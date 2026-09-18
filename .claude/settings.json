@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "defaultMode": "plan"
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(cat); cmd=$(echo \"$f\" | jq -r '.tool_input.command // empty'); if echo \"$cmd\" | grep -qE 'prisma[^&|;]*\\b(db push|migrate reset)\\b'; then printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Blocked: prisma db push / migrate reset bypasses versioned migrations and can wipe data. Use prisma migrate dev locally or migrate deploy in prod — see docs/DATABASE_SCHEMA.md (Migrations, versioning, and rollback).\"}}'; fi",
+            "statusMessage": "Checking for unsafe prisma commands..."
+          },
+          {
+            "type": "command",
+            "command": "f=$(cat); cmd=$(echo \"$f\" | jq -r '.tool_input.command // empty'); if echo \"$cmd\" | grep -qE '(^|[[:space:]/])vercel(@[^[:space:]]*)?[[:space:]]+(deploy|dev|whoami|link|logs|inspect|promote|rollback|--prod)' && ! echo \"$cmd\" | grep -q -- '--token'; then printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Blocked: bare vercel command. The global Vercel CLI login is shared and usually wrong for this project. Deploy via git push to origin main, or use an account-scoped token per the parent CLAUDE.md deployment rule.\"}}'; fi",
+            "statusMessage": "Checking for bare vercel CLI commands..."
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(cat); p=$(echo \"$f\" | jq -r '.tool_input.file_path // .tool_input.path // empty'); if echo \"$p\" | grep -q 'packages/database/prisma/migrations/'; then printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Blocked: migration files are append-only once committed. Generate a new migration with prisma migrate dev instead of hand-editing an existing one — see docs/DATABASE_SCHEMA.md (Migrations, versioning, and rollback).\"}}'; fi",
+            "statusMessage": "Checking migration file edit..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "f=$(cat); p=$(echo \"$f\" | jq -r '.tool_input.file_path // .tool_response.filePath // empty'); case \"$p\" in *.ts|*.tsx|*.js|*.jsx) npx --no-install eslint --fix \"$p\" >/dev/null 2>&1; npx --no-install prettier --write \"$p\" >/dev/null 2>&1 ;; *.json|*.md|*.css) npx --no-install prettier --write \"$p\" >/dev/null 2>&1 ;; esac; true",
+            "statusMessage": "Auto-formatting changed file..."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,573 @@
+// Draft schema — see docs/DATABASE_SCHEMA.md for the reasoning behind the
+// non-obvious choices (price snapshots, JSON discount config, separate
+// Customer/StaffUser tables, etc.). This is a starting point for Phase 1,
+// not final: expect it to move once the open decisions in
+// docs/OPEN_DECISIONS.md are settled.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Identity & access
+// ---------------------------------------------------------------------------
+
+model Customer {
+  id                String    @id @default(cuid())
+  email             String?   @unique
+  emailVerifiedAt   DateTime?
+  phone             String?   @unique
+  phoneVerifiedAt   DateTime?
+  name              String?
+  status            CustomerStatus @default(ACTIVE)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  addresses         Address[]
+  orders            Order[]
+  cart              Cart?
+  reviews           Review[]
+  consentLogs       ConsentLog[]
+  dataRequests      DataSubjectRequest[]
+  couponRedemptions CouponRedemption[]
+}
+
+enum CustomerStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+  type       AddressType
+  line1      String
+  line2      String?
+  city       String
+  state      String
+  postalCode String
+  country    String
+  isDefault  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+}
+
+enum AddressType {
+  SHIPPING
+  BILLING
+}
+
+// StaffUser is deliberately separate from Customer: different auth flow
+// (password, not OTP-only), different threat model. See docs/ARCHITECTURE.md.
+model StaffUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+
+  roles        StaffUserRole[]
+  auditLogs    AuditLog[]
+}
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+
+  permissions RolePermission[]
+  staffUsers  StaffUserRole[]
+}
+
+model Permission {
+  id          String @id @default(cuid())
+  key         String @unique // e.g. "product:create", "inventory:adjust"
+  description String?
+
+  roles       RolePermission[]
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+}
+
+model StaffUserRole {
+  staffUserId String
+  roleId      String
+  staffUser   StaffUser @relation(fields: [staffUserId], references: [id])
+  role        Role      @relation(fields: [roleId], references: [id])
+
+  @@id([staffUserId, roleId])
+}
+
+// Hashed OTP challenges for both signup/login and checkout verification.
+// The code itself is never stored in plaintext.
+model OtpChallenge {
+  id          String    @id @default(cuid())
+  identifier  String    // email or phone
+  channel     OtpChannel
+  purpose     OtpPurpose
+  codeHash    String
+  expiresAt   DateTime
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  consumedAt  DateTime?
+  requestIp   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([identifier, purpose])
+}
+
+enum OtpChannel {
+  EMAIL
+  SMS
+}
+
+enum OtpPurpose {
+  SIGNUP
+  LOGIN
+  CHECKOUT_VERIFY
+}
+
+// ---------------------------------------------------------------------------
+// Catalog
+// ---------------------------------------------------------------------------
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  parentId  String?
+  parent    Category?  @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryToCategory")
+  imageUrl  String?
+  isActive  Boolean    @default(true)
+  sortOrder Int        @default(0)
+
+  products  Product[]
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  categoryId  String
+  category    Category  @relation(fields: [categoryId], references: [id])
+  description String?
+  status      ProductStatus @default(DRAFT)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  variants    ProductVariant[]
+  images      ProductImage[]
+  reviews     Review[]
+
+  @@index([categoryId])
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model ProductVariant {
+  id             String   @id @default(cuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id])
+  sku            String   @unique
+  // e.g. { "size": "M", "color": "Navy" } — kept as JSON so new attributes
+  // don't require a migration.
+  attributes     Json
+  price          Decimal  @db.Decimal(10, 2)
+  compareAtPrice Decimal? @db.Decimal(10, 2)
+  weightGrams    Int?
+  status         ProductStatus @default(ACTIVE)
+
+  images         ProductImage[]
+  inventory      Inventory[]
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+
+  @@index([productId])
+}
+
+model ProductImage {
+  id               String          @id @default(cuid())
+  productId        String
+  product          Product         @relation(fields: [productId], references: [id])
+  productVariantId String?
+  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
+  url              String
+  altText          String?
+  sortOrder        Int             @default(0)
+  isPlaceholder    Boolean         @default(true)
+
+  @@index([productId])
+}
+
+// ---------------------------------------------------------------------------
+// Inventory
+// ---------------------------------------------------------------------------
+
+model Warehouse {
+  id      String @id @default(cuid())
+  name    String
+  address String?
+
+  inventory Inventory[]
+}
+
+model Inventory {
+  id                String         @id @default(cuid())
+  productVariantId  String
+  productVariant    ProductVariant @relation(fields: [productVariantId], references: [id])
+  warehouseId       String
+  warehouse         Warehouse      @relation(fields: [warehouseId], references: [id])
+  quantityOnHand    Int            @default(0)
+  quantityReserved  Int            @default(0)
+  reorderThreshold  Int            @default(0)
+
+  @@unique([productVariantId, warehouseId])
+}
+
+model InventoryLog {
+  id         String   @id @default(cuid())
+  variantSku String
+  changeQty  Int
+  reason     InventoryChangeReason
+  actorType  ActorType
+  actorId    String?
+  createdAt  DateTime @default(now())
+}
+
+enum InventoryChangeReason {
+  RESTOCK
+  SALE
+  RETURN
+  ADJUSTMENT
+}
+
+enum ActorType {
+  STAFF
+  SYSTEM
+}
+
+// ---------------------------------------------------------------------------
+// Cart & orders
+// ---------------------------------------------------------------------------
+
+model Cart {
+  id         String     @id @default(cuid())
+  customerId String     @unique
+  customer   Customer   @relation(fields: [customerId], references: [id])
+  updatedAt  DateTime   @updatedAt
+
+  items      CartItem[]
+}
+
+model CartItem {
+  id               String         @id @default(cuid())
+  cartId           String
+  cart             Cart           @relation(fields: [cartId], references: [id])
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  quantity         Int
+
+  @@unique([cartId, productVariantId])
+}
+
+model Order {
+  id                String   @id @default(cuid())
+  orderNumber       String   @unique
+  customerId        String
+  customer          Customer @relation(fields: [customerId], references: [id])
+  status            OrderStatus @default(PENDING)
+  subtotal          Decimal  @db.Decimal(10, 2)
+  discountTotal     Decimal  @db.Decimal(10, 2) @default(0)
+  taxTotal          Decimal  @db.Decimal(10, 2) @default(0)
+  shippingTotal     Decimal  @db.Decimal(10, 2) @default(0)
+  total             Decimal  @db.Decimal(10, 2)
+  currency          String   @default("INR")
+  shippingAddressId String
+  billingAddressId  String
+  couponCode        String?
+  placedAt          DateTime @default(now())
+  deletedAt         DateTime?
+
+  items             OrderItem[]
+  statusHistory     OrderStatusHistory[]
+  payments          Payment[]
+  returnRequests    ReturnRequest[]
+  couponRedemption  CouponRedemption?
+
+  @@index([customerId])
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PACKED
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  RETURN_REQUESTED
+  RETURNED
+  REFUNDED
+}
+
+// Price fields are snapshotted at purchase time — never joined live from
+// ProductVariant. See docs/DATABASE_SCHEMA.md.
+model OrderItem {
+  id               String         @id @default(cuid())
+  orderId          String
+  order            Order          @relation(fields: [orderId], references: [id])
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+  quantity         Int
+  unitPrice        Decimal        @db.Decimal(10, 2)
+  discountAmount   Decimal        @db.Decimal(10, 2) @default(0)
+  taxAmount        Decimal        @db.Decimal(10, 2) @default(0)
+  totalAmount      Decimal        @db.Decimal(10, 2)
+
+  returnRequests   ReturnRequest[]
+
+  @@index([orderId])
+}
+
+// Every status change is a row — this is what powers order tracking.
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id])
+  status    OrderStatus
+  note      String?
+  changedBy String      // "system", a courier webhook id, or a StaffUser id
+  createdAt DateTime    @default(now())
+
+  @@index([orderId])
+}
+
+model Payment {
+  id                String   @id @default(cuid())
+  orderId           String
+  order             Order    @relation(fields: [orderId], references: [id])
+  provider          String   // e.g. "razorpay" — see docs/OPEN_DECISIONS.md
+  providerPaymentId String
+  amount            Decimal  @db.Decimal(10, 2)
+  status            PaymentStatus @default(INITIATED)
+  createdAt         DateTime @default(now())
+
+  @@index([orderId])
+}
+
+enum PaymentStatus {
+  INITIATED
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+model ReturnRequest {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id])
+  reason      String
+  status      ReturnStatus @default(REQUESTED)
+  requestedAt DateTime @default(now())
+  resolvedAt  DateTime?
+
+  @@index([orderId])
+}
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  PICKED_UP
+  REFUNDED
+}
+
+// ---------------------------------------------------------------------------
+// Discounts — see .claude/skills/discount-rule-engine/ before adding a type
+// ---------------------------------------------------------------------------
+
+model Coupon {
+  id              String   @id @default(cuid())
+  code            String   @unique
+  description     String?
+  isActive        Boolean  @default(true)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  usageLimit      Int?
+  perCustomerLimit Int?
+  minOrderValue   Decimal? @db.Decimal(10, 2)
+
+  rules           DiscountRule[]
+  redemptions     CouponRedemption[]
+}
+
+model DiscountRule {
+  id         String       @id @default(cuid())
+  couponId   String?
+  coupon     Coupon?      @relation(fields: [couponId], references: [id])
+  type       DiscountType
+  // Typed and validated by a zod schema per `type` in packages/core —
+  // e.g. { "percentage": 20 } or { "buyQty": 2, "getQty": 1 }.
+  config     Json
+  priority   Int          @default(0)
+  stackable  Boolean      @default(false)
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FLAT
+  BUY_X_GET_Y
+}
+
+model CouponRedemption {
+  id             String   @id @default(cuid())
+  couponId       String
+  coupon         Coupon   @relation(fields: [couponId], references: [id])
+  orderId        String   @unique
+  order          Order    @relation(fields: [orderId], references: [id])
+  customerId     String
+  customer       Customer @relation(fields: [customerId], references: [id])
+  discountAmount Decimal  @db.Decimal(10, 2)
+  redeemedAt     DateTime @default(now())
+
+  @@index([couponId, customerId])
+}
+
+// ---------------------------------------------------------------------------
+// Reviews
+// ---------------------------------------------------------------------------
+
+model Review {
+  id            String       @id @default(cuid())
+  targetType    ReviewTarget
+  productId     String?
+  product       Product?     @relation(fields: [productId], references: [id])
+  customerId    String?
+  customer      Customer?    @relation(fields: [customerId], references: [id])
+  source        ReviewSource
+  rating        Int
+  title         String?
+  body          String
+  authorDisplay String?
+  isApproved    Boolean      @default(false)
+  submittedAt   DateTime     @default(now())
+  approvedAt    DateTime?
+  approvedBy    String?
+  externalRef   String?      // source URL/ID for imported reviews — dedup + traceability
+
+  @@index([productId, isApproved])
+  @@index([source, externalRef])
+}
+
+enum ReviewTarget {
+  PRODUCT
+  BRAND
+}
+
+enum ReviewSource {
+  SITE
+  EMAIL
+  AMAZON_IMPORT
+}
+
+// ---------------------------------------------------------------------------
+// Compliance (DPDP) — see docs/SECURITY_AND_DPDP.md
+// ---------------------------------------------------------------------------
+
+model ConsentLog {
+  id          String      @id @default(cuid())
+  customerId  String
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  consentType ConsentType
+  version     String
+  acceptedAt  DateTime    @default(now())
+  ipAddress   String?
+
+  @@index([customerId])
+}
+
+enum ConsentType {
+  TERMS_OF_SERVICE
+  PRIVACY_POLICY
+  MARKETING
+}
+
+model DataSubjectRequest {
+  id          String     @id @default(cuid())
+  customerId  String
+  customer    Customer   @relation(fields: [customerId], references: [id])
+  type        DsrType
+  status      DsrStatus  @default(RECEIVED)
+  requestedAt DateTime   @default(now())
+  fulfilledAt DateTime?
+}
+
+enum DsrType {
+  ACCESS
+  ERASURE
+  CORRECTION
+}
+
+enum DsrStatus {
+  RECEIVED
+  IN_PROGRESS
+  FULFILLED
+  REJECTED
+}
+
+// ---------------------------------------------------------------------------
+// Audit & analytics
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id          String    @id @default(cuid())
+  actorType   ActorType
+  staffUserId String?
+  staffUser   StaffUser? @relation(fields: [staffUserId], references: [id])
+  action      String    // e.g. "inventory.adjust", "review.approve"
+  entityType  String
+  entityId    String
+  beforeState Json?
+  afterState  Json?
+  createdAt   DateTime  @default(now())
+
+  @@index([entityType, entityId])
+}
+
+// Funnel events for the admin analytics dashboard. Kept intentionally thin —
+// see docs/ARCHITECTURE.md on why aggregation shouldn't hit this table live.
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  sessionId  String
+  customerId String?
+  eventType  String   // e.g. "product_viewed", "checkout_started"
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([eventType, createdAt])
+}
