@@ -14,8 +14,8 @@ const NAV_LINKS = [
 export function SiteHeader() {
   return (
     <header className="flex flex-col items-center">
-      <div className="mx-14 mt-3 flex w-full max-w-[1360px] items-center justify-center gap-6 rounded-[20px] bg-onwei-blue px-14 py-2.5">
-        <p className="whitespace-nowrap font-grotesk text-label uppercase text-onwei-white">
+      <div className="mx-4 mt-3 flex w-full max-w-[1360px] items-center justify-center gap-6 overflow-hidden rounded-[20px] bg-onwei-blue px-6 py-2.5 sm:mx-14 sm:px-14">
+        <p className="truncate font-grotesk text-label uppercase text-onwei-white sm:whitespace-nowrap">
           Free shipping on orders over &#8377;1500
         </p>
         <Image
@@ -24,15 +24,16 @@ export function SiteHeader() {
           width={20}
           height={15}
           aria-hidden
+          className="hidden shrink-0 sm:block"
         />
-        <p className="whitespace-nowrap font-grotesk text-label uppercase text-onwei-white">
+        <p className="hidden whitespace-nowrap font-grotesk text-label uppercase text-onwei-white sm:block">
           /on-way/ When you stop waiting to feel ready and just show up
         </p>
       </div>
 
       <nav
         aria-label="Primary"
-        className="flex w-full flex-wrap items-center justify-between gap-6 px-14 py-6"
+        className="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-4 px-6 py-6 sm:justify-between sm:px-14"
       >
         <Link href="/" aria-label="Onwei home" className="shrink-0">
           <Image
@@ -44,7 +45,7 @@ export function SiteHeader() {
           />
         </Link>
 
-        <ul className="flex flex-wrap items-center justify-center gap-8 md:gap-14">
+        <ul className="order-3 flex flex-wrap items-center justify-center gap-6 sm:order-none md:gap-14">
           {NAV_LINKS.map((link) => (
             <li key={link.label}>
               <Link

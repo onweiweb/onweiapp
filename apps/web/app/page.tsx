@@ -170,9 +170,19 @@ function HeroSection() {
             >
               shop pickleball
             </CtaLink>
-            <p className="font-script text-script-md uppercase text-onwei-beige">
-              Serve. Rally. Repeat.
-            </p>
+            <span className="flex items-center gap-2">
+              <p className="font-script text-script-md uppercase text-onwei-beige">
+                Serve. Rally. Repeat.
+              </p>
+              <Image
+                src="/images/hero/arrow-1.svg"
+                alt=""
+                width={22}
+                height={48}
+                aria-hidden
+                className="hidden -rotate-[75deg] sm:block"
+              />
+            </span>
           </div>
         </div>
 
@@ -185,6 +195,14 @@ function HeroSection() {
             className="object-cover"
           />
           <div className="absolute inset-0 bg-black/30" />
+          <Image
+            src="/images/hero/badge-stamp.svg"
+            alt=""
+            width={70}
+            height={70}
+            aria-hidden
+            className="absolute right-6 top-6 hidden sm:block"
+          />
           <div className="relative flex flex-col gap-8">
             <p className="font-display text-[48px] uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
               Movement,
@@ -197,9 +215,29 @@ function HeroSection() {
             >
               shop pilates
             </CtaLink>
-            <p className="font-script text-script-md uppercase text-onwei-beige">
-              Not perfect, just consistent
-            </p>
+            <div className="flex flex-col items-start gap-1">
+              <span className="flex items-center gap-2">
+                <p className="font-script text-script-md uppercase text-onwei-beige">
+                  Not perfect, just consistent
+                </p>
+                <Image
+                  src="/images/hero/arrow-2.svg"
+                  alt=""
+                  width={22}
+                  height={48}
+                  aria-hidden
+                  className="hidden -rotate-[38deg] sm:block"
+                />
+              </span>
+              <Image
+                src="/images/hero/underline-1.svg"
+                alt=""
+                width={344}
+                height={5}
+                aria-hidden
+                className="hidden max-w-[280px] sm:block"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -218,8 +256,16 @@ function ShowcaseSection() {
         <p className="font-display text-display-md uppercase leading-[0.9] text-onwei-blue">
           Designed to Move.
         </p>
-        <span className="font-script text-script-md uppercase text-onwei-blue">
-          &rarr; at your pace
+        <span className="flex items-center gap-2 font-script text-script-md uppercase text-onwei-blue">
+          <Image
+            src="/images/showcase/arrow-rotate.svg"
+            alt=""
+            width={22}
+            height={48}
+            aria-hidden
+            className="h-[22px] w-[10px] -rotate-90"
+          />
+          at your pace
         </span>
       </div>
 
@@ -343,14 +389,50 @@ function ProductGridSection({
 
 function AboutSection() {
   return (
-    <section className="flex flex-col items-start gap-8 bg-onwei-purple px-14 py-14 lg:flex-row lg:items-end lg:justify-between">
+    <section className="flex flex-col items-start gap-8 bg-onwei-purple px-6 py-14 sm:px-14 lg:flex-row lg:items-end lg:justify-between">
       <div className="flex w-full max-w-[639px] flex-col gap-8">
-        <p className="font-display text-[42px] uppercase leading-[1.1] text-onwei-white lg:text-[64px]">
-          Built to move,
+        <p className="font-display text-[36px] uppercase leading-[1.1] text-onwei-white sm:text-[48px] lg:text-[64px]">
+          Built to{" "}
+          <span className="relative inline-block">
+            <Image
+              src="/images/about/circle-move.svg"
+              alt=""
+              width={199}
+              height={74}
+              aria-hidden
+              className="pointer-events-none absolute -left-[15%] -top-[45%] -z-0 w-[130%] max-w-none"
+            />
+            <span className="relative">move</span>
+          </span>
+          ,
           <br />
-          Built with intent,
+          Built with{" "}
+          <span className="relative inline-block">
+            <span className="relative">intent</span>
+            <Image
+              src="/images/about/underline-1.svg"
+              alt=""
+              width={213}
+              height={7}
+              aria-hidden
+              className="pointer-events-none absolute -bottom-1 left-0 h-[6%] w-full"
+            />
+          </span>
+          ,
           <br />
-          Built by an athlete.
+          Built by an{" "}
+          <span className="relative inline-block">
+            <span className="relative">athlete</span>
+            <Image
+              src="/images/about/underline-2.svg"
+              alt=""
+              width={248}
+              height={7}
+              aria-hidden
+              className="pointer-events-none absolute -bottom-1 left-0 h-[6%] w-full"
+            />
+          </span>
+          .
         </p>
         <div className="flex flex-col gap-6">
           <p className="max-w-[484px] font-grotesk text-[14px] text-onwei-white">
@@ -437,13 +519,31 @@ function ReviewsSection() {
       className="flex flex-col items-center gap-8 bg-onwei-white px-12 py-24"
     >
       <div className="relative flex w-full flex-wrap items-end justify-between gap-6">
-        <p className="font-display text-display-md uppercase leading-[0.9] text-onwei-blue">
-          Chosen by 1000+
-          <br />
-          everyday movers
-        </p>
-        <span className="font-script text-script-md uppercase text-onwei-blue">
-          share your Onwei routine &darr;
+        <div className="flex flex-col gap-2">
+          <p className="font-display text-display-md uppercase leading-[0.9] text-onwei-blue">
+            Chosen by 1000+
+            <br />
+            everyday movers
+          </p>
+          <Image
+            src="/images/reviews/underline.svg"
+            alt=""
+            width={526}
+            height={4}
+            aria-hidden
+            className="max-w-full"
+          />
+        </div>
+        <span className="relative flex items-center gap-2 font-script text-script-md uppercase text-onwei-blue">
+          share your Onwei routine
+          <Image
+            src="/images/reviews/arrow.svg"
+            alt=""
+            width={20}
+            height={17}
+            aria-hidden
+            className="-rotate-[30deg]"
+          />
         </span>
         <CtaLink href="#" className="bg-onwei-blue text-onwei-beige">
           view all reviews
@@ -468,12 +568,20 @@ function ReviewsSection() {
 
 function JoinMovementSection() {
   return (
-    <section className="flex items-end justify-center gap-2.5 bg-onwei-green px-8 py-14 lg:px-[120px]">
+    <section className="relative flex items-end justify-center gap-2.5 overflow-hidden bg-onwei-green px-8 py-14 lg:px-[120px]">
+      <Image
+        src="/images/about2/illustration.svg"
+        alt=""
+        width={205}
+        height={202}
+        aria-hidden
+        className="pointer-events-none absolute right-[38%] top-0 hidden md:block"
+      />
       <div className="flex w-full flex-col items-start justify-between gap-8 lg:flex-row">
         <p className="max-w-[578px] font-display text-[48px] uppercase leading-[0.9] text-onwei-blue lg:text-[70px]">
           Join the Movement
         </p>
-        <div className="flex flex-col items-start gap-6">
+        <div className="relative flex flex-col items-start gap-6">
           <p className="max-w-[484px] font-grotesk text-[14px] text-onwei-blue">
             Movement events, community sessions, early access, product testing,
             and exclusive rewards - and a say in what we build next!
@@ -481,6 +589,14 @@ function JoinMovementSection() {
           <CtaLink href="#" className="bg-onwei-blue text-onwei-beige">
             Find Your Wei
           </CtaLink>
+          <Image
+            src="/images/about2/underline.svg"
+            alt=""
+            width={285}
+            height={2}
+            aria-hidden
+            className="pointer-events-none absolute -left-1 top-[52px] w-[285px] max-w-none"
+          />
         </div>
       </div>
     </section>
@@ -494,9 +610,19 @@ function JournalSection() {
   return (
     <section className="flex flex-col items-center gap-12 bg-onwei-white px-14 py-24">
       <div className="flex w-full flex-wrap items-end justify-between gap-6">
-        <p className="font-display text-display-md uppercase leading-[0.9] text-onwei-blue">
-          from the playbook
-        </p>
+        <div className="flex flex-col gap-2">
+          <p className="font-display text-display-md uppercase leading-[0.9] text-onwei-blue">
+            from the playbook
+          </p>
+          <Image
+            src="/images/journal/underline.svg"
+            alt=""
+            width={321}
+            height={6}
+            aria-hidden
+            className="max-w-full"
+          />
+        </div>
         <CtaLink href="#" className="bg-onwei-blue text-onwei-beige">
           explore blogs
         </CtaLink>
@@ -540,9 +666,17 @@ function JournalSection() {
 function InstagramSection() {
   return (
     <section className="flex flex-col items-start gap-12 px-14 py-24">
-      <div className="flex w-full flex-col items-center gap-3">
-        <span className="font-script text-script-md uppercase text-onwei-blue">
-          follow us on instagram &darr;
+      <div className="relative flex w-full flex-col items-center gap-3">
+        <span className="relative flex items-center gap-2 font-script text-script-md uppercase text-onwei-blue">
+          follow us on instagram
+          <Image
+            src="/images/instagram/arrow.svg"
+            alt=""
+            width={20}
+            height={26}
+            aria-hidden
+            className="-rotate-[27deg]"
+          />
         </span>
         <p className="font-display text-[48px] uppercase leading-[0.9] text-onwei-blue lg:text-[70px]">
           @OnweiMoves
