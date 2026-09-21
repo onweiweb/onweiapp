@@ -13,7 +13,11 @@ const NAV_LINKS = [
 
 export function SiteHeader() {
   return (
-    <header className="flex flex-col items-center">
+    // bg-onwei-green: matches HeroSection's fix below it, so the top of the
+    // page reads as one continuous colored zone instead of a white nav
+    // strip butting into a yellow hero. Same caveat: best-effort, not yet
+    // re-verified against Figma (API rate-limited).
+    <header className="flex flex-col items-center bg-onwei-green">
       <div className="mx-4 mt-3 flex w-full max-w-[1360px] items-center justify-center gap-6 overflow-hidden rounded-[20px] bg-onwei-blue px-6 py-2.5 sm:mx-14 sm:px-14">
         <p className="truncate font-grotesk text-label uppercase text-onwei-white sm:whitespace-nowrap">
           Free shipping on orders over &#8377;1500

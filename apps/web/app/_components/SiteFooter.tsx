@@ -69,127 +69,138 @@ function LinkedInIcon() {
 
 export function SiteFooter() {
   return (
-    <footer className="relative">
-      <div className="relative flex flex-col items-end gap-[87px] overflow-hidden bg-onwei-purple px-14 py-12 lg:flex-row lg:items-end">
-        <Image
-          src="/images/footer/illustration-runner.svg"
-          alt=""
-          width={210}
-          height={342}
-          aria-hidden
-          className="pointer-events-none absolute top-4 right-16 hidden lg:block"
-        />
-        <div className="flex flex-1 flex-col gap-16 lg:flex-row lg:gap-[136px]">
-          <div className="flex w-full max-w-[401px] flex-col gap-8">
-            <div className="flex w-full max-w-[371px] flex-col items-start gap-5">
-              <Image
-                src="/images/footer/logo-circle.svg"
-                alt=""
-                width={113}
-                height={113}
-                aria-hidden
-              />
-              <p className="font-display text-[64px] uppercase leading-[0.9] text-onwei-beige">
-                on&middot;wei
-              </p>
-              <p className="font-display text-[16px] uppercase text-onwei-beige">
-                \ on-way \
-              </p>
-            </div>
-            <div className="flex flex-col gap-4 text-onwei-beige">
-              <div className="relative inline-block w-fit">
-                <span
+    <footer>
+      <div className="flex flex-col items-center overflow-hidden bg-onwei-purple px-14 py-12">
+        <div className="relative flex w-full max-w-[1440px] flex-col items-end gap-[87px] lg:flex-row lg:items-end">
+          <Image
+            src="/images/footer/illustration-runner.svg"
+            alt=""
+            width={210}
+            height={342}
+            aria-hidden
+            className="pointer-events-none absolute top-4 right-16 hidden lg:block"
+          />
+          <div className="flex flex-1 flex-col gap-16 lg:flex-row lg:gap-[136px]">
+            <div className="flex w-full max-w-[401px] flex-col gap-8">
+              <div className="flex w-full max-w-[371px] flex-col items-start gap-5">
+                <Image
+                  src="/images/footer/logo-circle.svg"
+                  alt=""
+                  width={113}
+                  height={113}
                   aria-hidden
-                  className="absolute -left-4 -right-4 -top-5 -bottom-5"
-                >
-                  <Image
-                    src="/images/footer/brand-asset-1.png"
-                    alt=""
-                    fill
-                    sizes="420px"
-                    className="object-contain"
-                  />
-                </span>
-                <p className="relative z-10 font-display text-[16px] uppercase text-onwei-blue">
-                  rhymes with &quot;on the way.&quot; because you already are.
+                />
+                <p className="font-display text-[64px] uppercase leading-[0.9] text-onwei-beige">
+                  on&middot;wei
+                </p>
+                <p className="font-display text-[16px] uppercase text-onwei-beige">
+                  \ on-way \
                 </p>
               </div>
-              <p className="font-grotesk text-[14px] leading-[1.3]">
-                ONWEI (n.)
-                <br />
-                <br />
-                1. The weight of your own effort. The only thing that&apos;s
-                always yours.
-                <br />
-                <br />
-                2. From On — present, engaged, showing up — and Wei (为) —
-                intentional action. Not hustle. Not noise. Just the choice to
-                participate.
-                <br />
-                <br />
-                <span className="font-semibold">
-                  3. The feeling when you stop waiting to feel ready and just
-                  show up.
-                  <br />
-                  Because progress belongs to those who — Show up. Stay on.
-                </span>
-              </p>
-            </div>
-          </div>
-
-          <div className="relative flex flex-1 flex-col gap-[87px]">
-            <Image
-              src="/images/footer/brand-asset-2.png"
-              alt=""
-              width={96}
-              height={124}
-              aria-hidden
-              className="pointer-events-none absolute right-8 top-0 hidden rotate-12 md:block"
-            />
-            <div className="flex flex-col items-start gap-6">
-              <div className="flex w-full max-w-[380px] flex-col gap-4 text-onwei-beige">
-                <p className="font-display text-[70px] uppercase leading-[0.9]">
-                  Move with
-                  <br />
-                  Onwei
-                </p>
-                <p className="font-grotesk text-[14px]">
-                  New releases, movement stories, and what&apos;s moving at
-                  Onwei — no unnecessary pings!
-                </p>
-              </div>
-              <NewsletterForm />
-            </div>
-
-            <div className="flex flex-wrap gap-8">
-              {FOOTER_COLUMNS.map((column) => (
-                <div
-                  key={column.heading}
-                  className="flex w-[180px] flex-col gap-6 text-onwei-beige"
-                >
-                  <p className="font-display text-[16px] uppercase tracking-[-0.16px]">
-                    {column.heading}
+              <div className="flex flex-col gap-4 text-onwei-beige">
+                <div className="relative inline-block w-fit">
+                  <span
+                    aria-hidden
+                    className="absolute -left-4 -right-4 -top-5 -bottom-5"
+                  >
+                    <Image
+                      src="/images/footer/brand-asset-1.png"
+                      alt=""
+                      fill
+                      sizes="420px"
+                      className="object-contain"
+                    />
+                  </span>
+                  <p className="relative z-10 font-display text-[16px] uppercase text-onwei-blue">
+                    rhymes with &quot;on the way.&quot; because you already are.
                   </p>
-                  <ul className="flex flex-col gap-4 font-grotesk text-[16px]">
-                    {column.links.map((link) => (
-                      <li key={link.label}>
-                        <Link href={link.href}>{link.label}</Link>
-                      </li>
-                    ))}
-                  </ul>
                 </div>
-              ))}
-              <div className="flex flex-1 flex-col gap-6 text-onwei-beige">
-                <p className="font-display text-[16px] uppercase tracking-[-0.16px]">
-                  Connect
+                <p className="font-grotesk text-[14px] leading-[1.3]">
+                  ONWEI (n.)
+                  <br />
+                  <br />
+                  1. The weight of your own effort. The only thing that&apos;s
+                  always yours.
+                  <br />
+                  <br />
+                  2. From On — present, engaged, showing up — and Wei (为) —
+                  intentional action. Not hustle. Not noise. Just the choice to
+                  participate.
+                  <br />
+                  <br />
+                  <span className="font-semibold">
+                    3. The feeling when you stop waiting to feel ready and just
+                    show up.
+                    <br />
+                    Because progress belongs to those who — Show up. Stay on.
+                  </span>
                 </p>
-                <div className="flex items-center gap-4">
-                  <a href="#" aria-label="Onwei on Instagram">
-                    <InstagramIcon />
-                  </a>
-                  <a href="#" aria-label="Onwei on LinkedIn">
-                    <LinkedInIcon />
-                  </a>
+              </div>
+            </div>
+
+            <div className="relative flex flex-1 flex-col gap-[87px]">
+              <Image
+                src="/images/footer/brand-asset-2.png"
+                alt=""
+                width={96}
+                height={124}
+                aria-hidden
+                className="pointer-events-none absolute right-8 top-0 hidden rotate-12 md:block"
+              />
+              <div className="flex flex-col items-start gap-6">
+                <div className="flex w-full max-w-[380px] flex-col gap-4 text-onwei-beige">
+                  <p className="font-display text-[70px] uppercase leading-[0.9]">
+                    Move with
+                    <br />
+                    Onwei
+                  </p>
+                  <p className="font-grotesk text-[14px]">
+                    New releases, movement stories, and what&apos;s moving at
+                    Onwei — no unnecessary pings!
+                  </p>
+                </div>
+                <NewsletterForm />
+              </div>
+
+              <div className="flex flex-wrap gap-8">
+                {FOOTER_COLUMNS.map((column) => (
+                  <div
+                    key={column.heading}
+                    className="flex w-[180px] flex-col gap-6 text-onwei-beige"
+                  >
+                    <p className="font-display text-[16px] uppercase tracking-[-0.16px]">
+                      {column.heading}
+                    </p>
+                    <ul className="flex flex-col gap-4 font-grotesk text-[16px]">
+                      {column.links.map((link) => (
+                        <li key={link.label}>
+                          <Link href={link.href}>{link.label}</Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+                <div className="flex flex-1 flex-col gap-6 text-onwei-beige">
+                  <p className="font-display text-[16px] uppercase tracking-[-0.16px]">
+                    Connect
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <a href="#" aria-label="Onwei on Instagram">
+                      <InstagramIcon />
+                    </a>
+                    <a href="#" aria-label="Onwei on LinkedIn">
+                      <LinkedInIcon />
+                    </a>
+                    <a href="#" aria-label="Onwei on Substack">
+                      <Image
+                        src="/images/footer/icon-substack.svg"
+                        alt=""
+                        width={15}
+                        height={17}
+                        aria-hidden
+                      />
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
