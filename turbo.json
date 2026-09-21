@@ -1,5 +1,6 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": ["DATABASE_URL", "DIRECT_URL", "OTP_HASH_SECRET"],
   "tasks": {
     "build": {
       "dependsOn": ["^build", "test", "typecheck"],
