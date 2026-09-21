@@ -14,6 +14,56 @@ Full plan lives at `/Users/apple/.claude/plans/great-figma-seems-to-harmonic-hin
 and `npm run build` all pass clean across all 8 workspaces. The first Prisma migration
 (`20260920052205_init`) is applied to a real Neon database. Nothing below is aspirational.
 
+## Phase 1 feature pass (2026-09-21) — deployed and verified live
+
+Shipped and live at https://onweiapp.vercel.app / https://onweiapp-admin.vercel.app (commits
+`a34c359`, `7b696e3`):
+
+- **Homepage built from Figma** (`apps/web/app/page.tsx` + `apps/web/app/_components/*`), replacing
+  the placeholder — real seeded Pickleball/Pilates product data in the grid via `@onwei/core`.
+  Reusable `SiteHeader`/`SiteFooter`/`ProductCard`/`CategoryTile`.
+- **Product browsing backend**: `packages/core/src/catalog/*` (list categories, list/get products,
+  active/soft-delete/DRAFT/ARCHIVED filtering, in-stock derivation) — 18 tests against the real DB.
+  Not yet wired into Collection/PDP pages (those still show placeholders — next up).
+- **Dummy OTP login**, working end-to-end against production: `packages/core/src/otp/otpChallenge.ts`,
+  `packages/auth/src/session/session.ts` (jose JWT cookie, explicit Redis placeholder),
+  `apps/web/app/api/auth/{request,verify}-otp`, `apps/web/app/login`. Supports email or phone in one
+  field. Deliberately excludes rate-limiting/blocklists/phone-format validation per earlier decision.
+- **Newsletter capture is real**: new `NewsletterSubscriber` table (migration
+  `20260921075951_add_newsletter_subscriber`), `packages/core/src/newsletter/subscribeToNewsletter.ts`,
+  `apps/web/app/api/newsletter/subscribe`.
+- **Two real bugs found via manual browser testing, not just CI** — worth remembering the pattern:
+  (1) `ProductGridSection` was an async Client Component (React can't render those outside Next's RSC
+  runtime) — fixed by fetching in the page and passing data down as a prop; (2) `NewsletterForm`'s
+  submit button did nothing because `packages/ui`'s `Button` defaults to `type="button"` and the form
+  never overrode it — **check every new `<Button>` inside a `<form>` explicitly sets
+  `type="submit"`, the default will silently no-op otherwise.**
+- **Corrections #15 — Turborepo cache path bug.** `turbo.json`'s `db:generate` task declared its
+  `.prisma` engine-directory output as `node_modules/.prisma/**` (relative to `packages/database`),
+  but npm workspace hoisting puts it at the repo root, exactly like the sibling `@prisma/client`
+  output already correctly pointed to two levels up. This silently broke on the _first_ real cache
+  hit in production: Vercel restored the cached `@prisma/client` package but not its generated
+  engine, and everything importing it failed with `Cannot find module '.prisma/client/default'` —
+  passed locally and on the previous (uncached) deploy, only surfaced once caching actually kicked
+  in. Fixed to `../../node_modules/.prisma/**`. **If a future `db:*` or similar task output path is
+  ever added, double-check it's relative to the task's package, not the repo root, and confirm
+  against `find <repo root> -maxdepth 4 -type d -name .prisma` rather than assuming.**
+
+### Known, disclosed gaps (not silently accepted — flag before treating as done)
+
+- **Font approximation**: the Figma file uses "Author Variable" (headlines), "ABC Monument Grotesk
+  Mono Unlicensed Trial" (body/nav/buttons), and "Summer Mood" (script annotations) — none are
+  Google Fonts and Figma doesn't expose font binaries via the API. Substituted Archivo / Space
+  Grotesk / Caveat respectively via `next/font/google`. Raleway (the one CTA text style) is exact.
+  This is the single biggest visual-fidelity gap versus the real design.
+- **Mobile Homepage variant** (Figma node `761:4763`) was not pulled — the Figma MCP hit its
+  Starter-plan tool-call rate limit mid-build. Desktop-only for now; needs a follow-up pass.
+- Collection and PDP pages (`apps/web/app/collection/[slug]`, `apps/web/app/product/[slug]`) still
+  show the Phase-0 placeholder text — not wired to the real catalog functions or built from Figma
+  yet. This is the natural next step.
+- A LinkedIn icon glyph in the footer and one downloaded-but-unused asset (`icon-substack.svg`,
+  ambiguous purpose in the source file) are minor loose ends, not investigated further.
+
 ## Locked-in decisions (do not re-litigate; re-ask the user only if one needs to change)
 
 - Build order: monorepo skeleton first, Figma-to-code per screen is separate follow-on work.
