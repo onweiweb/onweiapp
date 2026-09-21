@@ -48,9 +48,14 @@ export function ProductCard({ product }: { product: ProductListItem }) {
         </div>
         <div className="flex w-full flex-col items-start gap-2">
           <StaticRating />
-          <div className="flex w-full items-center justify-between font-display uppercase text-onwei-blue">
-            <p className="text-[20px]">{product.name}</p>
-            <p className="text-[12px]">{price}</p>
+          <div className="flex w-full items-center justify-between gap-2 font-display uppercase text-onwei-blue">
+            <p
+              className="min-w-0 flex-1 truncate text-[20px]"
+              title={product.name}
+            >
+              {product.name}
+            </p>
+            <p className="shrink-0 text-[12px]">{price}</p>
           </div>
         </div>
       </div>
