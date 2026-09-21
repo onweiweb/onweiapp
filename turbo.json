@@ -25,7 +25,7 @@
       "cache": true,
       "outputs": [
         "../../node_modules/@prisma/client/**",
-        "node_modules/.prisma/**"
+        "../../node_modules/.prisma/**"
       ]
     },
     "dev": {
