@@ -543,6 +543,18 @@ enum DsrStatus {
 }
 
 // ---------------------------------------------------------------------------
+// Marketing
+// ---------------------------------------------------------------------------
+
+model NewsletterSubscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  source         String? // e.g. "homepage_footer" — provenance, not required
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+}
+
+// ---------------------------------------------------------------------------
 // Audit & analytics
 // ---------------------------------------------------------------------------
 

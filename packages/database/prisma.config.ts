@@ -12,6 +12,10 @@ try {
 
 export default defineConfig({
   schema: "prisma/schema.prisma",
+  migrations: {
+    path: "prisma/migrations",
+    seed: "tsx prisma/seed.ts",
+  },
   datasource: {
     // Used by the Prisma CLI (migrate/introspect) only — Neon's pooled host
     // (DATABASE_URL) runs PgBouncer, which doesn't support the advisory

@@ -1,6 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalEnv": ["DATABASE_URL", "DIRECT_URL", "OTP_HASH_SECRET"],
+  "globalEnv": [
+    "DATABASE_URL",
+    "DIRECT_URL",
+    "OTP_HASH_SECRET",
+    "SESSION_JWT_SECRET"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build", "test", "typecheck"],

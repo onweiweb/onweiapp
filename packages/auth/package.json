@@ -10,6 +10,9 @@
     "test": "vitest run",
     "lint": "eslint ."
   },
+  "dependencies": {
+    "jose": "^6.2.12"
+  },
   "devDependencies": {
     "@onwei/config": "*",
     "eslint": "^9.39.5",

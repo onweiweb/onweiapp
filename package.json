@@ -1,6 +1,7 @@
 {
   "name": "sports-brand-ecommerce",
   "private": true,
+  "type": "module",
   "packageManager": "npm@11.6.2",
   "workspaces": [
     "apps/*",

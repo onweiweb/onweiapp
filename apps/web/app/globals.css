@@ -2,7 +2,54 @@
 @import "@onwei/config/tailwind/base.css";
 
 /*
- * Figma design tokens (colors, type scale, spacing) go here once pulled via
- * mcp__figma__get_variable_defs against file 3HCgSRca91P6WCpW28RA9o. Left
- * empty deliberately — ground rule 8 in CLAUDE.md: no improvised design.
+ * Figma design tokens pulled from file 3HCgSRca91P6WCpW28RA9o (Homepage,
+ * node 758:2218) via mcp__figma__get_variable_defs and per-section
+ * get_design_context calls. Ground rule 8 in CLAUDE.md: no improvised
+ * design, so every color/type value below traces back to a Figma value.
  */
+@theme {
+  --color-onwei-blue: #161845;
+  --color-onwei-beige: #eae8d6;
+  --color-onwei-green: #eded86;
+  --color-onwei-black: #131112;
+  --color-onwei-purple: #8e94ca;
+  --color-onwei-white: #ffffff;
+
+  /* --font-display approximates Figma's "Author Variable" (headlines).
+     --font-grotesk approximates "ABC Monument Grotesk Mono Unlicensed
+     Trial" (nav/body/uppercase labels/buttons). --font-script approximates
+     "Summer Mood" (handwritten annotations). None of the three source fonts
+     are Google Fonts and Figma does not expose the binaries, so the closest
+     available Google Fonts are registered in layout.tsx instead. */
+  --font-display: var(--font-archivo), sans-serif;
+  --font-grotesk: var(--font-space-grotesk), sans-serif;
+  --font-script: var(--font-caveat), cursive;
+  --font-cta: var(--font-raleway), sans-serif;
+
+  /* CTA 1 variable from Figma: Raleway SemiBold, 16px, line-height 1,
+     letter-spacing -1px. */
+  --text-cta: 16px;
+  --text-cta--line-height: 1;
+  --text-cta--letter-spacing: -1px;
+  --text-cta--font-weight: 600;
+
+  --text-display-xl: 82px;
+  --text-display-xl--line-height: 0.9;
+  --text-display-lg: 70px;
+  --text-display-lg--line-height: 0.9;
+  --text-display-md: 64px;
+  --text-display-md--line-height: 0.9;
+  --text-script-md: 20px;
+  --text-script-md--line-height: 1.2;
+  --text-label: 14px;
+  --text-label--line-height: normal;
+}
+
+@keyframes onwei-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
