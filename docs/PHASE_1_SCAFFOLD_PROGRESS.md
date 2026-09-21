@@ -125,6 +125,31 @@ and `npm run build` all pass clean across all 8 workspaces. The first Prisma mig
       via `prisma migrate status` ("Database schema is up to date!") and the integration test
       (`client.integration.test.ts`) passing against the live connection.
 
+## Deployed (2026-09-21)
+
+Two Vercel projects under the `onwei` team, both linked to `onweiweb/onweiapp` on GitHub (`main`
+branch), both pointed at the same Neon database:
+
+| Project          | Root Directory | URL                               |
+| ---------------- | -------------- | --------------------------------- |
+| `onweiapp`       | `apps/web`     | https://onweiapp.vercel.app       |
+| `onweiapp-admin` | `apps/admin`   | https://onweiapp-admin.vercel.app |
+
+`onweiapp` already had a Vercel Postgres/Neon marketplace integration connected (auto-injects
+`DATABASE_URL` + the full `PG*`/`POSTGRES_*` var set) — that's the same database migrated earlier.
+`onweiapp-admin` has `DATABASE_URL`/`DIRECT_URL`/`OTP_HASH_SECRET` set manually (no integration
+attached to it). A Vercel API token (account `admin-15057788`, team `onwei`) is saved locally as
+`VERCEL_TOKEN` in the repo root `.env` (gitignored) for any future project-config work — never used
+via the shared/global `vercel` CLI session, always with an explicit `--token`/`Authorization` header.
+
+**Corrections #14 — Turborepo strips undeclared env vars.** The first deploy attempt on both
+projects failed with the same `DIRECT_URL` error seen locally, but from a different cause: Turbo's
+strict env-var filtering silently drops any environment variable not declared in `turbo.json`, even
+when it's correctly set on the Vercel project. Fixed by adding
+`"globalEnv": ["DATABASE_URL", "DIRECT_URL", "OTP_HASH_SECRET"]` to `turbo.json`. Any _new_ env var
+a package needs at build or runtime must be added to this list too, or Vercel builds will fail even
+though the variable shows up correctly in the Vercel dashboard.
+
 ## Known open items (unchanged, still real)
 
 - Figma pull for actual screen styling (Homepage/PDP/Collection/About) is deliberately deferred to
