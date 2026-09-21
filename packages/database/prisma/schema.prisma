@@ -8,9 +8,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Prisma 7 moved connection URLs out of schema.prisma into prisma.config.ts
+// (CLI/migrations) and the PrismaClient driver adapter (runtime queries) —
+// see prisma.config.ts and src/client.ts in this package.
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ---------------------------------------------------------------------------

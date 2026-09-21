@@ -1,6 +1,7 @@
 {
   "name": "sports-brand-ecommerce",
   "private": true,
+  "packageManager": "npm@11.6.2",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -10,15 +11,25 @@
     "build": "turbo run build",
     "prebuild": "npm run test && npm run typecheck",
     "test": "turbo run test",
+    "test:e2e": "playwright test",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
+    "postinstall": "npm run db:generate",
+    "db:generate": "turbo run db:generate",
+    "db:migrate": "npm run db:migrate --workspace=@onwei/database",
     "prepare": "husky"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "husky": "^9.1.0",
+    "jsdom": "^29.1.1",
     "lint-staged": "^15.2.0",
+    "prettier": "^3.9.8",
     "turbo": "^2.1.0",
-    "typescript": "^5.6.0"
+    "typescript": "^6.0.3"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

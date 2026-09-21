@@ -1,0 +1,9 @@
+{
+  "extends": "@onwei/config/tsconfig/base.json",
+  "compilerOptions": {
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["react", "node"]
+  },
+  "include": ["src", "vitest.setup.ts"]
+}

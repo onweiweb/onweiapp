@@ -1,0 +1,5 @@
+@import "tailwindcss";
+@import "@onwei/config/tailwind/base.css";
+
+/* No themed design system here on purpose — apps/admin uses the functional
+   default. See docs/ARCHITECTURE.md. */

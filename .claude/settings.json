@@ -2,6 +2,7 @@
   "permissions": {
     "defaultMode": "plan"
   },
+  "enabledMcpjsonServers": ["figma"],
   "hooks": {
     "PreToolUse": [
       {
