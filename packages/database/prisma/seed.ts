@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { prisma } from "../src/client";
 
 // Runs against the same shared Neon dev database as everything else in this
@@ -311,6 +312,69 @@ async function getOrCreateMainWarehouse() {
   return mainWarehouseCache;
 }
 
+// bcryptjs is used directly here (not packages/auth's hashPassword) to avoid
+// a circular package dependency: packages/auth already depends on
+// @onwei/database (for getStaffPermissions), so @onwei/database can't
+// depend back on packages/auth. Keep SALT_ROUNDS in sync with
+// packages/auth/src/password/password.ts if that ever changes.
+const SALT_ROUNDS = 12;
+
+// The full catalog of permission keys the admin app checks against
+// (apps/admin/app/api/_lib/requireStaffSession.ts). The bootstrapped
+// super-admin (packages/auth/src/rbac/getStaffPermissions.ts) gets every
+// row in this table automatically — if this table were empty, the
+// super-admin would have *no* permissions despite the "gets every
+// permission automatically" rule in docs/ARCHITECTURE.md, so these rows
+// must exist for that rule to actually mean anything. Every other staff
+// user gets permissions only via an assigned Role (not built yet — no
+// non-superadmin staff exist to need one).
+const PERMISSION_KEYS = [
+  "category:create",
+  "category:update",
+  "product:create",
+  "product:update",
+  "product:delete",
+  "productVariant:create",
+  "productVariant:update",
+  "productImage:manage",
+  "inventory:view",
+  "inventory:adjust",
+] as const;
+
+async function seedPermissions() {
+  for (const key of PERMISSION_KEYS) {
+    await prisma.permission.upsert({
+      where: { key },
+      update: {},
+      create: { key },
+    });
+  }
+}
+
+async function seedSuperAdmin() {
+  const email = process.env.SUPERADMIN_EMAIL;
+  const initialPassword = process.env.SUPERADMIN_INITIAL_PASSWORD;
+
+  if (!email || !initialPassword) {
+    console.log(
+      "SUPERADMIN_EMAIL / SUPERADMIN_INITIAL_PASSWORD not set — skipping super-admin seed.",
+    );
+    return;
+  }
+
+  const passwordHash = await bcrypt.hash(initialPassword, SALT_ROUNDS);
+
+  await prisma.staffUser.upsert({
+    where: { email },
+    update: {},
+    create: {
+      email,
+      passwordHash,
+      name: "Super Admin",
+    },
+  });
+}
+
 async function main() {
   await seedCategory({
     name: "Pickleball",
@@ -327,6 +391,9 @@ async function main() {
     imageUrl: "/images/categories/pilates.svg",
     products: PILATES_PRODUCTS,
   });
+
+  await seedPermissions();
+  await seedSuperAdmin();
 
   console.log("Seed complete.");
 }

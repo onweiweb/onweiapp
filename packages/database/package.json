@@ -21,6 +21,7 @@
   "devDependencies": {
     "@onwei/config": "*",
     "@types/pg": "^8.23.1",
+    "bcryptjs": "^3.0.3",
     "eslint": "^9.39.5",
     "prisma": "^7.10.0",
     "tsx": "^4.23.15",

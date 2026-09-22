@@ -1,3 +1,31 @@
+export { createCategory, updateCategory } from "./admin/category";
+export {
+  createProduct,
+  deleteProduct,
+  restoreProduct,
+  updateProduct,
+} from "./admin/product";
+export {
+  createProductVariant,
+  updateProductVariant,
+} from "./admin/productVariant";
+export {
+  addProductImage,
+  removeProductImage,
+  reorderProductImages,
+} from "./admin/productImage";
+export { adjustInventory, listInventory } from "./admin/inventory";
+export type {
+  AdjustInventoryInput,
+  AuditActor,
+  CreateCategoryInput,
+  CreateProductInput,
+  CreateProductVariantInput,
+  InventoryAdjustmentReason,
+  UpdateCategoryInput,
+  UpdateProductInput,
+  UpdateProductVariantInput,
+} from "./admin/types";
 export { getActiveProductBySlug } from "./catalog/getActiveProductBySlug";
 export {
   derivePriceRangeMinorUnits,
