@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Archivo, IBM_Plex_Mono, Raleway } from "next/font/google";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import {
@@ -9,6 +10,28 @@ import { prisma } from "@onwei/database";
 import { SignOutButton } from "./_components/SignOutButton";
 import "./globals.css";
 
+// Same font families as apps/web (see apps/web/app/layout.tsx) so admin
+// reads as the same product, minus the display-headline scale, which is
+// storefront-only. No --font-script (Caveat) here — marketing accent only.
+const raleway = Raleway({
+  subsets: ["latin"],
+  variable: "--font-raleway",
+  display: "swap",
+});
+
+const archivo = Archivo({
+  subsets: ["latin"],
+  variable: "--font-archivo",
+  display: "swap",
+});
+
+const ibmPlexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Onwei Admin",
   description: "Internal tools for running the Onwei store.",
@@ -16,9 +39,19 @@ export const metadata: Metadata = {
 
 const NAV_ITEMS = [
   { label: "Dashboard", href: "/" },
+  { label: "Orders", href: "/orders" },
+  { label: "Returns", href: "/returns" },
+  { label: "Coupons", href: "/coupons" },
+  { label: "Reviews", href: "/reviews" },
   { label: "Products", href: "/products" },
   { label: "Categories", href: "/categories" },
   { label: "Inventory", href: "/inventory" },
+  { label: "Staff", href: "/staff" },
+  { label: "Roles", href: "/roles" },
+  { label: "Customers", href: "/customers" },
+  { label: "Audit Log", href: "/audit-log" },
+  { label: "Newsletter", href: "/newsletter" },
+  { label: "Data requests", href: "/dsr" },
 ] as const;
 
 async function getCurrentStaffName(): Promise<string | null> {
@@ -45,22 +78,27 @@ export default async function RootLayout({
   const staffName = await getCurrentStaffName();
 
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-neutral-50 text-neutral-900">
+    <html
+      lang="en"
+      className={`${raleway.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
+    >
+      <body className="min-h-screen bg-onwei-beige font-grotesk text-onwei-blue">
         {staffName ? (
           <div className="flex min-h-screen">
             <nav
               aria-label="Admin"
-              className="flex w-56 shrink-0 flex-col justify-between border-r border-neutral-200 bg-white p-4"
+              className="flex w-56 shrink-0 flex-col justify-between rounded-r-[30px] bg-onwei-blue p-4 text-onwei-beige"
             >
               <div>
-                <p className="mb-6 px-2 text-lg font-semibold">Onwei Admin</p>
+                <p className="mb-6 px-2 font-display text-lg font-semibold uppercase">
+                  Onwei Admin
+                </p>
                 <ul className="flex flex-col gap-1">
                   {NAV_ITEMS.map((item) => (
                     <li key={item.label}>
                       <Link
                         href={item.href}
-                        className="block rounded-md px-2 py-1.5 text-sm text-neutral-700 hover:bg-neutral-100"
+                        className="block rounded-[30px] px-3 py-1.5 text-sm uppercase tracking-wide hover:bg-onwei-green hover:text-onwei-blue"
                       >
                         {item.label}
                       </Link>
@@ -68,11 +106,11 @@ export default async function RootLayout({
                   ))}
                 </ul>
               </div>
-              <div className="flex flex-col gap-2 border-t border-neutral-200 pt-4">
-                <p className="px-2 text-sm text-neutral-500">
+              <div className="flex flex-col gap-2 border-t border-onwei-beige/30 pt-4">
+                <p className="px-2 text-xs text-onwei-beige/80">
                   Signed in as
                   <br />
-                  <span className="text-neutral-900">{staffName}</span>
+                  <span className="text-onwei-white">{staffName}</span>
                 </p>
                 <SignOutButton />
               </div>

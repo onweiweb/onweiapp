@@ -326,8 +326,8 @@ const SALT_ROUNDS = 12;
 // super-admin would have *no* permissions despite the "gets every
 // permission automatically" rule in docs/ARCHITECTURE.md, so these rows
 // must exist for that rule to actually mean anything. Every other staff
-// user gets permissions only via an assigned Role (not built yet — no
-// non-superadmin staff exist to need one).
+// user gets permissions only via an assigned Role — see apps/admin's
+// /staff and /roles pages (packages/core/src/staff/*.ts).
 const PERMISSION_KEYS = [
   "category:create",
   "category:update",
@@ -339,6 +339,29 @@ const PERMISSION_KEYS = [
   "productImage:manage",
   "inventory:view",
   "inventory:adjust",
+  "order:view",
+  "order:updateStatus",
+  "return:view",
+  "return:approve",
+  "return:reject",
+  "payment:view",
+  "coupon:create",
+  "coupon:update",
+  "discountRule:create",
+  "discountRule:update",
+  "staffUser:create",
+  "staffUser:update",
+  "role:create",
+  "role:update",
+  "staffUserRole:assign",
+  "review:moderate",
+  "review:createManual",
+  "customer:view",
+  "auditLog:view",
+  "newsletter:view",
+  "dsr:view",
+  "dsr:updateStatus",
+  "consentLog:view",
 ] as const;
 
 async function seedPermissions() {

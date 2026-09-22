@@ -12,7 +12,8 @@
   },
   "dependencies": {
     "@onwei/auth": "*",
-    "@onwei/database": "*"
+    "@onwei/database": "*",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@onwei/config": "*",

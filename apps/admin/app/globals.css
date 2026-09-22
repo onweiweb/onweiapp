@@ -1,5 +1,25 @@
 @import "tailwindcss";
 @import "@onwei/config/tailwind/base.css";
 
-/* No themed design system here on purpose — apps/admin uses the functional
-   default. See docs/ARCHITECTURE.md. */
+/*
+ * Same 6 color tokens and 3 (of 4) fonts as apps/web/app/globals.css — the
+ * user asked apps/admin to adopt the storefront's visual language instead of
+ * staying unthemed. This is a deliberate departure from this file's previous
+ * "no themed design system on purpose" state; see the admin build-out plan.
+ * --font-script (Caveat) is intentionally skipped — it's a marketing accent,
+ * not useful for a dense ops UI. The giant display type scale
+ * (--text-display-*) is intentionally skipped too — admin keeps Tailwind's
+ * default text sizes for information density; only fonts/colors change.
+ */
+@theme {
+  --color-onwei-blue: #161845;
+  --color-onwei-beige: #eae8d6;
+  --color-onwei-green: #eded86;
+  --color-onwei-black: #131112;
+  --color-onwei-purple: #8e94ca;
+  --color-onwei-white: #ffffff;
+
+  --font-display: var(--font-archivo), sans-serif;
+  --font-grotesk: var(--font-mono), monospace;
+  --font-cta: var(--font-raleway), sans-serif;
+}

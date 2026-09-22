@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listInventory } from "@onwei/core";
 import { prisma } from "@onwei/database";
+import { AdminCard } from "./_components/ui";
 
 async function getDashboardCounts() {
   const [activeProducts, categories, lowStock] = await Promise.all([
@@ -19,29 +20,30 @@ export default async function DashboardPage() {
 
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <h1 className="font-display text-2xl font-semibold uppercase">
+        Dashboard
+      </h1>
 
       {!hasAnyData ? (
-        <p className="text-neutral-600">
+        <p className="text-onwei-blue/70">
           Nothing to show yet — once you add a category and a product,
           you&apos;ll see them here.
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-neutral-200 bg-white p-4">
-            <p className="text-sm text-neutral-500">Live products</p>
+          <AdminCard>
+            <p className="text-sm text-onwei-blue/70">Live products</p>
             <p className="text-3xl font-semibold">{activeProducts}</p>
-          </div>
-          <div className="rounded-lg border border-neutral-200 bg-white p-4">
-            <p className="text-sm text-neutral-500">Visible categories</p>
+          </AdminCard>
+          <AdminCard>
+            <p className="text-sm text-onwei-blue/70">Visible categories</p>
             <p className="text-3xl font-semibold">{categories}</p>
-          </div>
-          <Link
-            href="/inventory?lowStockOnly=true"
-            className="rounded-lg border border-neutral-200 bg-white p-4 hover:border-neutral-300"
-          >
-            <p className="text-sm text-neutral-500">Running low on stock</p>
-            <p className="text-3xl font-semibold">{lowStockCount}</p>
+          </AdminCard>
+          <Link href="/inventory?lowStockOnly=true">
+            <AdminCard className="transition-colors hover:border-onwei-purple">
+              <p className="text-sm text-onwei-blue/70">Running low on stock</p>
+              <p className="text-3xl font-semibold">{lowStockCount}</p>
+            </AdminCard>
           </Link>
         </div>
       )}
