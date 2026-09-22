@@ -49,20 +49,71 @@ Shipped and live at https://onweiapp.vercel.app / https://onweiapp-admin.vercel.
   ever added, double-check it's relative to the task's package, not the repo root, and confirm
   against `find <repo root> -maxdepth 4 -type d -name .prisma` rather than assuming.**
 
-### Known, disclosed gaps (not silently accepted — flag before treating as done)
+### Known, disclosed gaps as of 2026-09-21 (superseded — see the 2026-09-22 pass below)
 
-- **Font approximation**: the Figma file uses "Author Variable" (headlines), "ABC Monument Grotesk
-  Mono Unlicensed Trial" (body/nav/buttons), and "Summer Mood" (script annotations) — none are
-  Google Fonts and Figma doesn't expose font binaries via the API. Substituted Archivo / Space
-  Grotesk / Caveat respectively via `next/font/google`. Raleway (the one CTA text style) is exact.
-  This is the single biggest visual-fidelity gap versus the real design.
-- **Mobile Homepage variant** (Figma node `761:4763`) was not pulled — the Figma MCP hit its
-  Starter-plan tool-call rate limit mid-build. Desktop-only for now; needs a follow-up pass.
-- Collection and PDP pages (`apps/web/app/collection/[slug]`, `apps/web/app/product/[slug]`) still
-  show the Phase-0 placeholder text — not wired to the real catalog functions or built from Figma
-  yet. This is the natural next step.
+- Font approximation, missing mobile Homepage variant, and un-wired Collection/PDP pages were all
+  flagged here as open. All three are now closed — see below.
 - A LinkedIn icon glyph in the footer and one downloaded-but-unused asset (`icon-substack.svg`,
   ambiguous purpose in the source file) are minor loose ends, not investigated further.
+
+## Figma rate-limit resolution + design-fidelity + catalog-wiring pass (2026-09-22) — deployed and verified live
+
+Figma's Starter-plan tool-call rate limit (hit mid-build on 2026-09-21) turned out to be scoped to
+the **file-owning team's** plan, not the accessing user's own team/account — a non-obvious finding.
+The user duplicated the file into their own Pro-tier team's drafts, producing a new file key
+(`kGG2vJdbqU6b1d1xmIhRwG`, replacing `3HCgSRca91P6WCpW28RA9o`) that is not rate-limited. All Figma
+work from this pass on used the new key; node IDs are unchanged (duplication preserves them).
+
+Shipped and live at https://onweiapp.vercel.app (commits `3481699`, `a6a0f56`, `efc8c65`):
+
+- **Root-caused the font mismatch the user flagged as "completely different" from Figma**: it wasn't
+  primarily the substitute font families, it was that headings/labels had **no `font-weight` applied
+  at all**, rendering at the browser default (400) instead of Figma's actual Bold/Semibold/Medium
+  cuts — confirmed node-by-node via `get_design_context`. Fixed by applying the correct Tailwind
+  weight utility at every `font-display`/`font-grotesk` usage (verified per-instance against Figma,
+  not applied uniformly). Also swapped `--font-grotesk` from Space Grotesk (not actually monospace)
+  to IBM Plex Mono, since "ABC Monument Grotesk Mono" is a genuine monospace family — Space Grotesk
+  was the wrong category of substitute, not just an imperfect match. Archivo (`--font-display`) and
+  Caveat (`--font-script`) are kept; Raleway (`--font-cta`) was already confirmed exact.
+- **Real Figma placeholder photo replaces the 7 generated flat-color SVGs** in
+  `packages/database/prisma/seed.ts` — downloaded via `mcp__figma__download_assets` (the "RALLY PRO"
+  paddle shot Figma itself reuses across every product card in the file). One shared image for every
+  seeded product, matching Figma's own placeholder strategy rather than inventing per-SKU art.
+- **Collection and PDP pages wired to the real catalog backend** (`apps/web/app/collection/[slug]`,
+  `apps/web/app/product/[slug]`), built from Figma frames `760:3829` and `759:2979`. Collection:
+  category tabs + heading/grid reusing `ProductCard`. PDP: gallery, title/price, a new client
+  `ProductVariantPicker` (color/size chips driving live per-variant stock state), and Add to Cart
+  rendered permanently disabled (cart is Phase 2, per the original plan's explicit PDP scope
+  decision) plus the description block. Deliberately left out (no real data behind them, not
+  invented): the power/spin/control slider, Materials & Care / Shipping accordions, the FAQ chat
+  widget, the spec comparison table, the review wall, "you may also like", and — on Collection — the
+  Homepage-duplicate marketing sections (reviews/newsletter/Instagram) further down that Figma page.
+- **Mobile Homepage built** from the previously-unpulled node `761:4763`. Nav collapses to a
+  decorative squiggle + logo + cart/account icons per Figma (the file has no menu UI at all in this
+  state) — **by explicit user approval, the logo doubles as a menu trigger** opening a drawer
+  (`MobileNav.tsx`) with the same links as desktop, since shipping a header mobile visitors can't
+  navigate from isn't acceptable even though it'd be pixel-faithful. Every section's side padding
+  now scales down for mobile (12px, matching Figma) instead of using the desktop `px-14` value
+  unconditionally. Shop and Journal card grids became horizontal-scroll carousels on mobile
+  (matching Figma's mobile pattern), same as Reviews/Instagram already were.
+- **Fixed a real scroll-affordance bug, reported directly by the user against a screenshot**: every
+  horizontal-scroll row showed the browser's native scrollbar instead of Figma's clean hidden-
+  scrollbar look, and the decorative progress track under Reviews (`ReviewCarousel.tsx` now) was a
+  static, non-functional bar that never moved. Added a `.no-scrollbar` utility (applied to every
+  scroll row) and made the Reviews track a real client component that reflects actual scroll
+  position via `onScroll`.
+- Set the decorative squiggle icon as the site favicon (`apps/web/app/icon.svg`), per request.
+- **Tooling limitation discovered**: `mcp__claude-in-chrome__resize_window` does not reliably
+  resize the actual rendered viewport in this environment — `window.innerWidth` sometimes doesn't
+  update at all, and when it does, there's a multi-call lag and it appears to floor out around
+  ~500px rather than reaching an exact requested width like 390px. Mobile work in this pass was
+  therefore built directly from the Figma spec (measurements + screenshots) without pixel-exact
+  live-viewport confirmation, then spot-checked afterward at the ~500px width the tool did settle
+  at, per explicit user direction. Get the user to check exact mobile rendering on a real device.
+- Playwright is **not actually installed** in this repo, despite the 2026-09-21 entry above and the
+  original plan text both saying otherwise (checked directly: no `playwright.config.*`, no `e2e/`
+  directory, not in any `package.json`). No e2e tests exist. Correcting the record here so a future
+  session doesn't assume test infrastructure that was never actually set up.
 
 ## Locked-in decisions (do not re-litigate; re-ask the user only if one needs to change)
 
@@ -200,13 +251,20 @@ when it's correctly set on the Vercel project. Fixed by adding
 a package needs at build or runtime must be added to this list too, or Vercel builds will fail even
 though the variable shows up correctly in the Vercel dashboard.
 
-## Known open items (unchanged, still real)
+## Known open items (updated 2026-09-22)
 
-- Figma pull for actual screen styling (Homepage/PDP/Collection/About) is deliberately deferred to
-  a follow-on pass, not part of this scaffold.
+- **Phase 1 (DB schema + OTP auth + product browsing) is functionally complete**: Homepage,
+  Collection, and PDP are all built from Figma and wired to real seeded data; OTP login and
+  newsletter capture work end-to-end in production. Remaining polish is exact-pixel mobile
+  verification on a real device (see the resize-tool limitation above) and whatever client feedback
+  comes back.
 - OTP/SMS vendor and payment gateway remain open per `docs/OPEN_DECISIONS.md` — do not resolve
-  without the user.
-- No e2e tests written yet despite Playwright being installed.
+  without the user. **Phase 2 (cart/checkout/payments/coupons) cannot start until the payment
+  gateway is confirmed**, and per root `CLAUDE.md` ground rule 1 needs a Plan Mode session first
+  regardless (new schema, new dependency, touches payments/discounts).
+- No e2e tests exist — Playwright is not installed in this repo (corrected from the earlier,
+  inaccurate "installed but unused" note). Not blocking Phase 1; would matter more once Phase 2
+  introduces state that's expensive to verify by hand (checkout, payment callbacks).
 - `npm audit`'s 4 high-severity findings (see Corrections #13) — accepted risk, unreachable code path.
 
 ## Update discipline
