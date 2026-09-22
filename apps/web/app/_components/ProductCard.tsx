@@ -33,7 +33,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
   const price = formatCurrency(product.priceRangeMinorUnits.min, "INR");
 
   return (
-    <div className="flex w-full max-w-[282px] flex-col items-start gap-6">
+    <div className="flex w-[282px] shrink-0 max-w-[282px] flex-col items-start gap-6">
       <div className="flex w-full flex-col items-start gap-3">
         <div className="relative h-[315px] w-full overflow-hidden rounded-[30px] bg-[#f0e9da]">
           {product.image ? (

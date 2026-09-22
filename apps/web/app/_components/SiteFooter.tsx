@@ -70,7 +70,7 @@ function LinkedInIcon() {
 export function SiteFooter() {
   return (
     <footer>
-      <div className="flex flex-col items-center overflow-hidden bg-onwei-purple px-14 py-12">
+      <div className="flex flex-col items-center overflow-hidden bg-onwei-purple px-3 py-12 sm:px-6 lg:px-14">
         <div className="relative flex w-full max-w-[1440px] flex-col items-end gap-[87px] lg:flex-row lg:items-end">
           <Image
             src="/images/footer/illustration-runner.svg"
@@ -207,7 +207,7 @@ export function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="flex items-start justify-center bg-onwei-blue px-14 py-2">
+      <div className="flex items-start justify-center bg-onwei-blue px-3 py-2 sm:px-6 lg:px-14">
         <p className="font-grotesk text-label uppercase text-onwei-white">
           &copy;2026 ONWEI
         </p>

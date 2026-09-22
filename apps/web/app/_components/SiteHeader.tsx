@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { MobileNav } from "./MobileNav";
 
 const NAV_LINKS = [
   { label: "Shop All", href: "/collection/all" },
@@ -35,9 +36,59 @@ export function SiteHeader() {
         </p>
       </div>
 
+      {/* Mobile (node 761:4767): decorative squiggle, logo-as-menu-button
+          (see MobileNav.tsx), account/cart icons — no visible link list. */}
+      <div className="flex w-full items-center justify-between px-[18px] py-[18px] sm:hidden">
+        <Image
+          src="/images/header/icon-mobile-squiggle.svg"
+          alt=""
+          width={22}
+          height={17}
+          aria-hidden
+        />
+        <MobileNav />
+        <div className="flex items-center gap-2.5">
+          <Link
+            href="/login"
+            aria-label="Account"
+            className="relative block h-[14px] w-[14px]"
+          >
+            <Image
+              src="/images/header/icon-user-1.svg"
+              alt=""
+              width={8}
+              height={8}
+              aria-hidden
+              className="absolute left-[3px] top-0"
+            />
+            <Image
+              src="/images/header/icon-user-2.svg"
+              alt=""
+              width={14}
+              height={5.5}
+              aria-hidden
+              className="absolute left-0 top-[8.5px]"
+            />
+          </Link>
+          <Link
+            href="#"
+            aria-label="Cart"
+            className="relative block h-[13px] w-[14px]"
+          >
+            <Image
+              src="/images/header/icon-cart.svg"
+              alt=""
+              fill
+              sizes="14px"
+              aria-hidden
+            />
+          </Link>
+        </div>
+      </div>
+
       <nav
         aria-label="Primary"
-        className="flex w-full flex-wrap items-center justify-center gap-x-6 gap-y-4 px-6 py-6 sm:justify-between sm:px-14"
+        className="hidden w-full items-center justify-center gap-x-6 gap-y-4 px-6 py-6 sm:flex sm:justify-between sm:px-14"
       >
         <Link href="/" aria-label="Onwei home" className="shrink-0">
           <Image
@@ -49,7 +100,7 @@ export function SiteHeader() {
           />
         </Link>
 
-        <ul className="order-3 flex flex-wrap items-center justify-center gap-6 sm:order-none md:gap-14">
+        <ul className="flex flex-wrap items-center justify-center gap-6 md:gap-14">
           {NAV_LINKS.map((link) => (
             <li key={link.label}>
               <Link

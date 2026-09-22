@@ -5,6 +5,7 @@ import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
 import { ProductCard } from "@/_components/ProductCard";
 import { CategoryTile } from "@/_components/CategoryTile";
+import { ReviewCarousel } from "@/_components/ReviewCarousel";
 
 const HERO_MARQUEE_ITEMS = [
   "OWN YOUR EFFORT",
@@ -152,8 +153,8 @@ function HeroSection() {
     // the section previously had no background at all (rendered white).
     // Figma's API is rate-limited right now; re-verify the exact fill once
     // access resets.
-    <section className="flex flex-col items-center gap-6 bg-onwei-green pb-14">
-      <div className="flex w-full max-w-[1440px] flex-col gap-6 px-11 lg:flex-row">
+    <section className="flex flex-col items-center gap-3 bg-onwei-green pb-14 sm:gap-6">
+      <div className="flex w-full max-w-[1440px] flex-col gap-3 px-3 sm:gap-6 sm:px-6 lg:px-11 lg:flex-row">
         <div className="relative flex h-[500px] w-full flex-col justify-end gap-8 overflow-hidden rounded-[30px] px-8 py-12 lg:h-[635px] lg:px-14 lg:py-24">
           <Image
             src="/images/hero/pickleball-bg.png"
@@ -246,7 +247,7 @@ function HeroSection() {
         </div>
       </div>
 
-      <div className="w-full max-w-[1360px] px-11">
+      <div className="w-full max-w-[1360px] px-3 sm:px-6 lg:px-11">
         <MarqueeBar items={HERO_MARQUEE_ITEMS} />
       </div>
     </section>
@@ -255,7 +256,7 @@ function HeroSection() {
 
 function ShowcaseSection() {
   return (
-    <section className="flex flex-col items-center bg-onwei-green px-14 py-14">
+    <section className="flex flex-col items-center bg-onwei-green px-3 py-14 sm:px-6 lg:px-14">
       <div className="flex w-full max-w-[1440px] flex-col gap-12">
         <div className="flex flex-wrap items-center gap-3">
           <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
@@ -331,7 +332,7 @@ function ShopSection({
   pilatesHref: string;
 }) {
   return (
-    <section className="flex items-end justify-center bg-onwei-white px-14 pb-12 pt-16">
+    <section className="flex items-end justify-center bg-onwei-white px-3 pb-12 pt-16 sm:px-6 lg:px-14">
       <div className="flex w-full max-w-[1440px] flex-wrap items-end justify-between gap-8">
         <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
           shop our gear
@@ -382,8 +383,12 @@ function ProductGridSection({
   products: Awaited<ReturnType<typeof listFeaturedProducts>>;
 }) {
   return (
-    <section className="flex flex-col items-center bg-onwei-white px-14 pb-24">
-      <div className="flex w-full max-w-[1440px] flex-wrap items-start justify-center gap-8">
+    <section className="flex flex-col items-center bg-onwei-white px-3 pb-24 sm:px-6 lg:px-14">
+      {/* Mobile (node 761:4877 "Shop"): a horizontal-scroll carousel, not a
+          wrapping grid — matches the same pattern as Reviews/Instagram. At
+          lg:+ it reverts to the desktop row, which already fits everything
+          on one line at 1440px so overflow-x-auto has no visible effect. */}
+      <div className="no-scrollbar flex w-full max-w-[1440px] items-start gap-8 overflow-x-auto lg:flex-wrap lg:justify-center">
         <TestimonialTile />
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
@@ -525,7 +530,7 @@ function ReviewsSection() {
   return (
     <section
       id="reviews"
-      className="flex flex-col items-center bg-onwei-white px-12 py-24"
+      className="flex flex-col items-center bg-onwei-white px-3 py-24 sm:px-6 lg:px-12"
     >
       <div className="flex w-full max-w-[1440px] flex-col items-center gap-8">
         <div className="relative flex w-full flex-wrap items-end justify-between gap-6">
@@ -560,18 +565,14 @@ function ReviewsSection() {
           </CtaLink>
         </div>
 
-        <div className="flex w-full gap-4 overflow-x-auto pb-4">
+        <ReviewCarousel>
           <ReviewCard tone="purple" />
           <ReviewPhoto src="/images/reviews/photo-1.png" />
           <ReviewCard tone="purple" />
           <ReviewPhoto src="/images/reviews/photo-2.png" />
           <ReviewCard tone="dark" />
           <ReviewPhoto src="/images/reviews/photo-1.png" />
-        </div>
-
-        <div className="h-0.5 w-full max-w-[1344px] rounded-full bg-onwei-blue/20">
-          <div className="h-0.5 w-[272px] rounded-full bg-onwei-blue" />
-        </div>
+        </ReviewCarousel>
       </div>
     </section>
   );
@@ -579,7 +580,7 @@ function ReviewsSection() {
 
 function JoinMovementSection() {
   return (
-    <section className="flex items-end justify-center bg-onwei-green px-8 py-14 lg:px-[120px]">
+    <section className="flex items-end justify-center bg-onwei-green px-3 py-14 sm:px-8 lg:px-[120px]">
       <div className="relative flex w-full max-w-[1440px] items-end justify-center gap-2.5">
         {/* Straddles the section boundary in Figma — half the illustration
           sits in the white space above this section, not fully inside it. */}
@@ -623,7 +624,7 @@ function JoinMovementSection() {
 // hardcoded straight from the Figma file.
 function JournalSection() {
   return (
-    <section className="flex flex-col items-center bg-onwei-white px-14 py-24">
+    <section className="flex flex-col items-center bg-onwei-white px-3 py-24 sm:px-6 lg:px-14">
       <div className="flex w-full max-w-[1440px] flex-col gap-12">
         <div className="flex w-full flex-wrap items-end justify-between gap-6">
           <div className="flex flex-col gap-2">
@@ -644,9 +645,15 @@ function JournalSection() {
           </CtaLink>
         </div>
 
-        <div className="flex w-full flex-col gap-6 lg:flex-row">
+        {/* Mobile (node 761:5154): horizontal-scroll carousel of fixed-
+            width cards, matching Shop/Reviews/Instagram. At lg:+ this
+            reverts to an even 3-column row (flex-1, no fixed width). */}
+        <div className="no-scrollbar flex w-full gap-6 overflow-x-auto lg:overflow-visible">
           {JOURNAL_ARTICLES.map((post) => (
-            <article key={post.title} className="flex flex-1 flex-col gap-3">
+            <article
+              key={post.title}
+              className="flex w-[300px] shrink-0 flex-col gap-3 lg:w-auto lg:flex-1 lg:shrink"
+            >
               <div className="relative aspect-[416/280] w-full overflow-hidden rounded-[20px] bg-[#d4d4d4]">
                 <Image
                   src={post.image}
@@ -684,7 +691,7 @@ function InstagramSection() {
   return (
     // bg-onwei-green: same best-effort fix as Hero/Nav — was rendering
     // with no background at all. Not yet re-verified against Figma.
-    <section className="flex flex-col items-center bg-onwei-green px-14 py-24">
+    <section className="flex flex-col items-center bg-onwei-green px-3 py-24 sm:px-6 lg:px-14">
       <div className="flex w-full max-w-[1440px] flex-col items-start gap-12">
         <div className="relative flex w-full flex-col items-center gap-3">
           <span className="relative flex items-center gap-2 font-script text-script-md uppercase text-onwei-blue">
@@ -702,7 +709,7 @@ function InstagramSection() {
             @OnweiMoves
           </p>
         </div>
-        <div className="flex w-full gap-4 overflow-x-auto">
+        <div className="no-scrollbar flex w-full gap-4 overflow-x-auto">
           {INSTAGRAM_PHOTOS.map((src, index) => (
             <div
               key={src}

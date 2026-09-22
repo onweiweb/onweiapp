@@ -55,3 +55,16 @@
     transform: translateX(-50%);
   }
 }
+
+/* Every horizontally-scrolling row in this Figma file (reviews, Instagram,
+   the mobile product/journal carousels) is scrolled by drag/swipe with no
+   visible OS scrollbar — only the Reviews section has its own custom
+   progress track (see ReviewCarousel.tsx). The native scrollbar the
+   browser draws by default isn't part of any of these designs. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
