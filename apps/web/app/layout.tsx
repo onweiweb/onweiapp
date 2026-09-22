@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
-import { Archivo, Caveat, Raleway, Space_Grotesk } from "next/font/google";
+import { Archivo, Caveat, IBM_Plex_Mono, Raleway } from "next/font/google";
 import "./globals.css";
 
-// Figma specs "Author Variable" (display headlines), "ABC Monument Grotesk
-// Mono Unlicensed Trial" (nav/body/labels) and "Summer Mood" (handwritten
-// annotations). None of the three are Google Fonts and Figma does not export
-// the underlying font binaries, so they're approximated with the closest
-// Google Fonts available: Archivo, Space Grotesk and Caveat respectively.
-// Raleway is a real match for the existing --text-cta token.
+// Figma specs "Author Variable" (display headlines, weights Medium/Semibold/
+// Bold), "ABC Monument Grotesk Mono Unlicensed Trial" (nav/body/labels,
+// weights Regular/Medium/Bold — a MONOSPACE grotesk, not a proportional one)
+// and "Summer Mood" (handwritten annotations). None of the three are Google
+// Fonts and Figma does not export the underlying font binaries. Closest
+// Google Fonts substitutes: Archivo (a variable family whose heavier cuts
+// share Author's blocky, minimal-aperture character — apply font-bold/
+// font-semibold/font-medium per instance, never left at default weight),
+// IBM Plex Mono (a true monospace grotesk, unlike the previously-used Space
+// Grotesk which isn't monospace at all) and Caveat. Raleway is a real match
+// for the existing --text-cta token (confirmed against Figma's "CTA 1" style).
 const raleway = Raleway({
   subsets: ["latin"],
   variable: "--font-raleway",
@@ -20,9 +25,10 @@ const archivo = Archivo({
   display: "swap",
 });
 
-const spaceGrotesk = Space_Grotesk({
+const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-mono",
   display: "swap",
 });
 
@@ -45,7 +51,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${raleway.variable} ${archivo.variable} ${spaceGrotesk.variable} ${caveat.variable}`}
+      className={`${raleway.variable} ${archivo.variable} ${ibmPlexMono.variable} ${caveat.variable}`}
     >
       <body>{children}</body>
     </html>

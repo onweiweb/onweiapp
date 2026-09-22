@@ -26,7 +26,7 @@ export function CategoryTile({
           aria-hidden
           className="pointer-events-none"
         />
-        <p className="relative whitespace-nowrap font-display text-[20px] uppercase text-onwei-blue">
+        <p className="relative whitespace-nowrap font-display text-[20px] font-medium uppercase text-onwei-blue">
           {label}
         </p>
       </Link>
@@ -36,7 +36,7 @@ export function CategoryTile({
   return (
     <Link
       href={href}
-      className="whitespace-nowrap font-display text-[20px] uppercase text-onwei-blue"
+      className="whitespace-nowrap font-display text-[20px] font-medium uppercase text-onwei-blue"
     >
       {label}
     </Link>

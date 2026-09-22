@@ -21,9 +21,16 @@ interface ProductSeed {
   name: string;
   description: string;
   status: "ACTIVE" | "DRAFT";
-  imagePath: string;
   variants: VariantSeed[];
 }
+
+// Figma's own Homepage (node 758:2329, "Frame 31" / the "shop our gear"
+// section) reuses one placeholder product photo across every card, even
+// though the cards are conceptually different products — there is no
+// separate placeholder photo per product in the file. This mirrors that:
+// one shared, real Figma-provided placeholder asset for every seeded
+// product, rather than inventing a distinct flat-color mock per SKU.
+const PLACEHOLDER_IMAGE_PATH = "/images/products/placeholder-product.png";
 
 const PICKLEBALL_PRODUCTS: ProductSeed[] = [
   {
@@ -31,7 +38,6 @@ const PICKLEBALL_PRODUCTS: ProductSeed[] = [
     name: "Pickleball Performance Polo",
     description: "Moisture-wicking polo built for long rallies and hot courts.",
     status: "ACTIVE",
-    imagePath: "/images/products/pickleball-performance-polo.svg",
     variants: [
       {
         sku: "PBPOLO-M-NAVY",
@@ -65,7 +71,6 @@ const PICKLEBALL_PRODUCTS: ProductSeed[] = [
     description:
       "Four-way stretch shorts with a side pocket sized for a spare ball.",
     status: "ACTIVE",
-    imagePath: "/images/products/pickleball-dink-shorts.svg",
     variants: [
       {
         sku: "PBSHORT-S-BLACK",
@@ -88,7 +93,6 @@ const PICKLEBALL_PRODUCTS: ProductSeed[] = [
     name: "Pickleball Court Cap",
     description: "Lightweight cap with a UPF-rated brim.",
     status: "ACTIVE",
-    imagePath: "/images/products/pickleball-court-cap.svg",
     variants: [
       {
         sku: "PBCAP-OS-BEIGE",
@@ -107,7 +111,6 @@ const PILATES_PRODUCTS: ProductSeed[] = [
     name: "Pilates Sculpt Leggings",
     description: "High-rise leggings with a squat-proof, buttery-soft fabric.",
     status: "ACTIVE",
-    imagePath: "/images/products/pilates-sculpt-leggings.svg",
     variants: [
       {
         sku: "PILEGG-S-PURPLE",
@@ -137,7 +140,6 @@ const PILATES_PRODUCTS: ProductSeed[] = [
     name: "Pilates Studio Tank",
     description: "A relaxed-fit tank with a built-in shelf bra.",
     status: "ACTIVE",
-    imagePath: "/images/products/pilates-studio-tank.svg",
     variants: [
       {
         sku: "PITANK-S-BEIGE",
@@ -161,7 +163,6 @@ const PILATES_PRODUCTS: ProductSeed[] = [
     description:
       "A wrap-front top that layers over a sports bra for studio-to-street wear.",
     status: "ACTIVE",
-    imagePath: "/images/products/pilates-wrap-top.svg",
     variants: [
       {
         sku: "PIWRAP-S-GREEN",
@@ -188,7 +189,6 @@ const PILATES_PRODUCTS: ProductSeed[] = [
     name: "Pilates Grip Socks",
     description: "Grip socks with silicone dot soles, coming soon.",
     status: "DRAFT",
-    imagePath: "/images/products/pilates-grip-socks.svg",
     variants: [
       {
         sku: "PISOCK-M-BLACK",
@@ -246,11 +246,11 @@ async function seedCategory(input: {
 
     await prisma.productImage.upsert({
       where: { id: `${product.id}-primary-image` },
-      update: { url: productSeed.imagePath },
+      update: { url: PLACEHOLDER_IMAGE_PATH },
       create: {
         id: `${product.id}-primary-image`,
         productId: product.id,
-        url: productSeed.imagePath,
+        url: PLACEHOLDER_IMAGE_PATH,
         altText: productSeed.name,
         sortOrder: 0,
         isPlaceholder: true,

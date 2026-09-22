@@ -48,7 +48,7 @@ export function ProductCard({ product }: { product: ProductListItem }) {
         </div>
         <div className="flex w-full flex-col items-start gap-2">
           <StaticRating />
-          <div className="flex w-full items-center justify-between gap-2 font-display uppercase text-onwei-blue">
+          <div className="flex w-full items-center justify-between gap-2 font-display font-medium uppercase text-onwei-blue">
             <p
               className="min-w-0 flex-1 truncate text-[20px]"
               title={product.name}

@@ -90,10 +90,10 @@ export function SiteFooter() {
                   height={113}
                   aria-hidden
                 />
-                <p className="font-display text-[64px] uppercase leading-[0.9] text-onwei-beige">
+                <p className="font-display text-[64px] font-bold uppercase leading-[0.9] text-onwei-beige">
                   on&middot;wei
                 </p>
-                <p className="font-display text-[16px] uppercase text-onwei-beige">
+                <p className="font-display text-[16px] font-semibold uppercase text-onwei-beige">
                   \ on-way \
                 </p>
               </div>
@@ -111,7 +111,7 @@ export function SiteFooter() {
                       className="object-contain"
                     />
                   </span>
-                  <p className="relative z-10 font-display text-[16px] uppercase text-onwei-blue">
+                  <p className="relative z-10 font-display text-[16px] font-semibold uppercase text-onwei-blue">
                     rhymes with &quot;on the way.&quot; because you already are.
                   </p>
                 </div>
@@ -149,7 +149,7 @@ export function SiteFooter() {
               />
               <div className="flex flex-col items-start gap-6">
                 <div className="flex w-full max-w-[380px] flex-col gap-4 text-onwei-beige">
-                  <p className="font-display text-[70px] uppercase leading-[0.9]">
+                  <p className="font-display text-[70px] font-bold uppercase leading-[0.9]">
                     Move with
                     <br />
                     Onwei
@@ -168,10 +168,10 @@ export function SiteFooter() {
                     key={column.heading}
                     className="flex w-[180px] flex-col gap-6 text-onwei-beige"
                   >
-                    <p className="font-display text-[16px] uppercase tracking-[-0.16px]">
+                    <p className="font-display text-[16px] font-semibold uppercase tracking-[-0.16px]">
                       {column.heading}
                     </p>
-                    <ul className="flex flex-col gap-4 font-grotesk text-[16px]">
+                    <ul className="flex flex-col gap-4 font-grotesk font-medium text-[16px]">
                       {column.links.map((link) => (
                         <li key={link.label}>
                           <Link href={link.href}>{link.label}</Link>
@@ -181,7 +181,7 @@ export function SiteFooter() {
                   </div>
                 ))}
                 <div className="flex flex-1 flex-col gap-6 text-onwei-beige">
-                  <p className="font-display text-[16px] uppercase tracking-[-0.16px]">
+                  <p className="font-display text-[16px] font-semibold uppercase tracking-[-0.16px]">
                     Connect
                   </p>
                   <div className="flex items-center gap-4">

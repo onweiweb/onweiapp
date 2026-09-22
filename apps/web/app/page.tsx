@@ -165,7 +165,7 @@ function HeroSection() {
           />
           <div className="absolute inset-0 bg-black/30" />
           <div className="relative flex flex-col gap-8">
-            <p className="font-display text-[48px] uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
+            <p className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
               Made for everyday play
             </p>
             <CtaLink
@@ -208,7 +208,7 @@ function HeroSection() {
             className="absolute right-6 top-6 hidden sm:block"
           />
           <div className="relative flex flex-col gap-8">
-            <p className="font-display text-[48px] uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
+            <p className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
               Movement,
               <br />
               your own way
@@ -258,7 +258,7 @@ function ShowcaseSection() {
     <section className="flex flex-col items-center bg-onwei-green px-14 py-14">
       <div className="flex w-full max-w-[1440px] flex-col gap-12">
         <div className="flex flex-wrap items-center gap-3">
-          <p className="font-display text-display-md uppercase leading-[0.9] text-onwei-blue">
+          <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
             Designed to Move.
           </p>
           <span className="flex items-center gap-2 font-script text-script-md uppercase text-onwei-blue">
@@ -307,7 +307,7 @@ function ShowcaseSection() {
                   aria-hidden
                 />
                 <div className="flex flex-col items-start gap-3 text-left text-onwei-white">
-                  <p className="font-display text-[18px] uppercase tracking-[0.216px]">
+                  <p className="font-display text-[18px] font-medium uppercase tracking-[0.216px]">
                     {prop.title}
                   </p>
                   <p className="font-grotesk text-[14px]">{prop.body}</p>
@@ -333,7 +333,7 @@ function ShopSection({
   return (
     <section className="flex items-end justify-center bg-onwei-white px-14 pb-12 pt-16">
       <div className="flex w-full max-w-[1440px] flex-wrap items-end justify-between gap-8">
-        <p className="font-display text-display-md uppercase leading-[0.9] text-onwei-blue">
+        <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
           shop our gear
         </p>
         <div className="flex items-start gap-8">
@@ -398,7 +398,7 @@ function AboutSection() {
     <section className="flex flex-col items-center bg-onwei-purple px-6 py-14 sm:px-14">
       <div className="flex w-full max-w-[1440px] flex-col items-start gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div className="flex w-full max-w-[639px] flex-col gap-8">
-          <p className="font-display text-[36px] uppercase leading-[1.1] text-onwei-white sm:text-[48px] lg:text-[64px]">
+          <p className="font-display text-[36px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[48px] lg:text-[64px]">
             Built to{" "}
             <span className="relative inline-block">
               <Image
@@ -493,7 +493,7 @@ function ReviewCard({ tone }: { tone: "purple" | "dark" }) {
       <p className="font-grotesk text-[14px] font-bold">{REVIEW_TEXT.title}</p>
       <p className="font-grotesk text-[14px]">{REVIEW_TEXT.body}</p>
       <div className="flex flex-col items-center gap-1.5">
-        <p className="font-display text-[16px] uppercase tracking-[-0.16px]">
+        <p className="font-display text-[16px] font-semibold uppercase tracking-[-0.16px]">
           {REVIEW_TEXT.reviewer}
         </p>
         <div className="flex items-center gap-1">
@@ -504,7 +504,7 @@ function ReviewCard({ tone }: { tone: "purple" | "dark" }) {
             height={18}
             aria-hidden
           />
-          <span className="font-display text-[16px] uppercase tracking-[-0.16px] opacity-70">
+          <span className="font-display text-[16px] font-semibold uppercase tracking-[-0.16px] opacity-70">
             Verified Review
           </span>
         </div>
@@ -530,7 +530,7 @@ function ReviewsSection() {
       <div className="flex w-full max-w-[1440px] flex-col items-center gap-8">
         <div className="relative flex w-full flex-wrap items-end justify-between gap-6">
           <div className="flex flex-col gap-2">
-            <p className="font-display text-display-md uppercase leading-[0.9] text-onwei-blue">
+            <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
               Chosen by 1000+
               <br />
               everyday movers
@@ -592,7 +592,7 @@ function JoinMovementSection() {
           className="pointer-events-none absolute right-[38%] -top-24 hidden md:block"
         />
         <div className="flex w-full flex-col items-start justify-between gap-8 lg:flex-row">
-          <p className="max-w-[578px] font-display text-[48px] uppercase leading-[0.9] text-onwei-blue lg:text-[70px]">
+          <p className="max-w-[578px] font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-blue lg:text-[70px]">
             Join the Movement
           </p>
           <div className="relative flex flex-col items-start gap-6">
@@ -627,7 +627,7 @@ function JournalSection() {
       <div className="flex w-full max-w-[1440px] flex-col gap-12">
         <div className="flex w-full flex-wrap items-end justify-between gap-6">
           <div className="flex flex-col gap-2">
-            <p className="font-display text-display-md uppercase leading-[0.9] text-onwei-blue">
+            <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
               from the playbook
             </p>
             <Image
@@ -661,7 +661,7 @@ function JournalSection() {
                   <p className="font-grotesk text-[11px] font-light">
                     {post.date}
                   </p>
-                  <p className="font-display text-[18px] uppercase tracking-[0.216px]">
+                  <p className="font-display text-[18px] font-medium uppercase tracking-[0.216px]">
                     {post.title}
                   </p>
                   <p className="font-grotesk text-[14px]">{JOURNAL_BODY}</p>
@@ -698,7 +698,7 @@ function InstagramSection() {
               className="-rotate-[27deg]"
             />
           </span>
-          <p className="font-display text-[48px] uppercase leading-[0.9] text-onwei-blue lg:text-[70px]">
+          <p className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-blue lg:text-[70px]">
             @OnweiMoves
           </p>
         </div>
