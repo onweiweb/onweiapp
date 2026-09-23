@@ -2,11 +2,13 @@ import { render, screen } from "@testing-library/react";
 import { fireEvent } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { AdminStepper } from "./AdminStepper";
+import type { AdminStepItem } from "./AdminStepper";
 
-const steps = [
+const [stepOne, stepTwo] = [
   { id: "one", label: "Step One", content: <p>Content one</p> },
   { id: "two", label: "Step Two", content: <p>Content two</p> },
 ];
+const steps: AdminStepItem[] = [stepOne, stepTwo];
 
 describe("AdminStepper", () => {
   it("starts on the first step and shows Next, not the submit button", () => {
@@ -19,7 +21,10 @@ describe("AdminStepper", () => {
   });
 
   it("blocks Next while the active step reports canAdvance: false", () => {
-    const gatedSteps = [{ ...steps[0], canAdvance: false }, steps[1]];
+    const gatedSteps: AdminStepItem[] = [
+      { ...stepOne, canAdvance: false },
+      stepTwo,
+    ];
     render(<AdminStepper steps={gatedSteps} submitLabel="Save" />);
     expect(screen.getByRole("button", { name: "Next" })).toBeDisabled();
   });
