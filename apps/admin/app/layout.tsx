@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Archivo, IBM_Plex_Mono, Raleway } from "next/font/google";
 import Image from "next/image";
-import Link from "next/link";
 import { cookies } from "next/headers";
 import {
   STAFF_SESSION_COOKIE_NAME,
   verifyStaffSessionToken,
 } from "@onwei/auth";
 import { prisma } from "@onwei/database";
+import { AdminNav } from "./_components/AdminNav";
 import { SignOutButton } from "./_components/SignOutButton";
 import "./globals.css";
 
@@ -38,23 +38,51 @@ export const metadata: Metadata = {
   description: "Internal tools for running the Onwei store.",
 };
 
-const NAV_ITEMS = [
-  { label: "Dashboard", href: "/" },
-  { label: "Orders", href: "/orders" },
-  { label: "Returns", href: "/returns" },
-  { label: "Coupons", href: "/coupons" },
-  { label: "Reviews", href: "/reviews" },
-  { label: "Review placements", href: "/reviews/placements" },
-  { label: "Content", href: "/content" },
-  { label: "Products", href: "/products" },
-  { label: "Categories", href: "/categories" },
-  { label: "Inventory", href: "/inventory" },
-  { label: "Staff", href: "/staff" },
-  { label: "Roles", href: "/roles" },
-  { label: "Customers", href: "/customers" },
-  { label: "Audit Log", href: "/audit-log" },
-  { label: "Newsletter", href: "/newsletter" },
-  { label: "Data requests", href: "/dsr" },
+const NAV_GROUPS = [
+  {
+    label: "Overview",
+    items: [{ label: "Dashboard", href: "/" }],
+  },
+  {
+    label: "Catalog",
+    items: [
+      { label: "Products", href: "/products" },
+      { label: "Categories", href: "/categories" },
+      { label: "Inventory", href: "/inventory" },
+    ],
+  },
+  {
+    label: "Sales",
+    items: [
+      { label: "Orders", href: "/orders" },
+      { label: "Returns", href: "/returns" },
+      { label: "Coupons", href: "/coupons" },
+    ],
+  },
+  {
+    label: "Marketing & content",
+    items: [
+      { label: "Content", href: "/content" },
+      { label: "Reviews", href: "/reviews" },
+      { label: "Review placements", href: "/reviews/placements" },
+      { label: "Newsletter", href: "/newsletter" },
+    ],
+  },
+  {
+    label: "People",
+    items: [
+      { label: "Staff", href: "/staff" },
+      { label: "Roles", href: "/roles" },
+      { label: "Customers", href: "/customers" },
+    ],
+  },
+  {
+    label: "Compliance",
+    items: [
+      { label: "Audit log", href: "/audit-log" },
+      { label: "Data requests", href: "/dsr" },
+    ],
+  },
 ] as const;
 
 async function getCurrentStaffName(): Promise<string | null> {
@@ -105,18 +133,7 @@ export default async function RootLayout({
                     Onwei Admin
                   </p>
                 </div>
-                <ul className="flex flex-col gap-1">
-                  {NAV_ITEMS.map((item) => (
-                    <li key={item.label}>
-                      <Link
-                        href={item.href}
-                        className="block rounded-[30px] px-3 py-1.5 text-sm uppercase tracking-wide hover:bg-onwei-green hover:text-onwei-blue"
-                      >
-                        {item.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                <AdminNav groups={NAV_GROUPS} />
               </div>
               <div className="flex flex-col gap-2 border-t border-onwei-beige/30 pt-4">
                 <p className="px-2 text-xs text-onwei-beige/80">

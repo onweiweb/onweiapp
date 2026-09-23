@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AdminInput, AdminSelect, AdminStepper, AdminTextarea } from "./ui";
+import type { AdminStepItem } from "./ui";
 
 function slugify(name: string) {
   return name
@@ -126,7 +128,7 @@ export function ProductForm({
       }
 
       if (mode === "create" && data.product) {
-        router.push(`/products/${data.product.id}`);
+        router.push(`/products/${data.product.id}?tab=photos`);
       } else {
         router.push("/products");
       }
@@ -137,214 +139,208 @@ export function ProductForm({
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-4">
-      <div className="flex flex-col gap-1">
-        <label htmlFor="name" className="text-sm font-medium">
-          Name
-        </label>
-        <input
-          id="name"
-          value={name}
-          onChange={(event) => handleNameChange(event.target.value)}
-          required
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        />
-      </div>
+  const basicsComplete = Boolean(name.trim() && slug.trim() && categoryId);
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="slug" className="text-sm font-medium">
-          URL slug
-        </label>
-        <input
-          id="slug"
-          value={slug}
-          onChange={(event) => {
-            setSlugTouched(true);
-            setSlug(event.target.value);
-          }}
-          required
-          className="rounded-md border border-neutral-300 px-3 py-2 font-mono text-sm"
-        />
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label htmlFor="category" className="text-sm font-medium">
-          Category
-        </label>
-        <select
-          id="category"
-          value={categoryId}
-          onChange={(event) => setCategoryId(event.target.value)}
-          required
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        >
-          {categories.length === 0 ? (
-            <option value="">Add a category first</option>
-          ) : null}
-          {categories.map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label htmlFor="description" className="text-sm font-medium">
-          Description
-        </label>
-        <textarea
-          id="description"
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          rows={4}
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        />
-      </div>
-
-      <div className="flex flex-col gap-2 border-t border-neutral-200 pt-4">
-        <p className="text-sm font-medium">Product page details (optional)</p>
-        <p className="text-xs text-neutral-500">
-          Shown on the product&apos;s storefront page. Leave blank to hide a
-          section — nothing shows a placeholder.
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-2">
-        <label className="text-sm font-medium">Specs</label>
-        {specs.map((row, index) => (
-          <div key={index} className="flex gap-2">
-            <input
-              value={row.label}
-              onChange={(event) =>
-                updateSpecRow(index, "label", event.target.value)
-              }
-              placeholder="Label (e.g. Material)"
-              className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
+  const steps: AdminStepItem[] = [
+    {
+      id: "basics",
+      label: "Basics",
+      canAdvance: basicsComplete,
+      content: (
+        <div className="flex max-w-xl flex-col gap-4">
+          <label className="flex flex-col gap-1 text-sm">
+            Name
+            <AdminInput
+              value={name}
+              onChange={(event) => handleNameChange(event.target.value)}
+              required
             />
-            <input
-              value={row.value}
-              onChange={(event) =>
-                updateSpecRow(index, "value", event.target.value)
-              }
-              placeholder="Value"
-              className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm"
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            URL slug
+            <AdminInput
+              value={slug}
+              onChange={(event) => {
+                setSlugTouched(true);
+                setSlug(event.target.value);
+              }}
+              required
+              className="font-mono"
             />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            Category
+            <AdminSelect
+              value={categoryId}
+              onChange={(event) => setCategoryId(event.target.value)}
+              required
+            >
+              {categories.length === 0 ? (
+                <option value="">Add a category first</option>
+              ) : null}
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </AdminSelect>
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            Status
+            <AdminSelect
+              value={status}
+              onChange={(event) =>
+                setStatus(event.target.value as typeof status)
+              }
+            >
+              {STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </AdminSelect>
+          </label>
+        </div>
+      ),
+    },
+    {
+      id: "storefront",
+      label: "Storefront content",
+      content: (
+        <div className="flex max-w-xl flex-col gap-4">
+          <p className="text-xs text-onwei-blue/60">
+            Shown on the product&apos;s storefront page. Leave blank to hide a
+            section — nothing shows a placeholder.
+          </p>
+
+          <label className="flex flex-col gap-1 text-sm">
+            Description
+            <AdminTextarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              rows={4}
+            />
+          </label>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium">Specs</label>
+            {specs.map((row, index) => (
+              <div key={index} className="flex gap-2">
+                <AdminInput
+                  value={row.label}
+                  onChange={(event) =>
+                    updateSpecRow(index, "label", event.target.value)
+                  }
+                  placeholder="Label (e.g. Material)"
+                  className="flex-1"
+                />
+                <AdminInput
+                  value={row.value}
+                  onChange={(event) =>
+                    updateSpecRow(index, "value", event.target.value)
+                  }
+                  placeholder="Value"
+                  className="flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeSpecRow(index)}
+                  className="rounded-[500px] border border-onwei-blue/25 px-3 text-sm text-onwei-blue/70"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
             <button
               type="button"
-              onClick={() => removeSpecRow(index)}
-              className="rounded-md border border-neutral-300 px-2 text-sm text-neutral-600"
+              onClick={() =>
+                setSpecs((rows) => [...rows, { label: "", value: "" }])
+              }
+              className="w-fit rounded-[500px] border border-onwei-blue/25 px-3 py-1.5 text-sm text-onwei-blue"
             >
-              Remove
+              Add spec row
             </button>
           </div>
-        ))}
-        <button
-          type="button"
-          onClick={() =>
-            setSpecs((rows) => [...rows, { label: "", value: "" }])
-          }
-          className="w-fit rounded-md border border-neutral-300 px-3 py-1.5 text-sm text-neutral-700"
-        >
-          Add spec row
-        </button>
-      </div>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="whoThisIsFor" className="text-sm font-medium">
-          Who this is for
-        </label>
-        <textarea
-          id="whoThisIsFor"
-          value={whoThisIsFor}
-          onChange={(event) => setWhoThisIsFor(event.target.value)}
-          rows={4}
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        />
-      </div>
+          <label className="flex flex-col gap-1 text-sm">
+            Who this is for
+            <AdminTextarea
+              value={whoThisIsFor}
+              onChange={(event) => setWhoThisIsFor(event.target.value)}
+              rows={4}
+            />
+          </label>
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="careInstructions" className="text-sm font-medium">
-          Care instructions
-        </label>
-        <textarea
-          id="careInstructions"
-          value={careInstructions}
-          onChange={(event) => setCareInstructions(event.target.value)}
-          rows={4}
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        />
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label className="text-sm font-medium">
-          Play characteristics (0-100, paddle products only)
-        </label>
-        <div className="flex gap-2">
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={powerRating}
-            onChange={(event) => setPowerRating(event.target.value)}
-            placeholder="Power"
-            className="w-24 rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={spinRating}
-            onChange={(event) => setSpinRating(event.target.value)}
-            placeholder="Spin"
-            className="w-24 rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
-          <input
-            type="number"
-            min={0}
-            max={100}
-            value={controlRating}
-            onChange={(event) => setControlRating(event.target.value)}
-            placeholder="Control"
-            className="w-24 rounded-md border border-neutral-300 px-3 py-2 text-sm"
-          />
+          <label className="flex flex-col gap-1 text-sm">
+            Care instructions
+            <AdminTextarea
+              value={careInstructions}
+              onChange={(event) => setCareInstructions(event.target.value)}
+              rows={4}
+            />
+          </label>
         </div>
-      </div>
+      ),
+    },
+    {
+      id: "play-characteristics",
+      label: "Play characteristics",
+      content: (
+        <div className="flex max-w-xl flex-col gap-4">
+          <label className="flex flex-col gap-1 text-sm">
+            Play characteristics (0-100, paddle products only)
+            <div className="flex gap-2">
+              <AdminInput
+                type="number"
+                min={0}
+                max={100}
+                value={powerRating}
+                onChange={(event) => setPowerRating(event.target.value)}
+                placeholder="Power"
+                className="w-24"
+              />
+              <AdminInput
+                type="number"
+                min={0}
+                max={100}
+                value={spinRating}
+                onChange={(event) => setSpinRating(event.target.value)}
+                placeholder="Spin"
+                className="w-24"
+              />
+              <AdminInput
+                type="number"
+                min={0}
+                max={100}
+                value={controlRating}
+                onChange={(event) => setControlRating(event.target.value)}
+                placeholder="Control"
+                className="w-24"
+              />
+            </div>
+          </label>
+        </div>
+      ),
+    },
+  ];
 
-      <div className="flex flex-col gap-1">
-        <label htmlFor="status" className="text-sm font-medium">
-          Status
-        </label>
-        <select
-          id="status"
-          value={status}
-          onChange={(event) => setStatus(event.target.value as typeof status)}
-          className="rounded-md border border-neutral-300 px-3 py-2"
-        >
-          {STATUS_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
-      <div className="flex gap-2">
-        <button
-          type="submit"
-          disabled={submitting || categories.length === 0}
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm text-white disabled:opacity-60"
-        >
-          {submitting
+  return (
+    <form onSubmit={handleSubmit} className="flex max-w-xl flex-col gap-4">
+      {error ? <p className="text-sm text-onwei-black">{error}</p> : null}
+      <AdminStepper
+        steps={steps}
+        submitLabel={
+          submitting
             ? "Saving…"
             : mode === "create"
               ? "Create product"
-              : "Save changes"}
-        </button>
-      </div>
+              : "Save changes"
+        }
+        submitDisabled={submitting || categories.length === 0}
+      />
     </form>
   );
 }
