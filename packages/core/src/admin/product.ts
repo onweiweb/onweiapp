@@ -1,10 +1,21 @@
-import { prisma } from "@onwei/database";
+import { prisma, Prisma } from "@onwei/database";
 import { writeAuditLog } from "./auditLog";
+import { validateProductSpecs } from "./productSpecs";
 import type {
   AuditActor,
   CreateProductInput,
   UpdateProductInput,
 } from "./types";
+
+function resolveSpecs(specs: CreateProductInput["specs"]) {
+  if (specs === undefined) return undefined;
+  if (specs === null) return Prisma.JsonNull;
+  const validated = validateProductSpecs(specs);
+  if (!validated.ok) {
+    throw new Error(`invalid-specs: ${validated.error}`);
+  }
+  return validated.data as Prisma.InputJsonValue;
+}
 
 export async function createProduct(
   input: CreateProductInput,
@@ -17,6 +28,12 @@ export async function createProduct(
       categoryId: input.categoryId,
       description: input.description ?? null,
       status: input.status ?? "DRAFT",
+      specs: resolveSpecs(input.specs) ?? Prisma.JsonNull,
+      whoThisIsFor: input.whoThisIsFor ?? null,
+      careInstructions: input.careInstructions ?? null,
+      powerRating: input.powerRating ?? null,
+      spinRating: input.spinRating ?? null,
+      controlRating: input.controlRating ?? null,
     },
   });
 
@@ -46,6 +63,12 @@ export async function updateProduct(
       categoryId: input.categoryId,
       description: input.description,
       status: input.status,
+      specs: resolveSpecs(input.specs),
+      whoThisIsFor: input.whoThisIsFor,
+      careInstructions: input.careInstructions,
+      powerRating: input.powerRating,
+      spinRating: input.spinRating,
+      controlRating: input.controlRating,
     },
   });
 

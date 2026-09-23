@@ -1,60 +1,28 @@
 import Image from "next/image";
 import Link from "next/link";
-import { listActiveCategories, listFeaturedProducts } from "@onwei/core";
+import {
+  listActiveCategories,
+  listActiveProductsByCategorySlug,
+  listInstagramPhotos,
+  listMarqueeItems,
+  listSurfaceReviews,
+  listValueProps,
+} from "@onwei/core";
+import type {
+  ProductListItem,
+  ReviewListItem,
+  ValuePropItem,
+} from "@onwei/core";
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
 import { ProductCard } from "@/_components/ProductCard";
 import { CategoryTile } from "@/_components/CategoryTile";
-import { ReviewCarousel } from "@/_components/ReviewCarousel";
-
-const HERO_MARQUEE_ITEMS = [
-  "OWN YOUR EFFORT",
-  "NOT PERFECTLY, JUST CONSISTENTLY",
-  "BUILT FOR EVERYDAY",
-  "EVEN 20 MINUTES COUNT",
-  "PLAY. PAUSE. PROGRESS.",
-  "AT YOUR OWN PACE",
-];
-
-const SHOWCASE_MARQUEE_ITEMS = [
-  "BUILT BY AN ATHLETE",
-  "FOR EVERYDAY USE",
-  "COMFORTABLE GRIP",
-  "BUILT FOR PERFORMANCE",
-  "ELEVATED DESIGN",
-  "FOR EVERYDAY USE",
-];
-
-const VALUE_PROPS = [
-  {
-    illustration: "/images/showcase/value-prop-1.svg",
-    width: 151,
-    height: 82,
-    title: "Designed Intentionally",
-    body: "You shouldn’t have to choose between performance, durability, and good design.",
-  },
-  {
-    illustration: "/images/showcase/value-prop-2.svg",
-    width: 168,
-    height: 60,
-    title: "Designed for consistent use",
-    body: "You show up — between work, life and everything else. Your gear should match that effort.",
-  },
-  {
-    illustration: "/images/showcase/value-prop-3.svg",
-    width: 170,
-    height: 67,
-    title: "Designed to Belong",
-    body: "Products you’ll feel good using, carrying and coming back to every day.",
-  },
-] as const;
-
-const REVIEW_TEXT = {
-  rating: 5,
-  title: "Best mat I have owned!!",
-  body: "Five days a week for three months and it still looks brand new. The grip holds even when I'm sweating through a tough flow. Worth every penny.",
-  reviewer: "Melanie N.",
-} as const;
+import { MarqueeBar } from "@/_components/MarqueeBar";
+import { ValueProps } from "@/_components/ValueProps";
+import { InstagramGrid } from "@/_components/InstagramGrid";
+import { ReviewWall } from "@/_components/ReviewWall";
+import { StarRow } from "@/_components/StarRow";
+import { CtaLink } from "@/_components/CtaLink";
 
 const JOURNAL_ARTICLES = [
   {
@@ -77,77 +45,7 @@ const JOURNAL_ARTICLES = [
 const JOURNAL_BODY =
   "Lorem ipsum dolor sit amet consectetur. Arcu diam pellentesque libero iaculis adipiscing. Turpis sem odio gravida sagittis pretium velit non. Dignissim mauris purus vitae mattis turpis eu. Pharetra eu arcu integer integer elementum. Ullamcorper mattis lectus turpis nulla tristique tincidunt. Eget odio semper facilisis mauris id elementum faucibus non purus. Volutpat porta integer in feugiat tortor eu diam volutpat.";
 
-const INSTAGRAM_PHOTOS = [
-  "/images/instagram/photo-1.png",
-  "/images/instagram/photo-2.png",
-  "/images/instagram/photo-3.png",
-  "/images/instagram/photo-4.png",
-  "/images/instagram/photo-5.png",
-];
-
-function StarRow({ count, size = 18 }: { count: number; size?: number }) {
-  return (
-    <div className="flex items-start gap-0.5">
-      {Array.from({ length: count }).map((_, index) => (
-        <Image
-          key={index}
-          src="/images/shared/star-full.svg"
-          alt=""
-          width={size}
-          height={size}
-          aria-hidden
-        />
-      ))}
-    </div>
-  );
-}
-
-function MarqueeBar({ items }: { items: readonly string[] }) {
-  const doubled = [...items, ...items];
-  return (
-    <div
-      className="w-full overflow-hidden rounded-[20px] bg-onwei-blue px-14 py-3"
-      aria-hidden
-    >
-      <div className="flex w-max animate-[onwei-marquee_28s_linear_infinite] gap-6">
-        {doubled.map((item, index) => (
-          <div key={index} className="flex shrink-0 items-center gap-6">
-            <p className="whitespace-nowrap font-grotesk text-label uppercase text-onwei-white">
-              {item}
-            </p>
-            <Image
-              src="/images/hero/marquee-divider.svg"
-              alt=""
-              width={20}
-              height={15}
-            />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CtaLink({
-  href,
-  children,
-  className = "",
-}: {
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`inline-flex items-center justify-center whitespace-nowrap rounded-[30px] px-6 py-3 font-grotesk text-label uppercase ${className}`}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function HeroSection() {
+function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
   return (
     // bg-onwei-green: best-effort match, not confirmed against Figma —
     // the section previously had no background at all (rendered white).
@@ -248,13 +146,19 @@ function HeroSection() {
       </div>
 
       <div className="w-full max-w-[1360px] px-3 sm:px-6 lg:px-11">
-        <MarqueeBar items={HERO_MARQUEE_ITEMS} />
+        <MarqueeBar items={marqueeItems} />
       </div>
     </section>
   );
 }
 
-function ShowcaseSection() {
+function ShowcaseSection({
+  marqueeItems,
+  valueProps,
+}: {
+  marqueeItems: string[];
+  valueProps: ValuePropItem[];
+}) {
   return (
     <section className="flex flex-col items-center bg-onwei-green px-3 py-14 sm:px-6 lg:px-14">
       <div className="flex w-full max-w-[1440px] flex-col gap-12">
@@ -295,30 +199,11 @@ function ShowcaseSection() {
           </div>
 
           <div className="flex flex-1 flex-col gap-6">
-            {VALUE_PROPS.map((prop) => (
-              <div
-                key={prop.title}
-                className="flex flex-1 flex-col items-center justify-center gap-8 rounded-[30px] bg-onwei-purple px-6 py-8 text-center"
-              >
-                <Image
-                  src={prop.illustration}
-                  alt=""
-                  width={prop.width}
-                  height={prop.height}
-                  aria-hidden
-                />
-                <div className="flex flex-col items-start gap-3 text-left text-onwei-white">
-                  <p className="font-display text-[18px] font-medium uppercase tracking-[0.216px]">
-                    {prop.title}
-                  </p>
-                  <p className="font-grotesk text-[14px]">{prop.body}</p>
-                </div>
-              </div>
-            ))}
+            <ValueProps items={valueProps} />
           </div>
         </div>
 
-        <MarqueeBar items={SHOWCASE_MARQUEE_ITEMS} />
+        <MarqueeBar items={marqueeItems} />
       </div>
     </section>
   );
@@ -339,14 +224,15 @@ function ShopSection({
         </p>
         <div className="flex items-start gap-8">
           <CategoryTile label="pickle ball" href={pickleballHref} circled />
-          <CategoryTile label="yoga mats" href={pilatesHref} />
+          <CategoryTile label="pilates" href={pilatesHref} />
         </div>
       </div>
     </section>
   );
 }
 
-function TestimonialTile() {
+function TestimonialTile({ review }: { review: ReviewListItem | undefined }) {
+  if (!review) return null;
   return (
     <div className="relative flex h-[420px] w-full max-w-[375px] shrink-0 flex-col items-center justify-center gap-8 overflow-hidden rounded-[30px] p-8">
       <Image
@@ -359,11 +245,11 @@ function TestimonialTile() {
       />
       <div className="absolute inset-0 bg-black/50" />
       <div className="relative flex flex-col items-center gap-8 text-center text-onwei-beige">
-        <StarRow count={REVIEW_TEXT.rating} />
-        <p className="font-grotesk text-[14px] font-bold">
-          {REVIEW_TEXT.title}
-        </p>
-        <p className="font-grotesk text-[14px]">{REVIEW_TEXT.body}</p>
+        <StarRow count={review.rating} />
+        {review.title ? (
+          <p className="font-grotesk text-[14px] font-bold">{review.title}</p>
+        ) : null}
+        <p className="font-grotesk text-[14px]">{review.body}</p>
       </div>
       <Image
         src="/images/product-grid/carousel-dots.svg"
@@ -379,8 +265,10 @@ function TestimonialTile() {
 
 function ProductGridSection({
   products,
+  testimonial,
 }: {
-  products: Awaited<ReturnType<typeof listFeaturedProducts>>;
+  products: ProductListItem[];
+  testimonial: ReviewListItem | undefined;
 }) {
   return (
     <section className="flex flex-col items-center bg-onwei-white px-3 pb-24 sm:px-6 lg:px-14">
@@ -389,7 +277,7 @@ function ProductGridSection({
           lg:+ it reverts to the desktop row, which already fits everything
           on one line at 1440px so overflow-x-auto has no visible effect. */}
       <div className="no-scrollbar flex w-full max-w-[1440px] items-start gap-8 overflow-x-auto lg:flex-wrap lg:justify-center">
-        <TestimonialTile />
+        <TestimonialTile review={testimonial} />
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
@@ -482,97 +370,6 @@ function AboutSection() {
             className="object-cover"
           />
         </div>
-      </div>
-    </section>
-  );
-}
-
-function ReviewCard({ tone }: { tone: "purple" | "dark" }) {
-  return (
-    <div
-      className={`flex h-[429px] w-[341px] shrink-0 flex-col items-center justify-center gap-8 rounded-[30px] px-12 pb-10 pt-8 text-center text-onwei-beige ${
-        tone === "purple" ? "bg-onwei-purple" : "bg-onwei-blue"
-      }`}
-    >
-      <StarRow count={REVIEW_TEXT.rating} />
-      <p className="font-grotesk text-[14px] font-bold">{REVIEW_TEXT.title}</p>
-      <p className="font-grotesk text-[14px]">{REVIEW_TEXT.body}</p>
-      <div className="flex flex-col items-center gap-1.5">
-        <p className="font-display text-[16px] font-semibold uppercase tracking-[-0.16px]">
-          {REVIEW_TEXT.reviewer}
-        </p>
-        <div className="flex items-center gap-1">
-          <Image
-            src="/images/reviews/check.svg"
-            alt=""
-            width={18}
-            height={18}
-            aria-hidden
-          />
-          <span className="font-display text-[16px] font-semibold uppercase tracking-[-0.16px] opacity-70">
-            Verified Review
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ReviewPhoto({ src }: { src: string }) {
-  return (
-    <div className="relative h-[429px] w-[498px] shrink-0 overflow-hidden rounded-[30px]">
-      <Image src={src} alt="" fill sizes="498px" className="object-cover" />
-    </div>
-  );
-}
-
-function ReviewsSection() {
-  return (
-    <section
-      id="reviews"
-      className="flex flex-col items-center bg-onwei-white px-3 py-24 sm:px-6 lg:px-12"
-    >
-      <div className="flex w-full max-w-[1440px] flex-col items-center gap-8">
-        <div className="relative flex w-full flex-wrap items-end justify-between gap-6">
-          <div className="flex flex-col gap-2">
-            <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
-              Chosen by 1000+
-              <br />
-              everyday movers
-            </p>
-            <Image
-              src="/images/reviews/underline.svg"
-              alt=""
-              width={526}
-              height={4}
-              aria-hidden
-              className="max-w-full"
-            />
-          </div>
-          <span className="relative flex items-center gap-2 font-script text-script-md uppercase text-onwei-blue">
-            share your Onwei routine
-            <Image
-              src="/images/reviews/arrow.svg"
-              alt=""
-              width={20}
-              height={17}
-              aria-hidden
-              className="-rotate-[30deg]"
-            />
-          </span>
-          <CtaLink href="#" className="bg-onwei-blue text-onwei-beige">
-            view all reviews
-          </CtaLink>
-        </div>
-
-        <ReviewCarousel>
-          <ReviewCard tone="purple" />
-          <ReviewPhoto src="/images/reviews/photo-1.png" />
-          <ReviewCard tone="purple" />
-          <ReviewPhoto src="/images/reviews/photo-2.png" />
-          <ReviewCard tone="dark" />
-          <ReviewPhoto src="/images/reviews/photo-1.png" />
-        </ReviewCarousel>
       </div>
     </section>
   );
@@ -685,66 +482,47 @@ function JournalSection() {
   );
 }
 
-// Static — no Instagram feed integration exists; images and handle are
-// hardcoded straight from the Figma file.
-function InstagramSection() {
-  return (
-    // bg-onwei-green: same best-effort fix as Hero/Nav — was rendering
-    // with no background at all. Not yet re-verified against Figma.
-    <section className="flex flex-col items-center bg-onwei-green px-3 py-24 sm:px-6 lg:px-14">
-      <div className="flex w-full max-w-[1440px] flex-col items-start gap-12">
-        <div className="relative flex w-full flex-col items-center gap-3">
-          <span className="relative flex items-center gap-2 font-script text-script-md uppercase text-onwei-blue">
-            follow us on instagram
-            <Image
-              src="/images/instagram/arrow.svg"
-              alt=""
-              width={20}
-              height={26}
-              aria-hidden
-              className="-rotate-[27deg]"
-            />
-          </span>
-          <p className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-blue lg:text-[70px]">
-            @OnweiMoves
-          </p>
-        </div>
-        <div className="no-scrollbar flex w-full gap-4 overflow-x-auto">
-          {INSTAGRAM_PHOTOS.map((src, index) => (
-            <div
-              key={src}
-              className="relative h-[420px] w-[340px] shrink-0 overflow-hidden rounded-[30px]"
-            >
-              <Image
-                src={src}
-                alt={`Onwei community photo ${index + 1}`}
-                fill
-                sizes="340px"
-                className="object-cover"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
+// No live Instagram feed integration exists — photos are CMS-editable
+// (InstagramPhoto) rather than a real feed, but no longer hardcoded here.
 export default async function HomePage() {
-  const [categories, products] = await Promise.all([
+  const [
+    categories,
+    pickleballCollection,
+    heroTestimonial,
+    wallReviews,
+    heroMarqueeItems,
+    showcaseMarqueeItems,
+    valueProps,
+    instagramPhotos,
+  ] = await Promise.all([
     listActiveCategories(),
-    listFeaturedProducts(3),
+    listActiveProductsByCategorySlug("pickleball"),
+    listSurfaceReviews({ surface: "HOME_HERO" }),
+    listSurfaceReviews({ surface: "HOME_WALL" }),
+    listMarqueeItems("HOME_HERO"),
+    listMarqueeItems("HOME_SHOWCASE"),
+    listValueProps(),
+    listInstagramPhotos(),
   ]);
   const pickleball = categories.find(
     (category) => category.slug === "pickleball",
   );
   const pilates = categories.find((category) => category.slug === "pilates");
+  // ShopSection's "pickle ball" tile is always the one shown as selected
+  // (Figma's Homepage frame only specifies this one state, no interactive
+  // toggle), so the grid below it shows pickleball products to match —
+  // showing unrelated products under a circled "pickle ball" tab was the
+  // bug reported against the live site.
+  const products = (pickleballCollection?.products ?? []).slice(0, 3);
 
   return (
     <main>
       <SiteHeader />
-      <HeroSection />
-      <ShowcaseSection />
+      <HeroSection marqueeItems={heroMarqueeItems} />
+      <ShowcaseSection
+        marqueeItems={showcaseMarqueeItems}
+        valueProps={valueProps}
+      />
       <ShopSection
         pickleballHref={
           pickleball
@@ -755,12 +533,24 @@ export default async function HomePage() {
           pilates ? `/collection/${pilates.slug}` : "/collection/pilates"
         }
       />
-      <ProductGridSection products={products} />
+      <ProductGridSection
+        products={products}
+        testimonial={heroTestimonial[0]}
+      />
       <AboutSection />
-      <ReviewsSection />
+      <ReviewWall
+        reviews={wallReviews}
+        heading={
+          <>
+            Chosen by 1000+
+            <br />
+            everyday movers
+          </>
+        }
+      />
       <JoinMovementSection />
       <JournalSection />
-      <InstagramSection />
+      <InstagramGrid photos={instagramPhotos} />
       <SiteFooter />
     </main>
   );

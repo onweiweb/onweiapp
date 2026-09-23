@@ -1,0 +1,120 @@
+import { prisma } from "@onwei/database";
+import type { ReviewSurface } from "@onwei/database";
+import { writeAuditLog } from "../admin/auditLog";
+import type { AuditActor } from "../admin/types";
+import type { CreateReviewPlacementInput } from "./types";
+
+/**
+ * Features an approved review onto a surface. Postgres treats NULL as
+ * distinct in a unique constraint, so the schema's
+ * @@unique([surface, productId, reviewId]) alone won't stop duplicate
+ * HOME_HERO/HOME_WALL rows (productId: null) for the same review — check
+ * for an existing row first rather than relying on the DB constraint.
+ */
+export async function setReviewPlacement(
+  input: CreateReviewPlacementInput,
+  actor: AuditActor,
+) {
+  const productId = input.productId ?? null;
+
+  const existing = await prisma.reviewPlacement.findFirst({
+    where: { surface: input.surface, productId, reviewId: input.reviewId },
+  });
+  if (existing) {
+    throw new Error("already-featured: this review is already on this surface");
+  }
+
+  const placement = await prisma.reviewPlacement.create({
+    data: {
+      surface: input.surface,
+      productId,
+      reviewId: input.reviewId,
+      sortOrder: input.sortOrder ?? 0,
+    },
+  });
+
+  await writeAuditLog({
+    staffUserId: actor.staffUserId,
+    action: "reviewPlacement.set",
+    entityType: "ReviewPlacement",
+    entityId: placement.id,
+    afterState: placement,
+  });
+
+  return placement;
+}
+
+export async function removeReviewPlacement(id: string, actor: AuditActor) {
+  const before = await prisma.reviewPlacement.findUniqueOrThrow({
+    where: { id },
+  });
+  await prisma.reviewPlacement.delete({ where: { id } });
+
+  await writeAuditLog({
+    staffUserId: actor.staffUserId,
+    action: "reviewPlacement.remove",
+    entityType: "ReviewPlacement",
+    entityId: id,
+    beforeState: before,
+  });
+}
+
+/** Rewrites sortOrder for every placement on a surface (+ product, for
+ * PRODUCT_WALL) to match the given id order — same technique as
+ * reorderProductImages, no drag-and-drop library needed. */
+export async function reorderReviewPlacements(
+  surface: ReviewSurface,
+  productId: string | null,
+  orderedPlacementIds: string[],
+  actor: AuditActor,
+) {
+  const before = await prisma.reviewPlacement.findMany({
+    where: { surface, productId },
+    orderBy: { sortOrder: "asc" },
+  });
+
+  await prisma.$transaction(
+    orderedPlacementIds.map((id, index) =>
+      prisma.reviewPlacement.update({
+        where: { id },
+        data: { sortOrder: index },
+      }),
+    ),
+  );
+
+  await writeAuditLog({
+    staffUserId: actor.staffUserId,
+    action: "reviewPlacement.reorder",
+    entityType: "ReviewPlacement",
+    entityId: `${surface}:${productId ?? "brand"}`,
+    beforeState: { order: before.map((p) => p.id) },
+    afterState: { order: orderedPlacementIds },
+  });
+}
+
+export async function updateReviewSurfaceLimit(
+  surface: ReviewSurface,
+  limit: number,
+  actor: AuditActor,
+) {
+  const before = await prisma.reviewSurfaceConfig.findUnique({
+    where: { surface },
+  });
+
+  const config = await prisma.reviewSurfaceConfig.upsert({
+    where: { surface },
+    update: { limit },
+    create: { surface, limit },
+  });
+
+  await writeAuditLog({
+    staffUserId: actor.staffUserId,
+    action: "reviewSurfaceConfig.update",
+    entityType: "ReviewSurfaceConfig",
+    entityId: config.id,
+    beforeState: before,
+    afterState: config,
+  });
+
+  return config;
+}

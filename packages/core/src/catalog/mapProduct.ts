@@ -7,7 +7,9 @@ import {
 import type {
   ProductImageDTO,
   ProductListItem,
+  ProductSpec,
   ProductVariantDTO,
+  ReviewSummary,
 } from "./types";
 
 /**
@@ -33,6 +35,15 @@ export interface ProductWithCatalogRelations {
     compareAtPrice: { toNumber(): number } | null;
     inventory: readonly { quantityOnHand: number; quantityReserved: number }[];
   }[];
+  reviews?: readonly { rating: number }[];
+}
+
+export function summarizeProductReviews(
+  reviews: readonly { rating: number }[] | undefined,
+): ReviewSummary | null {
+  if (!reviews || reviews.length === 0) return null;
+  const total = reviews.reduce((sum, review) => sum + review.rating, 0);
+  return { average: total / reviews.length, count: reviews.length };
 }
 
 export function mapImage(image: {
@@ -62,6 +73,20 @@ export function mapVariant(
   };
 }
 
+/** `Product.specs` is a nullable Json column — defensively coerced, same
+ * pragmatic-cast convention as `mapVariant`'s `attributes`, but falls back
+ * to an empty list rather than crashing the PDP on an unexpected shape. */
+export function mapSpecs(specs: unknown): ProductSpec[] {
+  if (!Array.isArray(specs)) return [];
+  return specs.filter(
+    (entry): entry is ProductSpec =>
+      typeof entry === "object" &&
+      entry !== null &&
+      typeof (entry as ProductSpec).label === "string" &&
+      typeof (entry as ProductSpec).value === "string",
+  );
+}
+
 export function mapToListItem(
   product: ProductWithCatalogRelations,
 ): ProductListItem {
@@ -75,5 +100,6 @@ export function mapToListItem(
     image: pickLeadImage(images),
     priceRangeMinorUnits: derivePriceRangeMinorUnits(variants),
     inStock: variants.some((variant) => variant.inStock),
+    reviewSummary: summarizeProductReviews(product.reviews),
   };
 }

@@ -1,4 +1,6 @@
-import type { ProductImageDTO } from "./types";
+import type { ProductImageDTO, ProductListItem } from "./types";
+
+export type ProductSort = "featured" | "price-asc" | "price-desc";
 
 /** Converts a Prisma Decimal (rupees) to an integer paise count for formatCurrency. */
 export function toMinorUnits(
@@ -43,4 +45,24 @@ export function pickLeadImage(
 ): ProductImageDTO | null {
   if (images.length === 0) return null;
   return images.find((image) => !image.isPlaceholder) ?? images[0] ?? null;
+}
+
+/**
+ * Collection page "SORT BY" (Figma frame "Collection", node 760:3925).
+ * "featured" reuses the same "no real curation field, so newest-first"
+ * convention as listFeaturedProducts — the DB query already orders by
+ * createdAt desc, so this only needs to re-sort for the two price options.
+ * Sorted in JS, not via Prisma orderBy, since price is a derived min/max
+ * across a product's variants rather than a single column.
+ */
+export function sortProductList(
+  products: ProductListItem[],
+  sort: ProductSort,
+): ProductListItem[] {
+  if (sort === "featured") return products;
+  const direction = sort === "price-asc" ? 1 : -1;
+  return [...products].sort(
+    (a, b) =>
+      (a.priceRangeMinorUnits.min - b.priceRangeMinorUnits.min) * direction,
+  );
 }

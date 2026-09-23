@@ -1,6 +1,6 @@
 import { prisma } from "@onwei/database";
-import { mapImage, mapVariant } from "./mapProduct";
-import type { ProductDetail } from "./types";
+import { mapImage, mapSpecs, mapVariant } from "./mapProduct";
+import type { PlayCharacteristics, ProductDetail } from "./types";
 
 /**
  * Full product detail for the PDP. Returns null for DRAFT, ARCHIVED,
@@ -20,6 +20,17 @@ export async function getActiveProductBySlug(
   });
   if (!product) return null;
 
+  const playCharacteristics: PlayCharacteristics | null =
+    product.powerRating != null &&
+    product.spinRating != null &&
+    product.controlRating != null
+      ? {
+          power: product.powerRating,
+          spin: product.spinRating,
+          control: product.controlRating,
+        }
+      : null;
+
   return {
     id: product.id,
     name: product.name,
@@ -33,5 +44,10 @@ export async function getActiveProductBySlug(
     },
     images: product.images.map(mapImage),
     variants: product.variants.map(mapVariant),
+    specs: mapSpecs(product.specs),
+    whoThisIsFor: product.whoThisIsFor,
+    careInstructions: product.careInstructions,
+    playCharacteristics,
+    highlightTags: product.highlightTags,
   };
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
@@ -40,6 +41,12 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-neutral-50">
       <div className="flex w-full max-w-sm flex-col gap-6 rounded-lg border border-neutral-200 bg-white p-8">
+        <Image
+          src="/images/header/logo.svg"
+          alt="Onwei"
+          width={71}
+          height={33}
+        />
         <h1 className="text-xl font-semibold">Sign in</h1>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">

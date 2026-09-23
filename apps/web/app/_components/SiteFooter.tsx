@@ -9,7 +9,6 @@ const FOOTER_COLUMNS = [
       { label: "Pickleball", href: "/collection/pickleball" },
       { label: "Pilates", href: "/collection/pilates" },
       { label: "Bestsellers", href: "/collection/all" },
-      { label: "Find Your Wei", href: "#" },
     ],
   },
   {
@@ -63,6 +62,23 @@ function LinkedInIcon() {
       aria-hidden
     >
       <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3.5 9.5h3V20.5h-3V9.5Zm6.25 0h2.88v1.5h.04c.4-.76 1.38-1.56 2.85-1.56 3.05 0 3.61 2.01 3.61 4.62v6.44h-3v-5.71c0-1.36-.02-3.1-1.89-3.1-1.9 0-2.19 1.48-2.19 3.01v5.8h-3V9.5Z" />
+    </svg>
+  );
+}
+
+// Figma's footer (About Us node 760:4661, and the same pattern on
+// Homepage/PDP/Collection) lists Instagram / LinkedIn / Facebook — a
+// Substack icon was used here instead of Facebook in an earlier pass.
+function FacebookIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      width={20}
+      height={20}
+      fill="currentColor"
+      aria-hidden
+    >
+      <path d="M14 21v-8h2.7l.4-3.3H14V7.6c0-.96.27-1.6 1.65-1.6H17V3.14C16.7 3.1 15.7 3 14.5 3c-2.4 0-4 1.46-4 4.15v2.55H7.8V13H10.5v8h3.5Z" />
     </svg>
   );
 }
@@ -150,9 +166,9 @@ export function SiteFooter() {
               <div className="flex flex-col items-start gap-6">
                 <div className="flex w-full max-w-[380px] flex-col gap-4 text-onwei-beige">
                   <p className="font-display text-[70px] font-bold uppercase leading-[0.9]">
-                    Move with
+                    Stay in
                     <br />
-                    Onwei
+                    the loop
                   </p>
                   <p className="font-grotesk text-[14px]">
                     New releases, movement stories, and what&apos;s moving at
@@ -191,14 +207,8 @@ export function SiteFooter() {
                     <a href="#" aria-label="Onwei on LinkedIn">
                       <LinkedInIcon />
                     </a>
-                    <a href="#" aria-label="Onwei on Substack">
-                      <Image
-                        src="/images/footer/icon-substack.svg"
-                        alt=""
-                        width={15}
-                        height={17}
-                        aria-hidden
-                      />
+                    <a href="#" aria-label="Onwei on Facebook">
+                      <FacebookIcon />
                     </a>
                   </div>
                 </div>

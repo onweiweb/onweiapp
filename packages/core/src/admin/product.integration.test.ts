@@ -135,5 +135,31 @@ describe.skipIf(!process.env.DATABASE_URL)(
 
       await trackAuditLogsFor(product.id);
     });
+
+    it("accepts a valid specs list and rejects a malformed one", async () => {
+      const category = await createFixtureCategory();
+
+      const product = await createProduct(
+        {
+          name: "Test Product",
+          slug: `test-product-${randomUUID()}`,
+          categoryId: category.id,
+          specs: [{ label: "Fabric", value: "100% cotton" }],
+        },
+        actor,
+      );
+      createdProductIds.push(product.id);
+      expect(product.specs).toEqual([
+        { label: "Fabric", value: "100% cotton" },
+      ]);
+
+      await expect(
+        updateProduct(
+          product.id,
+          { specs: [{ label: "", value: "missing a label" }] },
+          actor,
+        ),
+      ).rejects.toThrow(/invalid-specs/);
+    });
   },
 );

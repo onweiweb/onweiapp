@@ -1,4 +1,20 @@
 export { createCategory, updateCategory } from "./admin/category";
+export { createFaq, deleteFaq, updateFaq } from "./admin/faq";
+export {
+  createValueProp,
+  deleteValueProp,
+  updateValueProp,
+} from "./admin/valueProp";
+export {
+  createInstagramPhoto,
+  deleteInstagramPhoto,
+  updateInstagramPhoto,
+} from "./admin/instagramPhoto";
+export {
+  createMarqueeItem,
+  deleteMarqueeItem,
+  updateMarqueeItem,
+} from "./admin/marqueeItem";
 export { updateDsrStatus } from "./compliance/updateDsrStatus";
 export { createCoupon, updateCoupon } from "./discounts/coupon";
 export { addDiscountRule, updateDiscountRule } from "./discounts/discountRule";
@@ -29,30 +45,63 @@ export type {
   AdjustInventoryInput,
   AuditActor,
   CreateCategoryInput,
+  CreateFaqInput,
+  CreateInstagramPhotoInput,
+  CreateMarqueeItemInput,
   CreateProductInput,
   CreateProductVariantInput,
+  CreateValuePropInput,
   InventoryAdjustmentReason,
+  ProductSpecInput,
   UpdateCategoryInput,
+  UpdateFaqInput,
+  UpdateInstagramPhotoInput,
+  UpdateMarqueeItemInput,
   UpdateProductInput,
   UpdateProductVariantInput,
+  UpdateValuePropInput,
 } from "./admin/types";
 export { getActiveProductBySlug } from "./catalog/getActiveProductBySlug";
 export {
   derivePriceRangeMinorUnits,
   deriveInStock,
   pickLeadImage,
+  sortProductList,
   toMinorUnits,
 } from "./catalog/helpers";
+export type { ProductSort } from "./catalog/helpers";
 export { listActiveCategories } from "./catalog/listActiveCategories";
 export { listActiveProductsByCategorySlug } from "./catalog/listActiveProductsByCategorySlug";
 export { listAllActiveProducts } from "./catalog/listAllActiveProducts";
+export {
+  listApprovedReviews,
+  summarizeReviews,
+} from "./catalog/listApprovedReviews";
+export {
+  DEFAULT_SURFACE_LIMITS,
+  listSurfaceReviews,
+} from "./catalog/listSurfaceReviews";
+export { listComparableProducts } from "./catalog/listComparableProducts";
+export { listFaqs } from "./catalog/listFaqs";
 export { listFeaturedProducts } from "./catalog/listFeaturedProducts";
+export { listRelatedProducts } from "./catalog/listRelatedProducts";
+export { listValueProps } from "./catalog/listValueProps";
+export { listInstagramPhotos } from "./catalog/listInstagramPhotos";
+export { listMarqueeItems } from "./catalog/listMarqueeItems";
 export type {
   CategorySummary,
+  ComparisonProduct,
+  FaqItem,
+  InstagramPhotoItem,
+  PlayCharacteristics,
   ProductDetail,
   ProductImageDTO,
   ProductListItem,
+  ProductSpec,
   ProductVariantDTO,
+  ReviewListItem,
+  ReviewSummary,
+  ValuePropItem,
 } from "./catalog/types";
 export { formatCurrency } from "./money/formatCurrency";
 export { createRole, updateRolePermissions } from "./staff/role";
@@ -88,5 +137,14 @@ export {
   createManualReview,
   rejectReview,
 } from "./reviews/review";
-export type { CreateManualReviewInput } from "./reviews/types";
+export {
+  removeReviewPlacement,
+  reorderReviewPlacements,
+  setReviewPlacement,
+  updateReviewSurfaceLimit,
+} from "./reviews/reviewPlacement";
+export type {
+  CreateManualReviewInput,
+  CreateReviewPlacementInput,
+} from "./reviews/types";
 export type { ProductSearchIndex } from "./search/ProductSearchIndex";

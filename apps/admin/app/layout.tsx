@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Archivo, IBM_Plex_Mono, Raleway } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import {
@@ -43,6 +44,8 @@ const NAV_ITEMS = [
   { label: "Returns", href: "/returns" },
   { label: "Coupons", href: "/coupons" },
   { label: "Reviews", href: "/reviews" },
+  { label: "Review placements", href: "/reviews/placements" },
+  { label: "Content", href: "/content" },
   { label: "Products", href: "/products" },
   { label: "Categories", href: "/categories" },
   { label: "Inventory", href: "/inventory" },
@@ -90,9 +93,18 @@ export default async function RootLayout({
               className="flex w-56 shrink-0 flex-col justify-between rounded-r-[30px] bg-onwei-blue p-4 text-onwei-beige"
             >
               <div>
-                <p className="mb-6 px-2 font-display text-lg font-semibold uppercase">
-                  Onwei Admin
-                </p>
+                <div className="mb-6 flex items-center gap-2 px-2">
+                  <Image
+                    src="/images/footer/logo-circle.svg"
+                    alt=""
+                    width={28}
+                    height={28}
+                    aria-hidden
+                  />
+                  <p className="font-display text-lg font-semibold uppercase">
+                    Onwei Admin
+                  </p>
+                </div>
                 <ul className="flex flex-col gap-1">
                   {NAV_ITEMS.map((item) => (
                     <li key={item.label}>

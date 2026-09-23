@@ -176,9 +176,29 @@ model Product {
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
 
-  variants    ProductVariant[]
-  images      ProductImage[]
-  reviews     Review[]
+  // PDP content — all optional, shared across variants (doesn't vary by
+  // size/color). `specs` is an ordered [{label, value}] array: the key set
+  // genuinely varies by category (paddle specs vs. apparel specs), same
+  // reasoning as ProductVariant.attributes and DiscountRule.config. The
+  // three ratings are plain nullable columns, not JSON, since their shape
+  // never varies (three named 0-100 numbers) — only their applicability
+  // does; a yoga mat product simply leaves them null.
+  specs             Json?
+  whoThisIsFor      String?
+  careInstructions  String?
+  powerRating       Int?
+  spinRating        Int?
+  controlRating     Int?
+  // Short "⬥"-separated highlight tags shown under the PDP title (e.g.
+  // "USAPA Approved") — a curated subset, distinct from the full `specs`
+  // table. Plain string array: shape never varies, so no JSON needed.
+  highlightTags     String[] @default([])
+
+  variants         ProductVariant[]
+  images           ProductImage[]
+  reviews          Review[]
+  faqs             Faq[]
+  reviewPlacements ReviewPlacement[]
 
   @@index([categoryId])
 }
@@ -482,6 +502,8 @@ model Review {
   approvedBy    String?
   externalRef   String?      // source URL/ID for imported reviews — dedup + traceability
 
+  placements    ReviewPlacement[]
+
   @@index([productId, isApproved])
   @@index([source, externalRef])
 }
@@ -495,6 +517,65 @@ enum ReviewSource {
   SITE
   EMAIL
   AMAZON_IMPORT
+}
+
+// Which storefront surface an approved review is curated onto, and in what
+// order. Purely opt-in: a surface (or a product's PRODUCT_WALL) with no
+// placements falls back to the most-recent-approved reviews for that
+// surface at read time — see listSurfaceReviews in packages/core. Not a
+// customer/order/audit entity, so no soft delete here, matching Faq/
+// ProductImage.
+enum ReviewSurface {
+  HOME_HERO    // Homepage TestimonialTile — single-review hero card
+  HOME_WALL    // Homepage ReviewWall — brand reviews grid
+  PRODUCT_WALL // PDP ReviewWall — per-product reviews grid
+}
+
+model ReviewPlacement {
+  id        String        @id @default(cuid())
+  surface   ReviewSurface
+  // Set only for PRODUCT_WALL (which product's wall this review is featured
+  // on); null for the two brand-wide surfaces. Postgres treats NULL as
+  // distinct in unique constraints, so the @@unique below does not by
+  // itself stop duplicate HOME_HERO/HOME_WALL rows for the same review —
+  // packages/core's setReviewPlacement checks for an existing row first.
+  productId String?
+  product   Product?      @relation(fields: [productId], references: [id])
+  reviewId  String
+  review    Review        @relation(fields: [reviewId], references: [id])
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+
+  @@unique([surface, productId, reviewId])
+  @@index([surface, productId])
+}
+
+// One configurable display-limit per surface (e.g. "show at most 6 on the
+// PDP wall"). A surface with no row here falls back to an in-code default —
+// see DEFAULT_SURFACE_LIMITS in packages/core.
+model ReviewSurfaceConfig {
+  id      String        @id @default(cuid())
+  surface ReviewSurface @unique
+  limit   Int
+}
+
+// ---------------------------------------------------------------------------
+// FAQs
+// ---------------------------------------------------------------------------
+
+// productId null = a general/site-wide FAQ; set = shown on that product's PDP.
+model Faq {
+  id         String   @id @default(cuid())
+  productId  String?
+  product    Product? @relation(fields: [productId], references: [id])
+  question   String
+  answer     String
+  sortOrder  Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([productId, isActive])
 }
 
 // ---------------------------------------------------------------------------
@@ -552,6 +633,46 @@ model NewsletterSubscriber {
   source         String? // e.g. "homepage_footer" — provenance, not required
   subscribedAt   DateTime  @default(now())
   unsubscribedAt DateTime?
+}
+
+// Homepage and PDP shared marketing content — CMS-editable so it isn't
+// baked into page source as hardcoded consts. Not customer/order/audit
+// data, so hard delete (like Faq), not soft delete.
+model ValueProp {
+  id              String  @id @default(cuid())
+  illustrationUrl String
+  width           Int
+  height          Int
+  title           String
+  body            String
+  sortOrder       Int     @default(0)
+  isActive        Boolean @default(true)
+}
+
+model InstagramPhoto {
+  id        String  @id @default(cuid())
+  imageUrl  String
+  altText   String?
+  sortOrder Int     @default(0)
+  isActive  Boolean @default(true)
+}
+
+// Which marquee ticker a line of text belongs to — Homepage has two
+// (hero + showcase), the PDP has its own.
+enum MarqueePlacement {
+  HOME_HERO
+  HOME_SHOWCASE
+  PDP
+}
+
+model MarqueeItem {
+  id        String           @id @default(cuid())
+  placement MarqueePlacement
+  label     String
+  sortOrder Int              @default(0)
+  isActive  Boolean          @default(true)
+
+  @@index([placement, isActive])
 }
 
 // ---------------------------------------------------------------------------

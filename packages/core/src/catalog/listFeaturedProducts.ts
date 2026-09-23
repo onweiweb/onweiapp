@@ -18,6 +18,7 @@ export async function listFeaturedProducts(
     include: {
       images: { orderBy: { sortOrder: "asc" } },
       variants: { where: { status: "ACTIVE" }, include: { inventory: true } },
+      reviews: { where: { isApproved: true }, select: { rating: true } },
     },
   });
 
