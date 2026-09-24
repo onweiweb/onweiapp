@@ -21,6 +21,8 @@ import { MarqueeBar } from "@/_components/MarqueeBar";
 import { ValueProps } from "@/_components/ValueProps";
 import { InstagramGrid } from "@/_components/InstagramGrid";
 import { ReviewWall } from "@/_components/ReviewWall";
+import { JoinMovementSection } from "@/_components/JoinMovementSection";
+import { ScrollCarousel } from "@/_components/ScrollCarousel";
 import { StarRow } from "@/_components/StarRow";
 import { CtaLink } from "@/_components/CtaLink";
 
@@ -275,13 +277,17 @@ function ProductGridSection({
       {/* Mobile (node 761:4877 "Shop"): a horizontal-scroll carousel, not a
           wrapping grid — matches the same pattern as Reviews/Instagram. At
           lg:+ it reverts to the desktop row, which already fits everything
-          on one line at 1440px so overflow-x-auto has no visible effect. */}
-      <div className="no-scrollbar flex w-full max-w-[1440px] items-start gap-8 overflow-x-auto lg:flex-wrap lg:justify-center">
+          on one line at 1440px so the scroll track is hidden there. */}
+      <ScrollCarousel
+        gap="gap-8"
+        className="max-w-[1440px] items-start lg:flex-wrap lg:justify-center"
+        trackClassName="lg:hidden"
+      >
         <TestimonialTile review={testimonial} />
         {products.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
-      </div>
+      </ScrollCarousel>
     </section>
   );
 }
@@ -375,47 +381,6 @@ function AboutSection() {
   );
 }
 
-function JoinMovementSection() {
-  return (
-    <section className="flex items-end justify-center bg-onwei-green px-3 py-14 sm:px-8 lg:px-[120px]">
-      <div className="relative flex w-full max-w-[1440px] items-end justify-center gap-2.5">
-        {/* Straddles the section boundary in Figma — half the illustration
-          sits in the white space above this section, not fully inside it. */}
-        <Image
-          src="/images/about2/illustration.svg"
-          alt=""
-          width={205}
-          height={202}
-          aria-hidden
-          className="pointer-events-none absolute right-[38%] -top-24 hidden md:block"
-        />
-        <div className="flex w-full flex-col items-start justify-between gap-8 lg:flex-row">
-          <p className="max-w-[578px] font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-blue lg:text-[70px]">
-            Join the Movement
-          </p>
-          <div className="relative flex flex-col items-start gap-6">
-            <p className="max-w-[484px] font-grotesk text-[14px] text-onwei-blue">
-              Movement events, community sessions, early access, product
-              testing, and exclusive rewards - and a say in what we build next!
-            </p>
-            <CtaLink href="#" className="bg-onwei-blue text-onwei-beige">
-              Find Your Wei
-            </CtaLink>
-            <Image
-              src="/images/about2/underline.svg"
-              alt=""
-              width={285}
-              height={2}
-              aria-hidden
-              className="pointer-events-none absolute -left-1 top-[52px] w-[285px] max-w-none"
-            />
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 // Static — no blog/article model exists in this codebase (see
 // docs/DATABASE_SCHEMA.md). All three posts, dates and body copy are
 // hardcoded straight from the Figma file.
@@ -445,7 +410,11 @@ function JournalSection() {
         {/* Mobile (node 761:5154): horizontal-scroll carousel of fixed-
             width cards, matching Shop/Reviews/Instagram. At lg:+ this
             reverts to an even 3-column row (flex-1, no fixed width). */}
-        <div className="no-scrollbar flex w-full gap-6 overflow-x-auto lg:overflow-visible">
+        <ScrollCarousel
+          gap="gap-6"
+          className="lg:overflow-visible"
+          trackClassName="lg:hidden"
+        >
           {JOURNAL_ARTICLES.map((post) => (
             <article
               key={post.title}
@@ -476,7 +445,7 @@ function JournalSection() {
               </div>
             </article>
           ))}
-        </div>
+        </ScrollCarousel>
       </div>
     </section>
   );

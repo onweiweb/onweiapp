@@ -44,11 +44,17 @@ export function ProductCard({ product }: { product: ProductListItem }) {
       >
         <div className="relative h-[315px] w-full overflow-hidden rounded-[30px] bg-[#f0e9da]">
           {product.image ? (
+            // Reused inside horizontally-scrolling rows (Collection grids,
+            // Homepage's mobile shop carousel) — next/image's default lazy
+            // loading uses an IntersectionObserver against the browser
+            // viewport, which never fires for a card positioned off-screen
+            // to the right, so it stayed blank until scrolled into view.
             <Image
               src={product.image.url}
               alt={product.image.altText ?? product.name}
               fill
               sizes="282px"
+              loading="eager"
               className="object-contain p-6"
             />
           ) : null}

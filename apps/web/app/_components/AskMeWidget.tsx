@@ -3,7 +3,7 @@
 import Image from "next/image";
 import type { FaqItem } from "@onwei/core";
 import { OPEN_ACCORDION_ITEM_EVENT } from "./Accordion";
-import { ReviewCarousel } from "./ReviewCarousel";
+import { ScrollCarousel } from "./ScrollCarousel";
 
 // Figma PDP info panel (frame "PDP_draft 2", node 759:3102 "FAQ") — a
 // purple "have questions?" teaser sitting right after the accordion, with
@@ -32,7 +32,7 @@ export function AskMeWidget({ faqs }: { faqs: FaqItem[] }) {
         />
       </div>
 
-      <ReviewCarousel>
+      <ScrollCarousel>
         {suggested.map((faq) => (
           <button
             key={faq.id}
@@ -49,7 +49,7 @@ export function AskMeWidget({ faqs }: { faqs: FaqItem[] }) {
             {faq.question}
           </button>
         ))}
-      </ReviewCarousel>
+      </ScrollCarousel>
     </div>
   );
 }

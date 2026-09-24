@@ -26,11 +26,18 @@ export function PromoTile({
   return (
     <div className="relative w-[375px] shrink-0 max-w-[375px]">
       <div className="relative aspect-[375/454] w-full overflow-hidden rounded-[30px]">
+        {/* Sits inside a horizontally-scrolling row, often past the
+            initial viewport width. next/image's default lazy loading uses
+            an IntersectionObserver against the browser viewport, which
+            never fires for an element positioned off-screen to the right —
+            so the photo only loaded once the user scrolled it into view.
+            loading="eager" opts it out of that. */}
         <Image
           src={photo}
           alt={photoAlt}
           fill
           sizes="375px"
+          loading="eager"
           className="object-cover"
         />
       </div>
@@ -40,6 +47,7 @@ export function PromoTile({
         width={illustrationWidth}
         height={illustrationHeight}
         aria-hidden
+        loading="eager"
         className={`pointer-events-none absolute hidden lg:block ${illustrationClassName}`}
       />
     </div>

@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { ReviewListItem } from "@onwei/core";
-import { ReviewCarousel } from "./ReviewCarousel";
+import { ScrollCarousel } from "./ScrollCarousel";
 import { StarRow } from "./StarRow";
 import { CtaLink } from "./CtaLink";
 
@@ -98,7 +98,7 @@ export function ReviewWall({
           </CtaLink>
         </div>
 
-        <ReviewCarousel>
+        <ScrollCarousel>
           {reviews.map((review, index) => (
             <ReviewCard
               key={review.id}
@@ -106,7 +106,7 @@ export function ReviewWall({
               tone={TONES[index % TONES.length] ?? "purple"}
             />
           ))}
-        </ReviewCarousel>
+        </ScrollCarousel>
       </div>
     </section>
   );

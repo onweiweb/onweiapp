@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { ScrollCarousel } from "./ScrollCarousel";
 
 export interface InstagramGridPhoto {
   url: string;
@@ -7,11 +8,16 @@ export interface InstagramGridPhoto {
 
 // Extracted from the Homepage's InstagramSection (was page-local) — reused
 // on Collection/PDP with the same photo set (Figma duplicates this section
-// per-page rather than treating it as Homepage-only).
+// per-page rather than treating it as Homepage-only). The heading text
+// itself differs per page in Figma (Homepage: "@OnweiMoves", Collection:
+// "@onwei" — both confirmed against their own frames, not a typo), so it's
+// a prop rather than hardcoded.
 export function InstagramGrid({
   photos,
+  heading = "@OnweiMoves",
 }: {
   photos: readonly InstagramGridPhoto[];
+  heading?: string;
 }) {
   return (
     <section className="flex flex-col items-center bg-onwei-green px-3 py-24 sm:px-6 lg:px-14">
@@ -29,10 +35,10 @@ export function InstagramGrid({
             />
           </span>
           <p className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-blue lg:text-[70px]">
-            @OnweiMoves
+            {heading}
           </p>
         </div>
-        <div className="no-scrollbar flex w-full gap-4 overflow-x-auto">
+        <ScrollCarousel>
           {photos.map((photo, index) => (
             <div
               key={photo.url}
@@ -47,7 +53,7 @@ export function InstagramGrid({
               />
             </div>
           ))}
-        </div>
+        </ScrollCarousel>
       </div>
     </section>
   );
