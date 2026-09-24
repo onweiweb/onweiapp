@@ -893,6 +893,7 @@ const PERMISSION_KEYS = [
   "customer:view",
   "auditLog:view",
   "newsletter:view",
+  "newsletter:manage",
   "dsr:view",
   "dsr:updateStatus",
   "consentLog:view",

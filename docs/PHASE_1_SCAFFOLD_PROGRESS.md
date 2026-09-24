@@ -251,17 +251,90 @@ when it's correctly set on the Vercel project. Fixed by adding
 a package needs at build or runtime must be added to this list too, or Vercel builds will fail even
 though the variable shows up correctly in the Vercel dashboard.
 
-## Known open items (updated 2026-09-22)
+## Admin CMS build-out (2026-09-23), superseding the original "out of scope" call
 
-- **Phase 1 (DB schema + OTP auth + product browsing) is functionally complete**: Homepage,
-  Collection, and PDP are all built from Figma and wired to real seeded data; OTP login and
-  newsletter capture work end-to-end in production. Remaining polish is exact-pixel mobile
+The original plan's "Locked-in decisions" above said admin CMS feature screens were out of scope for
+this scaffold. That was superseded in practice: a real, working `apps/admin` CMS shipped (commits
+`9df1bcd`, `622ddcb`, `92ac287`) covering staff auth + RBAC, catalog/inventory, orders/returns,
+coupons/discount rules, staff/roles management, review moderation and placement curation, compliance
+(audit log, DSR, consent), and marketing content (value props, Instagram photos, marquee tickers).
+Treat that locked-in decision as historical context for why the scaffold plan didn't originally
+include it, not as current scope.
+
+## Admin UX restructure (2026-09-24)
+
+The admin sidebar had grown to 16 flat links and several pages stacked 3-4 independent forms/editors
+vertically with no structure (`apps/admin/app/_components/ProductForm.tsx` alone was 350 lines in one
+scroll). Fixed (commits `ca26aba`, `ae53f8d`):
+
+- Sidebar nav grouped into 6 collapsible sections (Overview/Catalog/Sales/Marketing & content/People/
+  Compliance), default-collapsed, expand state persisted per label via `localStorage` through
+  `useSyncExternalStore` (`apps/admin/app/_components/AdminNav.tsx`), **not** `useState`+`useEffect`:
+  `react-hooks/set-state-in-effect` (part of the newer eslint-plugin-react-hooks rule set this
+  repo's `eslint-config-next` pulls in) flags that pattern as a lint error on `npm run build`'s
+  pre-push hook.
+- New shared primitives in `apps/admin/app/_components/ui/`: `AdminStepper` (linear wizard, gates
+  "Next" on a per-step `canAdvance` flag) and `AdminTabs` (free-switching, no gating). `ProductForm`
+  is now a 3-step wizard (Basics / Storefront content / Play characteristics); the product edit page,
+  coupon edit page, and marketing-content page use `AdminTabs` instead of stacking sections.
+- **Real bug fixed, not just cosmetic**: `AdminInput`/`AdminSelect`/`AdminTextarea` had
+  `border-onwei-beige`, the same color as the page background most forms sit directly on (not every
+  form is wrapped in a white `AdminCard`), so borders were invisible outside a card. Changed to
+  `border-onwei-blue/25` everywhere those primitives are used.
+
+## Review-placement fixes + newsletter add (2026-09-24, in progress, not yet committed)
+
+User-reported: the PDP review-count "slider" didn't seem to work, and there was no way to add a
+newsletter subscriber by hand. Root causes found by reading the actual code rather than guessing:
+
+- `ReviewSurfaceConfig.surface` was globally `@unique`, so **one review-count limit applied to every
+  product**: setting it from one product's "Featured reviews" tab silently changed every other
+  product's PDP wall too. Migrated to `@@unique([surface, productId])` (migration
+  `20260923111049_add_review_surface_config_product_override`, `productId` nullable; null rows are a
+  surface's global default). `packages/core/src/catalog/listSurfaceReviews.ts`'s new
+  `resolveSurfaceLimit()` does product-override, then global, then in-code-default fallback.
+- **The "slider" was a plain `<input type="number">`, not a range slider**, and its handlers were
+  already wired correctly end-to-end. Replaced with a real `AdminSlider` (`<input type="range">`)
+  primitive showing a live "N of M approved reviews" readout, and removed the limit control entirely
+  for `HOME_HERO` (the homepage hero always renders exactly one review; `TestimonialTile` in
+  `apps/web/app/page.tsx` hardcodes index 0, so a slider that could move above 1 with no visible
+  effect was itself the "doesn't work" complaint).
+- Added a manual "add a subscriber" form + `POST /api/newsletter` to the previously 100%-read-only
+  newsletter admin page, gated behind a new `newsletter:manage` permission (seeded into
+  `PERMISSION_KEYS`). Reuses the existing `subscribeToNewsletter` core function the storefront's own
+  signup already calls, no new business logic.
+- Confirmed (not a bug): the scrolling bar right below "Have questions? Ask me" on the PDP is
+  `MarqueeBar`, fed by the unrelated `MarqueeItem` model, never reviews. Content-page copy updated to
+  say so explicitly.
+- **`prisma migrate dev` does not work at all in this sandboxed shell** (no TTY; Prisma refuses
+  non-interactive environments outright, even with `--create-only`). Workaround used and worth
+  repeating: `npx prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma
+--script` to get the raw SQL (diffs the live DB against the target schema, no shadow DB needed),
+  hand-write it into a normally-named `prisma/migrations/<timestamp>_<name>/migration.sql` folder,
+  then `npx prisma migrate deploy` (which _is_ non-interactive-safe) to apply it and record it in
+  `_prisma_migrations`. `prisma migrate diff --from-migrations ... --to-schema` (diffing against
+  migration history instead of the live DB) additionally requires a `shadowDatabaseUrl` not configured
+  here; `--from-config-datasource` sidesteps that by introspecting the real DB instead.
+- **Prisma quirk**: a compound `@@unique` that includes a nullable field can't be queried via
+  `findUnique`'s compound-key shorthand with a literal `null`. The generated
+  `<Model><Fields>CompoundUniqueInput` type requires every field non-null, even ones the schema itself
+  allows to be null. Querying the "global" (`productId: null`) row needs a plain `findFirst({ where: {
+surface, productId: null } })` instead; the same restriction rules out `upsert` for that row too
+  (had to become find-then-branch `create`/`update` by `id`, see `updateReviewSurfaceLimit` in
+  `packages/core/src/reviews/reviewPlacement.ts`).
+
+## Known open items (updated 2026-09-24)
+
+- **Phase 1 (DB schema + OTP auth + product browsing) is functionally complete**, and a full admin CMS
+  now exists well beyond original Phase 1 scope (see above). Remaining polish is exact-pixel mobile
   verification on a real device (see the resize-tool limitation above) and whatever client feedback
   comes back.
 - OTP/SMS vendor and payment gateway remain open per `docs/OPEN_DECISIONS.md` — do not resolve
   without the user. **Phase 2 (cart/checkout/payments/coupons) cannot start until the payment
   gateway is confirmed**, and per root `CLAUDE.md` ground rule 1 needs a Plan Mode session first
   regardless (new schema, new dependency, touches payments/discounts).
+- Newsletter campaign/content management (composing/sending an actual issue, not just subscriber
+  list + manual add) is a new open decision, see `docs/OPEN_DECISIONS.md`.
 - No e2e tests exist — Playwright is not installed in this repo (corrected from the earlier,
   inaccurate "installed but unused" note). Not blocking Phase 1; would matter more once Phase 2
   introduces state that's expensive to verify by hand (checkout, payment callbacks).

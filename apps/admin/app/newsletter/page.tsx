@@ -1,5 +1,7 @@
 import { prisma } from "@onwei/database";
+import { hasPermission } from "@onwei/auth";
 import { requirePageSession } from "../_lib/requirePageSession";
+import { AddNewsletterSubscriberForm } from "../_components/AddNewsletterSubscriberForm";
 import {
   AdminBadge,
   AdminTable,
@@ -10,7 +12,8 @@ import {
 } from "../_components/ui";
 
 export default async function NewsletterPage() {
-  await requirePageSession("newsletter:view");
+  const { permissions } = await requirePageSession("newsletter:view");
+  const canManage = hasPermission(permissions, "newsletter:manage");
 
   const subscribers = await prisma.newsletterSubscriber.findMany({
     orderBy: { subscribedAt: "desc" },
@@ -22,6 +25,8 @@ export default async function NewsletterPage() {
       <h1 className="font-display text-2xl font-semibold uppercase">
         Newsletter
       </h1>
+
+      {canManage ? <AddNewsletterSubscriberForm /> : null}
 
       {subscribers.length === 0 ? (
         <p className="text-onwei-blue/70">

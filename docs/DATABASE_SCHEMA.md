@@ -50,7 +50,7 @@ step) is a row, so the storefront can render a timeline instead of just a
 current-status label.
 
 **Discounts** — `Coupon` holds the code-level rules (usage limit, per-customer
-limit, min order value, validity window). `DiscountRule` holds the *kind* of
+limit, min order value, validity window). `DiscountRule` holds the _kind_ of
 discount (`PERCENTAGE`, `FLAT`, `BUY_X_GET_Y`, and future types) with a typed
 `config` JSON field validated by a zod schema per type — see
 `.claude/skills/discount-rule-engine/`. `CouponRedemption` records every use,
@@ -62,6 +62,17 @@ visibility — nothing shows on the storefront until an admin approves it.
 `externalRef` stores a source URL/ID for imported reviews, both for
 traceability and to avoid importing the same review twice. See
 `docs/OPEN_DECISIONS.md` for how Amazon reviews actually get in.
+`ReviewPlacement` curates which approved reviews show on which
+`ReviewSurface` (`HOME_HERO`, `HOME_WALL`, `PRODUCT_WALL`); a surface with no
+curated placements falls back to the most-recent-approved reviews for that
+target instead of going blank. `ReviewSurfaceConfig.limit` is the configurable
+display count per surface, and is itself scoped by an optional `productId`
+(only meaningful for `PRODUCT_WALL`): a row with `productId` set overrides the
+count for that one product, a row with `productId: null` is that surface's
+global default, and a surface+product with no row at all falls back to an
+in-code default (`DEFAULT_SURFACE_LIMITS` in `packages/core`). This exists
+because the PDP review wall's count needed to be settable per product without
+one admin's change silently affecting every other product's page.
 
 **Compliance** — `ConsentLog` records what policy version a customer accepted
 and when (needed to demonstrably show consent under the DPDP Act — see
@@ -70,7 +81,7 @@ correction requests, also a DPDP requirement once a customer asks for one.
 
 ## Deliberately deferred
 
-Multi-currency, multi-language, and multi-warehouse *routing* (choosing which
+Multi-currency, multi-language, and multi-warehouse _routing_ (choosing which
 warehouse fulfills an order) aren't in the first schema pass — `Warehouse`
 and `currency` fields exist so they can be added without a breaking
 migration, but the logic for them isn't built until there's an actual need.
@@ -83,7 +94,7 @@ was fine.
 
 - **Prisma Migrate is the version history.** Every schema change is a
   timestamped file under `packages/database/prisma/migrations/`, committed to
-  git — that directory *is* the changelog of the database, reviewed in PRs
+  git — that directory _is_ the changelog of the database, reviewed in PRs
   like any other code change (this is also why schema changes need a Plan
   Mode round per ground rule #1 in `CLAUDE.md`).
 - **`migrate dev` locally, `migrate deploy` in production.** Never
@@ -97,7 +108,7 @@ was fine.
   rename, type change, or drop goes through three separate migrations (add
   the new shape → backfill and dual-write → drop the old shape once nothing
   reads it) instead of one migration that changes it in place. A bad deploy
-  can then be rolled back by reverting the *app code* to read/write the old
+  can then be rolled back by reverting the _app code_ to read/write the old
   shape, without touching the database at all — this is the primary rollback
   mechanism, not a database restore.
 - **Migrations are append-only once applied anywhere shared** (staging or

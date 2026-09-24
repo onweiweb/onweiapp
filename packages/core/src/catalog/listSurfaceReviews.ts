@@ -10,6 +10,29 @@ export const DEFAULT_SURFACE_LIMITS: Record<ReviewSurface, number> = {
 };
 
 /**
+ * A surface's effective display limit: a product-specific override (only
+ * meaningful for PRODUCT_WALL) if one exists, else that surface's global
+ * row (productId: null), else the in-code default. HOME_HERO/HOME_WALL
+ * never pass a productId, so they only ever see the global row.
+ */
+export async function resolveSurfaceLimit(
+  surface: ReviewSurface,
+  productId?: string,
+): Promise<number> {
+  if (surface === "PRODUCT_WALL" && productId) {
+    const productConfig = await prisma.reviewSurfaceConfig.findUnique({
+      where: { surface_productId: { surface, productId } },
+    });
+    if (productConfig) return productConfig.limit;
+  }
+
+  const globalConfig = await prisma.reviewSurfaceConfig.findFirst({
+    where: { surface, productId: null },
+  });
+  return globalConfig?.limit ?? DEFAULT_SURFACE_LIMITS[surface];
+}
+
+/**
  * Storefront read for a review surface: curated ReviewPlacement rows if any
  * exist for this surface (+ product, for PRODUCT_WALL), otherwise the
  * most-recent-approved reviews — so a surface with nothing curated yet
@@ -22,10 +45,7 @@ export async function listSurfaceReviews(options: {
   // surfaces.
   productId?: string;
 }): Promise<ReviewListItem[]> {
-  const config = await prisma.reviewSurfaceConfig.findUnique({
-    where: { surface: options.surface },
-  });
-  const limit = config?.limit ?? DEFAULT_SURFACE_LIMITS[options.surface];
+  const limit = await resolveSurfaceLimit(options.surface, options.productId);
 
   const placements = await prisma.reviewPlacement.findMany({
     where: {

@@ -96,16 +96,28 @@ export async function updateReviewSurfaceLimit(
   surface: ReviewSurface,
   limit: number,
   actor: AuditActor,
+  productId: string | null = null,
 ) {
-  const before = await prisma.reviewSurfaceConfig.findUnique({
-    where: { surface },
-  });
+  // Prisma's compound-unique `where` shorthand can't take a literal null for
+  // a nullable field (surface_productId requires productId: string), so the
+  // global (productId: null) row has to be found via a plain filter and
+  // updated by id — no upsert-by-compound-key for that case.
+  const before = productId
+    ? await prisma.reviewSurfaceConfig.findUnique({
+        where: { surface_productId: { surface, productId } },
+      })
+    : await prisma.reviewSurfaceConfig.findFirst({
+        where: { surface, productId: null },
+      });
 
-  const config = await prisma.reviewSurfaceConfig.upsert({
-    where: { surface },
-    update: { limit },
-    create: { surface, limit },
-  });
+  const config = before
+    ? await prisma.reviewSurfaceConfig.update({
+        where: { id: before.id },
+        data: { limit },
+      })
+    : await prisma.reviewSurfaceConfig.create({
+        data: { surface, productId, limit },
+      });
 
   await writeAuditLog({
     staffUserId: actor.staffUserId,

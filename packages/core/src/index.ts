@@ -80,6 +80,7 @@ export {
 export {
   DEFAULT_SURFACE_LIMITS,
   listSurfaceReviews,
+  resolveSurfaceLimit,
 } from "./catalog/listSurfaceReviews";
 export { listComparableProducts } from "./catalog/listComparableProducts";
 export { listFaqs } from "./catalog/listFaqs";

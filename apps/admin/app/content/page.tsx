@@ -69,8 +69,10 @@ export default async function ContentPage() {
             content: (
               <div className="flex flex-col gap-6">
                 <p className="text-sm text-onwei-blue/70">
-                  The scrolling text bars — homepage has two, each product page
-                  has its own.
+                  The scrolling text bars. The homepage has two, and each
+                  product page has its own. Short taglines only (e.g.
+                  &quot;Built for Indian courts&quot;), not customer reviews.
+                  Those live under Reviews and Review placements instead.
                 </p>
                 <div className="flex flex-col gap-2">
                   <h3 className="text-sm font-semibold uppercase">

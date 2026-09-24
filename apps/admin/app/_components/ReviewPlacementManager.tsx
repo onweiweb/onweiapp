@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AdminButton,
-  AdminInput,
   AdminSelect,
+  AdminSlider,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
@@ -54,9 +54,12 @@ export function ReviewPlacementManager({
   const [selectedReviewId, setSelectedReviewId] = useState(
     candidates[0]?.id ?? "",
   );
-  const [limitInput, setLimitInput] = useState(String(limit));
+  const [limitValue, setLimitValue] = useState(limit);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const approvedCount = placements.length + candidates.length;
+  const sliderMax = Math.max(approvedCount, limit, 1);
 
   async function withSubmitting(action: () => Promise<void>) {
     setError(null);
@@ -122,16 +125,11 @@ export function ReviewPlacementManager({
   }
 
   async function saveLimit() {
-    const parsed = Number(limitInput);
-    if (!Number.isInteger(parsed) || parsed < 1) {
-      setError("Enter a whole number of at least 1.");
-      return;
-    }
     await withSubmitting(async () => {
       const response = await fetch(`/api/reviews/surface-config/${surface}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ limit: parsed }),
+        body: JSON.stringify({ limit: limitValue, productId }),
       });
       const data = (await response.json()) as { ok: boolean; error?: string };
       if (!data.ok) throw new Error(data.error);
@@ -229,28 +227,32 @@ export function ReviewPlacementManager({
         </AdminButton>
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs uppercase text-onwei-blue/70">
-            Max reviews shown here
-          </label>
-          <AdminInput
-            type="number"
-            min={1}
-            value={limitInput}
-            onChange={(event) => setLimitInput(event.target.value)}
-            className="w-24"
-          />
+      {surface === "HOME_HERO" ? null : (
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex min-w-64 flex-col gap-1.5">
+            <label className="text-xs uppercase text-onwei-blue/70">
+              Max reviews shown here
+            </label>
+            <AdminSlider
+              min={1}
+              max={sliderMax}
+              value={limitValue}
+              onChange={setLimitValue}
+              formatValue={(value) =>
+                `${value} of ${approvedCount} approved review${approvedCount === 1 ? "" : "s"}`
+              }
+            />
+          </div>
+          <AdminButton
+            type="button"
+            variant="secondary"
+            disabled={submitting}
+            onClick={saveLimit}
+          >
+            Save limit
+          </AdminButton>
         </div>
-        <AdminButton
-          type="button"
-          variant="secondary"
-          disabled={submitting}
-          onClick={saveLimit}
-        >
-          Save limit
-        </AdminButton>
-      </div>
+      )}
 
       {error ? <p className="text-xs text-onwei-black">{error}</p> : null}
     </div>

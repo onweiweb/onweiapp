@@ -2,6 +2,7 @@ export { AdminBadge } from "./AdminBadge";
 export { AdminButton } from "./AdminButton";
 export { AdminCard } from "./AdminCard";
 export { AdminInput, AdminSelect, AdminTextarea } from "./AdminInput";
+export { AdminSlider } from "./AdminSlider";
 export { AdminStepper } from "./AdminStepper";
 export type { AdminStepItem } from "./AdminStepper";
 export { AdminTabs } from "./AdminTabs";

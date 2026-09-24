@@ -21,10 +21,13 @@ export async function PATCH(
   }
 
   const body = (await request.json().catch(() => null)) as unknown;
-  const limit =
+  const record =
     typeof body === "object" && body !== null
-      ? (body as Record<string, unknown>).limit
+      ? (body as Record<string, unknown>)
       : null;
+  const limit = record?.limit;
+  const productId =
+    typeof record?.productId === "string" ? record.productId : null;
 
   if (typeof limit !== "number" || !Number.isInteger(limit) || limit < 1) {
     return NextResponse.json(
@@ -39,6 +42,7 @@ export async function PATCH(
     {
       staffUserId: session.context.staffUserId,
     },
+    productId,
   );
   return NextResponse.json({ ok: true, config });
 }

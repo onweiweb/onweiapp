@@ -7,7 +7,11 @@ import {
   setReviewPlacement,
   updateReviewSurfaceLimit,
 } from "./reviewPlacement";
-import { listSurfaceReviews } from "../catalog/listSurfaceReviews";
+import {
+  DEFAULT_SURFACE_LIMITS,
+  listSurfaceReviews,
+  resolveSurfaceLimit,
+} from "../catalog/listSurfaceReviews";
 
 describe.skipIf(!process.env.DATABASE_URL)(
   "review placements (integration)",
@@ -15,6 +19,8 @@ describe.skipIf(!process.env.DATABASE_URL)(
   () => {
     const createdReviewIds: string[] = [];
     const createdPlacementIds: string[] = [];
+    const createdProductIds: string[] = [];
+    const createdCategoryIds: string[] = [];
     let actor: { staffUserId: string };
 
     beforeAll(async () => {
@@ -32,6 +38,18 @@ describe.skipIf(!process.env.DATABASE_URL)(
       await prisma.reviewSurfaceConfig.deleteMany({
         where: { surface: "HOME_WALL" },
       });
+      await prisma.reviewSurfaceConfig.deleteMany({
+        where: {
+          surface: "PRODUCT_WALL",
+          productId: { in: createdProductIds },
+        },
+      });
+      await prisma.product.deleteMany({
+        where: { id: { in: createdProductIds } },
+      });
+      await prisma.category.deleteMany({
+        where: { id: { in: createdCategoryIds } },
+      });
       await prisma.staffUser.delete({ where: { id: actor.staffUserId } });
     });
 
@@ -45,6 +63,23 @@ describe.skipIf(!process.env.DATABASE_URL)(
       createdPlacementIds.length = 0;
       createdReviewIds.length = 0;
     });
+
+    async function createFixtureProduct() {
+      const category = await prisma.category.create({
+        data: { name: "Test Category", slug: `test-category-${randomUUID()}` },
+      });
+      createdCategoryIds.push(category.id);
+
+      const product = await prisma.product.create({
+        data: {
+          name: "Test Product",
+          slug: `test-product-${randomUUID()}`,
+          categoryId: category.id,
+        },
+      });
+      createdProductIds.push(product.id);
+      return product;
+    }
 
     async function createApprovedBrandReview(body: string) {
       const review = await prisma.review.create({
@@ -151,6 +186,31 @@ describe.skipIf(!process.env.DATABASE_URL)(
 
       const updated = await updateReviewSurfaceLimit("HOME_WALL", 5, actor);
       expect(updated.limit).toBe(5);
+    });
+
+    it("resolves PRODUCT_WALL limit as product override, then global, then default", async () => {
+      const productA = await createFixtureProduct();
+      const productB = await createFixtureProduct();
+
+      // No config anywhere yet: falls back to the in-code default.
+      expect(await resolveSurfaceLimit("PRODUCT_WALL", productA.id)).toBe(
+        DEFAULT_SURFACE_LIMITS.PRODUCT_WALL,
+      );
+
+      // A global (productId: null) row applies to every product that has no
+      // override of its own.
+      await updateReviewSurfaceLimit("PRODUCT_WALL", 4, actor);
+      expect(await resolveSurfaceLimit("PRODUCT_WALL", productA.id)).toBe(4);
+      expect(await resolveSurfaceLimit("PRODUCT_WALL", productB.id)).toBe(4);
+
+      // A product-specific override applies only to that product.
+      await updateReviewSurfaceLimit("PRODUCT_WALL", 2, actor, productA.id);
+      expect(await resolveSurfaceLimit("PRODUCT_WALL", productA.id)).toBe(2);
+      expect(await resolveSurfaceLimit("PRODUCT_WALL", productB.id)).toBe(4);
+
+      await prisma.reviewSurfaceConfig.deleteMany({
+        where: { surface: "PRODUCT_WALL" },
+      });
     });
   },
 );

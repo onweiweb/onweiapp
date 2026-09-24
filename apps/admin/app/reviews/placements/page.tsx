@@ -1,11 +1,11 @@
 import { prisma } from "@onwei/database";
-import { DEFAULT_SURFACE_LIMITS } from "@onwei/core";
+import { resolveSurfaceLimit } from "@onwei/core";
 import type { ReviewSurface } from "@onwei/database";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { ReviewPlacementManager } from "../../_components/ReviewPlacementManager";
 
 async function loadSurface(surface: ReviewSurface) {
-  const [approvedReviews, placements, surfaceConfig] = await Promise.all([
+  const [approvedReviews, placements, limit] = await Promise.all([
     prisma.review.findMany({
       where: { targetType: "BRAND", isApproved: true },
       orderBy: { submittedAt: "desc" },
@@ -15,7 +15,7 @@ async function loadSurface(surface: ReviewSurface) {
       include: { review: true },
       orderBy: { sortOrder: "asc" },
     }),
-    prisma.reviewSurfaceConfig.findUnique({ where: { surface } }),
+    resolveSurfaceLimit(surface),
   ]);
 
   const featuredReviewIds = new Set(placements.map((p) => p.reviewId));
@@ -38,7 +38,7 @@ async function loadSurface(surface: ReviewSurface) {
         body: review.body,
         authorDisplay: review.authorDisplay,
       })),
-    limit: surfaceConfig?.limit ?? DEFAULT_SURFACE_LIMITS[surface],
+    limit,
   };
 }
 

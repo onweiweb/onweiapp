@@ -7,15 +7,15 @@ rewriting real code, not just a config value.
 
 ## Decided by default (override anytime, low cost to change)
 
-| Decision | Default | Why |
-|---|---|---|
-| Database | PostgreSQL + Prisma | Orders, inventory, and coupons need real relational integrity (no overselling, no double-redemption) |
-| Monorepo tool | Turborepo | Two apps, several shared packages, need one cached build/test pipeline |
-| Frontend styling | Tailwind + headless components | Fast to implement the Figma spec exactly without fighting a themed component library |
-| Hosting | Vercel + Vercel Postgres (data) + Vercel Blob (images/uploads) | Standard, low-ops, single-vendor pairing for a Next.js monorepo. Confirmed. |
-| Admin auth | Email + password (room for MFA later), separate from customer OTP auth | Different threat model than the storefront — see `docs/ARCHITECTURE.md` |
-| Amazon reviews | Paid third-party reviews-aggregation service | Confirmed route; vendor not yet picked (see pending below). |
-| Figma access | Figma Dev Mode MCP server, connected live in Claude Code, rather than static exported files | Confirmed; lets `apps/web` be built against the live file instead of manual exports. Needs the Figma file link + MCP server set up before Phase 1 UI work starts. Until it's connected, or for any screen/component genuinely missing from the file, `apps/web` UI work stops for explicit design approval instead of improvising — see root `CLAUDE.md` ground rule 8. |
+| Decision         | Default                                                                                     | Why                                                                                                                                                                                                                                                                                                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Database         | PostgreSQL + Prisma                                                                         | Orders, inventory, and coupons need real relational integrity (no overselling, no double-redemption)                                                                                                                                                                                                                                                                    |
+| Monorepo tool    | Turborepo                                                                                   | Two apps, several shared packages, need one cached build/test pipeline                                                                                                                                                                                                                                                                                                  |
+| Frontend styling | Tailwind + headless components                                                              | Fast to implement the Figma spec exactly without fighting a themed component library                                                                                                                                                                                                                                                                                    |
+| Hosting          | Vercel + Vercel Postgres (data) + Vercel Blob (images/uploads)                              | Standard, low-ops, single-vendor pairing for a Next.js monorepo. Confirmed.                                                                                                                                                                                                                                                                                             |
+| Admin auth       | Email + password (room for MFA later), separate from customer OTP auth                      | Different threat model than the storefront — see `docs/ARCHITECTURE.md`                                                                                                                                                                                                                                                                                                 |
+| Amazon reviews   | Paid third-party reviews-aggregation service                                                | Confirmed route; vendor not yet picked (see pending below).                                                                                                                                                                                                                                                                                                             |
+| Figma access     | Figma Dev Mode MCP server, connected live in Claude Code, rather than static exported files | Confirmed; lets `apps/web` be built against the live file instead of manual exports. Needs the Figma file link + MCP server set up before Phase 1 UI work starts. Until it's connected, or for any screen/component genuinely missing from the file, `apps/web` UI work stops for explicit design approval instead of improvising — see root `CLAUDE.md` ground rule 8. |
 
 ## Pending — needs an actual answer
 
@@ -47,3 +47,11 @@ provisioned.
 whether status updates come from a courier webhook (Shiprocket, Delhivery,
 etc.) or are entered manually by admin staff for now is a real product and
 cost decision, not just a technical one.
+
+**Newsletter campaign/content management.** The admin can view subscribers
+and (as of 2026-09-24) add one manually, but there's no way to compose or
+send an actual newsletter issue. No send provider, template format,
+audience-segmentation, or scheduling model exists yet anywhere in the repo.
+Needs its own scoping conversation (which provider, what content, how
+consent/unsubscribe is enforced per `docs/SECURITY_AND_DPDP.md`) before any
+of that gets built.

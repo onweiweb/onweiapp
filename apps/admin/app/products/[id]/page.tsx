@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@onwei/database";
-import { DEFAULT_SURFACE_LIMITS } from "@onwei/core";
+import { resolveSurfaceLimit } from "@onwei/core";
 import { ProductForm } from "../../_components/ProductForm";
 import { VariantManager } from "../../_components/VariantManager";
 import { ImageManager } from "../../_components/ImageManager";
@@ -16,7 +16,7 @@ export default async function EditProductPage({
 }) {
   const { id } = await params;
   const { tab } = await searchParams;
-  const [product, categories, approvedReviews, placements, surfaceConfig] =
+  const [product, categories, approvedReviews, placements, reviewLimit] =
     await Promise.all([
       prisma.product.findUnique({
         where: { id },
@@ -38,9 +38,7 @@ export default async function EditProductPage({
         include: { review: true },
         orderBy: { sortOrder: "asc" },
       }),
-      prisma.reviewSurfaceConfig.findUnique({
-        where: { surface: "PRODUCT_WALL" },
-      }),
+      resolveSurfaceLimit("PRODUCT_WALL", id),
     ]);
   if (!product) notFound();
 
@@ -125,9 +123,7 @@ export default async function EditProductPage({
                     body: review.body,
                     authorDisplay: review.authorDisplay,
                   }))}
-                limit={
-                  surfaceConfig?.limit ?? DEFAULT_SURFACE_LIMITS.PRODUCT_WALL
-                }
+                limit={reviewLimit}
               />
             ),
           },

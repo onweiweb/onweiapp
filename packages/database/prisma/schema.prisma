@@ -551,12 +551,18 @@ model ReviewPlacement {
 }
 
 // One configurable display-limit per surface (e.g. "show at most 6 on the
-// PDP wall"). A surface with no row here falls back to an in-code default —
+// PDP wall"). productId is only meaningful for PRODUCT_WALL — null there
+// means "the global default for every product without its own override";
+// HOME_HERO/HOME_WALL are site-wide and always use productId: null. A
+// surface(+product) with no row here falls back to an in-code default —
 // see DEFAULT_SURFACE_LIMITS in packages/core.
 model ReviewSurfaceConfig {
-  id      String        @id @default(cuid())
-  surface ReviewSurface @unique
-  limit   Int
+  id        String        @id @default(cuid())
+  surface   ReviewSurface
+  productId String?
+  limit     Int
+
+  @@unique([surface, productId])
 }
 
 // ---------------------------------------------------------------------------
