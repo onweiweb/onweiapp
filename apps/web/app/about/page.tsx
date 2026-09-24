@@ -112,21 +112,35 @@ export default function AboutPage() {
             Read Sabhya&apos;s substack
           </span>
         </div>
-        <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
+        {/* Wrapper (not the photo div itself, which clips via
+            overflow-hidden) so the pickleball-swing illustration (Figma
+            node 760:4746) can hang below the photo's bottom edge like it
+            does in Figma, instead of getting clipped. */}
+        <div className="relative">
+          <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
+            <Image
+              src="/images/about-us/sabhya.png"
+              alt="Sabhya, Onwei co-founder, holding a tennis racket"
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+            />
+            <Image
+              src="/images/footer/logo-circle.svg"
+              alt=""
+              width={90}
+              height={90}
+              aria-hidden
+              className="pointer-events-none absolute right-6 top-6 hidden opacity-90 sm:block"
+            />
+          </div>
           <Image
-            src="/images/about-us/sabhya.png"
-            alt="Sabhya, Onwei co-founder, holding a tennis racket"
-            fill
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            className="object-cover"
-          />
-          <Image
-            src="/images/footer/logo-circle.svg"
+            src="/images/about-us/illustration-pickleball-swing.svg"
             alt=""
-            width={90}
-            height={90}
+            width={145}
+            height={262}
             aria-hidden
-            className="pointer-events-none absolute right-6 top-6 hidden opacity-90 sm:block"
+            className="pointer-events-none absolute -bottom-16 left-[4%] z-10 hidden lg:block"
           />
         </div>
       </section>
