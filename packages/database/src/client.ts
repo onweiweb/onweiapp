@@ -5,7 +5,16 @@ import { PrismaClient } from "@prisma/client";
 // url. This uses the pooled DATABASE_URL (via PgBouncer) for normal app
 // queries; prisma.config.ts separately points the CLI's migrate/introspect
 // commands at the direct, non-pooled DIRECT_URL. See prisma.config.ts.
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+//
+// `max` caps the local pg.Pool's own connections, on top of PgBouncer's
+// pooling. Without it, pg's default (10) applies per warm serverless
+// instance; with apps/web and apps/admin scaling independently and each
+// invocation potentially holding its own pool, an unbounded default risks
+// exhausting PgBouncer's own connection budget under concurrent traffic.
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
+  max: 5,
+});
 
 // Next.js dev-mode hot reload re-executes this module on every edit, which
 // would otherwise open a new Postgres connection pool each time. Caching the

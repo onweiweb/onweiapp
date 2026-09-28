@@ -1,13 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  listActiveCategories,
-  listActiveProductsByCategorySlug,
-  listInstagramPhotos,
-  listMarqueeItems,
-  listSurfaceReviews,
-  listValueProps,
-} from "@onwei/core";
+  cachedListActiveCategories as listActiveCategories,
+  cachedListActiveProductsByCategorySlug as listActiveProductsByCategorySlug,
+  cachedListInstagramPhotos as listInstagramPhotos,
+  cachedListMarqueeItems as listMarqueeItems,
+  cachedListSurfaceReviews as listSurfaceReviews,
+  cachedListValueProps as listValueProps,
+} from "../lib/cachedCatalog";
 import type {
   ProductListItem,
   ReviewListItem,

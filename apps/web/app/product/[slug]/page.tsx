@@ -1,16 +1,15 @@
 import { notFound } from "next/navigation";
+import { formatCurrency, summarizeReviews } from "@onwei/core";
 import {
-  getActiveProductBySlug,
-  formatCurrency,
-  listSurfaceReviews,
-  summarizeReviews,
-  listRelatedProducts,
-  listComparableProducts,
-  listFaqs,
-  listInstagramPhotos,
-  listMarqueeItems,
-  listValueProps,
-} from "@onwei/core";
+  cachedGetActiveProductBySlug as getActiveProductBySlug,
+  cachedListSurfaceReviews as listSurfaceReviews,
+  cachedListRelatedProducts as listRelatedProducts,
+  cachedListComparableProducts as listComparableProducts,
+  cachedListFaqs as listFaqs,
+  cachedListInstagramPhotos as listInstagramPhotos,
+  cachedListMarqueeItems as listMarqueeItems,
+  cachedListValueProps as listValueProps,
+} from "../../../lib/cachedCatalog";
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
 import { ProductVariantPicker } from "@/_components/ProductVariantPicker";

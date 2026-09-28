@@ -2,10 +2,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  listActiveProductsByCategorySlug,
-  listInstagramPhotos,
-  listSurfaceReviews,
-} from "@onwei/core";
+  cachedListActiveProductsByCategorySlug as listActiveProductsByCategorySlug,
+  cachedListInstagramPhotos as listInstagramPhotos,
+  cachedListSurfaceReviews as listSurfaceReviews,
+} from "../../../lib/cachedCatalog";
 import type {
   CategorySummary,
   ProductListItem,
