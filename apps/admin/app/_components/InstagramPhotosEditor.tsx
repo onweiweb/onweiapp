@@ -50,6 +50,9 @@ export function InstagramPhotosEditor({
   }
 
   async function remove(id: string) {
+    if (!window.confirm("Delete this Instagram photo? This can't be undone.")) {
+      return;
+    }
     setSubmitting(true);
     await fetch(`/api/content/instagram-photos/${id}`, { method: "DELETE" });
     setSubmitting(false);

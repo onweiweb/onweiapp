@@ -50,6 +50,7 @@ export function ImageManager({
   }
 
   async function handleRemove(imageId: string) {
+    if (!window.confirm("Remove this image from the product?")) return;
     await fetch(`/api/products/${productId}/images/${imageId}`, {
       method: "DELETE",
     });

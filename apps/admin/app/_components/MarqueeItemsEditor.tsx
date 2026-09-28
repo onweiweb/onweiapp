@@ -46,6 +46,9 @@ export function MarqueeItemsEditor({
   }
 
   async function remove(id: string) {
+    if (!window.confirm("Delete this marquee item? This can't be undone.")) {
+      return;
+    }
     setSubmitting(true);
     await fetch(`/api/content/marquee-items/${id}`, { method: "DELETE" });
     setSubmitting(false);

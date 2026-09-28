@@ -36,6 +36,11 @@ export default async function CouponDetailPage({
 
   if (!coupon) notFound();
 
+  // <input type="date">'s own value format ("YYYY-MM-DD").
+  function toDateInputValue(date: Date | null): string {
+    return date ? date.toISOString().slice(0, 10) : "";
+  }
+
   return (
     <main className="flex flex-col gap-6">
       <div className="flex items-center gap-3">
@@ -63,6 +68,8 @@ export default async function CouponDetailPage({
                     usageLimit: coupon.usageLimit?.toString() ?? "",
                     perCustomerLimit: coupon.perCustomerLimit?.toString() ?? "",
                     minOrderValue: coupon.minOrderValue?.toString() ?? "",
+                    startsAt: toDateInputValue(coupon.startsAt),
+                    endsAt: toDateInputValue(coupon.endsAt),
                     isActive: coupon.isActive,
                   }}
                 />

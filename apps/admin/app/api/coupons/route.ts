@@ -2,6 +2,16 @@ import { createCoupon } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { requireStaffSession } from "../_lib/requireStaffSession";
 
+// `startsAt`/`endsAt` arrive as ISO date strings (or null to clear them) --
+// converted to Date here since createCoupon/updateCoupon's input type is
+// `Date | null`, matching the Prisma column.
+function parseOptionalDate(value: unknown): Date | null | undefined {
+  if (value === null) return null;
+  if (typeof value !== "string" || value === "") return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
 export async function POST(request: Request) {
   const session = await requireStaffSession(request, "coupon:create");
   if (!session.ok) return session.response;
@@ -12,6 +22,8 @@ export async function POST(request: Request) {
     usageLimit?: unknown;
     perCustomerLimit?: unknown;
     minOrderValue?: unknown;
+    startsAt?: unknown;
+    endsAt?: unknown;
   } | null;
 
   const code = typeof body?.code === "string" ? body.code.trim() : "";
@@ -36,6 +48,8 @@ export async function POST(request: Request) {
             : null,
         minOrderValue:
           typeof body?.minOrderValue === "number" ? body.minOrderValue : null,
+        startsAt: parseOptionalDate(body?.startsAt) ?? null,
+        endsAt: parseOptionalDate(body?.endsAt) ?? null,
       },
       { staffUserId: session.context.staffUserId },
     );

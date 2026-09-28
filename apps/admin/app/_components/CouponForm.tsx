@@ -18,6 +18,10 @@ export function CouponForm({
     perCustomerLimit: string;
     minOrderValue: string;
     isActive: boolean;
+    // "YYYY-MM-DD", matching <input type="date">'s own value format, or ""
+    // for "no limit" — see toDateInputValue in the pages that build this.
+    startsAt: string;
+    endsAt: string;
   };
 }) {
   const router = useRouter();
@@ -30,6 +34,8 @@ export function CouponForm({
   const [minOrderValue, setMinOrderValue] = useState(
     initial?.minOrderValue ?? "",
   );
+  const [startsAt, setStartsAt] = useState(initial?.startsAt ?? "");
+  const [endsAt, setEndsAt] = useState(initial?.endsAt ?? "");
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -38,6 +44,10 @@ export function CouponForm({
     event.preventDefault();
     if (!code.trim()) {
       setError("Enter a coupon code.");
+      return;
+    }
+    if (startsAt && endsAt && startsAt > endsAt) {
+      setError("The end date needs to be after the start date.");
       return;
     }
     setError(null);
@@ -49,6 +59,8 @@ export function CouponForm({
       usageLimit: usageLimit ? Number(usageLimit) : null,
       perCustomerLimit: perCustomerLimit ? Number(perCustomerLimit) : null,
       minOrderValue: minOrderValue ? Number(minOrderValue) : null,
+      startsAt: startsAt || null,
+      endsAt: endsAt || null,
       ...(mode === "edit" ? { isActive } : {}),
     };
 
@@ -122,6 +134,22 @@ export function CouponForm({
           min={0}
           value={minOrderValue}
           onChange={(event) => setMinOrderValue(event.target.value)}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        Starts on (leave blank to start immediately)
+        <AdminInput
+          type="date"
+          value={startsAt}
+          onChange={(event) => setStartsAt(event.target.value)}
+        />
+      </label>
+      <label className="flex flex-col gap-1 text-sm">
+        Ends on (leave blank to never expire)
+        <AdminInput
+          type="date"
+          value={endsAt}
+          onChange={(event) => setEndsAt(event.target.value)}
         />
       </label>
       {mode === "edit" ? (

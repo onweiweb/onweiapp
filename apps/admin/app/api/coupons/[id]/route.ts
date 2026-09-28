@@ -2,6 +2,14 @@ import { updateCoupon } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { requireStaffSession } from "../../_lib/requireStaffSession";
 
+// See apps/admin/app/api/coupons/route.ts's copy of this for why.
+function parseOptionalDate(value: unknown): Date | null | undefined {
+  if (value === null) return null;
+  if (typeof value !== "string" || value === "") return undefined;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? undefined : date;
+}
+
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -17,6 +25,8 @@ export async function PATCH(
     usageLimit?: unknown;
     perCustomerLimit?: unknown;
     minOrderValue?: unknown;
+    startsAt?: unknown;
+    endsAt?: unknown;
   } | null;
 
   if (!body) {
@@ -50,6 +60,8 @@ export async function PATCH(
           typeof body.minOrderValue === "number" || body.minOrderValue === null
             ? body.minOrderValue
             : undefined,
+        startsAt: parseOptionalDate(body.startsAt),
+        endsAt: parseOptionalDate(body.endsAt),
       },
       { staffUserId: session.context.staffUserId },
     );

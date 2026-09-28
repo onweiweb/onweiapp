@@ -69,6 +69,9 @@ export function ValuePropsEditor({ items }: { items: ValuePropRow[] }) {
   }
 
   async function remove(id: string) {
+    if (!window.confirm("Delete this value prop? This can't be undone.")) {
+      return;
+    }
     setSubmitting(true);
     await fetch(`/api/content/value-props/${id}`, { method: "DELETE" });
     setSubmitting(false);

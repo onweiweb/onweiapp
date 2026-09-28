@@ -86,6 +86,34 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(body.coupon.code).toBe(code);
     });
 
+    it("stores startsAt/endsAt when provided", async () => {
+      const { POST } = await import("./route");
+      const code = `TEST-${crypto.randomUUID()}`;
+      const response = await POST(
+        new Request("http://localhost/api/coupons", {
+          method: "POST",
+          headers: { cookie: cookieHeader },
+          body: JSON.stringify({
+            code,
+            startsAt: "2026-01-01",
+            endsAt: "2026-02-01",
+          }),
+        }),
+      );
+      const body = (await response.json()) as {
+        coupon: { id: string; startsAt: string; endsAt: string };
+      };
+      createdCouponIds.push(body.coupon.id);
+
+      expect(response.status).toBe(201);
+      expect(new Date(body.coupon.startsAt).toISOString().slice(0, 10)).toBe(
+        "2026-01-01",
+      );
+      expect(new Date(body.coupon.endsAt).toISOString().slice(0, 10)).toBe(
+        "2026-02-01",
+      );
+    });
+
     it("returns a plain-language error for a duplicate code", async () => {
       const { POST } = await import("./route");
       const code = `TEST-${crypto.randomUUID()}`;

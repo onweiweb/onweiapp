@@ -18,6 +18,16 @@ export function StaffRoleAssignment({
   const assigned = new Set(assignedRoleIds);
 
   async function toggle(roleId: string, isAssigned: boolean) {
+    if (isAssigned) {
+      const roleName = allRoles.find((role) => role.id === roleId)?.name;
+      if (
+        !window.confirm(
+          `Remove the "${roleName ?? "role"}" role from this person? They'll lose any permissions it grants.`,
+        )
+      ) {
+        return;
+      }
+    }
     setError(null);
     setPendingRoleId(roleId);
     try {
