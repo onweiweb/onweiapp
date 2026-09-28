@@ -92,7 +92,7 @@ function CategorySection({
   // than that needs it, so only then does the row scroll.
   const needsScroll = products.length > 3;
   const productCards = products.map((product) => (
-    <ProductCard key={product.id} product={product} />
+    <ProductCard key={product.id} product={product} eager={needsScroll} />
   ));
 
   return (

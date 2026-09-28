@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Figma (node 758:2445 "Frame 2085661414" / "Rectangle 73") shows a thin
 // progress track under horizontally-scrolling rows — a real scrollbar
@@ -26,12 +26,27 @@ export function ScrollCarousel({
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
+  const rafRef = useRef<number | null>(null);
 
+  useEffect(() => {
+    return () => {
+      if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  // A raw scroll event fires many times per frame during a touch/trackpad
+  // gesture; coalescing to one setState per animation frame (instead of one
+  // per event) keeps the thumb smooth without re-rendering far more often
+  // than the screen can actually paint.
   function handleScroll() {
-    const el = scrollerRef.current;
-    if (!el) return;
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    setProgress(maxScroll > 0 ? el.scrollLeft / maxScroll : 0);
+    if (rafRef.current !== null) return;
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = null;
+      const el = scrollerRef.current;
+      if (!el) return;
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      setProgress(maxScroll > 0 ? el.scrollLeft / maxScroll : 0);
+    });
   }
 
   return (

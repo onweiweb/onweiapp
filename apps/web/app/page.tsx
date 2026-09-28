@@ -285,7 +285,7 @@ function ProductGridSection({
       >
         <TestimonialTile review={testimonial} />
         {products.map((product) => (
-          <ProductCard key={product.id} product={product} />
+          <ProductCard key={product.id} product={product} eager />
         ))}
       </ScrollCarousel>
     </section>

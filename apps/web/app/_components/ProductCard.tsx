@@ -33,7 +33,22 @@ function ProductRating({ summary }: { summary: ReviewSummary }) {
   );
 }
 
-export function ProductCard({ product }: { product: ProductListItem }) {
+export function ProductCard({
+  product,
+  eager = false,
+}: {
+  product: ProductListItem;
+  // Pass true only from a caller that's actually inside a horizontally-
+  // scrolling row (ScrollCarousel, or a manual overflow-x-auto row that's
+  // genuinely scrolling at the current breakpoint) — next/image's default
+  // lazy loading uses an IntersectionObserver against the browser viewport,
+  // which never fires for a card positioned off-screen to the right, so it
+  // stays blank until scrolled into view. Defaulting to eager everywhere
+  // (the previous behavior) forced every product image sitewide to load
+  // immediately regardless of position, including non-scrolling grids and
+  // below-the-fold sections like RelatedProducts.
+  eager?: boolean;
+}) {
   const price = formatCurrency(product.priceRangeMinorUnits.min, "INR");
 
   return (
@@ -44,17 +59,12 @@ export function ProductCard({ product }: { product: ProductListItem }) {
       >
         <div className="relative h-[315px] w-full overflow-hidden rounded-[30px] bg-[#f0e9da]">
           {product.image ? (
-            // Reused inside horizontally-scrolling rows (Collection grids,
-            // Homepage's mobile shop carousel) — next/image's default lazy
-            // loading uses an IntersectionObserver against the browser
-            // viewport, which never fires for a card positioned off-screen
-            // to the right, so it stayed blank until scrolled into view.
             <Image
               src={product.image.url}
               alt={product.image.altText ?? product.name}
               fill
               sizes="282px"
-              loading="eager"
+              loading={eager ? "eager" : "lazy"}
               className="object-contain p-6"
             />
           ) : null}
