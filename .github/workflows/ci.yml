@@ -8,6 +8,21 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Without these, every DB-integration test (packages/core, apps/admin,
+    # apps/web) silently skips via `describe.skipIf(!process.env.DATABASE_URL)`
+    # instead of running, and `npm run build` can't prerender Homepage/
+    # Collection/PDP (they query Postgres directly, no dynamic/edge config).
+    # Set DATABASE_URL/DIRECT_URL as repo secrets (Settings > Secrets and
+    # variables > Actions) pointing at a scratch DB or Neon branch, not the
+    # production database, for this to take effect -- until then these are
+    # empty strings and CI behaves exactly as before (tests skip, build
+    # still runs against whatever apps/web/.env.local provides locally).
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DIRECT_URL: ${{ secrets.DIRECT_URL }}
+      OTP_HASH_SECRET: ${{ secrets.OTP_HASH_SECRET }}
+      SESSION_JWT_SECRET: ${{ secrets.SESSION_JWT_SECRET }}
+      ADMIN_SESSION_JWT_SECRET: ${{ secrets.ADMIN_SESSION_JWT_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

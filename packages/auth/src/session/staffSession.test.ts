@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createStaffSessionToken,
+  revokeStaffSessionToken,
   verifyStaffSessionToken,
 } from "./staffSession";
 
@@ -54,5 +55,19 @@ describe("staff session token", () => {
     expect(
       await verifyStaffSessionToken(customerToken, "shared-secret"),
     ).toBeNull();
+  });
+
+  it("revoke() degrades to a no-op without Upstash configured, so the token still verifies", async () => {
+    const token = await createStaffSessionToken(
+      { staffUserId: "staff_123" },
+      "secret-a",
+    );
+
+    await expect(
+      revokeStaffSessionToken(token, "secret-a"),
+    ).resolves.toBeUndefined();
+    expect(await verifyStaffSessionToken(token, "secret-a")).toEqual({
+      staffUserId: "staff_123",
+    });
   });
 });

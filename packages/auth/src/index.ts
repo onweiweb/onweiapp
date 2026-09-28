@@ -10,12 +10,14 @@ export { hasAllPermissions, hasPermission } from "./rbac/hasPermission";
 export { getStaffPermissions } from "./rbac/getStaffPermissions";
 export {
   createSessionToken,
+  revokeSessionToken,
   SESSION_COOKIE_NAME,
   verifySessionToken,
 } from "./session/session";
 export type { SessionPayload } from "./session/session";
 export {
   createStaffSessionToken,
+  revokeStaffSessionToken,
   STAFF_SESSION_COOKIE_NAME,
   verifyStaffSessionToken,
 } from "./session/staffSession";

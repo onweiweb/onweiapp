@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createSessionToken, verifySessionToken } from "./session";
+import {
+  createSessionToken,
+  revokeSessionToken,
+  verifySessionToken,
+} from "./session";
 
 describe("session token", () => {
   it("round-trips a payload through sign and verify", async () => {
@@ -35,5 +39,19 @@ describe("session token", () => {
     await new Promise((resolve) => setTimeout(resolve, 1100));
 
     expect(await verifySessionToken(token, "secret-a")).toBeNull();
+  });
+
+  it("revoke() degrades to a no-op without Upstash configured, so the token still verifies", async () => {
+    const token = await createSessionToken(
+      { customerId: "cust_123" },
+      "secret-a",
+    );
+
+    await expect(
+      revokeSessionToken(token, "secret-a"),
+    ).resolves.toBeUndefined();
+    expect(await verifySessionToken(token, "secret-a")).toEqual({
+      customerId: "cust_123",
+    });
   });
 });
