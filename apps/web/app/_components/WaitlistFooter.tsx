@@ -88,13 +88,17 @@ export function WaitlistFooter() {
     <footer className="w-full">
       <div className="flex flex-col items-center bg-onwei-purple px-3 py-12 sm:px-6 lg:px-14">
         <div className="relative flex w-full max-w-[1440px] flex-col gap-14 lg:flex-row lg:items-end lg:justify-between lg:gap-24">
+          {/* Figma (node 945:4375): left:1149, top:-85, w:210 inside a
+              1441px container — i.e. right:82px (not flush with the edge)
+              and mostly ABOVE the section's top edge, not hovering next to
+              the heading text at mid-height. */}
           <Image
             src="/images/footer/illustration-runner.svg"
             alt=""
             width={210}
             height={342}
             aria-hidden
-            className="pointer-events-none absolute -top-6 right-0 hidden lg:block"
+            className="pointer-events-none absolute -top-[85px] right-[82px] hidden lg:block"
           />
 
           <div className="flex w-full max-w-[401px] flex-col gap-8">
@@ -132,7 +136,12 @@ export function WaitlistFooter() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          {/* max-w matches Figma's actual column width (two roughly-equal
+              flex-1 halves at ~616px each in the 1441px frame) — without a
+              cap here, the heading (the widest thing in this column, wider
+              than the paragraph's own max-w-[510px] below it) grows past
+              where the illustration is positioned and runs into it. */}
+          <div className="flex max-w-[600px] flex-col gap-3">
             <p className="font-display text-[36px] font-bold uppercase leading-[0.9] text-onwei-beige sm:text-[48px]">
               Let&apos;s be friends
             </p>

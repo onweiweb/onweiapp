@@ -24,9 +24,26 @@ function pad(value: number): string {
   return value.toString().padStart(2, "0");
 }
 
+// useSyncExternalStore requires getSnapshot to return a STABLE value between
+// calls unless the store actually changed — returning Date.now() directly
+// from getSnapshot changes on literally every call (including calls React
+// makes just to check whether a re-render is needed), which trips React's
+// "getSnapshot should be cached" infinite-loop guard. Caching the clock
+// value here and only updating it inside the once-a-second interval (the
+// same tick that notifies React via `callback`) is what actually makes this
+// a valid external store.
+let cachedNow = Date.now();
+
 function subscribeToClock(callback: () => void): () => void {
-  const interval = setInterval(callback, 1000);
+  const interval = setInterval(() => {
+    cachedNow = Date.now();
+    callback();
+  }, 1000);
   return () => clearInterval(interval);
+}
+
+function getClockSnapshot(): number {
+  return cachedNow;
 }
 
 // Figma node 945:4263 (web) / 945:4412 (mobile) — the "43 / 11 / 42 / 06"
@@ -42,7 +59,7 @@ export function WaitlistCountdown({ launchAt }: { launchAt: string }) {
   // clock right after mount, ticking every second via the subscription.
   const now = useSyncExternalStore(
     subscribeToClock,
-    () => Date.now(),
+    getClockSnapshot,
     () => target,
   );
   const timeLeft = getTimeLeft(target, now);
