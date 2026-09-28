@@ -146,6 +146,14 @@ docs/       -> architecture, schema rationale, test plan, security notes, open d
 
 ## Current phase
 
-**Phase 0 (this scaffold): planning + tooling only. No app code yet.**
-Phase 1 (next, needs a go-ahead): DB schema finalized + OTP auth + product browsing.
-Phase 2: cart/checkout/payments + coupons. Phase 3: reviews + admin CMS. Phase 4: analytics.
+**Phase 1 is functionally complete and deployed**: DB schema, dummy OTP auth,
+product browsing (Homepage/Collection/PDP), and a full admin CMS (catalog,
+inventory, orders/returns, coupons, staff/roles, review moderation, marketing
+content, compliance) — the last of these well beyond Phase 1's original scope.
+See `docs/PHASE_1_SCAFFOLD_PROGRESS.md` for the authoritative, continuously-
+updated status log; trust it over this section if they ever disagree.
+Phase 2 (cart/checkout/payments + coupon redemption) hasn't started and is
+blocked on the payment-gateway decision in `docs/OPEN_DECISIONS.md`, plus a
+Plan Mode session per ground rule 1. Phase 3: reviews (moderation already
+shipped in Phase 1's admin build-out; the open piece is customer-submitted
+reviews). Phase 4: analytics.
