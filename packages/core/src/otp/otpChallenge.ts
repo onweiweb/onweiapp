@@ -1,4 +1,4 @@
-import { generateOtpCode, hashOtpCode } from "@onwei/auth";
+import { generateOtpCode, hashOtpCode, verifyOtpCode } from "@onwei/auth";
 import type { OtpChannel, OtpPurpose } from "@onwei/database";
 import { prisma } from "@onwei/database";
 
@@ -56,9 +56,15 @@ export type VerifyOtpResult =
 
 /**
  * Verifies a submitted code against the most recent, not-yet-consumed
- * challenge for an identifier+purpose. Check order matters: the attempts
- * cutoff is checked BEFORE comparing the code, so a correct code submitted
- * after maxAttempts is hit is still rejected, not just future wrong guesses.
+ * challenge for an identifier+purpose.
+ *
+ * The attempt slot is claimed atomically (`updateMany ... WHERE attempts <
+ * maxAttempts`) BEFORE the code is compared, not read-checked-then-
+ * incremented afterward — otherwise concurrent verify calls can all read
+ * the same stale `attempts` value and each get a free code comparison past
+ * maxAttempts, defeating the lockout under parallel brute-force. The code
+ * comparison itself is constant-time (`verifyOtpCode`) to avoid leaking
+ * partial-match info via response timing.
  */
 export async function verifyOtpChallenge(
   input: { identifier: string; purpose: OtpPurpose; code: string },
@@ -74,19 +80,19 @@ export async function verifyOtpChallenge(
   });
 
   if (!challenge) return { ok: false, reason: "NOT_FOUND" };
-  if (challenge.attempts >= challenge.maxAttempts) {
-    return { ok: false, reason: "MAX_ATTEMPTS_EXCEEDED" };
-  }
   if (challenge.expiresAt.getTime() < Date.now()) {
     return { ok: false, reason: "EXPIRED" };
   }
 
-  const submittedHash = hashOtpCode(input.code, secret);
-  if (submittedHash !== challenge.codeHash) {
-    await prisma.otpChallenge.update({
-      where: { id: challenge.id },
-      data: { attempts: { increment: 1 } },
-    });
+  const claimed = await prisma.otpChallenge.updateMany({
+    where: { id: challenge.id, attempts: { lt: challenge.maxAttempts } },
+    data: { attempts: { increment: 1 } },
+  });
+  if (claimed.count === 0) {
+    return { ok: false, reason: "MAX_ATTEMPTS_EXCEEDED" };
+  }
+
+  if (!verifyOtpCode(input.code, secret, challenge.codeHash)) {
     return { ok: false, reason: "INCORRECT_CODE" };
   }
 

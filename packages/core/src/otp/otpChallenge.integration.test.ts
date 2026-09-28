@@ -129,6 +129,41 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(result).toEqual({ ok: false, reason: "EXPIRED" });
     });
 
+    it("caps total wrong guesses at maxAttempts even when submitted concurrently", async () => {
+      const identifier = fixtureEmail();
+      await requestOtpChallenge(
+        { identifier, channel: "EMAIL", purpose: "LOGIN" },
+        SECRET,
+      );
+
+      // 10 concurrent wrong guesses against a maxAttempts=5 challenge. A
+      // read-then-increment implementation lets every one of these read the
+      // same stale `attempts` value and get a free comparison; the atomic
+      // `updateMany ... WHERE attempts < maxAttempts` claim caps it at 5.
+      const results = await Promise.all(
+        Array.from({ length: 10 }, () =>
+          verifyOtpChallenge(
+            { identifier, purpose: "LOGIN", code: "000000" },
+            SECRET,
+          ),
+        ),
+      );
+
+      const incorrect = results.filter(
+        (r) => !r.ok && r.reason === "INCORRECT_CODE",
+      );
+      const lockedOut = results.filter(
+        (r) => !r.ok && r.reason === "MAX_ATTEMPTS_EXCEEDED",
+      );
+      expect(incorrect).toHaveLength(5);
+      expect(lockedOut).toHaveLength(5);
+
+      const row = await prisma.otpChallenge.findFirstOrThrow({
+        where: { identifier },
+      });
+      expect(row.attempts).toBe(5);
+    });
+
     it("creates a Customer on first login and reuses it on repeat login", async () => {
       const identifier = fixtureEmail();
       const first = await requestOtpChallenge(

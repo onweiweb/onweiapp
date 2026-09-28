@@ -1,4 +1,4 @@
-import { randomInt, createHmac } from "node:crypto";
+import { randomInt, createHmac, timingSafeEqual } from "node:crypto";
 
 /** A cryptographically-random 6-digit OTP code, as a zero-padded string. */
 export function generateOtpCode(): string {
@@ -23,4 +23,21 @@ export function hashOtpCode(code: string, secret: string): string {
     );
   }
   return createHmac("sha256", secret).update(code).digest("hex");
+}
+
+/**
+ * Re-hashes `code` and compares it against `expectedHash` in constant time
+ * (`crypto.timingSafeEqual`), instead of a plain `===`/`!==` string compare
+ * which leaks how many leading hex characters matched via response timing.
+ */
+export function verifyOtpCode(
+  code: string,
+  secret: string,
+  expectedHash: string,
+): boolean {
+  const actualHash = hashOtpCode(code, secret);
+  const actual = Buffer.from(actualHash, "hex");
+  const expected = Buffer.from(expectedHash, "hex");
+  if (actual.length !== expected.length) return false;
+  return timingSafeEqual(actual, expected);
 }

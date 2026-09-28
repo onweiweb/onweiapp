@@ -132,6 +132,7 @@ export type {
   VerifyAndAuthenticateResult,
   VerifyOtpResult,
 } from "./otp/otpChallenge";
+export { checkOtpRateLimit } from "./otp/otpRateLimit";
 export type { PaymentProvider } from "./payments/PaymentProvider";
 export {
   approveReview,

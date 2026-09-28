@@ -20,10 +20,6 @@ export async function approveReturn(
     include: { orderItem: { include: { productVariant: true } } },
   });
 
-  if (before.status !== "REQUESTED") {
-    throw new Error(`not-pending: return request is already ${before.status}`);
-  }
-
   const inventoryRow = await prisma.inventory.findFirst({
     where: { productVariantId: before.orderItem.productVariantId },
   });
@@ -33,16 +29,29 @@ export async function approveReturn(
     );
   }
 
-  const [returnRequest] = await prisma.$transaction([
-    prisma.returnRequest.update({
-      where: { id: input.returnRequestId },
+  // The REQUESTED -> APPROVED transition is claimed via a conditional
+  // updateMany inside the transaction (not a pre-checked `before.status`),
+  // so two concurrent approvals of the same return can't both pass the
+  // status check and both restock.
+  const returnRequest = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.returnRequest.updateMany({
+      where: { id: input.returnRequestId, status: "REQUESTED" },
       data: { status: "APPROVED", resolvedAt: new Date() },
-    }),
-    prisma.inventory.update({
+    });
+    if (claimed.count === 0) {
+      const current = await tx.returnRequest.findUniqueOrThrow({
+        where: { id: input.returnRequestId },
+      });
+      throw new Error(
+        `not-pending: return request is already ${current.status}`,
+      );
+    }
+
+    await tx.inventory.update({
       where: { id: inventoryRow.id },
       data: { quantityOnHand: { increment: before.orderItem.quantity } },
-    }),
-    prisma.inventoryLog.create({
+    });
+    await tx.inventoryLog.create({
       data: {
         variantSku: before.orderItem.productVariant.sku,
         changeQty: before.orderItem.quantity,
@@ -50,8 +59,12 @@ export async function approveReturn(
         actorType: "STAFF",
         actorId: actor.staffUserId,
       },
-    }),
-  ]);
+    });
+
+    return tx.returnRequest.findUniqueOrThrow({
+      where: { id: input.returnRequestId },
+    });
+  });
 
   await writeAuditLog({
     staffUserId: actor.staffUserId,

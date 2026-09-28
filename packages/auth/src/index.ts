@@ -1,5 +1,9 @@
 export { ConsoleOtpSender } from "./otp/ConsoleOtpSender";
-export { generateOtpCode, hashOtpCode } from "./otp/generateOtpCode";
+export {
+  generateOtpCode,
+  hashOtpCode,
+  verifyOtpCode,
+} from "./otp/generateOtpCode";
 export type { OtpChannel, OtpSender } from "./otp/OtpSender";
 export { hashPassword, verifyPassword } from "./password/password";
 export { hasAllPermissions, hasPermission } from "./rbac/hasPermission";

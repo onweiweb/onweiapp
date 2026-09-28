@@ -216,6 +216,31 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(refreshedInventory.quantityOnHand).toBe(5);
     });
 
+    it("only restocks once when the same return is approved concurrently", async () => {
+      const { returnRequest, inventory } = await createFixtureReturnRequest(5);
+
+      // Two concurrent approvals of the same REQUESTED return. A
+      // read-status-then-write implementation lets both pass the status
+      // check and double-restock; the conditional updateMany claim can't.
+      const results = await Promise.allSettled([
+        approveReturn({ returnRequestId: returnRequest.id }, actor),
+        approveReturn({ returnRequestId: returnRequest.id }, actor),
+      ]);
+
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+      expect(fulfilled).toHaveLength(1);
+      expect(rejected).toHaveLength(1);
+      if (rejected[0]?.status === "rejected") {
+        expect(String(rejected[0].reason)).toMatch(/not-pending/);
+      }
+
+      const refreshedInventory = await prisma.inventory.findUniqueOrThrow({
+        where: { id: inventory.id },
+      });
+      expect(refreshedInventory.quantityOnHand).toBe(7);
+    });
+
     it("rejects resolving a return request that isn't pending", async () => {
       const { returnRequest } = await createFixtureReturnRequest(5);
       await rejectReturn({ returnRequestId: returnRequest.id }, actor);

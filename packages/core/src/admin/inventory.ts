@@ -7,14 +7,43 @@ import type { AdjustInventoryInput, AuditActor } from "./types";
  * writes an InventoryLog row (the append-only history the storefront never
  * reads but ops needs for "why is this number what it is"), and an
  * AuditLog row (per docs/DATABASE_SCHEMA.md — inventory changes always get
- * one). A negative delta below zero on-hand is rejected rather than letting
- * stock go negative.
+ * one). The mutation itself is a single atomic `UPDATE ... WHERE qty + delta
+ * >= 0` (via `updateMany`'s row-count guard) rather than a read-compute-write,
+ * so two concurrent adjustments can't lose an update or push stock negative.
  */
 export async function adjustInventory(
   input: AdjustInventoryInput,
   actor: AuditActor,
 ) {
-  const before = await prisma.inventory.findUniqueOrThrow({
+  const updateResult = await prisma.inventory.updateMany({
+    where: {
+      productVariantId: input.productVariantId,
+      warehouseId: input.warehouseId,
+      quantityOnHand: { gte: -input.delta },
+    },
+    data: { quantityOnHand: { increment: input.delta } },
+  });
+
+  if (updateResult.count === 0) {
+    const existing = await prisma.inventory.findUnique({
+      where: {
+        productVariantId_warehouseId: {
+          productVariantId: input.productVariantId,
+          warehouseId: input.warehouseId,
+        },
+      },
+    });
+    if (!existing) {
+      throw new Error(
+        "No inventory row for that variant/warehouse combination.",
+      );
+    }
+    throw new Error(
+      `Adjustment would take on-hand stock negative (currently ${existing.quantityOnHand}, delta ${input.delta}).`,
+    );
+  }
+
+  const inventory = await prisma.inventory.findUniqueOrThrow({
     where: {
       productVariantId_warehouseId: {
         productVariantId: input.productVariantId,
@@ -23,41 +52,24 @@ export async function adjustInventory(
     },
     include: { productVariant: true },
   });
+  const beforeQuantity = inventory.quantityOnHand - input.delta;
 
-  const newQuantity = before.quantityOnHand + input.delta;
-  if (newQuantity < 0) {
-    throw new Error(
-      `Adjustment would take on-hand stock negative (currently ${before.quantityOnHand}, delta ${input.delta}).`,
-    );
-  }
-
-  const [inventory] = await prisma.$transaction([
-    prisma.inventory.update({
-      where: {
-        productVariantId_warehouseId: {
-          productVariantId: input.productVariantId,
-          warehouseId: input.warehouseId,
-        },
-      },
-      data: { quantityOnHand: newQuantity },
-    }),
-    prisma.inventoryLog.create({
-      data: {
-        variantSku: before.productVariant.sku,
-        changeQty: input.delta,
-        reason: input.reason,
-        actorType: "STAFF",
-        actorId: actor.staffUserId,
-      },
-    }),
-  ]);
+  await prisma.inventoryLog.create({
+    data: {
+      variantSku: inventory.productVariant.sku,
+      changeQty: input.delta,
+      reason: input.reason,
+      actorType: "STAFF",
+      actorId: actor.staffUserId,
+    },
+  });
 
   await writeAuditLog({
     staffUserId: actor.staffUserId,
     action: "inventory.adjust",
     entityType: "Inventory",
     entityId: inventory.id,
-    beforeState: { quantityOnHand: before.quantityOnHand },
+    beforeState: { quantityOnHand: beforeQuantity },
     afterState: {
       quantityOnHand: inventory.quantityOnHand,
       reason: input.reason,

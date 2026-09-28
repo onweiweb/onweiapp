@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { ConsoleOtpSender } from "./ConsoleOtpSender";
-import { generateOtpCode, hashOtpCode } from "./generateOtpCode";
+import { generateOtpCode, hashOtpCode, verifyOtpCode } from "./generateOtpCode";
 
 describe("generateOtpCode", () => {
   it("returns a 6-digit zero-padded string", () => {
@@ -32,6 +32,24 @@ describe("hashOtpCode", () => {
 
   it("rejects an empty secret", () => {
     expect(() => hashOtpCode("123456", "")).toThrow();
+  });
+});
+
+describe("verifyOtpCode", () => {
+  it("accepts the correct code for the stored hash", () => {
+    const hash = hashOtpCode("123456", "test-secret");
+    expect(verifyOtpCode("123456", "test-secret", hash)).toBe(true);
+  });
+
+  it("rejects a wrong code", () => {
+    const hash = hashOtpCode("123456", "test-secret");
+    expect(verifyOtpCode("654321", "test-secret", hash)).toBe(false);
+  });
+
+  it("rejects a malformed/wrong-length hash instead of throwing", () => {
+    expect(verifyOtpCode("123456", "test-secret", "not-a-real-hash")).toBe(
+      false,
+    );
   });
 });
 

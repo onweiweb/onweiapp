@@ -169,6 +169,72 @@ describe.skipIf(!process.env.DATABASE_URL)(
       ).rejects.toThrow(/negative/i);
     });
 
+    it("applies concurrent adjustments atomically instead of losing an update", async () => {
+      const { variant, warehouse } = await createFixtureInventory(10);
+
+      // 10 concurrent +1 adjustments. A read-compute-write implementation
+      // races here and typically loses several updates; the atomic
+      // `updateMany ... WHERE qty + delta >= 0` version can't.
+      await Promise.all(
+        Array.from({ length: 10 }, () =>
+          adjustInventory(
+            {
+              productVariantId: variant.id,
+              warehouseId: warehouse.id,
+              delta: 1,
+              reason: "ADJUSTMENT",
+            },
+            actor,
+          ),
+        ),
+      );
+
+      const final = await prisma.inventory.findUniqueOrThrow({
+        where: {
+          productVariantId_warehouseId: {
+            productVariantId: variant.id,
+            warehouseId: warehouse.id,
+          },
+        },
+      });
+      expect(final.quantityOnHand).toBe(20);
+    });
+
+    it("rejects a concurrent adjustment that would take stock negative without corrupting the count", async () => {
+      const { variant, warehouse } = await createFixtureInventory(5);
+
+      // Five concurrent -1s should all succeed (5 -> 0); a sixth concurrent
+      // -1 should be rejected, not allowed to push stock to -1.
+      const results = await Promise.allSettled(
+        Array.from({ length: 6 }, () =>
+          adjustInventory(
+            {
+              productVariantId: variant.id,
+              warehouseId: warehouse.id,
+              delta: -1,
+              reason: "ADJUSTMENT",
+            },
+            actor,
+          ),
+        ),
+      );
+
+      const fulfilled = results.filter((r) => r.status === "fulfilled");
+      const rejected = results.filter((r) => r.status === "rejected");
+      expect(fulfilled).toHaveLength(5);
+      expect(rejected).toHaveLength(1);
+
+      const final = await prisma.inventory.findUniqueOrThrow({
+        where: {
+          productVariantId_warehouseId: {
+            productVariantId: variant.id,
+            warehouseId: warehouse.id,
+          },
+        },
+      });
+      expect(final.quantityOnHand).toBe(0);
+    });
+
     it("listInventory with lowStockOnly only returns rows at or below their reorder threshold", async () => {
       const low = await createFixtureInventory(1);
       await prisma.inventory.update({
