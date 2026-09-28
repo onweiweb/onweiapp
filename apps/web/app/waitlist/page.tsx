@@ -5,7 +5,6 @@ import { WaitlistCountdown } from "@/_components/WaitlistCountdown";
 import { WaitlistCardScroll } from "@/_components/WaitlistCardScroll";
 import { WaitlistForm } from "@/_components/WaitlistForm";
 import { WaitlistFooter } from "@/_components/WaitlistFooter";
-import { WaitlistMarquee } from "@/_components/WaitlistMarquee";
 
 // This page reads launchAt via Prisma, not `fetch`, so Next's automatic
 // static/dynamic detection has no signal that it depends on data that
@@ -60,10 +59,6 @@ export default async function WaitlistPage() {
             </div>
           </div>
         </WaitlistCardScroll>
-      </section>
-
-      <section className="w-full max-w-[1440px] px-3 sm:px-11">
-        <WaitlistMarquee />
       </section>
 
       <section

@@ -8,6 +8,7 @@ import {
   useTransform,
   type MotionValue,
 } from "motion/react";
+import { WaitlistMarquee } from "./WaitlistMarquee";
 
 const CARD_COUNT = 4;
 
@@ -223,19 +224,27 @@ export function WaitlistCardScroll({
       {/* h-screen (not a fixed 747px) so the pinned box fills whatever the
           viewport actually is — a fixed height here left a growing slab of
           empty background below the cards on any viewport taller than
-          ~840px, for the entire 400vh scroll-through. justify-center/
-          items-center then centers the (still ~747px) card row inside it. */}
-      <div className="sticky top-0 flex min-h-screen flex-col items-center justify-center gap-8 px-3 py-6 sm:h-screen sm:flex-row sm:justify-between sm:px-11">
-        {children}
-        <div className="relative h-[500px] w-full sm:h-[635px] sm:flex-1">
-          {CARDS.map((Content, index) => (
-            <ScrollCard
-              key={index}
-              progress={scrollYProgress}
-              index={index}
-              Content={Content}
-            />
-          ))}
+          ~840px, for the entire 400vh scroll-through. The marquee (moved
+          here from its own section further down the page, at the client's
+          request) fills that leftover space with something visibly moving
+          instead of it just sitting empty; justify-center centers the
+          [row + marquee] group as a whole inside the full-height box. */}
+      <div className="sticky top-0 flex min-h-screen w-full flex-col items-center justify-center gap-10 px-3 py-6 sm:h-screen sm:px-11">
+        <div className="flex w-full max-w-[1440px] flex-col items-center gap-8 sm:flex-row sm:justify-between">
+          {children}
+          <div className="relative h-[500px] w-full sm:h-[635px] sm:flex-1">
+            {CARDS.map((Content, index) => (
+              <ScrollCard
+                key={index}
+                progress={scrollYProgress}
+                index={index}
+                Content={Content}
+              />
+            ))}
+          </div>
+        </div>
+        <div className="w-full max-w-[1440px]">
+          <WaitlistMarquee />
         </div>
       </div>
     </div>
