@@ -64,7 +64,7 @@ export default function AboutPage() {
       </section>
 
       <section className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-6 px-6 pb-6 sm:px-11 lg:grid-cols-2">
-        <div className="flex flex-col justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 sm:px-14 sm:py-12">
+        <div className="order-2 flex flex-col justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 sm:px-14 sm:py-12 lg:order-1">
           <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
             <Image
               src="/images/about-us/squiggle-sabhya-name.svg"
@@ -115,12 +115,16 @@ export default function AboutPage() {
         {/* Wrapper (not the photo div itself, which clips via
             overflow-hidden) so the pickleball-swing illustration (Figma
             node 760:4746) can hang below the photo's bottom edge like it
-            does in Figma, instead of getting clipped. */}
-        <div className="relative">
+            does in Figma, instead of getting clipped. order-1/lg:order-2:
+            Figma's mobile frame (969:3987) stacks the photo above the text
+            card for this section, but desktop (760:4533) puts text on the
+            left — this section is the only one of the two where the two
+            breakpoints disagree on which comes first. */}
+        <div className="relative order-1 lg:order-2">
           <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
             <Image
               src="/images/about-us/sabhya.png"
-              alt="Sabhya, Onwei co-founder, holding a tennis racket"
+              alt="Sabhya, Onwei co-founder, playing table tennis in a tournament"
               fill
               sizes="(min-width: 1024px) 50vw, 100vw"
               className="object-cover"
@@ -148,11 +152,11 @@ export default function AboutPage() {
       <section className="relative mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-6 px-6 pb-6 sm:px-11 lg:grid-cols-2">
         <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
           <Image
-            src="/images/about-us/sakshi.png"
-            alt="Sakshi, Onwei co-founder, in a Pilates pose"
+            src="/images/about-us/sakshi.jpg"
+            alt="Sakshi, Onwei co-founder, holding an Onwei yoga mat"
             fill
             sizes="(min-width: 1024px) 50vw, 100vw"
-            className="object-cover"
+            className="object-cover object-top"
           />
           <Image
             src="/images/footer/logo-circle.svg"
@@ -251,11 +255,11 @@ export default function AboutPage() {
       <section className="mx-auto w-full max-w-[1440px] px-6 pb-14 sm:px-11">
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[30px] sm:aspect-[16/9]">
           <Image
-            src="/images/about-us/married.png"
-            alt="Sabhya and Sakshi celebrating on a tennis court"
+            src="/images/about-us/married.jpg"
+            alt="Sabhya and Sakshi at a theatre together"
             fill
             sizes="100vw"
-            className="object-cover"
+            className="object-cover object-top"
           />
         </div>
       </section>
