@@ -43,37 +43,48 @@ export async function adjustInventory(
     );
   }
 
-  const inventory = await prisma.inventory.findUniqueOrThrow({
-    where: {
-      productVariantId_warehouseId: {
-        productVariantId: input.productVariantId,
-        warehouseId: input.warehouseId,
+  // The inventory row's own mutation already committed atomically above;
+  // reading it back and writing its InventoryLog + AuditLog entries in one
+  // transaction just means a failed log write can't leave the change
+  // unlogged, not that the stock mutation itself is at risk.
+  const inventory = await prisma.$transaction(async (tx) => {
+    const row = await tx.inventory.findUniqueOrThrow({
+      where: {
+        productVariantId_warehouseId: {
+          productVariantId: input.productVariantId,
+          warehouseId: input.warehouseId,
+        },
       },
-    },
-    include: { productVariant: true },
-  });
-  const beforeQuantity = inventory.quantityOnHand - input.delta;
+      include: { productVariant: true },
+    });
+    const beforeQuantity = row.quantityOnHand - input.delta;
 
-  await prisma.inventoryLog.create({
-    data: {
-      variantSku: inventory.productVariant.sku,
-      changeQty: input.delta,
-      reason: input.reason,
-      actorType: "STAFF",
-      actorId: actor.staffUserId,
-    },
-  });
+    await tx.inventoryLog.create({
+      data: {
+        variantSku: row.productVariant.sku,
+        changeQty: input.delta,
+        reason: input.reason,
+        actorType: "STAFF",
+        actorId: actor.staffUserId,
+      },
+    });
 
-  await writeAuditLog({
-    staffUserId: actor.staffUserId,
-    action: "inventory.adjust",
-    entityType: "Inventory",
-    entityId: inventory.id,
-    beforeState: { quantityOnHand: beforeQuantity },
-    afterState: {
-      quantityOnHand: inventory.quantityOnHand,
-      reason: input.reason,
-    },
+    await writeAuditLog(
+      {
+        staffUserId: actor.staffUserId,
+        action: "inventory.adjust",
+        entityType: "Inventory",
+        entityId: row.id,
+        beforeState: { quantityOnHand: beforeQuantity },
+        afterState: {
+          quantityOnHand: row.quantityOnHand,
+          reason: input.reason,
+        },
+      },
+      tx,
+    );
+
+    return row;
   });
 
   return inventory;

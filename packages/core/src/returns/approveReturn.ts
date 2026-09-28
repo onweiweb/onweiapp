@@ -61,22 +61,27 @@ export async function approveReturn(
       },
     });
 
-    return tx.returnRequest.findUniqueOrThrow({
+    const updated = await tx.returnRequest.findUniqueOrThrow({
       where: { id: input.returnRequestId },
     });
-  });
 
-  await writeAuditLog({
-    staffUserId: actor.staffUserId,
-    action: "return.approve",
-    entityType: "ReturnRequest",
-    entityId: input.returnRequestId,
-    beforeState: { status: before.status },
-    afterState: {
-      status: returnRequest.status,
-      restockedQty: before.orderItem.quantity,
-      note: input.note ?? null,
-    },
+    await writeAuditLog(
+      {
+        staffUserId: actor.staffUserId,
+        action: "return.approve",
+        entityType: "ReturnRequest",
+        entityId: input.returnRequestId,
+        beforeState: { status: before.status },
+        afterState: {
+          status: updated.status,
+          restockedQty: before.orderItem.quantity,
+          note: input.note ?? null,
+        },
+      },
+      tx,
+    );
+
+    return updated;
   });
 
   return returnRequest;
