@@ -84,7 +84,7 @@ function NavSection({ group }: { group: AdminNavGroup }) {
         type="button"
         onClick={() => setExpanded(group.label, !expanded)}
         aria-expanded={expanded}
-        className="flex w-full items-center justify-between px-3 pb-1 text-xs uppercase tracking-wide text-onwei-beige/50 hover:text-onwei-beige/80"
+        className="flex w-full items-center justify-between px-3 pb-1 text-sm uppercase tracking-wide text-onwei-beige/50 hover:text-onwei-beige/80"
       >
         <span>{group.label}</span>
         <ChevronIcon expanded={expanded} />
@@ -95,7 +95,7 @@ function NavSection({ group }: { group: AdminNavGroup }) {
             <li key={item.label}>
               <Link
                 href={item.href}
-                className="block rounded-[30px] px-3 py-1.5 text-sm uppercase tracking-wide hover:bg-onwei-green hover:text-onwei-blue"
+                className="block rounded-[30px] px-3 py-1.5 text-xs uppercase tracking-wide hover:bg-onwei-green hover:text-onwei-blue"
               >
                 {item.label}
               </Link>
