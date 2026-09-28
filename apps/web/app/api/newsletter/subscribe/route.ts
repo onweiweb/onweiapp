@@ -1,7 +1,5 @@
-import { subscribeToNewsletter } from "@onwei/core";
+import { isValidEmail, subscribeToNewsletter } from "@onwei/core";
 import { NextResponse } from "next/server";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {
@@ -10,7 +8,7 @@ export async function POST(request: Request) {
   const email =
     typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
 
-  if (!EMAIL_PATTERN.test(email)) {
+  if (!isValidEmail(email)) {
     return NextResponse.json(
       { ok: false, reason: "INVALID_EMAIL" },
       { status: 400 },

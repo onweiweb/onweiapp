@@ -44,6 +44,48 @@ plain, functional CMS UI with no set design system.
    looking design and move on — `apps/admin` has no design system so this
    rule is `apps/web`-only.
 
+## Frontend implementation gotchas (apps/web)
+
+Learned the hard way while building out the Collection and About Us pages —
+read before assuming something that looks broken is a missing asset.
+
+- **Figma exports bake in ancestor backgrounds.** An SVG export of a
+  decorative node from the Dev Mode MCP often embeds a flat placeholder rect
+  (`#D4D4D4`), the full page background, and the local frame's background as
+  leading `<rect>` elements before the actual artwork. Invisible when the
+  asset happens to sit on a matching-color section, but shows as a visible
+  box the moment it's placed over a photo. Strip every leading `<rect>`
+  before the real content group. PNG raster exports have the same failure
+  mode as an oversized canvas with the real asset shrunk into a corner —
+  re-export tightly cropped to the node's own bounds instead of trusting the
+  first export.
+- **`next/image` lazy-loading blind spot inside horizontal scroll.** Default
+  lazy loading uses an IntersectionObserver against the browser viewport,
+  which never fires for an element positioned off-screen to the _right_
+  inside an `overflow-x-auto` row. It stays blank until the row is scrolled
+  far enough to bring it on-screen. Set `loading="eager"` on any image that
+  can sit inside a horizontally-scrolling row.
+- **`overflow-x-auto` alone forces `overflow-y: auto` too** (CSS Overflow
+  spec: an axis left `visible` while the other isn't computes to `auto`).
+  This clips any absolutely-positioned decoration that intentionally hangs
+  outside its own box — a common Figma pattern — if that decoration is a
+  descendant of the scroll container. Either pad the scroll container to
+  give the overhang room, or pull the decoration out as a sibling instead of
+  a child.
+- **Next.js dev image cache lives at `apps/web/.next/dev/cache/images`**
+  (not the classic `.next/cache/images`). Replacing a static file under
+  `public/` and still seeing the old version after a hard reload means this
+  cache is stale, not the browser — delete the directory.
+- **Figma layer/text names can be stale.** A text node's `name` in Dev Mode
+  MCP metadata sometimes reflects an earlier duplicated layer, not its
+  current content (a reviews heading named "Transform Your Health" actually
+  read "Chosen by 1000+ everyday movers" on screen). Confirm with an actual
+  screenshot before trusting a metadata dump.
+- **Shared horizontal-scroll UI** lives in
+  `apps/web/app/_components/ScrollCarousel.tsx` (progress-track + thumb, not
+  a native scrollbar) — reuse it for any new scrolling row instead of a bare
+  `overflow-x-auto` div.
+
 ## Tech stack (proposed — see docs/OPEN_DECISIONS.md for what's still open)
 
 - Next.js, App Router, TypeScript (strict)
@@ -85,14 +127,14 @@ docs/       -> architecture, schema rationale, test plan, security notes, open d
 
 ## Where things live
 
-| Feature | Lives in |
-|---|---|
-| Product browsing, PDP, cart, checkout | `apps/web` |
-| Coupon / discount rule engine | `packages/core` |
-| OTP signup/login, RBAC checks | `packages/auth` |
-| Product/category/inventory/review admin | `apps/admin` |
-| DB schema & migrations | `packages/database` |
-| Order status timeline / tracking | `packages/core` (state machine) + `apps/web` (display) |
+| Feature                                 | Lives in                                               |
+| --------------------------------------- | ------------------------------------------------------ |
+| Product browsing, PDP, cart, checkout   | `apps/web`                                             |
+| Coupon / discount rule engine           | `packages/core`                                        |
+| OTP signup/login, RBAC checks           | `packages/auth`                                        |
+| Product/category/inventory/review admin | `apps/admin`                                           |
+| DB schema & migrations                  | `packages/database`                                    |
+| Order status timeline / tracking        | `packages/core` (state machine) + `apps/web` (display) |
 
 ## Docs index
 

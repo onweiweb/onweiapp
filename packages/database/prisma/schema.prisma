@@ -630,6 +630,37 @@ enum DsrStatus {
 }
 
 // ---------------------------------------------------------------------------
+// Site configuration
+// ---------------------------------------------------------------------------
+
+// Which public-facing mode the storefront is in — read by apps/web/proxy.ts
+// to decide whether to gate every route to /waitlist. WAITLIST is pre-launch
+// (this table's initial state); PREORDERS unlocks browsing plus the
+// pre-order flow (built separately, see docs/OPEN_DECISIONS.md); LIVE is the
+// normal storefront with checkout.
+enum SiteMode {
+  WAITLIST
+  PREORDERS
+  LIVE
+}
+
+// Single-row site-wide config, admin-editable via apps/admin's /settings
+// page. A fixed id enforces the single row instead of a generic key-value
+// table — three knobs don't need that abstraction yet.
+model SiteSetting {
+  id                      String   @id @default("singleton")
+  siteMode                SiteMode @default(WAITLIST)
+  // Countdown target on /waitlist and the gate the PREORDERS mode switch
+  // gets flipped by hand around — not derived, an admin sets it directly.
+  launchAt                DateTime
+  // Whether WaitlistEntry.phone accepts any valid international number or
+  // only Indian mobile numbers — see packages/core/src/validation/phone.ts.
+  allowInternationalPhone Boolean  @default(true)
+  updatedAt               DateTime @updatedAt
+  updatedByStaffId        String?
+}
+
+// ---------------------------------------------------------------------------
 // Marketing
 // ---------------------------------------------------------------------------
 
@@ -639,6 +670,33 @@ model NewsletterSubscriber {
   source         String? // e.g. "homepage_footer" — provenance, not required
   subscribedAt   DateTime  @default(now())
   unsubscribedAt DateTime?
+}
+
+// Pre-launch signups from the /waitlist page — distinct from
+// NewsletterSubscriber because this is a real identity capture (name +
+// phone required, not just email) used to seed launch-day access, not a
+// mailing list. Never hard-deleted, same reasoning as Customer: it's
+// DPDP-covered personal data, an unsubscribe just stops contact.
+model WaitlistEntry {
+  id              String    @id @default(cuid())
+  fullName        String
+  email           String    @unique
+  // Stored normalized (E.164) so "+911234567890" and a bare local-format
+  // entry of the same number collapse to one row instead of two.
+  phone           String    @unique
+  // Optional "fridge run" -> "full marathon" engagement slider from the
+  // signup form — marketing color, not required for the entry to be valid.
+  movementFlex    Int?
+  source          String?
+  // Terms/Privacy version accepted at submit time — see ConsentLog and
+  // docs/SECURITY_AND_DPDP.md; kept inline rather than a ConsentLog row
+  // since a waitlist signup isn't a Customer yet.
+  consentVersion  String
+  ipAddress       String?
+  submittedAt     DateTime  @default(now())
+  unsubscribedAt  DateTime?
+
+  @@index([submittedAt])
 }
 
 // Homepage and PDP shared marketing content — CMS-editable so it isn't

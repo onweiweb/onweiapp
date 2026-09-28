@@ -149,3 +149,25 @@ export type {
   CreateReviewPlacementInput,
 } from "./reviews/types";
 export type { ProductSearchIndex } from "./search/ProductSearchIndex";
+export { getSiteSetting, updateSiteSetting } from "./settings/siteSetting";
+export type {
+  SiteSettingSummary,
+  UpdateSiteSettingInput,
+} from "./settings/siteSetting";
+export { isValidEmail } from "./validation/email";
+export { validatePhone } from "./validation/phone";
+export type { PhoneValidationResult } from "./validation/phone";
+export {
+  exportWaitlistEntriesToCsv,
+  listWaitlistEntries,
+} from "./waitlist/listWaitlistEntries";
+export { subscribeToWaitlist } from "./waitlist/subscribeToWaitlist";
+export { checkWaitlistRateLimit } from "./waitlist/waitlistRateLimit";
+export type {
+  ListWaitlistEntriesInput,
+  ListWaitlistEntriesResult,
+  SubscribeToWaitlistFailureReason,
+  SubscribeToWaitlistInput,
+  SubscribeToWaitlistResult,
+  WaitlistEntrySummary,
+} from "./waitlist/types";

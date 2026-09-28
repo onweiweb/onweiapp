@@ -1,8 +1,6 @@
-import { subscribeToNewsletter } from "@onwei/core";
+import { isValidEmail, subscribeToNewsletter } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { requireStaffSession } from "../_lib/requireStaffSession";
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export async function POST(request: Request) {
   const session = await requireStaffSession(request, "newsletter:manage");
@@ -19,7 +17,7 @@ export async function POST(request: Request) {
       ? body.source.trim()
       : "admin_manual";
 
-  if (!EMAIL_PATTERN.test(email)) {
+  if (!isValidEmail(email)) {
     return NextResponse.json(
       { ok: false, error: "Enter a valid email address." },
       { status: 400 },

@@ -41,7 +41,10 @@ export const metadata: Metadata = {
 const NAV_GROUPS = [
   {
     label: "Overview",
-    items: [{ label: "Dashboard", href: "/" }],
+    items: [
+      { label: "Dashboard", href: "/" },
+      { label: "Site settings", href: "/settings" },
+    ],
   },
   {
     label: "Catalog",
@@ -66,6 +69,7 @@ const NAV_GROUPS = [
       { label: "Reviews", href: "/reviews" },
       { label: "Review placements", href: "/reviews/placements" },
       { label: "Newsletter", href: "/newsletter" },
+      { label: "Waitlist", href: "/waitlist" },
     ],
   },
   {

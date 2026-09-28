@@ -897,6 +897,10 @@ const PERMISSION_KEYS = [
   "dsr:view",
   "dsr:updateStatus",
   "consentLog:view",
+  "waitlist:view",
+  "waitlist:manage",
+  "settings:view",
+  "settings:manage",
 ] as const;
 
 async function seedPermissions() {
@@ -1050,6 +1054,23 @@ async function seedMarqueeItems() {
   }
 }
 
+// Single-row site config — see the SiteSetting model comment in
+// schema.prisma. Seeded once; an admin edits it from here on via
+// apps/admin's /settings page, this function never overwrites an existing
+// row's values.
+async function seedSiteSetting() {
+  await prisma.siteSetting.upsert({
+    where: { id: "singleton" },
+    update: {},
+    create: {
+      id: "singleton",
+      siteMode: "WAITLIST",
+      launchAt: new Date("2026-12-01T00:00:00+05:30"),
+      allowInternationalPhone: true,
+    },
+  });
+}
+
 async function main() {
   await seedCategory({
     name: "Pickleball",
@@ -1075,6 +1096,7 @@ async function main() {
 
   await seedPermissions();
   await seedSuperAdmin();
+  await seedSiteSetting();
 
   console.log("Seed complete.");
 }
