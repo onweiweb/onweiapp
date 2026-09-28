@@ -220,7 +220,12 @@ export function WaitlistCardScroll({
 
   return (
     <div ref={containerRef} className="relative h-[400vh]">
-      <div className="sticky top-0 flex flex-col gap-8 px-3 py-6 sm:h-[747px] sm:flex-row sm:items-center sm:justify-between sm:px-11 sm:py-14">
+      {/* h-screen (not a fixed 747px) so the pinned box fills whatever the
+          viewport actually is — a fixed height here left a growing slab of
+          empty background below the cards on any viewport taller than
+          ~840px, for the entire 400vh scroll-through. justify-center/
+          items-center then centers the (still ~747px) card row inside it. */}
+      <div className="sticky top-0 flex min-h-screen flex-col items-center justify-center gap-8 px-3 py-6 sm:h-screen sm:flex-row sm:justify-between sm:px-11">
         {children}
         <div className="relative h-[500px] w-full sm:h-[635px] sm:flex-1">
           {CARDS.map((Content, index) => (

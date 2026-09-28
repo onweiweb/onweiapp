@@ -7,6 +7,15 @@ import { WaitlistForm } from "@/_components/WaitlistForm";
 import { WaitlistFooter } from "@/_components/WaitlistFooter";
 import { WaitlistMarquee } from "@/_components/WaitlistMarquee";
 
+// This page reads launchAt via Prisma, not `fetch`, so Next's automatic
+// static/dynamic detection has no signal that it depends on data that
+// changes — without this, it gets fully static-generated once and never
+// re-rendered, so an admin changing the countdown target on /settings would
+// never show up here short of a redeploy. Revalidating every 30s keeps most
+// of the caching benefit (not a live DB hit per request) while keeping that
+// window roughly in line with getSiteSetting()'s own ~15s in-process cache.
+export const revalidate = 30;
+
 // Figma "Coming Soon" screens: draft 3 (web, node 945:4238) and draft 4
 // (mobile, node 945:4388). Server component — only the countdown, the
 // card-scroll section, and the form are client islands (see each

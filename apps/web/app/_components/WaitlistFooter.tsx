@@ -69,99 +69,118 @@ function SpotifyIcon() {
 // one reordered with CSS so the DOM/reading order matches each breakpoint.
 export function WaitlistFooter() {
   return (
-    <footer className="flex flex-col items-center bg-onwei-purple px-3 py-12 sm:px-14">
-      <div className="relative flex w-full max-w-[1440px] flex-col gap-[56px] sm:flex-row sm:items-end sm:justify-between sm:gap-24">
-        <Image
-          src="/images/footer/illustration-runner.svg"
-          alt=""
-          width={210}
-          height={342}
-          aria-hidden
-          className="pointer-events-none absolute -top-6 right-0 hidden lg:block"
-        />
+    // <footer> itself stays bare (block, full width by default) — putting
+    // the flex/background classes directly on it instead made it a flex
+    // ITEM of <main>'s flex column, which shrink-wraps to content width
+    // instead of spanning full width (SiteFooter avoids this the same way:
+    // bare <footer>, flex+background on an inner div). Structural
+    // row/column switch and the padding scale match SiteFooter's
+    // breakpoints (lg, not sm) — this footer's own content is intentionally
+    // different from SiteFooter's, but it needs to behave like every other
+    // page's footer, not switch to a cramped row layout a full breakpoint
+    // earlier than everywhere else.
+    // w-full on <footer> itself: WaitlistPage's <main> is a flex column with
+    // items-center (not items-stretch, unlike a plain block <main> elsewhere
+    // on the site), so a flex ITEM with no explicit width — even a
+    // block-level <footer> — shrink-wraps to its content instead of
+    // spanning full width. This is why the inner bg/flex wrapper alone
+    // wasn't enough.
+    <footer className="w-full">
+      <div className="flex flex-col items-center bg-onwei-purple px-3 py-12 sm:px-6 lg:px-14">
+        <div className="relative flex w-full max-w-[1440px] flex-col gap-14 lg:flex-row lg:items-end lg:justify-between lg:gap-24">
+          <Image
+            src="/images/footer/illustration-runner.svg"
+            alt=""
+            width={210}
+            height={342}
+            aria-hidden
+            className="pointer-events-none absolute -top-6 right-0 hidden lg:block"
+          />
 
-        <div className="flex w-full max-w-[401px] flex-col gap-8">
-          <div className="relative flex flex-col items-start gap-5">
-            <div className="flex items-center gap-5 uppercase text-onwei-beige">
-              <p className="font-display text-[48px] font-bold leading-[0.9] sm:text-[64px]">
-                on&middot;wei
-              </p>
-              <p className="font-display text-[14px] font-semibold sm:text-[16px]">
-                \ on-way \
+          <div className="flex w-full max-w-[401px] flex-col gap-8">
+            <div className="relative flex flex-col items-start gap-5">
+              <div className="flex items-center gap-5 uppercase text-onwei-beige">
+                <p className="font-display text-[48px] font-bold leading-[0.9] sm:text-[64px]">
+                  on&middot;wei
+                </p>
+                <p className="font-display text-[14px] font-semibold sm:text-[16px]">
+                  \ on-way \
+                </p>
+              </div>
+              <p className="font-grotesk text-[14px] leading-[1.3] text-onwei-beige">
+                From On &mdash; present, engaged, showing up &mdash; and Wei
+                (way) intentional action. Not hustle. Not noise. Just the choice
+                to participate.
               </p>
             </div>
-            <p className="font-grotesk text-[14px] leading-[1.3] text-onwei-beige">
-              From On &mdash; present, engaged, showing up &mdash; and Wei (way)
-              intentional action. Not hustle. Not noise. Just the choice to
-              participate.
-            </p>
+            <div className="relative inline-block w-fit">
+              <span
+                aria-hidden
+                className="absolute -left-4 -right-4 -top-5 -bottom-5"
+              >
+                <Image
+                  src="/images/footer/brand-asset-1.png"
+                  alt=""
+                  fill
+                  sizes="420px"
+                  className="object-contain"
+                />
+              </span>
+              <p className="relative z-10 font-display text-[14px] font-semibold uppercase text-onwei-blue sm:text-[16px]">
+                rhymes with &quot;on the way.&quot; because you already are.
+              </p>
+            </div>
           </div>
-          <div className="relative inline-block w-fit">
-            <span
-              aria-hidden
-              className="absolute -left-4 -right-4 -top-5 -bottom-5"
-            >
-              <Image
-                src="/images/footer/brand-asset-1.png"
-                alt=""
-                fill
-                sizes="420px"
-                className="object-contain"
-              />
-            </span>
-            <p className="relative z-10 font-display text-[14px] font-semibold uppercase text-onwei-blue sm:text-[16px]">
-              rhymes with &quot;on the way.&quot; because you already are.
+
+          <div className="flex flex-col gap-3">
+            <p className="font-display text-[36px] font-bold uppercase leading-[0.9] text-onwei-beige sm:text-[48px]">
+              Let&apos;s be friends
+            </p>
+            <div className="flex items-center gap-5 text-onwei-beige">
+              <a href="#" aria-label="Onwei on Instagram">
+                <InstagramIcon />
+              </a>
+              <a href="#" aria-label="Onwei on YouTube">
+                <YoutubeIcon />
+              </a>
+              <a href="#" aria-label="Onwei on Spotify">
+                <SpotifyIcon />
+              </a>
+            </div>
+            <p className="max-w-[510px] font-display text-[14px] uppercase leading-[1.3] text-onwei-beige sm:text-[16px]">
+              <span className="font-semibold">ONWEI (n.)</span>
+              <br />
+              <span className="font-grotesk font-medium normal-case">
+                The weight of your own effort. The only thing that&apos;s always
+                yours.
+                <br />
+                The feeling when you stop waiting to feel ready and just show
+                up.
+                <br />
+                Because progress belongs to those who - Show up. Stay on.
+              </span>
             </p>
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <p className="font-display text-[36px] font-bold uppercase leading-[0.9] text-onwei-beige sm:text-[48px]">
-            Let&apos;s be friends
-          </p>
-          <div className="flex items-center gap-5 text-onwei-beige">
-            <a href="#" aria-label="Onwei on Instagram">
-              <InstagramIcon />
-            </a>
-            <a href="#" aria-label="Onwei on YouTube">
-              <YoutubeIcon />
-            </a>
-            <a href="#" aria-label="Onwei on Spotify">
-              <SpotifyIcon />
-            </a>
-          </div>
-          <p className="max-w-[510px] font-display text-[14px] uppercase leading-[1.3] text-onwei-beige sm:text-[16px]">
-            <span className="font-semibold">ONWEI (n.)</span>
-            <br />
-            <span className="font-grotesk font-medium normal-case">
-              The weight of your own effort. The only thing that&apos;s always
-              yours.
-              <br />
-              The feeling when you stop waiting to feel ready and just show up.
-              <br />
-              Because progress belongs to those who - Show up. Stay on.
-            </span>
-          </p>
+        {/* Figma has no destination screen for either link yet — "#"
+            placeholders, same convention as SiteFooter's Policies column. */}
+        <div className="mt-10 flex gap-6 font-grotesk text-[12px] text-onwei-beige lg:hidden">
+          <Link href="#" className="underline">
+            Terms &amp; Conditions
+          </Link>
+          <Link href="#" className="underline">
+            Privacy Policy
+          </Link>
         </div>
-      </div>
-
-      {/* Figma has no destination screen for either link yet — "#"
-          placeholders, same convention as SiteFooter's Policies column. */}
-      <div className="mt-10 flex gap-6 font-grotesk text-[12px] text-onwei-beige sm:hidden">
-        <Link href="#" className="underline">
-          Terms &amp; Conditions
-        </Link>
-        <Link href="#" className="underline">
-          Privacy Policy
-        </Link>
-      </div>
-      <div className="mt-10 hidden gap-6 font-grotesk text-[12px] text-onwei-beige sm:flex">
-        <Link href="#" className="underline">
-          Privacy Policy
-        </Link>
-        <Link href="#" className="underline">
-          Terms &amp; Conditions
-        </Link>
+        <div className="mt-10 hidden gap-6 font-grotesk text-[12px] text-onwei-beige lg:flex">
+          <Link href="#" className="underline">
+            Privacy Policy
+          </Link>
+          <Link href="#" className="underline">
+            Terms &amp; Conditions
+          </Link>
+        </div>
       </div>
     </footer>
   );
