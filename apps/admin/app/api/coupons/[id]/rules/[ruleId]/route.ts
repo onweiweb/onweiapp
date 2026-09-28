@@ -43,6 +43,7 @@ export async function PATCH(
     );
     return NextResponse.json({ ok: true, rule });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.startsWith("invalid-config")
         ? error.message.replace("invalid-config: ", "")

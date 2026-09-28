@@ -55,6 +55,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ ok: true, inventory });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.includes("negative")
         ? "That would take stock below zero — check the quantity and try again."

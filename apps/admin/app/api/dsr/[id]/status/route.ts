@@ -39,6 +39,7 @@ export async function PATCH(
     });
     return NextResponse.json({ ok: true, request: request_ });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.startsWith("invalid-transition")
         ? "That status change isn't allowed from here."

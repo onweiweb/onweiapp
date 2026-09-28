@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@onwei/database";
-import { resolveSurfaceLimit } from "@onwei/core";
+import { formatCurrency, resolveSurfaceLimit, toMinorUnits } from "@onwei/core";
 import { ProductForm } from "../../_components/ProductForm";
 import { VariantManager } from "../../_components/VariantManager";
 import { ImageManager } from "../../_components/ImageManager";
@@ -93,7 +93,10 @@ export default async function EditProductPage({
                   id: variant.id,
                   sku: variant.sku,
                   attributes: variant.attributes as Record<string, string>,
-                  price: variant.price.toString(),
+                  priceFormatted: formatCurrency(
+                    toMinorUnits(variant.price),
+                    "INR",
+                  ),
                   status: variant.status,
                 }))}
               />

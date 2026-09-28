@@ -50,6 +50,7 @@ export async function POST(
     );
     return NextResponse.json({ ok: true, rule }, { status: 201 });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.startsWith("invalid-config")
         ? error.message.replace("invalid-config: ", "")

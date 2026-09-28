@@ -38,6 +38,7 @@ export async function PATCH(
     );
     return NextResponse.json({ ok: true, order });
   } catch (error) {
+    console.error(error);
     if (
       error instanceof Error &&
       error.message.startsWith("invalid-transition")

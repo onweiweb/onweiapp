@@ -43,6 +43,7 @@ export async function PATCH(
     );
     return NextResponse.json({ ok: true, staffUser });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.startsWith("self-deactivate")
         ? "You can't deactivate your own account — ask another admin to do it."

@@ -17,6 +17,7 @@ export async function POST(
     });
     return NextResponse.json({ ok: true, review });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.startsWith("already-approved")
         ? "This review is already live."

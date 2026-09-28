@@ -58,13 +58,33 @@ export function mapImage(image: {
   };
 }
 
+/** `ProductVariant.attributes` is a Json column — defensively coerced like
+ * mapSpecs below, falling back to an empty object on an unexpected shape
+ * instead of trusting a raw `as Record<string, string>` cast (a non-string
+ * value or a non-object shape would otherwise flow straight through to the
+ * variant picker UI uncaught). */
+export function mapAttributes(attributes: unknown): Record<string, string> {
+  if (
+    typeof attributes !== "object" ||
+    attributes === null ||
+    Array.isArray(attributes)
+  ) {
+    return {};
+  }
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    if (typeof value === "string") result[key] = value;
+  }
+  return result;
+}
+
 export function mapVariant(
   variant: ProductWithCatalogRelations["variants"][number],
 ): ProductVariantDTO {
   return {
     id: variant.id,
     sku: variant.sku,
-    attributes: variant.attributes as Record<string, string>,
+    attributes: mapAttributes(variant.attributes),
     priceMinorUnits: toMinorUnits(variant.price),
     compareAtPriceMinorUnits: variant.compareAtPrice
       ? toMinorUnits(variant.compareAtPrice)

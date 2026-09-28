@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ ok: true, role }, { status: 201 });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.includes("Unique constraint")
         ? "A role with that name already exists."

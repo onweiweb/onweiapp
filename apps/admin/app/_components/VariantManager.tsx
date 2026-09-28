@@ -7,7 +7,13 @@ interface Variant {
   id: string;
   sku: string;
   attributes: Record<string, string>;
-  price: string;
+  // Pre-formatted server-side (formatCurrency, @onwei/core) rather than
+  // formatted here -- @onwei/core's package.json has no subpath exports, so
+  // any import from it (even a pure formatting helper) pulls its whole
+  // barrel in, including Prisma-touching modules that can't resolve in a
+  // client bundle. A Server Component doing the formatting and passing the
+  // string down avoids that entirely.
+  priceFormatted: string;
   status: string;
 }
 
@@ -98,7 +104,7 @@ export function VariantManager({
                     .map(([key, value]) => `${key}: ${value}`)
                     .join(", ") || "—"}
                 </td>
-                <td className="px-3 py-2">₹{variant.price}</td>
+                <td className="px-3 py-2">{variant.priceFormatted}</td>
                 <td className="px-3 py-2">
                   <select
                     value={variant.status}

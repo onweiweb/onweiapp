@@ -35,6 +35,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ ok: true, staffUser }, { status: 201 });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.includes("Unique constraint")
         ? "Someone already has an account with that email."

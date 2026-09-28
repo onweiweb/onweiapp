@@ -109,6 +109,7 @@ export async function PATCH(
     );
     return NextResponse.json({ ok: true, product });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.startsWith("invalid-specs")
         ? error.message.replace("invalid-specs: ", "")

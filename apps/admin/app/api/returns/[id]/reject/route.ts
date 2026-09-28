@@ -18,6 +18,7 @@ export async function POST(
     );
     return NextResponse.json({ ok: true, returnRequest });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.startsWith("not-pending")
         ? "This return was already resolved."

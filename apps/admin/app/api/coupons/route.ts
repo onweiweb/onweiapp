@@ -41,6 +41,7 @@ export async function POST(request: Request) {
     );
     return NextResponse.json({ ok: true, coupon }, { status: 201 });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.includes("Unique constraint")
         ? "That code is already in use — pick a different one."

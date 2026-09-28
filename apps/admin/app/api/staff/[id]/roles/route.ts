@@ -59,6 +59,7 @@ export async function DELETE(
     });
     return NextResponse.json({ ok: true });
   } catch (error) {
+    console.error(error);
     const message =
       error instanceof Error && error.message.startsWith("self-unassign")
         ? "You can't remove your own last role — ask another admin to do it."

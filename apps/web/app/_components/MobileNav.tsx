@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -20,13 +20,53 @@ const NAV_LINKS = [
 
 export function MobileNav() {
   const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  function close() {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }
+
+  // Escape-to-close, click-outside-to-close, and moving focus into the
+  // panel on open — none of this existed before, so a keyboard user had no
+  // way to close the menu short of tabbing all the way through it, and a
+  // screen reader had no indication this was a menu at all (no role, no
+  // focus management).
+  useEffect(() => {
+    if (!open) return;
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") close();
+    }
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node;
+      if (
+        !panelRef.current?.contains(target) &&
+        !triggerRef.current?.contains(target)
+      ) {
+        setOpen(false);
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener("pointerdown", handlePointerDown);
+    panelRef.current?.querySelector<HTMLElement>("a")?.focus();
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("pointerdown", handlePointerDown);
+    };
+  }, [open]);
 
   return (
     <div className="relative flex flex-col items-center">
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
+        aria-haspopup="menu"
         aria-label={open ? "Close menu" : "Open menu"}
         className="block"
       >
@@ -40,13 +80,19 @@ export function MobileNav() {
       </button>
 
       {open ? (
-        <div className="absolute top-[calc(100%+12px)] z-20 flex w-[240px] flex-col items-center gap-4 rounded-[20px] bg-onwei-blue px-6 py-6 shadow-lg">
+        <div
+          ref={panelRef}
+          role="menu"
+          aria-label="Main menu"
+          className="absolute top-[calc(100%+12px)] z-20 flex w-[240px] flex-col items-center gap-4 rounded-[20px] bg-onwei-blue px-6 py-6 shadow-lg"
+        >
           <ul className="flex flex-col items-center gap-4">
             {NAV_LINKS.map((link) => (
-              <li key={link.label}>
+              <li key={link.label} role="none">
                 <Link
+                  role="menuitem"
                   href={link.href}
-                  onClick={() => setOpen(false)}
+                  onClick={close}
                   className="whitespace-nowrap font-grotesk text-label uppercase text-onwei-beige"
                 >
                   {link.label}
@@ -55,8 +101,9 @@ export function MobileNav() {
             ))}
           </ul>
           <Link
+            role="menuitem"
             href="#"
-            onClick={() => setOpen(false)}
+            onClick={close}
             className="font-script text-script-md uppercase leading-none text-onwei-green"
           >
             insiders
