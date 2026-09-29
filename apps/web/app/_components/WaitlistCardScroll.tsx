@@ -6,31 +6,97 @@ import {
   motion,
   useScroll,
   useTransform,
-  type MotionStyle,
   type MotionValue,
 } from "motion/react";
 import { WaitlistMarquee } from "./WaitlistMarquee";
 
 const CARD_COUNT = 4;
 
-// Per-card motion layers computed once in ScrollCard and handed down to
-// each card component below, so every card stages its own text/
-// illustrations against the SAME staggered timing without each one
-// re-deriving it. The card frame itself (this file's outer ScrollCard
-// wrapper) carries the "background" layer — its own opacity fading in is
-// what "the background kicks in" means here, not a separate element, so
-// only text/illustrations need their own layer props.
-interface CardLayerProps {
-  textStyle: MotionStyle;
-  illustrationStyle: MotionStyle;
+// Shared timing a card hands down to its own beats (see useSweepIn /
+// useScaleBounce below) — `start`/`introEnd`/`outroStart`/`end` are
+// absolute points on the master 0-1 scroll progress; `span` is just
+// introEnd-start, precomputed since every beat below expresses its own
+// timing as a fraction of it.
+interface CardTiming {
+  progress: MotionValue<number>;
+  start: number;
+  span: number;
+  outroStart: number;
+  end: number;
+}
+
+// A piece that slides in from off the card (left/right/top/bottom per
+// `distance`'s sign and axis) and overshoots slightly past its resting
+// spot before settling — used for text sweeping in and for illustrations
+// that arrive by sliding rather than popping. `beat` is [begin, overshoot,
+// settle] as fractions of the card's own intro span, so different pieces
+// on the same card can be staggered just by giving them different beat
+// windows. Exit is a plain fade (matches the rest of this file) — only
+// the entrance gets the overshoot treatment.
+function useSweepIn(
+  { progress, start, span, outroStart, end }: CardTiming,
+  beat: [number, number, number],
+  axis: "x" | "y",
+  distance: number,
+  overshoot: number,
+  startOpacity: number,
+) {
+  const p0 = start;
+  const p1 = start + span * beat[0];
+  const p2 = start + span * beat[1];
+  const p3 = start + span * beat[2];
+  const opacity = useTransform(
+    progress,
+    [p0, p1, p3, outroStart, end],
+    [startOpacity, startOpacity, 1, 1, 0],
+  );
+  const offset = useTransform(
+    progress,
+    [p0, p1, p2, p3],
+    [distance, distance, overshoot, 0],
+  );
+  return axis === "x" ? { opacity, x: offset } : { opacity, y: offset };
+}
+
+// A piece that pops in — grows past its resting size then settles back,
+// instead of sliding in from a direction. Same staggered-beat idea as
+// useSweepIn above, just scale instead of position.
+function useScaleBounce(
+  { progress, start, span, outroStart, end }: CardTiming,
+  beat: [number, number, number],
+  fromScale: number,
+  overshootScale: number,
+  startOpacity: number,
+) {
+  const p0 = start;
+  const p1 = start + span * beat[0];
+  const p2 = start + span * beat[1];
+  const p3 = start + span * beat[2];
+  const opacity = useTransform(
+    progress,
+    [p0, p1, p3, outroStart, end],
+    [startOpacity, startOpacity, 1, 1, 0],
+  );
+  const scale = useTransform(
+    progress,
+    [p0, p1, p2, p3],
+    [fromScale, fromScale, overshootScale, 1],
+  );
+  return { opacity, scale };
 }
 
 // Figma nodes 945:4517/4520/4567/4583 — four cards laid out side by side on
-// the canvas, meant (per the brief) to be revealed one at a time as the user
-// scrolls, background first, then text sliding in, then illustrations —
-// see ScrollCard below for the staggered timing that drives textStyle/
-// illustrationStyle.
-function AllAccessCard({ textStyle }: CardLayerProps) {
+// the canvas, meant (per the brief) to be revealed one at a time as the
+// user scrolls. Each card plays out as a short sequence rather than one
+// blended crossfade: background lands with a little bounce, then text
+// sweeps in from one side, then illustrations arrive from the other side
+// (or pop in), each card with its own specific flourish — see each
+// component below for its own beat windows/directions.
+function AllAccessCard({ timing }: { timing: CardTiming }) {
+  // No separate illustration layer here — the blob IS the background, so
+  // it bounces along with the card frame (ScrollCard's own scale, below)
+  // rather than needing its own motion value.
+  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", -160, 18, 0);
   return (
     <div className="relative flex size-full items-center justify-center overflow-hidden rounded-[30px] bg-onwei-green">
       <Image
@@ -42,7 +108,7 @@ function AllAccessCard({ textStyle }: CardLayerProps) {
         className="absolute left-1/2 top-1/2 h-[110%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
       />
       <motion.p
-        style={textStyle}
+        style={text}
         className="relative px-8 text-center font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
       >
         All Access: Onwei Insiders Card
@@ -51,17 +117,24 @@ function AllAccessCard({ textStyle }: CardLayerProps) {
   );
 }
 
-function ShapeWhatsNextCard({ textStyle, illustrationStyle }: CardLayerProps) {
+function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
+  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", -160, 18, 0);
+  // Tennis: a scale-bounce "pop", first of the three illustrations.
+  const tennis = useScaleBounce(timing, [0.45, 0.62, 0.78], 0.4, 1.18, 0);
+  // Plank and tag: slide in from the right, one slightly after the other
+  // — staggered against each other, not just against the text.
+  const plank = useSweepIn(timing, [0.55, 0.75, 0.9], "x", 140, -16, 0);
+  const tag = useSweepIn(timing, [0.65, 0.85, 1], "x", 140, -16, 0);
   return (
     <div className="relative size-full overflow-hidden rounded-[30px] bg-onwei-purple">
-      {/* absolute inset-0 (not just a bare wrapper) — motion applying a
-          transform to animate `y` makes this div a new CSS containing
-          block the instant it mounts (even at y:0), which would otherwise
-          make the children's percentage-based left/top resolve against
-          THIS div instead of the card, breaking their positions. Matching
-          the card's own box exactly keeps that positioning identical to
-          before this wrapper existed. */}
-      <motion.div style={illustrationStyle} className="absolute inset-0">
+      {/* absolute inset-0 on each wrapper (not just a bare div) — motion
+          applying a transform (scale/x here) makes a div a new CSS
+          containing block the instant it mounts, which would otherwise
+          make each image's percentage-based left/top resolve against its
+          own tiny wrapper instead of the card. Matching the card's own
+          box exactly keeps that positioning identical to before these
+          wrappers existed. */}
+      <motion.div style={tennis} className="absolute inset-0">
         <Image
           src="/images/waitlist/cards/card2-illustration-tennis.svg"
           alt=""
@@ -70,6 +143,8 @@ function ShapeWhatsNextCard({ textStyle, illustrationStyle }: CardLayerProps) {
           aria-hidden
           className="absolute left-[17%] top-[12%] h-auto w-[10%] min-w-16"
         />
+      </motion.div>
+      <motion.div style={plank} className="absolute inset-0">
         <Image
           src="/images/waitlist/cards/card2-illustration-plank.svg"
           alt=""
@@ -78,6 +153,8 @@ function ShapeWhatsNextCard({ textStyle, illustrationStyle }: CardLayerProps) {
           aria-hidden
           className="absolute left-[54%] top-[52%] h-auto w-[20%] min-w-24 rotate-[6.34deg]"
         />
+      </motion.div>
+      <motion.div style={tag} className="absolute inset-0">
         <Image
           src="/images/waitlist/cards/card2-illustration-tag.svg"
           alt=""
@@ -88,7 +165,7 @@ function ShapeWhatsNextCard({ textStyle, illustrationStyle }: CardLayerProps) {
         />
       </motion.div>
       <motion.p
-        style={textStyle}
+        style={text}
         className="absolute left-[15%] top-[35%] w-[65%] font-display text-[28px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
       >
         Shape What&apos;s Next for Onwei
@@ -97,14 +174,32 @@ function ShapeWhatsNextCard({ textStyle, illustrationStyle }: CardLayerProps) {
   );
 }
 
-function SurprisesFromFoundersCard({
-  textStyle,
-  illustrationStyle,
-}: CardLayerProps) {
+function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
+  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", -160, 18, 0);
+  const founder = useScaleBounce(timing, [0.45, 0.65, 0.82], 0.4, 1.18, 0);
+  // Photo badge: a quick coloured-ring flash right as it lands, on top of
+  // the same pop the founder illustration gets (it's nested inside that
+  // illustration in the layout, see the JSX below).
+  const badgeRingBeat: [number, number, number] = [0.55, 0.72, 0.88];
+  const badgeRing = useTransform(
+    timing.progress,
+    [
+      timing.start,
+      timing.start + timing.span * badgeRingBeat[0],
+      timing.start + timing.span * badgeRingBeat[1],
+      timing.start + timing.span * badgeRingBeat[2],
+    ],
+    [
+      "0 0 0 0px rgba(237,237,134,0)",
+      "0 0 0 0px rgba(237,237,134,0)",
+      "0 0 0 6px rgba(237,237,134,0.9)",
+      "0 0 0 0px rgba(237,237,134,0)",
+    ],
+  );
   return (
     <div className="relative flex size-full flex-col items-center justify-center gap-8 rounded-[30px] bg-onwei-green px-8 py-12 sm:flex-row sm:justify-between sm:px-14">
       <motion.div
-        style={illustrationStyle}
+        style={founder}
         className="relative h-[180px] w-[110px] shrink-0 sm:h-[313px] sm:w-[192px]"
       >
         <Image
@@ -115,7 +210,10 @@ function SurprisesFromFoundersCard({
           aria-hidden
           className="object-contain"
         />
-        <div className="absolute -left-6 -top-10 h-16 w-24 sm:-left-8 sm:-top-16 sm:h-20 sm:w-32">
+        <motion.div
+          style={{ boxShadow: badgeRing }}
+          className="absolute -left-6 -top-10 h-16 w-24 rounded-[20px] sm:-left-8 sm:-top-16 sm:h-20 sm:w-32"
+        >
           <Image
             src="/images/waitlist/cards/card3-photo.png"
             alt=""
@@ -124,10 +222,10 @@ function SurprisesFromFoundersCard({
             aria-hidden
             className="object-contain"
           />
-        </div>
+        </motion.div>
       </motion.div>
       <motion.p
-        style={textStyle}
+        style={text}
         className="text-center font-display text-[28px] font-bold uppercase leading-[0.9] text-onwei-purple sm:text-[48px]"
       >
         Surprises
@@ -140,59 +238,76 @@ function SurprisesFromFoundersCard({
   );
 }
 
-function FirstDibsCard({ textStyle, illustrationStyle }: CardLayerProps) {
+function FirstDibsCard({ timing }: { timing: CardTiming }) {
+  // Three text lines pop in one after another instead of as one block.
+  const line1 = useSweepIn(timing, [0.15, 0.32, 0.45], "y", 28, -6, 0);
+  const line2 = useSweepIn(timing, [0.28, 0.45, 0.58], "y", 28, -6, 0);
+  const line3 = useSweepIn(timing, [0.41, 0.58, 0.71], "y", 28, -6, 0);
+  // Three illustrations, each from a direction matching where it sits and
+  // each with its own small bounce: dumbbell (top right) drops in from
+  // above, sticky note (bottom left) slides in from the left, squiggle
+  // (bottom right) slides in from the right.
+  const dumbbell = useSweepIn(timing, [0.55, 0.72, 0.85], "y", -60, 10, 0);
+  const stickyNote = useSweepIn(timing, [0.62, 0.79, 0.92], "x", -80, 10, 0);
+  const squiggle = useSweepIn(timing, [0.69, 0.86, 1], "x", 80, -10, 0);
   return (
     <div className="relative flex size-full flex-col items-center justify-center gap-8 overflow-hidden rounded-[30px] bg-onwei-purple px-8 py-12 sm:gap-14">
-      <motion.div
-        style={textStyle}
-        className="flex flex-col items-center gap-8 sm:gap-14"
+      <motion.p
+        style={line1}
+        className="font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
       >
-        <p className="font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]">
-          first dibs
-        </p>
-        <p className="font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]">
-          Exclusive Offers
-        </p>
-        <p className="font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]">
-          Event Invites
-        </p>
+        first dibs
+      </motion.p>
+      <motion.p
+        style={line2}
+        className="font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
+      >
+        Exclusive Offers
+      </motion.p>
+      <motion.p
+        style={line3}
+        className="font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
+      >
+        Event Invites
+      </motion.p>
+      <motion.div
+        style={dumbbell}
+        className="absolute right-[15%] top-[18%] h-[60px] w-[110px] rotate-[2deg] sm:h-[87px] sm:w-[189px]"
+      >
+        <Image
+          src="/images/waitlist/cards/card4-dumbbell-badge.png"
+          alt=""
+          fill
+          sizes="200px"
+          aria-hidden
+          className="object-contain"
+        />
       </motion.div>
-      {/* absolute inset-0 — same containing-block reasoning as
-          ShapeWhatsNextCard's illustration wrapper above: these three
-          decorative pieces are positioned in percentages relative to the
-          card, and this wrapper animating a transform would otherwise
-          silently become their new reference box the moment it mounts. */}
-      <motion.div style={illustrationStyle} className="absolute inset-0">
-        <div className="absolute right-[15%] top-[18%] h-[60px] w-[110px] rotate-[2deg] sm:h-[87px] sm:w-[189px]">
-          <Image
-            src="/images/waitlist/cards/card4-dumbbell-badge.png"
-            alt=""
-            fill
-            sizes="200px"
-            aria-hidden
-            className="object-contain"
-          />
-        </div>
-        <div className="absolute bottom-[24%] left-[8%] h-[70px] w-[70px] rotate-[-7.59deg] sm:h-[97px] sm:w-[96px]">
-          <Image
-            src="/images/waitlist/cards/card4-sticky-note.png"
-            alt=""
-            fill
-            sizes="200px"
-            aria-hidden
-            className="object-contain"
-          />
-        </div>
-        <div className="absolute bottom-[16%] right-[15%] h-[26px] w-[110px] sm:h-[38px] sm:w-[165px]">
-          <Image
-            src="/images/waitlist/cards/card4-squiggle.png"
-            alt=""
-            fill
-            sizes="200px"
-            aria-hidden
-            className="object-contain"
-          />
-        </div>
+      <motion.div
+        style={stickyNote}
+        className="absolute bottom-[24%] left-[8%] h-[70px] w-[70px] rotate-[-7.59deg] sm:h-[97px] sm:w-[96px]"
+      >
+        <Image
+          src="/images/waitlist/cards/card4-sticky-note.png"
+          alt=""
+          fill
+          sizes="200px"
+          aria-hidden
+          className="object-contain"
+        />
+      </motion.div>
+      <motion.div
+        style={squiggle}
+        className="absolute bottom-[16%] right-[15%] h-[26px] w-[110px] sm:h-[38px] sm:w-[165px]"
+      >
+        <Image
+          src="/images/waitlist/cards/card4-squiggle.png"
+          alt=""
+          fill
+          sizes="200px"
+          aria-hidden
+          className="object-contain"
+        />
       </motion.div>
     </div>
   );
@@ -212,7 +327,7 @@ function ScrollCard({
 }: {
   progress: MotionValue<number>;
   index: number;
-  Content: (props: CardLayerProps) => React.ReactNode;
+  Content: (props: { timing: CardTiming }) => React.ReactNode;
 }) {
   const step = 1 / CARD_COUNT;
   const start = index * step;
@@ -220,79 +335,47 @@ function ScrollCard({
   // A non-zero minimum keeps every input to useTransform strictly
   // increasing — a duplicated x-value (introEnd === start) at index 0's
   // progress===0 boundary caused a blank first paint before the first
-  // scroll event. The four eps-spaced points below extend that same fix
-  // to every staggered sub-point (background/text/illustration all need
-  // their own distinct-but-effectively-instant entrance for the card
-  // that's already on screen at first paint).
-  const introFraction = index === 0 ? 0.001 : 0.15;
-  const eps = step * 0.0001;
-  // Shorter than the original 0.25, and paired with a much smaller scale
-  // range below — at 1.2x, a card fading out while blowing up 20% spent a
-  // long stretch of scroll sitting at ~40-60% opacity AND oversized, which
-  // read as a washed-out, blurry ghost rather than a clean exit. Less time
-  // at partial opacity keeps the same "lifts and fades" idea from the
-  // brief without the muddy middle — the exit stays a plain fade (no more
-  // scale) now that the frame is a fixed size throughout, see below.
+  // scroll event. Every beat below derives its own timing as start +
+  // span*fraction, so this one tiny introFraction is all that's needed to
+  // keep the whole card's sequence (background/text/illustrations) both
+  // monotonic AND effectively instant for the card that's already on
+  // screen at first paint — nothing separate needed per beat.
+  //
+  // Roughly double the old value (0.15 → 0.33) — per feedback, the whole
+  // entrance felt like "the screen just changing" rather than a sequence
+  // of distinct moments; this gives each of the three beats (background,
+  // text, illustrations) real scroll distance to play out in instead of
+  // blending together in a blink.
+  const introFraction = index === 0 ? 0.001 : 0.33;
   const outroFraction = 0.12;
   const introEnd = start + step * introFraction;
   const outroStart = end - step * outroFraction;
+  const span = introEnd - start;
 
-  // Background = the card frame's own opacity (this component's outer
-  // motion.div below) — fades in first, over the full intro window. No
-  // scale here anymore: per the brief, the card's size stays fixed
-  // throughout, only opacity/child layers animate.
+  // Background = the card frame's own opacity+scale (this wrapper). Pops
+  // in with a small overshoot (slightly small → slightly big → settles)
+  // instead of a flat fade, then holds at rest size for the rest of the
+  // card's turn — only opacity animates again, for the exit fade.
   const bgOpacity = useTransform(
     progress,
-    [start, introEnd, outroStart, end],
+    [start, start + span * 0.3, outroStart, end],
     [index === 0 ? 1 : 0, 1, 1, 0],
   );
-
-  // Text: fades in AND slides in from the left, starting shortly after the
-  // background begins and finishing before the background's own intro
-  // ends — the two overlap rather than running fully sequentially, which
-  // reads as one fluid layered motion instead of a slow relay.
-  const textStart =
-    index === 0 ? start + eps : start + (introEnd - start) * 0.2;
-  const textEnd =
-    index === 0 ? start + eps * 2 : start + (introEnd - start) * 0.75;
-  const textOpacity = useTransform(
+  const bgScale = useTransform(
     progress,
-    [start, textStart, textEnd, outroStart, end],
-    [index === 0 ? 1 : 0, index === 0 ? 1 : 0, 1, 1, 0],
-  );
-  const textX = useTransform(
-    progress,
-    [start, textStart, textEnd, outroStart, end],
-    [index === 0 ? 0 : -40, index === 0 ? 0 : -40, 0, 0, 0],
+    [start, start + span * 0.1, start + span * 0.2, start + span * 0.32],
+    [0.8, 1.12, 0.94, 1],
   );
 
-  // Illustrations: last to arrive, starting around the text's midpoint and
-  // finishing as the intro window closes — a small upward drift alongside
-  // the fade, distinct from text's horizontal slide.
-  const illustrationStart =
-    index === 0 ? start + eps * 3 : start + (introEnd - start) * 0.45;
-  const illustrationEnd = index === 0 ? start + eps * 4 : introEnd;
-  const illustrationOpacity = useTransform(
-    progress,
-    [start, illustrationStart, illustrationEnd, outroStart, end],
-    [index === 0 ? 1 : 0, index === 0 ? 1 : 0, 1, 1, 0],
-  );
-  const illustrationY = useTransform(
-    progress,
-    [start, illustrationStart, illustrationEnd, outroStart, end],
-    [index === 0 ? 0 : 16, index === 0 ? 0 : 16, 0, 0, 0],
-  );
+  const timing: CardTiming = { progress, start, span, outroStart, end };
 
   return (
     <motion.div
-      style={{ opacity: bgOpacity }}
+      style={{ opacity: bgOpacity, scale: bgScale }}
       className="absolute inset-0"
       aria-hidden={index !== 0}
     >
-      <Content
-        textStyle={{ opacity: textOpacity, x: textX }}
-        illustrationStyle={{ opacity: illustrationOpacity, y: illustrationY }}
-      />
+      <Content timing={timing} />
     </motion.div>
   );
 }
