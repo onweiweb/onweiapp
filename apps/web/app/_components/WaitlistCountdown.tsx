@@ -73,22 +73,22 @@ export function WaitlistCountdown({ launchAt }: { launchAt: string }) {
   ];
 
   return (
-    <div className="flex w-full flex-col items-center justify-center gap-[18px] rounded-[20px] bg-onwei-green p-6 text-onwei-blue">
+    <div className="flex w-full flex-col items-center justify-center gap-2 rounded-[20px] bg-onwei-green p-3 text-onwei-blue sm:gap-[18px] sm:p-6">
       <p className="w-full text-center font-grotesk text-[14px]">
         Open to a small group just for:
       </p>
-      <div className="grid grid-cols-2 gap-x-14 gap-y-[18px] sm:flex sm:items-center sm:gap-14">
+      <div className="grid grid-cols-2 gap-x-8 gap-y-2 sm:flex sm:items-center sm:gap-14 sm:gap-y-[18px]">
         {units.map(([label, value]) => (
           <div
             key={label}
-            className="flex h-[93px] w-[73px] flex-col items-center gap-1.5"
+            className="flex h-[56px] w-[73px] flex-col items-center gap-1.5 sm:h-[93px]"
           >
             <motion.p
               key={value}
               initial={{ opacity: 0.4, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, ease: "easeOut" }}
-              className="font-display text-[48px] font-bold uppercase leading-[0.9] sm:text-[70px]"
+              className="font-display text-[28px] font-bold uppercase leading-[0.9] sm:text-[70px]"
             >
               {pad(value)}
             </motion.p>

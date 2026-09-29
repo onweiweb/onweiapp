@@ -30,9 +30,14 @@ export default async function WaitlistPage() {
 
       <section className="w-full max-w-[1440px]">
         <WaitlistCardScroll>
-          <div className="flex w-full flex-col justify-between gap-[30px] rounded-[30px] bg-onwei-purple px-6 py-12 sm:h-[635px] sm:w-[665px] sm:px-14 sm:py-12">
-            <div className="relative flex flex-col gap-6">
-              <p className="font-display text-[48px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
+          {/* py-6/gap-4 on mobile (was py-12/gap-[30px], same as desktop) —
+              this card has to fit next to the h-[300px] card viewport
+              within one mobile screen now (see WaitlistCardScroll's h-dvh
+              comment); the old desktop-sized padding/gaps alone made that
+              impossible regardless of how tight everything else got. */}
+          <div className="flex w-full flex-col justify-between gap-4 rounded-[30px] bg-onwei-purple px-5 py-6 sm:h-[635px] sm:w-[665px] sm:gap-[30px] sm:px-14 sm:py-12">
+            <div className="relative flex flex-col gap-3 sm:gap-6">
+              <p className="font-display text-[32px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
                 Join the{" "}
                 <span className="relative inline-block">
                   <Image
@@ -49,7 +54,7 @@ export default async function WaitlistPage() {
               <p className="absolute -top-10 right-0 font-script text-script-md uppercase leading-[1.2] text-onwei-green">
                 this is just the warm up
               </p>
-              <p className="font-grotesk text-[18px] leading-[1.3] text-onwei-white">
+              <p className="font-grotesk text-[14px] leading-[1.3] text-onwei-white sm:text-[18px]">
                 Unlock an{" "}
                 <span className="font-medium">
                   All Access Onwei Insiders Pass
