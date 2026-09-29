@@ -85,18 +85,70 @@ function useScaleBounce(
   return { opacity, scale };
 }
 
+// A quick colour-and-size "blink" for the one line per card that needs the
+// most emphasis — fires once the main entrance (sweep or pop) has already
+// settled, so it reads as a separate accent beat, not part of the arrival.
+// `beat` is [flashStart, flashPeak, settle] as fractions of the card's own
+// intro span, same convention as the two hooks above.
+function useEmphasisFlash(
+  { progress, start, span }: CardTiming,
+  beat: [number, number, number],
+  normalColor: string,
+  flashColor: string = "#ffffff",
+) {
+  const p0 = start + span * beat[0];
+  const p1 = start + span * beat[1];
+  const p2 = start + span * beat[2];
+  const color = useTransform(
+    progress,
+    [p0, p1, p2],
+    [normalColor, flashColor, normalColor],
+  );
+  const scale = useTransform(progress, [p0, p1, p2], [1, 1.08, 1]);
+  return { color, scale };
+}
+
 // Figma nodes 945:4517/4520/4567/4583 — four cards laid out side by side on
 // the canvas, meant (per the brief) to be revealed one at a time as the
 // user scrolls. Each card plays out as a short sequence rather than one
-// blended crossfade: background lands with a little bounce, then text
-// sweeps in from one side, then illustrations arrive from the other side
-// (or pop in), each card with its own specific flourish — see each
-// component below for its own beat windows/directions.
+// blended crossfade: background lands, then text/illustrations arrive —
+// but per client feedback, each card now gets a genuinely DIFFERENT
+// entrance style (not the same "sweep from the left" for every card), so
+// the sequence itself keeps reading as one continuous motion rather than
+// four repeats of the same beat: card 1 pops from the centre, card 2 drops
+// from the top, card 3 slides in from the right, card 4 zigzags — see each
+// component below for its own beat windows/directions. Each card's one
+// most-important line also gets a quick colour+size "blink" once it lands
+// (useEmphasisFlash above) for a bit of extra typographic punch.
 function AllAccessCard({ timing }: { timing: CardTiming }) {
   // No separate illustration layer here — the blob IS the background, so
   // it just fades in with the card frame rather than needing its own
-  // motion value.
-  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", -160, 18, 0);
+  // motion value. Text POPS from the centre (the one card with no
+  // directional sweep) rather than sliding in from a side.
+  const text = useScaleBounce(timing, [0.3, 0.55, 0.7], 0.5, 1.15, 0);
+  const emphasis = useEmphasisFlash(timing, [0.72, 0.86, 1], "#eded86");
+  // The pop-in bounce and the later emphasis blink both animate `scale`,
+  // but never at the same time (the blink's window only starts once the
+  // pop-in has already settled back to 1) — one flat useTransform call
+  // over both sets of keyframes in order, same pattern as every other
+  // beat in this file, rather than combining two separate MotionValues
+  // (which tripped a "monotonically non-decreasing" WAAPI error — Motion
+  // couldn't hardware-accelerate a scroll-linked animation built from two
+  // already-scroll-linked source values).
+  const { start, span } = timing;
+  const scale = useTransform(
+    timing.progress,
+    [
+      start,
+      start + span * 0.3,
+      start + span * 0.55,
+      start + span * 0.7,
+      start + span * 0.72,
+      start + span * 0.86,
+      start + span,
+    ],
+    [0.5, 0.5, 1.15, 1, 1, 1.08, 1],
+  );
   return (
     <div className="relative flex size-full items-center justify-center overflow-hidden rounded-[30px] bg-onwei-green">
       <Image
@@ -108,8 +160,8 @@ function AllAccessCard({ timing }: { timing: CardTiming }) {
         className="absolute left-1/2 top-1/2 h-[110%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
       />
       <motion.p
-        style={text}
-        className="relative px-8 text-center font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
+        style={{ opacity: text.opacity, color: emphasis.color, scale }}
+        className="relative px-8 text-center font-display text-[32px] font-bold uppercase leading-[0.9] sm:text-[48px]"
       >
         All Access: Onwei Insiders Card
       </motion.p>
@@ -118,7 +170,10 @@ function AllAccessCard({ timing }: { timing: CardTiming }) {
 }
 
 function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
-  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", -160, 18, 0);
+  // Drops in from the top (card 1 pops from the centre, card 3 slides in
+  // from the right, card 4 zigzags) — every card reads differently now.
+  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "y", -140, 16, 0);
+  const emphasis = useEmphasisFlash(timing, [0.72, 0.85, 1], "#eded86");
   // Tennis: a scale-bounce "pop", first of the three illustrations.
   const tennis = useScaleBounce(timing, [0.45, 0.62, 0.78], 0.4, 1.18, 0);
   // Plank and tag: slide in from the right, one slightly after the other
@@ -165,8 +220,8 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
         />
       </motion.div>
       <motion.p
-        style={text}
-        className="absolute left-[15%] top-[35%] w-[65%] font-display text-[28px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
+        style={{ ...text, color: emphasis.color, scale: emphasis.scale }}
+        className="absolute left-[15%] top-[35%] w-[65%] font-display text-[28px] font-bold uppercase leading-[0.9] sm:text-[48px]"
       >
         Shape What&apos;s Next for Onwei
       </motion.p>
@@ -175,7 +230,10 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
 }
 
 function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
-  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", -160, 18, 0);
+  // Slides in from the right, mirroring card 2's arrival from the top and
+  // card 1's centre pop.
+  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", 160, -18, 0);
+  const emphasis = useEmphasisFlash(timing, [0.72, 0.85, 1], "#8e94ca");
   const founder = useScaleBounce(timing, [0.45, 0.65, 0.82], 0.4, 1.18, 0);
   // Photo badge: a quick coloured-ring flash right as it lands, on top of
   // the same pop the founder illustration gets (it's nested inside that
@@ -225,8 +283,8 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
         </motion.div>
       </motion.div>
       <motion.p
-        style={text}
-        className="text-center font-display text-[28px] font-bold uppercase leading-[0.9] text-onwei-purple sm:text-[48px]"
+        style={{ ...text, color: emphasis.color, scale: emphasis.scale }}
+        className="text-center font-display text-[28px] font-bold uppercase leading-[0.9] sm:text-[48px]"
       >
         Surprises
         <br />
@@ -239,10 +297,14 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
 }
 
 function FirstDibsCard({ timing }: { timing: CardTiming }) {
-  // Three text lines pop in one after another instead of as one block.
-  const line1 = useSweepIn(timing, [0.15, 0.32, 0.45], "y", 28, -6, 0);
-  const line2 = useSweepIn(timing, [0.28, 0.45, 0.58], "y", 28, -6, 0);
+  // Three text lines pop in one after another instead of as one block —
+  // and, unlike the other three cards (each one direction only), this one
+  // zigzags: left, then right, then bottom, so the whole card reads as its
+  // own distinct rhythm rather than a repeat of any other card's sweep.
+  const line1 = useSweepIn(timing, [0.15, 0.32, 0.45], "x", -70, 8, 0);
+  const line2 = useSweepIn(timing, [0.28, 0.45, 0.58], "x", 70, -8, 0);
   const line3 = useSweepIn(timing, [0.41, 0.58, 0.71], "y", 28, -6, 0);
+  const emphasis = useEmphasisFlash(timing, [0.45, 0.55, 0.65], "#eded86");
   // Three illustrations, each from a direction matching where it sits and
   // each with its own small bounce: dumbbell (top right) drops in from
   // above, sticky note (bottom left) slides in from the left, squiggle
@@ -253,8 +315,8 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
   return (
     <div className="relative flex size-full flex-col items-center justify-center gap-8 overflow-hidden rounded-[30px] bg-onwei-purple px-8 py-12 sm:gap-14">
       <motion.p
-        style={line1}
-        className="font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
+        style={{ ...line1, color: emphasis.color, scale: emphasis.scale }}
+        className="font-display text-[32px] font-bold uppercase leading-[0.9] sm:text-[48px]"
       >
         first dibs
       </motion.p>
@@ -357,10 +419,34 @@ function ScrollCard({
   // frame itself; it just fades in, and the entrance drama instead comes
   // from the text/illustrations sweeping in from a side (see each card's
   // own useSweepIn/useScaleBounce calls below).
+  //
+  // The fade-in and fade-out windows are centred on the SAME boundary
+  // (`start` for this card's entrance is the previous card's `end`) and
+  // share the same width, so one card's fade-out and the next card's
+  // fade-in are mirror images of each other over the identical stretch of
+  // progress — a true crossfade. Sizing each card's own intro/outro
+  // independently (old version: outro over the last 12% of THIS card's
+  // step, intro over 30% of the NEXT card's much-shorter intro span) left
+  // a gap where neither card was near full opacity, so the page's beige
+  // background — or really, whichever card had most recently been fully
+  // opaque, i.e. the previous ("first") one — stayed visible a beat too
+  // long into every single transition instead of the incoming card's own
+  // background taking over right away.
+  // Clamped to [0, 1] — scrollYProgress never leaves that range, and an
+  // out-of-range breakpoint (card 0's window starts below 0, the last
+  // card's ends above 1) made Motion's hardware-accelerated scroll
+  // animation throw "Offsets must be monotonically non-decreasing" when it
+  // tried to build a native WAAPI animation from it.
+  const crossfade = step * 0.06;
   const bgOpacity = useTransform(
     progress,
-    [start, start + span * 0.3, outroStart, end],
-    [index === 0 ? 1 : 0, 1, 1, 0],
+    [
+      Math.max(0, start - crossfade / 2),
+      start + crossfade / 2,
+      end - crossfade / 2,
+      Math.min(1, end + crossfade / 2),
+    ],
+    [index === 0 ? 1 : 0, 1, 1, index === CARD_COUNT - 1 ? 1 : 0],
   );
 
   const timing: CardTiming = { progress, start, span, outroStart, end };
@@ -377,17 +463,19 @@ function ScrollCard({
 }
 
 /**
- * A tall (400vh) wrapper pins the whole row — hero card plus card viewport,
+ * A tall (500vh) wrapper pins the whole row — hero card plus card viewport,
  * passed in as `children` — via `sticky` while the user scrolls past it;
  * scroll progress through that wrapper drives which of the 4 cards is
  * visible. `children` has to be pinned in the same sticky box as the cards,
  * not a flex sibling outside this wrapper: a flex row's height stretches to
- * its tallest child, and this wrapper's own child is 400vh tall — as a
- * sibling, the hero card would get vertically centered inside a 400vh row
+ * its tallest child, and this wrapper's own child is 500vh tall — as a
+ * sibling, the hero card would get vertically centered inside a 500vh row
  * and pushed thousands of pixels down. Plain CSS sticky (not a
  * JS-computed fixed position) plus transform/opacity-only animation on the
  * cards keeps this on the compositor thread — see the "snappy and
- * scalable" note in project chat history.
+ * scalable" note in project chat history. 500vh (was 400vh) gives every
+ * card's beats (background/text/illustrations) more scroll distance to
+ * play out in, since the whole sequence felt slightly rushed at 400vh.
  */
 export function WaitlistCardScroll({
   children,
@@ -402,13 +490,13 @@ export function WaitlistCardScroll({
 
   return (
     <>
-      <div ref={containerRef} className="relative h-[400vh]">
+      <div ref={containerRef} className="relative h-[500vh]">
         {/* h-screen/h-dvh (not a fixed 747px, and not min-h-* on either
             breakpoint) so the pinned box is EXACTLY one viewport tall —
             required for the pin/progress math below, not just a visual
             choice. `scrollYProgress` is computed from this wrapper's full
-            400vh height on the assumption that CSS `position: sticky`
-            stays pinned for the whole (400vh - one viewport) scroll
+            500vh height on the assumption that CSS `position: sticky`
+            stays pinned for the whole (500vh - one viewport) scroll
             distance, which is only true when the sticky box's own content
             is exactly one viewport tall. `min-h-screen` (mobile's old
             value) let the box grow taller than the viewport whenever its
