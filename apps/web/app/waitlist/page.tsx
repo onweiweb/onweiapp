@@ -31,10 +31,8 @@ export default async function WaitlistPage() {
       <section className="w-full max-w-[1440px]">
         <WaitlistCardScroll>
           {/* py-6/gap-4 on mobile (was py-12/gap-[30px], same as desktop) —
-              this card has to fit next to the h-[300px] card viewport
-              within one mobile screen now (see WaitlistCardScroll's h-dvh
-              comment); the old desktop-sized padding/gaps alone made that
-              impossible regardless of how tight everything else got. */}
+              this card sits next to the h-[300px] card viewport on mobile;
+              the old desktop-sized padding/gaps alone made that too tall. */}
           <div className="flex w-full flex-col justify-between gap-4 rounded-[30px] bg-onwei-purple px-5 py-6 sm:h-[635px] sm:w-[665px] sm:gap-[30px] sm:px-14 sm:py-12">
             <div className="relative flex flex-col gap-3 sm:gap-6">
               {/* Figma mobile (node 945:4427) puts this line in normal flow

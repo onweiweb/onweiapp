@@ -1,15 +1,21 @@
 "use client";
 
 import Image from "next/image";
-import { useRef } from "react";
+import { useEffect } from "react";
 import {
+  animate,
   motion,
-  useScroll,
-  useSpring,
+  useMotionValue,
+  useReducedMotion,
   useTransform,
   type MotionValue,
 } from "motion/react";
 import { WaitlistMarquee } from "./WaitlistMarquee";
+
+// Full loop duration (card 1 through card 4, then straight back to card 1).
+// Split evenly, this is ~2.5s per card — per feedback, 18s (4.5s/card) read
+// as too slow for an autoplaying loop.
+const CYCLE_SECONDS = 10;
 
 const CARD_COUNT = 4;
 
@@ -131,8 +137,10 @@ function useEmphasisFlash(
 }
 
 // Figma nodes 945:4517/4520/4567/4583 — four cards laid out side by side on
-// the canvas, meant (per the brief) to be revealed one at a time as the
-// user scrolls. Each card plays out as a short sequence rather than one
+// the canvas, meant (per the brief) to be revealed one at a time —
+// originally scroll-driven, now an autoplaying loop (see
+// WaitlistCardScroll's own comment below). Each card plays out as a short
+// sequence rather than one
 // blended crossfade: background lands, then text/illustrations arrive —
 // but per client feedback, each card now gets a genuinely DIFFERENT
 // entrance style (not the same "sweep from the left" for every card), so
@@ -428,21 +436,11 @@ function ScrollCard({
   const step = 1 / CARD_COUNT;
   const start = index * step;
   const end = start + step;
-  // A non-zero minimum keeps every input to useTransform strictly
-  // increasing — a duplicated x-value (introEnd === start) at index 0's
-  // progress===0 boundary caused a blank first paint before the first
-  // scroll event. Every beat below derives its own timing as start +
-  // span*fraction, so this one tiny introFraction is all that's needed to
-  // keep the whole card's sequence (background/text/illustrations) both
-  // monotonic AND effectively instant for the card that's already on
-  // screen at first paint — nothing separate needed per beat.
-  //
-  // Roughly double the old value (0.15 → 0.33) — per feedback, the whole
-  // entrance felt like "the screen just changing" rather than a sequence
-  // of distinct moments; this gives each of the three beats (background,
-  // text, illustrations) real scroll distance to play out in instead of
-  // blending together in a blink.
-  const introFraction = index === 0 ? 0.001 : 0.33;
+  // Every card gets the same real entrance, including card 1 — this now
+  // autoplays in a loop rather than sitting on screen pre-scroll, so card
+  // 1's own sweep-in is something a viewer actually watches play out each
+  // time round, not just the scroll-jacked version's "already there" state.
+  const introFraction = 0.33;
   const outroFraction = 0.12;
   const introEnd = start + step * introFraction;
   const outroStart = end - step * outroFraction;
@@ -497,95 +495,68 @@ function ScrollCard({
 }
 
 /**
- * A tall (500vh) wrapper pins the whole row — hero card plus card viewport,
- * passed in as `children` — via `sticky` while the user scrolls past it;
- * scroll progress through that wrapper drives which of the 4 cards is
- * visible. `children` has to be pinned in the same sticky box as the cards,
- * not a flex sibling outside this wrapper: a flex row's height stretches to
- * its tallest child, and this wrapper's own child is 500vh tall — as a
- * sibling, the hero card would get vertically centered inside a 500vh row
- * and pushed thousands of pixels down. Plain CSS sticky (not a
- * JS-computed fixed position) plus transform/opacity-only animation on the
- * cards keeps this on the compositor thread — see the "snappy and
- * scalable" note in project chat history. 500vh (was 400vh) gives every
- * card's beats (background/text/illustrations) more scroll distance to
- * play out in, since the whole sequence felt slightly rushed at 400vh.
+ * Per client feedback, this no longer scrubs with scroll position — it
+ * autoplays on load and loops forever, like a background video: card 1 → 2
+ * → 3 → 4, then straight back to card 1, on a fixed timer
+ * (CYCLE_SECONDS) rather than however fast/slow the user happens to
+ * scroll. `progress` is a plain time-driven MotionValue (0 → 1 over
+ * CYCLE_SECONDS, linear, repeating) fed into the exact same per-card beat
+ * math (useSweepIn/useScaleBounce/useEmphasisFlash) that used to be driven
+ * by scrollYProgress — those hooks only care that their input climbs 0→1,
+ * not what drives it. The loop restart (progress 1 → 0) is a hard cut, not
+ * a crossfade: card 4 is still held at full opacity when the timer hits 1
+ * (see ScrollCard's bgOpacity), card 1 is already back at full opacity the
+ * instant progress resets to 0, matching how a looping video cuts back to
+ * its first frame rather than fading through black.
  */
 export function WaitlistCardScroll({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end end"],
-  });
-  // Raw scrollYProgress jumps straight to wherever a fast scroll (flick,
-  // trackpad fling, holding PageDown) lands — every beat above is driven
-  // 1:1 by progress, so a fast scroll skips through most of a card's
-  // sequence in a couple of frames, reported as barely seeing the
-  // animation at all. Springing it makes the driven progress lag behind
-  // and catch up smoothly instead of snapping, so a fast scroll still
-  // plays the sequence out over a beat or two after the scroll itself
-  // stops, rather than the frames simply not existing. Stiff/light enough
-  // that slow, deliberate scrolling still tracks the finger/wheel closely
-  // — this only becomes noticeable on quick scrolls.
-  const smoothProgress = useSpring(scrollYProgress, {
-    stiffness: 200,
-    damping: 30,
-    mass: 0.5,
-  });
+  const progress = useMotionValue(0);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (reduceMotion) {
+      // Freeze on card 1's settled resting frame (past its own intro, well
+      // before its outro starts) instead of looping — same "skip straight
+      // to the final state" contract ScrollReveal/WaitlistHeader use for
+      // this preference elsewhere on the page.
+      progress.set(1 / CARD_COUNT / 2);
+      return;
+    }
+    const controls = animate(progress, 1, {
+      duration: CYCLE_SECONDS,
+      ease: "linear",
+      repeat: Infinity,
+    });
+    return () => controls.stop();
+  }, [progress, reduceMotion]);
 
   return (
     <>
-      <div ref={containerRef} className="relative h-[500vh]">
-        {/* h-screen/h-dvh (not a fixed 747px, and not min-h-* on either
-            breakpoint) so the pinned box is EXACTLY one viewport tall —
-            required for the pin/progress math below, not just a visual
-            choice. `scrollYProgress` is computed from this wrapper's full
-            500vh height on the assumption that CSS `position: sticky`
-            stays pinned for the whole (500vh - one viewport) scroll
-            distance, which is only true when the sticky box's own content
-            is exactly one viewport tall. `min-h-screen` (mobile's old
-            value) let the box grow taller than the viewport whenever its
-            content didn't fit, so the browser's native sticky unpinned
-            early (measured: ~1310px of content against an ~900px viewport
-            unpins ~1300px before progress reaches 1.0) — the box would
-            visibly scroll away while the card animation was still playing
-            out its last ~35%, reported as the view "getting stuck". h-dvh
-            forces the same one-screen contract mobile already relies on
-            here for the card viewport to even be reachable during the pin;
-            the hero card and card viewport below are sized to actually fit
-            within it (see their own comments). justify-center centers the
-            [row + marquee] group as a whole inside the full-height box.
-            Desktop-only marquee (`hidden sm:block`) — mobile gets its own
-            instance below, outside the pin, same reasoning as before. */}
-        <div className="sticky top-0 flex h-dvh w-full flex-col items-center justify-center gap-4 px-3 py-4 sm:h-screen sm:gap-10 sm:px-11 sm:py-6">
-          <div className="flex w-full max-w-[1440px] flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-8">
-            {children}
-            <div className="relative h-[300px] w-full sm:h-[635px] sm:flex-1">
-              {CARDS.map((Content, index) => (
-                <ScrollCard
-                  key={index}
-                  progress={smoothProgress}
-                  index={index}
-                  Content={Content}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="hidden w-full max-w-[1440px] sm:block">
-            <WaitlistMarquee />
+      <div className="flex w-full flex-col items-center justify-center gap-4 px-3 py-4 sm:gap-10 sm:px-11 sm:py-6">
+        <div className="flex w-full max-w-[1440px] flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-8">
+          {children}
+          <div className="relative h-[300px] w-full sm:h-[635px] sm:flex-1">
+            {CARDS.map((Content, index) => (
+              <ScrollCard
+                key={index}
+                progress={progress}
+                index={index}
+                Content={Content}
+              />
+            ))}
           </div>
         </div>
+        <div className="hidden w-full max-w-[1440px] sm:block">
+          <WaitlistMarquee />
+        </div>
       </div>
-      {/* Mobile counterpart to the desktop-only marquee above — lives in
-          normal flow after the pinned section ends, not inside the sticky
-          box, so it stops eating into the vertical budget the card viewport
-          needs on mobile. See the comment above for the measurement.
+      {/* Mobile counterpart to the desktop-only marquee above.
           pt-6 only (not py-6) — Figma's mobile mock (node 945:4433/945:4442)
-          has this marquee flush against the pinned hero area above it and a
+          has this marquee flush against the hero area above it and a
           single 24px gap before the photo/form section below it, not 24px
           on both sides of the marquee. The next section already supplies
           that 24px via its own top padding (page.tsx's `py-6` on the

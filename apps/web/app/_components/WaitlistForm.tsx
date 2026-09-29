@@ -124,7 +124,7 @@ export function WaitlistForm() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="EMAIL ADDRESS"
-          className="h-12 w-full rounded-[500px] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
+          className="h-12 w-full rounded-[500px] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase tracking-[0.5px] text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
         />
 
         <label htmlFor={phoneId} className="sr-only">
