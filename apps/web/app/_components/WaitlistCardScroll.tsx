@@ -5,6 +5,7 @@ import { useRef } from "react";
 import {
   motion,
   useScroll,
+  useSpring,
   useTransform,
   type MotionValue,
 } from "motion/react";
@@ -31,8 +32,10 @@ interface CardTiming {
 // that arrive by sliding rather than popping. `beat` is [begin, overshoot,
 // settle] as fractions of the card's own intro span, so different pieces
 // on the same card can be staggered just by giving them different beat
-// windows. Exit is a plain fade (matches the rest of this file) — only
-// the entrance gets the overshoot treatment.
+// windows. Exit is a plain fade by default — pass `exitScale` above 1 (used
+// for text, not illustrations) to have the piece grow huge as it fades
+// over the card's own outro window instead of just fading in place, for a
+// more immersive "rushing past" exit.
 function useSweepIn(
   { progress, start, span, outroStart, end }: CardTiming,
   beat: [number, number, number],
@@ -40,6 +43,7 @@ function useSweepIn(
   distance: number,
   overshoot: number,
   startOpacity: number,
+  exitScale: number = 1,
 ) {
   const p0 = start;
   const p1 = start + span * beat[0];
@@ -55,7 +59,13 @@ function useSweepIn(
     [p0, p1, p2, p3],
     [distance, distance, overshoot, 0],
   );
-  return axis === "x" ? { opacity, x: offset } : { opacity, y: offset };
+  const scale = useTransform(
+    progress,
+    [p3, outroStart, end],
+    [1, 1, exitScale],
+  );
+  const offsetStyle = axis === "x" ? { x: offset } : { y: offset };
+  return { opacity, scale, ...offsetStyle };
 }
 
 // A piece that pops in — grows past its resting size then settles back,
@@ -89,12 +99,20 @@ function useScaleBounce(
 // most emphasis — fires once the main entrance (sweep or pop) has already
 // settled, so it reads as a separate accent beat, not part of the arrival.
 // `beat` is [flashStart, flashPeak, settle] as fractions of the card's own
-// intro span, same convention as the two hooks above.
+// intro span, same convention as the two hooks above. Its `scale` also
+// carries the exit: rather than just fading out in place, the text grows
+// huge as it fades over the card's own outro window (`outroStart` to
+// `end`), like the words are rushing past the viewer — a lot more
+// immersive than a flat fade. `p2` (the blink settling) always lands well
+// before `outroStart` (the intro span this beat lives in is a small
+// fraction of the card's full step, outroStart is near the very end of
+// it), so these two beats never fight over the same stretch of progress.
 function useEmphasisFlash(
-  { progress, start, span }: CardTiming,
+  { progress, start, span, outroStart, end }: CardTiming,
   beat: [number, number, number],
   normalColor: string,
   flashColor: string = "#ffffff",
+  exitScale: number = 4,
 ) {
   const p0 = start + span * beat[0];
   const p1 = start + span * beat[1];
@@ -104,7 +122,11 @@ function useEmphasisFlash(
     [p0, p1, p2],
     [normalColor, flashColor, normalColor],
   );
-  const scale = useTransform(progress, [p0, p1, p2], [1, 1.08, 1]);
+  const scale = useTransform(
+    progress,
+    [p0, p1, p2, outroStart, end],
+    [1, 1.08, 1, 1, exitScale],
+  );
   return { color, scale };
 }
 
@@ -135,7 +157,9 @@ function AllAccessCard({ timing }: { timing: CardTiming }) {
   // (which tripped a "monotonically non-decreasing" WAAPI error — Motion
   // couldn't hardware-accelerate a scroll-linked animation built from two
   // already-scroll-linked source values).
-  const { start, span } = timing;
+  // Also carries the exit-zoom (see useEmphasisFlash's comment) since this
+  // card computes its own scale manually rather than through that hook.
+  const { start, span, outroStart, end } = timing;
   const scale = useTransform(
     timing.progress,
     [
@@ -146,8 +170,10 @@ function AllAccessCard({ timing }: { timing: CardTiming }) {
       start + span * 0.72,
       start + span * 0.86,
       start + span,
+      outroStart,
+      end,
     ],
-    [0.5, 0.5, 1.15, 1, 1, 1.08, 1],
+    [0.2, 0.2, 1.3, 1, 1, 1.1, 1, 1, 4],
   );
   return (
     <div className="relative flex size-full items-center justify-center overflow-hidden rounded-[30px] bg-onwei-green">
@@ -172,7 +198,7 @@ function AllAccessCard({ timing }: { timing: CardTiming }) {
 function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
   // Drops in from the top (card 1 pops from the centre, card 3 slides in
   // from the right, card 4 zigzags) — every card reads differently now.
-  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "y", -140, 16, 0);
+  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "y", -260, 30, 0);
   const emphasis = useEmphasisFlash(timing, [0.72, 0.85, 1], "#eded86");
   // Tennis: a scale-bounce "pop", first of the three illustrations.
   const tennis = useScaleBounce(timing, [0.45, 0.62, 0.78], 0.4, 1.18, 0);
@@ -232,7 +258,7 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
 function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
   // Slides in from the right, mirroring card 2's arrival from the top and
   // card 1's centre pop.
-  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", 160, -18, 0);
+  const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", 280, -34, 0);
   const emphasis = useEmphasisFlash(timing, [0.72, 0.85, 1], "#8e94ca");
   const founder = useScaleBounce(timing, [0.45, 0.65, 0.82], 0.4, 1.18, 0);
   // Photo badge: a quick coloured-ring flash right as it lands, on top of
@@ -255,7 +281,7 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
     ],
   );
   return (
-    <div className="relative flex size-full flex-col items-center justify-center gap-8 rounded-[30px] bg-onwei-green px-8 py-12 sm:flex-row sm:justify-between sm:px-14">
+    <div className="relative flex size-full flex-col items-center justify-center gap-8 overflow-hidden rounded-[30px] bg-onwei-green px-8 py-12 sm:flex-row sm:justify-between sm:px-14">
       <motion.div
         style={founder}
         className="relative h-[180px] w-[110px] shrink-0 sm:h-[313px] sm:w-[192px]"
@@ -301,9 +327,12 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
   // and, unlike the other three cards (each one direction only), this one
   // zigzags: left, then right, then bottom, so the whole card reads as its
   // own distinct rhythm rather than a repeat of any other card's sweep.
-  const line1 = useSweepIn(timing, [0.15, 0.32, 0.45], "x", -70, 8, 0);
-  const line2 = useSweepIn(timing, [0.28, 0.45, 0.58], "x", 70, -8, 0);
-  const line3 = useSweepIn(timing, [0.41, 0.58, 0.71], "y", 28, -6, 0);
+  // line1's exit-zoom comes from `emphasis` below instead (it overrides
+  // this scale); line2/line3 get theirs directly since they have no
+  // emphasis hook of their own.
+  const line1 = useSweepIn(timing, [0.15, 0.32, 0.45], "x", -160, 18, 0);
+  const line2 = useSweepIn(timing, [0.28, 0.45, 0.58], "x", 160, -18, 0, 4);
+  const line3 = useSweepIn(timing, [0.41, 0.58, 0.71], "y", 70, -12, 0, 4);
   const emphasis = useEmphasisFlash(timing, [0.45, 0.55, 0.65], "#eded86");
   // Three illustrations, each from a direction matching where it sits and
   // each with its own small bounce: dumbbell (top right) drops in from
@@ -487,6 +516,21 @@ export function WaitlistCardScroll({
     target: containerRef,
     offset: ["start start", "end end"],
   });
+  // Raw scrollYProgress jumps straight to wherever a fast scroll (flick,
+  // trackpad fling, holding PageDown) lands — every beat above is driven
+  // 1:1 by progress, so a fast scroll skips through most of a card's
+  // sequence in a couple of frames, reported as barely seeing the
+  // animation at all. Springing it makes the driven progress lag behind
+  // and catch up smoothly instead of snapping, so a fast scroll still
+  // plays the sequence out over a beat or two after the scroll itself
+  // stops, rather than the frames simply not existing. Stiff/light enough
+  // that slow, deliberate scrolling still tracks the finger/wheel closely
+  // — this only becomes noticeable on quick scrolls.
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 200,
+    damping: 30,
+    mass: 0.5,
+  });
 
   return (
     <>
@@ -519,7 +563,7 @@ export function WaitlistCardScroll({
               {CARDS.map((Content, index) => (
                 <ScrollCard
                   key={index}
-                  progress={scrollYProgress}
+                  progress={smoothProgress}
                   index={index}
                   Content={Content}
                 />
