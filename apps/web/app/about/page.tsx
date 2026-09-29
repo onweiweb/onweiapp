@@ -56,14 +56,19 @@ export default async function AboutPage() {
           {/* Mobile (Figma node 969:4038): tucked under the tail end of the
               text, not out in a side margin like desktop — there's no wide
               margin to sit in at this width. Same asset, same aspect ratio,
-              just repositioned and scaled down for the narrower layout. */}
+              just repositioned and scaled down for the narrower layout.
+              top-full (not a small -bottom offset) so it starts right at
+              the text's baseline — a negative bottom offset here previously
+              pulled most of the image's height up into the glyphs instead
+              of below them, crossing out "on-way" instead of underlining
+              it. */}
           <Image
             src="/images/about-us/underline-about-pronunciation.png"
             alt=""
             width={64}
             height={15}
             aria-hidden
-            className="pointer-events-none absolute -bottom-1 -right-2 sm:hidden"
+            className="pointer-events-none absolute -right-2 top-full -mt-1 sm:hidden"
           />
           <Image
             src="/images/about-us/underline-about-pronunciation.png"
