@@ -88,7 +88,23 @@ export default async function AboutPage() {
             Onwei exists because two people — one who spent 15 years at the
             sharp end of competitive sport, and one who built careers around why
             people want the things they want —{" "}
-            <span className="rounded-[4px] bg-onwei-purple px-1 text-onwei-white [box-decoration-break:clone]">
+            {/* Figma highlights this run with an actual asset (a painted
+                purple brush stroke, node 760:4526/4527/4634, "Onwei Brand
+                Assets-149" — jagged hand-cut edges and a slight rotation,
+                not a clean rectangle), not a flat CSS background-color —
+                same exported PNG reused for all three highlighted phrases
+                on this page. [box-decoration-break:clone] + a 100%/100%
+                background-size (rather than a fixed source size) is what
+                lets one shared texture still stretch-to-fit whichever line
+                width each wrapped fragment ends up with, the same way
+                Figma itself crops/stretches one shared texture per
+                instance rather than shipping a bespoke image per size. */}
+            <span
+              className="px-1 text-onwei-white [background-size:100%_100%] [box-decoration-break:clone]"
+              style={{
+                backgroundImage: "url(/images/about-us/highlight-brush.png)",
+              }}
+            >
               looked at India&apos;s fitness shelves and felt the same thing:
               this isn&apos;t it.
             </span>
@@ -101,7 +117,12 @@ export default async function AboutPage() {
             training for a podium, not a complete beginner — just someone who
             takes their movement seriously and deserves gear that does the same.
           </p>
-          <p className="w-fit self-center rounded-[4px] bg-onwei-purple px-1 text-onwei-white [box-decoration-break:clone]">
+          <p
+            className="w-fit self-center px-1 text-onwei-white [background-size:100%_100%] [box-decoration-break:clone]"
+            style={{
+              backgroundImage: "url(/images/about-us/highlight-brush.png)",
+            }}
+          >
             That&apos;s who Onwei is for.
           </p>
         </div>
@@ -377,7 +398,12 @@ export default async function AboutPage() {
           <p>
             Sabhya obsesses over whether it actually performs. Sakshi obsesses
             over{" "}
-            <span className="rounded-[4px] bg-onwei-purple px-1 text-onwei-white [box-decoration-break:clone]">
+            <span
+              className="px-1 text-onwei-white [background-size:100%_100%] [box-decoration-break:clone]"
+              style={{
+                backgroundImage: "url(/images/about-us/highlight-brush.png)",
+              }}
+            >
               whether you&apos;d actually want it. Together they&apos;ve set a
               bar that&apos;s probably unreasonable — and are having a great
               time trying to clear it.
