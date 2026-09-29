@@ -187,7 +187,16 @@ function ScrollCard({
     [start, introEnd, outroStart, end],
     [index === 0 ? 1 : 0, 1, 1, 0],
   );
-  const scale = useTransform(progress, [outroStart, end], [1, 1.05]);
+  // Scale runs across the full lifespan, not just the exit, so the card
+  // grows in from slightly-undersized and keeps growing past full size on
+  // the way out — a continuous zoom-through rather than a fade-in that
+  // snaps to full scale. index 0 starts at 1 (already on screen at first
+  // paint, same reasoning as the opacity special-case above).
+  const scale = useTransform(
+    progress,
+    [start, introEnd, outroStart, end],
+    [index === 0 ? 1 : 0.92, 1, 1, 1.08],
+  );
 
   return (
     <motion.div
@@ -225,33 +234,48 @@ export function WaitlistCardScroll({
   });
 
   return (
-    <div ref={containerRef} className="relative h-[400vh]">
-      {/* h-screen (not a fixed 747px) so the pinned box fills whatever the
-          viewport actually is — a fixed height here left a growing slab of
-          empty background below the cards on any viewport taller than
-          ~840px, for the entire 400vh scroll-through. The marquee (moved
-          here from its own section further down the page, at the client's
-          request) fills that leftover space with something visibly moving
-          instead of it just sitting empty; justify-center centers the
-          [row + marquee] group as a whole inside the full-height box. */}
-      <div className="sticky top-0 flex min-h-screen w-full flex-col items-center justify-center gap-10 px-3 py-6 sm:h-screen sm:px-11">
-        <div className="flex w-full max-w-[1440px] flex-col items-center gap-8 sm:flex-row sm:justify-between">
-          {children}
-          <div className="relative h-[500px] w-full sm:h-[635px] sm:flex-1">
-            {CARDS.map((Content, index) => (
-              <ScrollCard
-                key={index}
-                progress={scrollYProgress}
-                index={index}
-                Content={Content}
-              />
-            ))}
+    <>
+      <div ref={containerRef} className="relative h-[400vh]">
+        {/* h-screen (not a fixed 747px) so the pinned box fills whatever the
+            viewport actually is — a fixed height here left a growing slab of
+            empty background below the cards on any viewport taller than
+            ~840px, for the entire 400vh scroll-through. The marquee (moved
+            here from its own section further down the page, at the client's
+            request) fills that leftover space with something visibly moving
+            instead of it just sitting empty; justify-center centers the
+            [row + marquee] group as a whole inside the full-height box.
+            Desktop only (`hidden sm:block`) — on mobile the stacked hero
+            card + card viewport already overflow a single screen inside
+            this sticky box (measured ~1392px of content against an ~813px
+            viewport), so the marquee's height and gap-10 there just push
+            the card viewport further below the fold for the whole pin.
+            Mobile gets its own instance below, outside the pin. */}
+        <div className="sticky top-0 flex min-h-screen w-full flex-col items-center justify-center gap-10 px-3 py-6 sm:h-screen sm:px-11">
+          <div className="flex w-full max-w-[1440px] flex-col items-center gap-8 sm:flex-row sm:justify-between">
+            {children}
+            <div className="relative h-[500px] w-full sm:h-[635px] sm:flex-1">
+              {CARDS.map((Content, index) => (
+                <ScrollCard
+                  key={index}
+                  progress={scrollYProgress}
+                  index={index}
+                  Content={Content}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="hidden w-full max-w-[1440px] sm:block">
+            <WaitlistMarquee />
           </div>
         </div>
-        <div className="w-full max-w-[1440px]">
-          <WaitlistMarquee />
-        </div>
       </div>
-    </div>
+      {/* Mobile counterpart to the desktop-only marquee above — lives in
+          normal flow after the pinned section ends, not inside the sticky
+          box, so it stops eating into the vertical budget the card viewport
+          needs on mobile. See the comment above for the measurement. */}
+      <div className="w-full px-3 py-6 sm:hidden">
+        <WaitlistMarquee />
+      </div>
+    </>
   );
 }
