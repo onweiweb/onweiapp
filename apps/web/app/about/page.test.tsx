@@ -14,7 +14,7 @@ describe.skipIf(!process.env.DATABASE_URL)("AboutPage", () => {
 
     if (siteMode === "WAITLIST") {
       expect(
-        screen.getAllByRole("link", { name: /join the waitlist/i }).length,
+        screen.getAllByRole("link", { name: /join the movement/i }).length,
       ).toBeGreaterThan(0);
       expect(
         screen.queryByText(/read sabhya's substack/i),

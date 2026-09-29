@@ -113,14 +113,20 @@ export function WaitlistFooter() {
               the illustration sits 48px lower than Figma and dips into the
               text below it. right:82px doesn't need the same correction —
               this row div's right edge already lines up with the section's
-              content-box right edge (no horizontal inset difference). */}
+              content-box right edge (no horizontal inset difference).
+              Extra -27px beyond that (-160 vs the derived -133) — live
+              content reflow (e.g. the "let's be friends" column wrapping to
+              more lines than Figma's static mock at some widths) pushes the
+              legal links up into the illustration's Figma-derived position;
+              this margin absorbs that instead of relying on an exact height
+              match that the live page can't guarantee. */}
             <Image
               src="/images/footer/illustration-runner.svg"
               alt=""
               width={210}
               height={342}
               aria-hidden
-              className="pointer-events-none absolute -top-[133px] right-[82px] hidden lg:block"
+              className="pointer-events-none absolute -top-[160px] right-[82px] hidden lg:block"
             />
             {/* Mobile equivalent (Figma node 945:4504, inside the mobile
               Newsletter frame 945:4477): much smaller (125x203, vs 210x342

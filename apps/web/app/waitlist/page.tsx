@@ -33,9 +33,20 @@ export default async function WaitlistPage() {
           <div className="flex w-full flex-col justify-between gap-[30px] rounded-[30px] bg-onwei-purple px-6 py-12 sm:h-[635px] sm:w-[665px] sm:px-14 sm:py-12">
             <div className="relative flex flex-col gap-6">
               <p className="font-display text-[48px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
-                Join the movement
+                Join the{" "}
+                <span className="relative inline-block">
+                  <Image
+                    src="/images/waitlist/hero/movement-circle.svg"
+                    alt=""
+                    width={300}
+                    height={64}
+                    aria-hidden
+                    className="pointer-events-none absolute -left-[14px] top-[1px] h-auto w-[calc(100%+28px)] max-w-none sm:-left-[18px] sm:top-[2px] sm:w-[calc(100%+36px)]"
+                  />
+                  <span className="relative">movement</span>
+                </span>
               </p>
-              <p className="absolute -top-10 right-0 hidden font-script text-script-md uppercase leading-[1.2] text-onwei-green sm:block">
+              <p className="absolute -top-10 right-0 font-script text-script-md uppercase leading-[1.2] text-onwei-green">
                 this is just the warm up
               </p>
               <p className="font-grotesk text-[18px] leading-[1.3] text-onwei-white">

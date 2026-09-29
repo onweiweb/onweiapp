@@ -16,7 +16,8 @@ export function WaitlistMarquee() {
       className="w-full overflow-hidden rounded-full bg-onwei-blue px-6 py-3 sm:px-14"
       aria-hidden
     >
-      <div className="flex w-max animate-[onwei-marquee_28s_linear_infinite] items-center gap-6">
+      {/* 18.7s = 28s / 1.5 — 1.5x the original speed, per feedback. */}
+      <div className="flex w-max animate-[onwei-marquee_18.7s_linear_infinite] items-center gap-6">
         {doubled.map((item, index) => {
           const isOutline = index % 2 === 1;
           return (

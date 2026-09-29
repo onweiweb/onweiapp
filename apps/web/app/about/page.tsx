@@ -37,7 +37,7 @@ export default async function AboutPage() {
   return (
     <main className="bg-onwei-green">
       {isWaitlistMode ? (
-        <WaitlistHeader navHref="/waitlist" navLabel="Join the Waitlist" />
+        <WaitlistHeader navHref="/waitlist" navLabel="Join the Movement" />
       ) : (
         <SiteHeader />
       )}
@@ -105,24 +105,27 @@ export default async function AboutPage() {
       <section className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-6 px-6 pb-6 sm:px-11 lg:grid-cols-2">
         <ScrollReveal
           as="div"
-          className="order-2 flex flex-col justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 sm:px-14 sm:py-12 lg:order-1"
+          className="order-2 flex flex-col items-center justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 text-center sm:px-14 sm:py-12 lg:order-1 lg:items-start lg:text-left"
         >
           <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
+            {/* Figma: an oval outline wraps the whole name (node 969:4048
+                mobile, 760:4566 desktop) — not the small corner squiggle
+                this used before, which was the wrong decoration entirely. */}
             <Image
-              src="/images/about-us/squiggle-sabhya-name.svg"
+              src="/images/about-us/circle-sabhya-mobile.svg"
               alt=""
-              width={137}
-              height={44}
+              width={196}
+              height={62}
               aria-hidden
-              className="pointer-events-none absolute -left-[10px] -top-[8px] sm:hidden"
+              className="pointer-events-none absolute -left-[18px] -top-[10px] h-auto w-[calc(100%+36px)] max-w-none sm:hidden"
             />
             <Image
-              src="/images/about-us/squiggle-sabhya-name.svg"
+              src="/images/about-us/circle-sabhya-desktop.svg"
               alt=""
-              width={220}
-              height={70}
+              width={273}
+              height={87}
               aria-hidden
-              className="pointer-events-none absolute -left-4 -top-3 hidden sm:block"
+              className="pointer-events-none absolute -left-[22px] -top-[12px] hidden h-auto w-[calc(100%+44px)] max-w-none sm:block"
             />
             <span className="relative">Sabhya</span>
           </p>
@@ -266,24 +269,23 @@ export default async function AboutPage() {
         <ScrollReveal
           as="div"
           delay={0.1}
-          className="flex flex-col justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 sm:px-14 sm:py-12"
+          className="flex flex-col items-center justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 text-center sm:px-14 sm:py-12 lg:items-start lg:text-left"
         >
           <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
+            {/* Figma gives Sakshi's name the oval-outline treatment on
+                mobile only (node 969:4059) — confirmed no such decoration
+                on desktop (760:4568's Sakshi section has none), unlike
+                Sabhya who keeps it at both breakpoints. Previously used the
+                same corner squiggle at both sizes for both names, which was
+                wrong on two counts (wrong shape, and present on a
+                breakpoint Figma doesn't have it on). */}
             <Image
-              src="/images/about-us/squiggle-sakshi-name.svg"
+              src="/images/about-us/circle-sakshi-mobile.svg"
               alt=""
-              width={137}
-              height={44}
+              width={196}
+              height={62}
               aria-hidden
-              className="pointer-events-none absolute -left-[10px] -top-[8px] sm:hidden"
-            />
-            <Image
-              src="/images/about-us/squiggle-sakshi-name.svg"
-              alt=""
-              width={220}
-              height={70}
-              aria-hidden
-              className="pointer-events-none absolute -left-4 -top-3 hidden sm:block"
+              className="pointer-events-none absolute -left-[18px] -top-[10px] h-auto w-[calc(100%+36px)] max-w-none sm:hidden"
             />
             <span className="relative">Sakshi</span>
           </p>
@@ -464,7 +466,7 @@ export default async function AboutPage() {
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
             >
-              {isWaitlistMode ? "Join the Waitlist" : "Explore the collection"}
+              {isWaitlistMode ? "Join the Movement" : "Explore the collection"}
             </HoverLink>
           </div>
         </div>

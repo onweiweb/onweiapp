@@ -15,15 +15,16 @@
   --color-onwei-purple: #8e94ca;
   --color-onwei-white: #ffffff;
 
-  /* --font-display approximates Figma's "Author Variable" (headlines —
-     weights vary per instance: Medium/Semibold/Bold, never left at default).
-     --font-grotesk approximates "ABC Monument Grotesk Mono Unlicensed
-     Trial" — confirmed a MONOSPACE grotesk, so IBM Plex Mono replaces the
-     earlier Space Grotesk (which is not monospace at all). --font-script
-     approximates "Summer Mood" (handwritten annotations). None of the three
-     source fonts are Google Fonts and Figma does not expose the binaries,
-     so the closest available Google Fonts are registered in layout.tsx. */
-  --font-display: var(--font-archivo), sans-serif;
+  /* --font-display is the real Figma font, "Author" (headlines — weights
+     vary per instance: Medium/Semibold/Bold, never left at default),
+     self-hosted from Fontshare (free, ITF Free Font License) — see
+     layout.tsx. --font-grotesk still approximates "ABC Monument Grotesk
+     Mono Unlicensed Trial" with IBM Plex Mono (a true monospace grotesk,
+     unlike the earlier Space Grotesk which isn't monospace at all), and
+     --font-script still approximates "Summer Mood" with Caveat — both are
+     paid fonts the client hasn't purchased yet; swap in real files once
+     provided (see layout.tsx's font registrations). */
+  --font-display: var(--font-author), sans-serif;
   --font-grotesk: var(--font-mono), monospace;
   --font-script: var(--font-caveat), cursive;
   --font-cta: var(--font-raleway), sans-serif;

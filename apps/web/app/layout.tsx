@@ -1,27 +1,36 @@
 import type { Metadata } from "next";
-import { Archivo, Caveat, IBM_Plex_Mono, Raleway } from "next/font/google";
+import localFont from "next/font/local";
+import { Caveat, IBM_Plex_Mono, Raleway } from "next/font/google";
 import "./globals.css";
 
 // Figma specs "Author Variable" (display headlines, weights Medium/Semibold/
 // Bold), "ABC Monument Grotesk Mono Unlicensed Trial" (nav/body/labels,
 // weights Regular/Medium/Bold — a MONOSPACE grotesk, not a proportional one)
-// and "Summer Mood" (handwritten annotations). None of the three are Google
-// Fonts and Figma does not export the underlying font binaries. Closest
-// Google Fonts substitutes: Archivo (a variable family whose heavier cuts
-// share Author's blocky, minimal-aperture character — apply font-bold/
-// font-semibold/font-medium per instance, never left at default weight),
-// IBM Plex Mono (a true monospace grotesk, unlike the previously-used Space
-// Grotesk which isn't monospace at all) and Caveat. Raleway is a real match
-// for the existing --text-cta token (confirmed against Figma's "CTA 1" style).
+// and "Summer Mood" (handwritten annotations). Author is the real font now
+// (self-hosted below, free for commercial use via Fontshare's ITF Free Font
+// License — confirmed, not a Google Fonts substitute). Grotesk Mono and
+// Summer Mood are still paid fonts the client hasn't purchased yet, so
+// those two stay on their closest free substitutes: IBM Plex Mono (a true
+// monospace grotesk, unlike the previously-used Space Grotesk which isn't
+// monospace at all) and Caveat. Raleway is a real match for the existing
+// --text-cta token (confirmed against Figma's "CTA 1" style).
 const raleway = Raleway({
   subsets: ["latin"],
   variable: "--font-raleway",
   display: "swap",
 });
 
-const archivo = Archivo({
-  subsets: ["latin"],
-  variable: "--font-archivo",
+// Self-hosted from Fontshare (api.fontshare.com/v2/css?f[]=author@400,500,600,700)
+// — weights match the CSS comment's "never left at default" Medium/
+// Semibold/Bold instances, plus Regular for anything not yet audited.
+const author = localFont({
+  src: [
+    { path: "../public/fonts/author/Author-Regular.woff2", weight: "400" },
+    { path: "../public/fonts/author/Author-Medium.woff2", weight: "500" },
+    { path: "../public/fonts/author/Author-SemiBold.woff2", weight: "600" },
+    { path: "../public/fonts/author/Author-Bold.woff2", weight: "700" },
+  ],
+  variable: "--font-author",
   display: "swap",
 });
 
@@ -51,7 +60,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${raleway.variable} ${archivo.variable} ${ibmPlexMono.variable} ${caveat.variable}`}
+      className={`${raleway.variable} ${author.variable} ${ibmPlexMono.variable} ${caveat.variable}`}
     >
       <body>{children}</body>
     </html>

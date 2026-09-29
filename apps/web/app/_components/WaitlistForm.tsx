@@ -149,15 +149,28 @@ export function WaitlistForm() {
             &ldquo;ran an actual marathon&rdquo; - what&apos;s today&apos;s
             movement flex?
           </label>
-          <input
-            id={sliderId}
-            type="range"
-            min={0}
-            max={100}
-            value={movementFlex}
-            onChange={(event) => setMovementFlex(Number(event.target.value))}
-            className="h-[6px] w-full cursor-pointer appearance-none rounded-full bg-onwei-beige/30 accent-onwei-beige"
-          />
+          {/* Figma shows a two-tone track: a solid fill from the left edge
+              up to the thumb, a faint unfilled remainder past it — not a
+              single uniform translucent bar. The native range input can't
+              paint that split on its own, so its own track is made fully
+              transparent and two sibling divs (faint full-width, solid
+              width-by-movementFlex%) paint it underneath. */}
+          <div className="relative flex h-[6px] w-full items-center">
+            <div className="pointer-events-none absolute inset-x-0 h-[6px] rounded-full bg-onwei-beige/30" />
+            <div
+              className="pointer-events-none absolute left-0 h-[6px] rounded-full bg-onwei-beige"
+              style={{ width: `${movementFlex}%` }}
+            />
+            <input
+              id={sliderId}
+              type="range"
+              min={0}
+              max={100}
+              value={movementFlex}
+              onChange={(event) => setMovementFlex(Number(event.target.value))}
+              className="relative z-10 h-[6px] w-full cursor-pointer appearance-none bg-transparent accent-onwei-beige [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:bg-transparent"
+            />
+          </div>
           <div className="flex items-center justify-between font-display text-[12px] font-medium uppercase text-onwei-beige">
             <span>fridge run</span>
             <span>full marathon</span>
