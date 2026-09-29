@@ -37,6 +37,19 @@ export default async function WaitlistPage() {
               impossible regardless of how tight everything else got. */}
           <div className="flex w-full flex-col justify-between gap-4 rounded-[30px] bg-onwei-purple px-5 py-6 sm:h-[635px] sm:w-[665px] sm:gap-[30px] sm:px-14 sm:py-12">
             <div className="relative flex flex-col gap-3 sm:gap-6">
+              {/* Figma mobile (node 945:4427) puts this line in normal flow
+                  ABOVE the heading, right-aligned, ending right where "Join
+                  the Movement" begins — not absolutely offset above the
+                  card like desktop's -top-10/right-0 treatment (node
+                  945:4241 area). At mobile's tighter py-6 card padding, that
+                  desktop offset pushed the text 16px above the card's own
+                  top edge, where it was getting cut off/hidden. sm: switches
+                  back to the desktop absolute positioning, unaffected by
+                  this element now coming first in the DOM since it's taken
+                  out of flow at that breakpoint regardless of order. */}
+              <p className="text-right font-script text-script-md uppercase leading-[1.2] text-onwei-green sm:absolute sm:-top-10 sm:right-0">
+                this is just the warm up
+              </p>
               <p className="font-display text-[32px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
                 Join the{" "}
                 <span className="relative inline-block">
@@ -50,9 +63,6 @@ export default async function WaitlistPage() {
                   />
                   <span className="relative">movement</span>
                 </span>
-              </p>
-              <p className="absolute -top-10 right-0 font-script text-script-md uppercase leading-[1.2] text-onwei-green">
-                this is just the warm up
               </p>
               <p className="font-grotesk text-[14px] leading-[1.3] text-onwei-white sm:text-[18px]">
                 Unlock an{" "}
