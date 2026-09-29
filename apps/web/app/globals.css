@@ -1,6 +1,17 @@
 @import "tailwindcss";
 @import "@onwei/config/tailwind/base.css";
 
+/* "I want in!" on /waitlist jumps to the form via a plain #hash href (see
+   HoverLink in waitlist/page.tsx) — CSS smooth-scroll, not a JS handler, so
+   it works the same for that and any future same-page anchor without
+   needing a client component just to intercept the click. Gated behind
+   prefers-reduced-motion so it doesn't override that preference. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 /*
  * Figma design tokens pulled from file 3HCgSRca91P6WCpW28RA9o (Homepage,
  * node 758:2218) via mcp__figma__get_variable_defs and per-section

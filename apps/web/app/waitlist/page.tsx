@@ -6,7 +6,7 @@ import { WaitlistCardScroll } from "@/_components/WaitlistCardScroll";
 import { WaitlistForm } from "@/_components/WaitlistForm";
 import { WaitlistFooter } from "@/_components/WaitlistFooter";
 import { ScrollReveal } from "@/_components/ScrollReveal";
-import { HoverLink } from "@/_components/HoverLink";
+import { SmoothScrollLink } from "@/_components/SmoothScrollLink";
 
 // This page reads launchAt via Prisma, not `fetch`, so Next's automatic
 // static/dynamic detection has no signal that it depends on data that
@@ -61,19 +61,19 @@ export default async function WaitlistPage() {
 
             <div className="flex flex-col gap-3">
               <WaitlistCountdown launchAt={launchAt.toISOString()} />
-              {/* next/link (not a plain anchor) so it can carry the
-                  whileHover/whileTap gesture props below — already inside
-                  WaitlistCardScroll's client boundary, so this doesn't add
-                  a new one. Still just a same-page hash jump, no real
-                  navigation. */}
-              <HoverLink
+              {/* SmoothScrollLink (not a plain anchor, not HoverLink) so
+                  the click reliably scrolls smoothly to the form — Next's
+                  Link doesn't do this on its own for a same-page hash, see
+                  that component's comment. Still no new client boundary,
+                  already inside WaitlistCardScroll's. */}
+              <SmoothScrollLink
                 href="#join-onwei-insiders"
                 className="flex w-full items-center justify-center rounded-[30px] bg-onwei-blue px-6 py-3 font-grotesk text-[20px] uppercase text-onwei-green sm:text-[24px]"
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >
                 I want in!
-              </HoverLink>
+              </SmoothScrollLink>
             </div>
           </div>
         </WaitlistCardScroll>
