@@ -7,7 +7,13 @@ import Link from "next/link";
 // doesn't have). Web shows the "on-the-way, cause you already are" tagline
 // next to the logo; mobile omits it — see root CLAUDE.md's mobile/web
 // difference note.
-export function WaitlistHeader() {
+export function WaitlistHeader({
+  navHref = "/about",
+  navLabel = "About Us",
+}: {
+  navHref?: string;
+  navLabel?: string;
+} = {}) {
   return (
     <header className="flex w-full flex-col items-center bg-onwei-green">
       <div className="flex h-[92px] w-full items-center justify-between px-5 py-3 sm:h-auto sm:px-14 sm:py-6">
@@ -38,10 +44,10 @@ export function WaitlistHeader() {
         </p>
 
         <Link
-          href="/about"
+          href={navHref}
           className="font-grotesk text-label uppercase text-onwei-blue"
         >
-          About Us
+          {navLabel}
         </Link>
       </div>
     </header>

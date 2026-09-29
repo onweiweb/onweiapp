@@ -1,7 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getSiteSetting } from "@onwei/core";
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
+import { WaitlistHeader } from "@/_components/WaitlistHeader";
+import { WaitlistFooter } from "@/_components/WaitlistFooter";
 
 // Built from Figma (file dQvPgsv3kEAYb4ca5mu08U, frame 760:4492 "About Us" /
 // 969:3987 "About Us - mobile" — supersedes an earlier note here claiming no
@@ -16,10 +19,27 @@ import { SiteFooter } from "@/_components/SiteFooter";
 // mobile and desktop heading font sizes), not independently re-measured node
 // positions — close enough for decorative elements, but a visual check after
 // deploy is worth it.
-export default function AboutPage() {
+// Reads siteMode so this branches the same way `apps/web/proxy.ts` already
+// gates routing — /about is the one normal page still reachable while
+// siteMode === "WAITLIST" (see proxy.ts's allow-list), so its chrome needs
+// to match the waitlist page's, not the full storefront's. Same revalidate
+// reasoning as apps/web/app/waitlist/page.tsx: getSiteSetting() isn't a
+// `fetch` call, so without this Next has no signal that the page depends on
+// data that changes, and an admin flipping siteMode wouldn't show up here
+// short of a redeploy.
+export const revalidate = 30;
+
+export default async function AboutPage() {
+  const { siteMode } = await getSiteSetting();
+  const isWaitlistMode = siteMode === "WAITLIST";
+
   return (
     <main className="bg-onwei-green">
-      <SiteHeader />
+      {isWaitlistMode ? (
+        <WaitlistHeader navHref="/waitlist" navLabel="Join the Waitlist" />
+      ) : (
+        <SiteHeader />
+      )}
 
       <section className="mx-auto flex w-full max-w-[1440px] flex-col items-center gap-6 px-6 pb-6 pt-8 text-center sm:px-14">
         <h1 className="relative font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-blue sm:text-[64px]">
@@ -131,9 +151,11 @@ export default function AboutPage() {
               couldn&apos;t ignore.
             </p>
           </div>
-          <span className="w-fit rounded-[30px] bg-onwei-beige px-6 py-3 font-grotesk text-[14px] uppercase text-onwei-blue">
-            Read Sabhya&apos;s substack
-          </span>
+          {!isWaitlistMode && (
+            <span className="w-fit rounded-[30px] bg-onwei-beige px-6 py-3 font-grotesk text-[14px] uppercase text-onwei-blue">
+              Read Sabhya&apos;s substack
+            </span>
+          )}
         </div>
         {/* Wrapper (not the photo div itself, which clips via
             overflow-hidden) so the pickleball-swing illustration (Figma
@@ -413,16 +435,16 @@ export default function AboutPage() {
               className="pointer-events-none absolute -right-20 -top-2 hidden lg:block"
             />
             <Link
-              href="/collection/pickleball"
+              href={isWaitlistMode ? "/waitlist" : "/collection/pickleball"}
               className="rounded-[30px] bg-onwei-blue px-6 py-3 font-grotesk text-[14px] uppercase text-onwei-beige"
             >
-              Explore the collection
+              {isWaitlistMode ? "Join the Waitlist" : "Explore the collection"}
             </Link>
           </div>
         </div>
       </section>
 
-      <SiteFooter />
+      {isWaitlistMode ? <WaitlistFooter /> : <SiteFooter />}
     </main>
   );
 }
