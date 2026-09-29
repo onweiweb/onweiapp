@@ -94,8 +94,8 @@ function useScaleBounce(
 // component below for its own beat windows/directions.
 function AllAccessCard({ timing }: { timing: CardTiming }) {
   // No separate illustration layer here — the blob IS the background, so
-  // it bounces along with the card frame (ScrollCard's own scale, below)
-  // rather than needing its own motion value.
+  // it just fades in with the card frame rather than needing its own
+  // motion value.
   const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", -160, 18, 0);
   return (
     <div className="relative flex size-full items-center justify-center overflow-hidden rounded-[30px] bg-onwei-green">
@@ -352,26 +352,22 @@ function ScrollCard({
   const outroStart = end - step * outroFraction;
   const span = introEnd - start;
 
-  // Background = the card frame's own opacity+scale (this wrapper). Pops
-  // in with a small overshoot (slightly small → slightly big → settles)
-  // instead of a flat fade, then holds at rest size for the rest of the
-  // card's turn — only opacity animates again, for the exit fade.
+  // Background = the card frame's own opacity (this wrapper). The card
+  // stays at its actual, fixed size the whole time — no scale/zoom on the
+  // frame itself; it just fades in, and the entrance drama instead comes
+  // from the text/illustrations sweeping in from a side (see each card's
+  // own useSweepIn/useScaleBounce calls below).
   const bgOpacity = useTransform(
     progress,
     [start, start + span * 0.3, outroStart, end],
     [index === 0 ? 1 : 0, 1, 1, 0],
-  );
-  const bgScale = useTransform(
-    progress,
-    [start, start + span * 0.1, start + span * 0.2, start + span * 0.32],
-    [0.8, 1.12, 0.94, 1],
   );
 
   const timing: CardTiming = { progress, start, span, outroStart, end };
 
   return (
     <motion.div
-      style={{ opacity: bgOpacity, scale: bgScale }}
+      style={{ opacity: bgOpacity }}
       className="absolute inset-0"
       aria-hidden={index !== 0}
     >
