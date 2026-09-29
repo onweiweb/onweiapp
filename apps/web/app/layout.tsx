@@ -1,19 +1,17 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { Caveat, IBM_Plex_Mono, Raleway } from "next/font/google";
+import { Raleway } from "next/font/google";
 import "./globals.css";
 
 // Figma specs "Author Variable" (display headlines, weights Medium/Semibold/
 // Bold), "ABC Monument Grotesk Mono Unlicensed Trial" (nav/body/labels,
 // weights Regular/Medium/Bold — a MONOSPACE grotesk, not a proportional one)
-// and "Summer Mood" (handwritten annotations). Author is the real font now
-// (self-hosted below, free for commercial use via Fontshare's ITF Free Font
-// License — confirmed, not a Google Fonts substitute). Grotesk Mono and
-// Summer Mood are still paid fonts the client hasn't purchased yet, so
-// those two stay on their closest free substitutes: IBM Plex Mono (a true
-// monospace grotesk, unlike the previously-used Space Grotesk which isn't
-// monospace at all) and Caveat. Raleway is a real match for the existing
-// --text-cta token (confirmed against Figma's "CTA 1" style).
+// and "Summer Mood" (handwritten annotations). All three are now self-hosted
+// from the real font files (Author via Fontshare's ITF Free Font License;
+// Grotesk Mono and Summer Mood are still the client's unpurchased trial
+// files — fine for dev/preview, but flag before this ships to production).
+// Raleway is a real match for the existing --text-cta token (confirmed
+// against Figma's "CTA 1" style) and stays on Google Fonts.
 const raleway = Raleway({
   subsets: ["latin"],
   variable: "--font-raleway",
@@ -34,15 +32,31 @@ const author = localFont({
   display: "swap",
 });
 
-const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// Self-hosted trial files from the client (Fonts/ABC Monument Grotesk/) —
+// unlicensed for production use, see file header comment above.
+const groteskMono = localFont({
+  src: [
+    {
+      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Regular-Trial.otf",
+      weight: "400",
+    },
+    {
+      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Medium-Trial.otf",
+      weight: "500",
+    },
+    {
+      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Bold-Trial.otf",
+      weight: "700",
+    },
+  ],
   variable: "--font-mono",
   display: "swap",
 });
 
-const caveat = Caveat({
-  subsets: ["latin"],
+// Self-hosted trial file from the client (Fonts/SummerMood.otf) — unlicensed
+// for production use, see file header comment above.
+const summerMood = localFont({
+  src: "../public/fonts/summer-mood/SummerMood.otf",
   variable: "--font-caveat",
   display: "swap",
 });
@@ -60,7 +74,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${raleway.variable} ${author.variable} ${ibmPlexMono.variable} ${caveat.variable}`}
+      className={`${raleway.variable} ${author.variable} ${groteskMono.variable} ${summerMood.variable}`}
     >
       <body>{children}</body>
     </html>
