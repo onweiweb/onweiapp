@@ -578,8 +578,15 @@ export function WaitlistCardScroll({
       {/* Mobile counterpart to the desktop-only marquee above — lives in
           normal flow after the pinned section ends, not inside the sticky
           box, so it stops eating into the vertical budget the card viewport
-          needs on mobile. See the comment above for the measurement. */}
-      <div className="w-full px-3 py-6 sm:hidden">
+          needs on mobile. See the comment above for the measurement.
+          pt-6 only (not py-6) — Figma's mobile mock (node 945:4433/945:4442)
+          has this marquee flush against the pinned hero area above it and a
+          single 24px gap before the photo/form section below it, not 24px
+          on both sides of the marquee. The next section already supplies
+          that 24px via its own top padding (page.tsx's `py-6` on the
+          `#join-onwei-insiders` section); adding a matching bottom pad here
+          too doubled it to 48px. */}
+      <div className="w-full px-3 pt-6 sm:hidden">
         <WaitlistMarquee />
       </div>
     </>
