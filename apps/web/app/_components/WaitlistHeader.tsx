@@ -1,12 +1,16 @@
 import Image from "next/image";
 import Link from "next/link";
 
-// Figma nodes 945:4239 (web, 945:4241/4245) and 945:4389 (mobile,
-// 945:4391/4395) — a minimal header just for /waitlist, not SiteHeader
-// (which carries the full nav/cart/account/announcement bar this page
-// doesn't have). Web shows the "on-the-way, cause you already are" tagline
-// next to the logo; mobile omits it — see root CLAUDE.md's mobile/web
-// difference note.
+// Figma nodes 945:4239 (web, logo lockup 945:4241) and 945:4389 (mobile,
+// 945:4391) — a minimal header just for /waitlist, not SiteHeader (which
+// carries the full nav/cart/account/announcement bar this page doesn't
+// have). Web shows the "on-the-way, cause you already are" tagline next to
+// the logo; mobile omits it — see root CLAUDE.md's mobile/web difference
+// note. The logo is exported as one combined SVG (logo-lockup.svg, node
+// 945:4241), not separate mark+wordmark images with a flex gap between
+// them - Figma's O/N and WEI groups sit ~2.8px apart with letterform-level
+// kerning, not a clean 13px gap, so two images side by side always read as
+// "ON  WEI" instead of the tightly-joined "ONWEI" wordmark.
 export function WaitlistHeader({
   navHref = "/about",
   navLabel = "About Us",
@@ -20,20 +24,12 @@ export function WaitlistHeader({
         <Link
           href="/waitlist"
           aria-label="Onwei home"
-          className="flex shrink-0 items-center gap-[13px]"
+          className="flex shrink-0 items-center"
         >
           <Image
-            src="/images/waitlist/header/logo-mark.svg"
-            alt=""
-            width={56}
-            height={27}
-            aria-hidden
-            priority
-          />
-          <Image
-            src="/images/waitlist/header/logo-wordmark.svg"
+            src="/images/waitlist/header/logo-lockup.svg"
             alt="Onwei"
-            width={91}
+            width={150}
             height={27}
             priority
           />
