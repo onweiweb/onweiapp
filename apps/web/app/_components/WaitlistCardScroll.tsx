@@ -404,11 +404,16 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
   );
 }
 
+// Client-requested order (was All Access / Shape What's Next / Surprises /
+// First Dibs): All Access, First Dibs, Surprises from Founders, Shape
+// What's Next. Each card's own entrance/exit choreography is keyed off its
+// slot's index, not which card it is, so reordering here is all that's
+// needed — no changes to any card component itself.
 const CARDS = [
   AllAccessCard,
-  ShapeWhatsNextCard,
-  SurprisesFromFoundersCard,
   FirstDibsCard,
+  SurprisesFromFoundersCard,
+  ShapeWhatsNextCard,
 ];
 
 function ScrollCard({
