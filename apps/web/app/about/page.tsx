@@ -1,10 +1,11 @@
 import Image from "next/image";
-import Link from "next/link";
 import { getSiteSetting } from "@onwei/core";
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
 import { WaitlistHeader } from "@/_components/WaitlistHeader";
 import { WaitlistFooter } from "@/_components/WaitlistFooter";
+import { ScrollReveal } from "@/_components/ScrollReveal";
+import { HoverLink } from "@/_components/HoverLink";
 
 // Built from Figma (file dQvPgsv3kEAYb4ca5mu08U, frame 760:4492 "About Us" /
 // 969:3987 "About Us - mobile" — supersedes an earlier note here claiming no
@@ -41,7 +42,10 @@ export default async function AboutPage() {
         <SiteHeader />
       )}
 
-      <section className="mx-auto flex w-full max-w-[1440px] flex-col items-center gap-6 px-6 pb-6 pt-8 text-center sm:px-14">
+      <ScrollReveal
+        as="section"
+        className="mx-auto flex w-full max-w-[1440px] flex-col items-center gap-6 px-6 pb-6 pt-8 text-center sm:px-14"
+      >
         <h1 className="relative font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-blue sm:text-[64px]">
           About us
         </h1>
@@ -96,10 +100,13 @@ export default async function AboutPage() {
             That&apos;s who Onwei is for.
           </p>
         </div>
-      </section>
+      </ScrollReveal>
 
       <section className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-6 px-6 pb-6 sm:px-11 lg:grid-cols-2">
-        <div className="order-2 flex flex-col justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 sm:px-14 sm:py-12 lg:order-1">
+        <ScrollReveal
+          as="div"
+          className="order-2 flex flex-col justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 sm:px-14 sm:py-12 lg:order-1"
+        >
           <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
             <Image
               src="/images/about-us/squiggle-sabhya-name.svg"
@@ -156,7 +163,7 @@ export default async function AboutPage() {
               Read Sabhya&apos;s substack
             </span>
           )}
-        </div>
+        </ScrollReveal>
         {/* Wrapper (not the photo div itself, which clips via
             overflow-hidden) so the pickleball-swing illustration (Figma
             node 760:4746) can hang below the photo's bottom edge like it
@@ -165,7 +172,11 @@ export default async function AboutPage() {
             card for this section, but desktop (760:4533) puts text on the
             left — this section is the only one of the two where the two
             breakpoints disagree on which comes first. */}
-        <div className="relative order-1 lg:order-2">
+        <ScrollReveal
+          as="div"
+          delay={0.1}
+          className="relative order-1 lg:order-2"
+        >
           <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
             <Image
               src="/images/about-us/sabhya.png"
@@ -203,7 +214,7 @@ export default async function AboutPage() {
             aria-hidden
             className="pointer-events-none absolute -bottom-16 left-[4%] z-10 hidden lg:block"
           />
-        </div>
+        </ScrollReveal>
       </section>
 
       <section className="relative mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-6 px-6 pb-6 sm:px-11 lg:grid-cols-2">
@@ -217,7 +228,7 @@ export default async function AboutPage() {
             columns stack, so that same bottom-0 would land at the very
             bottom of the second (text) column instead of at the photo/card
             seam — the plank needs its own anchor here instead. */}
-        <div className="relative">
+        <ScrollReveal as="div" className="relative">
           <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
             <Image
               src="/images/about-us/sakshi.jpg"
@@ -243,7 +254,7 @@ export default async function AboutPage() {
             aria-hidden
             className="pointer-events-none absolute -bottom-6 left-1/2 z-10 -translate-x-1/2 lg:hidden"
           />
-        </div>
+        </ScrollReveal>
         <Image
           src="/images/about-us/illustration-plank.svg"
           alt=""
@@ -252,7 +263,11 @@ export default async function AboutPage() {
           aria-hidden
           className="pointer-events-none absolute bottom-0 left-1/2 z-10 hidden -translate-x-1/2 lg:block"
         />
-        <div className="flex flex-col justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 sm:px-14 sm:py-12">
+        <ScrollReveal
+          as="div"
+          delay={0.1}
+          className="flex flex-col justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 sm:px-14 sm:py-12"
+        >
           <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
             <Image
               src="/images/about-us/squiggle-sakshi-name.svg"
@@ -299,10 +314,13 @@ export default async function AboutPage() {
               didn&apos;t exist. She made a note.
             </p>
           </div>
-        </div>
+        </ScrollReveal>
       </section>
 
-      <section className="relative mx-auto flex w-full max-w-[1440px] flex-col items-center gap-6 px-6 pb-6 pt-12 text-center sm:px-14">
+      <ScrollReveal
+        as="section"
+        className="relative mx-auto flex w-full max-w-[1440px] flex-col items-center gap-6 px-6 pb-6 pt-12 text-center sm:px-14"
+      >
         {/* Mobile only (Figma node 969:4237) — a small double-stroke
             underline beneath "THEN THEY GOT" (first line of the heading),
             near the section's left margin, not the swirled arrow desktop
@@ -359,9 +377,12 @@ export default async function AboutPage() {
             </span>
           </p>
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="mx-auto w-full max-w-[1440px] px-6 pb-14 sm:px-11">
+      <ScrollReveal
+        as="section"
+        className="mx-auto w-full max-w-[1440px] px-6 pb-14 sm:px-11"
+      >
         <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[30px] sm:aspect-[16/9]">
           <Image
             src="/images/about-us/married.jpg"
@@ -371,9 +392,12 @@ export default async function AboutPage() {
             className="object-cover object-top"
           />
         </div>
-      </section>
+      </ScrollReveal>
 
-      <section className="relative flex w-full flex-col items-center bg-onwei-white px-6 py-12 text-center sm:px-14">
+      <ScrollReveal
+        as="section"
+        className="relative flex w-full flex-col items-center bg-onwei-white px-6 py-12 text-center sm:px-14"
+      >
         <Image
           src="/images/about-us/ribbon-show-up-consistency.png"
           alt=""
@@ -434,15 +458,17 @@ export default async function AboutPage() {
               aria-hidden
               className="pointer-events-none absolute -right-20 -top-2 hidden lg:block"
             />
-            <Link
+            <HoverLink
               href={isWaitlistMode ? "/waitlist" : "/collection/pickleball"}
               className="rounded-[30px] bg-onwei-blue px-6 py-3 font-grotesk text-[14px] uppercase text-onwei-beige"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
             >
               {isWaitlistMode ? "Join the Waitlist" : "Explore the collection"}
-            </Link>
+            </HoverLink>
           </div>
         </div>
-      </section>
+      </ScrollReveal>
 
       {isWaitlistMode ? <WaitlistFooter /> : <SiteFooter />}
     </main>

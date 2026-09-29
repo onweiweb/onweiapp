@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { motion, useReducedMotion } from "motion/react";
+import { HoverLink } from "./HoverLink";
 
 // Figma nodes 945:4239 (web, logo lockup 945:4241) and 945:4389 (mobile,
 // 945:4391) — a minimal header just for /waitlist, not SiteHeader (which
@@ -11,6 +15,12 @@ import Link from "next/link";
 // them - Figma's O/N and WEI groups sit ~2.8px apart with letterform-level
 // kerning, not a clean 13px gap, so two images side by side always read as
 // "ON  WEI" instead of the tightly-joined "ONWEI" wordmark.
+//
+// "use client" + a mount fade so this header (shared by /waitlist and
+// /about in waitlist mode) gives both pages a consistent "arriving" feel
+// on load/navigation — the practical stand-in for a full cross-page
+// transition, which would need an AnimatePresence in a layout shared by
+// both routes (they're sibling top-level routes with none today).
 export function WaitlistHeader({
   navHref = "/about",
   navLabel = "About Us",
@@ -18,8 +28,15 @@ export function WaitlistHeader({
   navHref?: string;
   navLabel?: string;
 } = {}) {
+  const reduceMotion = useReducedMotion();
+
   return (
-    <header className="flex w-full flex-col items-center bg-onwei-green">
+    <motion.header
+      className="flex w-full flex-col items-center bg-onwei-green"
+      initial={reduceMotion ? false : { opacity: 0, y: -12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
       <div className="flex h-[92px] w-full items-center justify-between px-5 py-3 sm:h-auto sm:px-14 sm:py-6">
         <Link
           href="/waitlist"
@@ -39,13 +56,15 @@ export function WaitlistHeader({
           on-the-way, cause you already are
         </p>
 
-        <Link
+        <HoverLink
           href={navHref}
           className="font-grotesk text-label uppercase text-onwei-blue"
+          whileHover={{ scale: 1.04 }}
+          whileTap={{ scale: 0.97 }}
         >
           {navLabel}
-        </Link>
+        </HoverLink>
       </div>
-    </header>
+    </motion.header>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
+import { motion } from "motion/react";
 
 interface TimeLeft {
   days: number;
@@ -82,9 +83,15 @@ export function WaitlistCountdown({ launchAt }: { launchAt: string }) {
             key={label}
             className="flex h-[93px] w-[73px] flex-col items-center gap-1.5"
           >
-            <p className="font-display text-[48px] font-bold uppercase leading-[0.9] sm:text-[70px]">
+            <motion.p
+              key={value}
+              initial={{ opacity: 0.4, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="font-display text-[48px] font-bold uppercase leading-[0.9] sm:text-[70px]"
+            >
               {pad(value)}
-            </p>
+            </motion.p>
             <p className="w-full text-center font-grotesk text-[14px]">
               {label}
             </p>

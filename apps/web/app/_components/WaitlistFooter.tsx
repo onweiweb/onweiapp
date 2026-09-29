@@ -1,5 +1,11 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { motion } from "motion/react";
+import { ScrollReveal } from "./ScrollReveal";
+
+const MotionLink = motion.create("a");
 
 // Figma's "Font Awesome 5 Brands" text nodes are a placeholder for icon
 // glyphs (see SiteFooter.tsx for the same convention) — real inline icons
@@ -87,7 +93,8 @@ export function WaitlistFooter() {
     // wasn't enough.
     <footer className="w-full">
       <div className="flex flex-col items-center bg-onwei-purple px-3 py-12 sm:px-6 lg:px-14">
-        {/* Figma is three independent columns (brand / "let's be friends" /
+        <ScrollReveal className="flex w-full flex-col items-center">
+          {/* Figma is three independent columns (brand / "let's be friends" /
             illustration), not two flex children spread with justify-between —
             with only two real flex children here, justify-between shoved the
             friends column flush to the right edge, straight under the
@@ -98,8 +105,8 @@ export function WaitlistFooter() {
             brand block hanging from the row's TOP, not its bottom — it's
             shorter than the friends column (170 vs 233 tall) and starts at
             the same y, not bottom-aligned with it. */}
-        <div className="relative flex w-full max-w-[1440px] flex-col gap-14 lg:flex-row lg:items-start lg:gap-24">
-          {/* Figma (node 945:4375): left:1149, top:-85, w:210 inside the
+          <div className="relative flex w-full max-w-[1440px] flex-col gap-14 lg:flex-row lg:items-start lg:gap-24">
+            {/* Figma (node 945:4375): left:1149, top:-85, w:210 inside the
               1441px SECTION (945:4350) — not inside this row div, which is
               that section's own content box, itself inset by the section's
               py-12 (48px). So top here has to be -85-48=-133, not -85, or
@@ -107,105 +114,120 @@ export function WaitlistFooter() {
               text below it. right:82px doesn't need the same correction —
               this row div's right edge already lines up with the section's
               content-box right edge (no horizontal inset difference). */}
-          <Image
-            src="/images/footer/illustration-runner.svg"
-            alt=""
-            width={210}
-            height={342}
-            aria-hidden
-            className="pointer-events-none absolute -top-[133px] right-[82px] hidden lg:block"
-          />
-          {/* Mobile equivalent (Figma node 945:4504, inside the mobile
+            <Image
+              src="/images/footer/illustration-runner.svg"
+              alt=""
+              width={210}
+              height={342}
+              aria-hidden
+              className="pointer-events-none absolute -top-[133px] right-[82px] hidden lg:block"
+            />
+            {/* Mobile equivalent (Figma node 945:4504, inside the mobile
               Newsletter frame 945:4477): much smaller (125x203, vs 210x342
               on desktop) and sits lower, straddling the bottom of the
               "let's be friends" paragraph rather than hanging above the
               section like the desktop one — the paragraph's own max-w is
               narrowed on mobile (below) to leave it room. */}
-          <Image
-            src="/images/footer/illustration-runner.svg"
-            alt=""
-            width={125}
-            height={203}
-            aria-hidden
-            className="pointer-events-none absolute top-[360px] right-[25px] block lg:hidden"
-          />
+            <Image
+              src="/images/footer/illustration-runner.svg"
+              alt=""
+              width={125}
+              height={203}
+              aria-hidden
+              className="pointer-events-none absolute top-[360px] right-[25px] block lg:hidden"
+            />
 
-          <div className="flex w-full max-w-[401px] flex-col gap-8">
-            <div className="relative flex flex-col items-start gap-5">
-              <div className="flex items-center gap-5 uppercase text-onwei-beige">
-                <p className="font-display text-[48px] font-bold leading-[0.9] sm:text-[64px]">
-                  on&middot;wei
-                </p>
-                <p className="font-display text-[14px] font-semibold sm:text-[16px]">
-                  \ on-way \
+            <div className="flex w-full max-w-[401px] flex-col gap-8">
+              <div className="relative flex flex-col items-start gap-5">
+                <div className="flex items-center gap-5 uppercase text-onwei-beige">
+                  <p className="font-display text-[48px] font-bold leading-[0.9] sm:text-[64px]">
+                    on&middot;wei
+                  </p>
+                  <p className="font-display text-[14px] font-semibold sm:text-[16px]">
+                    \ on-way \
+                  </p>
+                </div>
+                <p className="font-grotesk text-[14px] leading-[1.3] text-onwei-beige">
+                  From On &mdash; present, engaged, showing up &mdash; and Wei
+                  (way) intentional action. Not hustle. Not noise. Just the
+                  choice to participate.
                 </p>
               </div>
-              <p className="font-grotesk text-[14px] leading-[1.3] text-onwei-beige">
-                From On &mdash; present, engaged, showing up &mdash; and Wei
-                (way) intentional action. Not hustle. Not noise. Just the choice
-                to participate.
-              </p>
+              <div className="relative inline-block w-fit">
+                <span
+                  aria-hidden
+                  className="absolute -left-4 -right-4 -top-5 -bottom-5"
+                >
+                  <Image
+                    src="/images/footer/brand-asset-1.png"
+                    alt=""
+                    fill
+                    sizes="420px"
+                    className="object-contain"
+                  />
+                </span>
+                <p className="relative z-10 font-display text-[14px] font-semibold uppercase text-onwei-blue sm:text-[16px]">
+                  rhymes with &quot;on the way.&quot; because you already are.
+                </p>
+              </div>
             </div>
-            <div className="relative inline-block w-fit">
-              <span
-                aria-hidden
-                className="absolute -left-4 -right-4 -top-5 -bottom-5"
-              >
-                <Image
-                  src="/images/footer/brand-asset-1.png"
-                  alt=""
-                  fill
-                  sizes="420px"
-                  className="object-contain"
-                />
-              </span>
-              <p className="relative z-10 font-display text-[14px] font-semibold uppercase text-onwei-blue sm:text-[16px]">
-                rhymes with &quot;on the way.&quot; because you already are.
-              </p>
-            </div>
-          </div>
 
-          {/* max-w matches Figma's actual column width (two roughly-equal
+            {/* max-w matches Figma's actual column width (two roughly-equal
               flex-1 halves at ~616px each in the 1441px frame) — without a
               cap here, the heading (the widest thing in this column, wider
               than the paragraph's own max-w-[510px] below it) grows past
               where the illustration is positioned and runs into it. */}
-          <div className="flex max-w-[600px] flex-col gap-3">
-            <p className="font-display text-[36px] font-bold uppercase leading-[0.9] text-onwei-beige sm:text-[48px]">
-              Let&apos;s be friends
-            </p>
-            <div className="flex items-center gap-5 text-onwei-beige">
-              <a href="#" aria-label="Onwei on Instagram">
-                <InstagramIcon />
-              </a>
-              <a href="#" aria-label="Onwei on YouTube">
-                <YoutubeIcon />
-              </a>
-              <a href="#" aria-label="Onwei on Spotify">
-                <SpotifyIcon />
-              </a>
-            </div>
-            {/* max-w-[219px] below lg: Figma's mobile paragraph wraps
+            <div className="flex max-w-[600px] flex-col gap-3">
+              <p className="font-display text-[36px] font-bold uppercase leading-[0.9] text-onwei-beige sm:text-[48px]">
+                Let&apos;s be friends
+              </p>
+              <div className="flex items-center gap-5 text-onwei-beige">
+                <MotionLink
+                  href="#"
+                  aria-label="Onwei on Instagram"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <InstagramIcon />
+                </MotionLink>
+                <MotionLink
+                  href="#"
+                  aria-label="Onwei on YouTube"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <YoutubeIcon />
+                </MotionLink>
+                <MotionLink
+                  href="#"
+                  aria-label="Onwei on Spotify"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <SpotifyIcon />
+                </MotionLink>
+              </div>
+              {/* max-w-[219px] below lg: Figma's mobile paragraph wraps
                 narrower than its 351px column, leaving the right side clear
                 for the mobile illustration above to overlap without
                 covering text — matches its own Figma text-box width. */}
-            <p className="max-w-[219px] font-display text-[14px] uppercase leading-[1.3] text-onwei-beige sm:text-[16px] lg:max-w-[510px]">
-              <span className="font-semibold">ONWEI (n.)</span>
-              <br />
-              <span className="font-grotesk font-medium normal-case">
-                The weight of your own effort. The only thing that&apos;s always
-                yours.
+              <p className="max-w-[219px] font-display text-[14px] uppercase leading-[1.3] text-onwei-beige sm:text-[16px] lg:max-w-[510px]">
+                <span className="font-semibold">ONWEI (n.)</span>
                 <br />
-                The feeling when you stop waiting to feel ready and just show
-                up.
-                <br />
-                Because progress belongs to those who - Show up. Stay on.
-              </span>
-            </p>
+                <span className="font-grotesk font-medium normal-case">
+                  The weight of your own effort. The only thing that&apos;s
+                  always yours.
+                  <br />
+                  The feeling when you stop waiting to feel ready and just show
+                  up.
+                  <br />
+                  Because progress belongs to those who - Show up. Stay on.
+                </span>
+              </p>
+            </div>
           </div>
-        </div>
 
-        {/* Figma has no destination screen for either link yet — "#"
+          {/* Figma has no destination screen for either link yet — "#"
             placeholders, same convention as SiteFooter's Policies column.
             Mobile: centered (Figma has near-equal margins either side, x:24.5
             in a 375px frame) — the outer items-center on this section already
@@ -215,22 +237,23 @@ export function WaitlistFooter() {
             — so it needs its own w-full/max-w to reach that edge and
             justify-end to sit at it, instead of inheriting the mobile
             centering. */}
-        <div className="mt-10 flex gap-6 font-grotesk text-[12px] text-onwei-beige lg:hidden">
-          <Link href="#" className="underline">
-            Terms &amp; Conditions
-          </Link>
-          <Link href="#" className="underline">
-            Privacy Policy
-          </Link>
-        </div>
-        <div className="mt-10 hidden w-full max-w-[1440px] gap-6 font-grotesk text-[12px] text-onwei-beige lg:flex lg:justify-end">
-          <Link href="#" className="underline">
-            Privacy Policy
-          </Link>
-          <Link href="#" className="underline">
-            Terms &amp; Conditions
-          </Link>
-        </div>
+          <div className="mt-10 flex gap-6 font-grotesk text-[12px] text-onwei-beige lg:hidden">
+            <Link href="#" className="underline">
+              Terms &amp; Conditions
+            </Link>
+            <Link href="#" className="underline">
+              Privacy Policy
+            </Link>
+          </div>
+          <div className="mt-10 hidden w-full max-w-[1440px] gap-6 font-grotesk text-[12px] text-onwei-beige lg:flex lg:justify-end">
+            <Link href="#" className="underline">
+              Privacy Policy
+            </Link>
+            <Link href="#" className="underline">
+              Terms &amp; Conditions
+            </Link>
+          </div>
+        </ScrollReveal>
       </div>
     </footer>
   );

@@ -1,8 +1,11 @@
 "use client";
 
 import { useId, useState } from "react";
+import { motion } from "motion/react";
 import { Button } from "@onwei/ui";
 import { WaitlistSuccessModal } from "./WaitlistSuccessModal";
+
+const MotionButton = motion.create(Button);
 
 type Status = "idle" | "submitting" | "success" | "already" | "error";
 
@@ -161,13 +164,15 @@ export function WaitlistForm() {
           </div>
         </div>
 
-        <Button
+        <MotionButton
           type="submit"
           disabled={status === "submitting"}
+          whileHover={status === "submitting" ? undefined : { scale: 1.02 }}
+          whileTap={status === "submitting" ? undefined : { scale: 0.98 }}
           className="flex w-full items-center justify-center rounded-[30px] bg-onwei-blue px-6 py-3 font-grotesk text-[20px] uppercase text-onwei-green disabled:opacity-70 sm:text-[24px]"
         >
           {status === "submitting" ? "submitting..." : "start my warm up"}
-        </Button>
+        </MotionButton>
 
         <p role="status" className="font-grotesk text-[12px] text-onwei-blue">
           {status === "success" &&

@@ -19,6 +19,19 @@ vi.mock("next/cache", async (importOriginal) => {
   };
 });
 
+// jsdom doesn't implement IntersectionObserver, which motion/react's
+// `whileInView` (ScrollReveal, used on /waitlist and /about) requires at
+// mount time -- without this, rendering any page that uses it throws
+// "ReferenceError: IntersectionObserver is not defined" in tests, even
+// though it works fine in a real browser. Tests don't need real
+// intersection tracking, just a constructor that doesn't throw.
+class MockIntersectionObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+
 afterEach(() => {
   cleanup();
 });

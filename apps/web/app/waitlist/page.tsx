@@ -5,6 +5,8 @@ import { WaitlistCountdown } from "@/_components/WaitlistCountdown";
 import { WaitlistCardScroll } from "@/_components/WaitlistCardScroll";
 import { WaitlistForm } from "@/_components/WaitlistForm";
 import { WaitlistFooter } from "@/_components/WaitlistFooter";
+import { ScrollReveal } from "@/_components/ScrollReveal";
+import { HoverLink } from "@/_components/HoverLink";
 
 // This page reads launchAt via Prisma, not `fetch`, so Next's automatic
 // static/dynamic detection has no signal that it depends on data that
@@ -48,14 +50,19 @@ export default async function WaitlistPage() {
 
             <div className="flex flex-col gap-3">
               <WaitlistCountdown launchAt={launchAt.toISOString()} />
-              {/* Plain anchor jump to the form below — no client JS needed
-                  for what's just a same-page scroll. */}
-              <a
+              {/* next/link (not a plain anchor) so it can carry the
+                  whileHover/whileTap gesture props below — already inside
+                  WaitlistCardScroll's client boundary, so this doesn't add
+                  a new one. Still just a same-page hash jump, no real
+                  navigation. */}
+              <HoverLink
                 href="#join-onwei-insiders"
                 className="flex w-full items-center justify-center rounded-[30px] bg-onwei-blue px-6 py-3 font-grotesk text-[20px] uppercase text-onwei-green sm:text-[24px]"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
               >
                 I want in!
-              </a>
+              </HoverLink>
             </div>
           </div>
         </WaitlistCardScroll>
@@ -65,7 +72,10 @@ export default async function WaitlistPage() {
         id="join-onwei-insiders"
         className="flex w-full max-w-[1440px] flex-col gap-8 px-3 py-6 sm:flex-row sm:items-center sm:justify-between sm:px-11 sm:py-14"
       >
-        <div className="relative h-[400px] w-full overflow-hidden rounded-[30px] sm:h-[635px] sm:w-[665px]">
+        <ScrollReveal
+          as="div"
+          className="relative h-[400px] w-full overflow-hidden rounded-[30px] sm:h-[635px] sm:w-[665px]"
+        >
           <Image
             src="/images/waitlist/photo/hero-photo.png"
             alt=""
@@ -82,9 +92,13 @@ export default async function WaitlistPage() {
               aria-hidden
             />
           </div>
-        </div>
+        </ScrollReveal>
 
-        <div className="flex w-full flex-col gap-6 rounded-[30px] px-0 py-6 sm:w-[665px] sm:px-14 sm:py-12">
+        <ScrollReveal
+          as="div"
+          delay={0.1}
+          className="flex w-full flex-col gap-6 rounded-[30px] px-0 py-6 sm:w-[665px] sm:px-14 sm:py-12"
+        >
           <div className="flex flex-col gap-3">
             <p className="font-display text-[36px] font-bold uppercase leading-[0.9] text-onwei-blue sm:text-[48px]">
               join onwei insiders
@@ -94,7 +108,7 @@ export default async function WaitlistPage() {
             </p>
           </div>
           <WaitlistForm />
-        </div>
+        </ScrollReveal>
       </section>
 
       <WaitlistFooter />
