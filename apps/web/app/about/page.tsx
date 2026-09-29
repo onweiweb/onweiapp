@@ -29,6 +29,18 @@ export default function AboutPage() {
           <p className="font-display text-[16px] font-medium uppercase text-onwei-blue">
             ( on&middot;wei, \ &#712;&auml;n-w&#257; / &ldquo;on-way&rdquo; )
           </p>
+          {/* Mobile (Figma node 969:4038): tucked under the tail end of the
+              text, not out in a side margin like desktop — there's no wide
+              margin to sit in at this width. Same asset, same aspect ratio,
+              just repositioned and scaled down for the narrower layout. */}
+          <Image
+            src="/images/about-us/underline-about-pronunciation.png"
+            alt=""
+            width={64}
+            height={15}
+            aria-hidden
+            className="pointer-events-none absolute -bottom-1 -right-2 sm:hidden"
+          />
           <Image
             src="/images/about-us/underline-about-pronunciation.png"
             alt=""
@@ -269,6 +281,22 @@ export default function AboutPage() {
       </section>
 
       <section className="relative mx-auto flex w-full max-w-[1440px] flex-col items-center gap-6 px-6 pb-6 pt-12 text-center sm:px-14">
+        {/* Mobile only (Figma node 969:4237) — a small double-stroke
+            underline beneath "THEN THEY GOT" (first line of the heading),
+            near the section's left margin, not the swirled arrow desktop
+            gets to the heading's right (which Figma's mobile frame doesn't
+            have at all — confirmed absent, not just hidden here). Top offset
+            is an approximation (Figma's own y-coordinate doesn't map 1:1
+            onto this section's padding), eyeballed to land under the first
+            line at this font size — worth a visual check after deploy. */}
+        <Image
+          src="/images/about-us/underline-married-heading-mobile.png"
+          alt=""
+          width={89}
+          height={16}
+          aria-hidden
+          className="pointer-events-none absolute left-6 top-24 lg:hidden"
+        />
         <Image
           src="/images/about-us/squiggle-arrow-married.svg"
           alt=""
