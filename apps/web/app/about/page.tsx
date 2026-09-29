@@ -89,20 +89,24 @@ export default async function AboutPage() {
             sharp end of competitive sport, and one who built careers around why
             people want the things they want —{" "}
             {/* Figma highlights this run with an actual asset (a painted
-                purple brush stroke, node 760:4526/4527/4634, "Onwei Brand
-                Assets-149" — jagged hand-cut edges and a slight rotation,
-                not a clean rectangle), not a flat CSS background-color —
-                same exported PNG reused for all three highlighted phrases
-                on this page. [box-decoration-break:clone] + a 100%/100%
-                background-size (rather than a fixed source size) is what
-                lets one shared texture still stretch-to-fit whichever line
-                width each wrapped fragment ends up with, the same way
-                Figma itself crops/stretches one shared texture per
-                instance rather than shipping a bespoke image per size. */}
+                purple brush stroke, node 760:4526 for this phrase, "Onwei
+                Brand Assets-149" — jagged hand-cut edges and a slight
+                rotation, not a clean rectangle), not a flat CSS
+                background-color. Each of the three highlighted phrases on
+                this page has its OWN export, sized to that phrase's own
+                width (701x27 here vs 352x27 for the other two, node
+                760:4527/760:4634) — reusing one shared texture across all
+                three stretched the shorter phrases' strokes noticeably out
+                of proportion, most visible at mobile's narrower line
+                width. [box-decoration-break:clone] + a 100%/100%
+                background-size still lets each phrase's own asset
+                stretch-to-fit whichever line width it wraps to at any
+                given viewport. */}
             <span
               className="px-1 text-onwei-white [background-size:100%_100%] [box-decoration-break:clone]"
               style={{
-                backgroundImage: "url(/images/about-us/highlight-brush.png)",
+                backgroundImage:
+                  "url(/images/about-us/highlight-looked-at.png)",
               }}
             >
               looked at India&apos;s fitness shelves and felt the same thing:
@@ -120,7 +124,7 @@ export default async function AboutPage() {
           <p
             className="w-fit self-center px-1 text-onwei-white [background-size:100%_100%] [box-decoration-break:clone]"
             style={{
-              backgroundImage: "url(/images/about-us/highlight-brush.png)",
+              backgroundImage: "url(/images/about-us/highlight-thats-who.png)",
             }}
           >
             That&apos;s who Onwei is for.
@@ -401,7 +405,7 @@ export default async function AboutPage() {
             <span
               className="px-1 text-onwei-white [background-size:100%_100%] [box-decoration-break:clone]"
               style={{
-                backgroundImage: "url(/images/about-us/highlight-brush.png)",
+                backgroundImage: "url(/images/about-us/highlight-married.png)",
               }}
             >
               whether you&apos;d actually want it. Together they&apos;ve set a
