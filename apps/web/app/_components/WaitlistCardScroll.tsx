@@ -172,7 +172,13 @@ function ScrollCard({
   // progress===0 boundary caused a blank first paint before the first
   // scroll event.
   const introFraction = index === 0 ? 0.001 : 0.15;
-  const outroFraction = 0.25;
+  // Shorter than the original 0.25, and paired with a much smaller scale
+  // range below — at 1.2x, a card fading out while blowing up 20% spent a
+  // long stretch of scroll sitting at ~40-60% opacity AND oversized, which
+  // read as a washed-out, blurry ghost rather than a clean exit. Less time
+  // at partial opacity, and less scale to blur through, keeps the same
+  // "lifts and fades" idea from the brief without the muddy middle.
+  const outroFraction = 0.12;
   const introEnd = start + step * introFraction;
   const outroStart = end - step * outroFraction;
 
@@ -181,8 +187,7 @@ function ScrollCard({
     [start, introEnd, outroStart, end],
     [index === 0 ? 1 : 0, 1, 1, 0],
   );
-  // The exiting card's text/content scales up and out, per the brief.
-  const scale = useTransform(progress, [outroStart, end], [1, 1.2]);
+  const scale = useTransform(progress, [outroStart, end], [1, 1.05]);
 
   return (
     <motion.div

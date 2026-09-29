@@ -3,16 +3,19 @@ import Link from "next/link";
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
 
-// Built from Figma (file kGG2vJdbqU6b1d1xmIhRwG, frame 760:4492 "About Us").
-// Desktop only — no mobile variant exists for this page in Figma, matching
-// this project's "flag it, don't invent" convention for missing breakpoints.
-// Decorative accents (squiggles/arrows/ribbon banners, nodes 760:4566,
-// 760:4600, 760:4639, 760:4642, 760:4654, 760:4658, 760:4660) are exported
-// SVGs/PNGs from those exact nodes, positioned relative to their anchor
-// text/photo rather than at Figma's raw canvas coordinates — those
-// coordinates assume a fixed 1440px frame and don't survive this page's
-// responsive layout. Hidden below `lg` where the anchor they decorate
-// (a two-column grid, or a wide margin) no longer exists at that spot.
+// Built from Figma (file dQvPgsv3kEAYb4ca5mu08U, frame 760:4492 "About Us" /
+// 969:3987 "About Us - mobile" — supersedes an earlier note here claiming no
+// mobile variant existed; it does, in this file, and the decorative accents
+// below now have mobile positions measured from it). Decorative accents
+// (squiggles/arrows/ribbon banners, nodes 760:4566, 760:4600, 760:4639,
+// 760:4642, 760:4654, 760:4658, 760:4660) are exported SVGs/PNGs from those
+// exact nodes, positioned relative to their anchor text/photo rather than at
+// Figma's raw canvas coordinates — those coordinates assume a fixed 1440px
+// frame and don't survive this page's responsive layout. Mobile sizes/offsets
+// below are the desktop figure scaled by 0.625 (the ratio between this page's
+// mobile and desktop heading font sizes), not independently re-measured node
+// positions — close enough for decorative elements, but a visual check after
+// deploy is worth it.
 export default function AboutPage() {
   return (
     <main className="bg-onwei-green">
@@ -66,6 +69,14 @@ export default function AboutPage() {
       <section className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-6 px-6 pb-6 sm:px-11 lg:grid-cols-2">
         <div className="order-2 flex flex-col justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 sm:px-14 sm:py-12 lg:order-1">
           <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
+            <Image
+              src="/images/about-us/squiggle-sabhya-name.svg"
+              alt=""
+              width={137}
+              height={44}
+              aria-hidden
+              className="pointer-events-none absolute -left-[10px] -top-[8px] sm:hidden"
+            />
             <Image
               src="/images/about-us/squiggle-sabhya-name.svg"
               alt=""
@@ -138,6 +149,18 @@ export default function AboutPage() {
               className="pointer-events-none absolute right-6 top-6 hidden opacity-90 sm:block"
             />
           </div>
+          {/* Figma's mobile frame has this on the RIGHT of the photo (not
+              left, like desktop) — the two breakpoints mirror each other
+              here, matching how the mobile frame also flips which comes
+              first, photo vs text card. */}
+          <Image
+            src="/images/about-us/illustration-pickleball-swing.svg"
+            alt=""
+            width={80}
+            height={145}
+            aria-hidden
+            className="pointer-events-none absolute -bottom-10 right-[4%] z-10 lg:hidden"
+          />
           <Image
             src="/images/about-us/illustration-pickleball-swing.svg"
             alt=""
@@ -150,21 +173,41 @@ export default function AboutPage() {
       </section>
 
       <section className="relative mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-6 px-6 pb-6 sm:px-11 lg:grid-cols-2">
-        <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
+        {/* Outer wrapper (not the photo div itself, which clips via
+            overflow-hidden) so the mobile plank illustration can hang below
+            the photo's bottom edge — same reasoning as the Sabhya photo
+            above. Needed only for mobile: on desktop the two grid columns
+            are equal height (grid's default stretch), so bottom-0 on the
+            plank image below, positioned relative to the whole section,
+            already lands exactly on the seam between them. On mobile the
+            columns stack, so that same bottom-0 would land at the very
+            bottom of the second (text) column instead of at the photo/card
+            seam — the plank needs its own anchor here instead. */}
+        <div className="relative">
+          <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
+            <Image
+              src="/images/about-us/sakshi.jpg"
+              alt="Sakshi, Onwei co-founder, holding an Onwei yoga mat"
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover object-top"
+            />
+            <Image
+              src="/images/footer/logo-circle.svg"
+              alt=""
+              width={90}
+              height={90}
+              aria-hidden
+              className="pointer-events-none absolute right-6 top-6 hidden opacity-90 sm:block"
+            />
+          </div>
           <Image
-            src="/images/about-us/sakshi.jpg"
-            alt="Sakshi, Onwei co-founder, holding an Onwei yoga mat"
-            fill
-            sizes="(min-width: 1024px) 50vw, 100vw"
-            className="object-cover object-top"
-          />
-          <Image
-            src="/images/footer/logo-circle.svg"
+            src="/images/about-us/illustration-plank.svg"
             alt=""
-            width={90}
-            height={90}
+            width={134}
+            height={48}
             aria-hidden
-            className="pointer-events-none absolute right-6 top-6 hidden opacity-90 sm:block"
+            className="pointer-events-none absolute -bottom-6 left-1/2 z-10 -translate-x-1/2 lg:hidden"
           />
         </div>
         <Image
@@ -176,8 +219,24 @@ export default function AboutPage() {
           className="pointer-events-none absolute bottom-0 left-1/2 z-10 hidden -translate-x-1/2 lg:block"
         />
         <div className="flex flex-col justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 sm:px-14 sm:py-12">
-          <p className="font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
-            Sakshi
+          <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
+            <Image
+              src="/images/about-us/squiggle-sakshi-name.svg"
+              alt=""
+              width={137}
+              height={44}
+              aria-hidden
+              className="pointer-events-none absolute -left-[10px] -top-[8px] sm:hidden"
+            />
+            <Image
+              src="/images/about-us/squiggle-sakshi-name.svg"
+              alt=""
+              width={220}
+              height={70}
+              aria-hidden
+              className="pointer-events-none absolute -left-4 -top-3 hidden sm:block"
+            />
+            <span className="relative">Sakshi</span>
           </p>
           <div className="font-grotesk text-[14px] leading-[1.3] text-onwei-white">
             <p>
@@ -277,6 +336,14 @@ export default function AboutPage() {
           <h2 className="font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-blue sm:text-[64px]">
             Why{" "}
             <span className="relative inline-block">
+              <Image
+                src="/images/about-us/squiggle-onwei-circle.svg"
+                alt=""
+                width={136}
+                height={76}
+                aria-hidden
+                className="pointer-events-none absolute -left-[10px] -top-[18px] sm:hidden"
+              />
               <Image
                 src="/images/about-us/squiggle-onwei-circle.svg"
                 alt=""

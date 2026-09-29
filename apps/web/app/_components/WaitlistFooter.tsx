@@ -87,18 +87,47 @@ export function WaitlistFooter() {
     // wasn't enough.
     <footer className="w-full">
       <div className="flex flex-col items-center bg-onwei-purple px-3 py-12 sm:px-6 lg:px-14">
-        <div className="relative flex w-full max-w-[1440px] flex-col gap-14 lg:flex-row lg:items-end lg:justify-between lg:gap-24">
-          {/* Figma (node 945:4375): left:1149, top:-85, w:210 inside a
-              1441px container — i.e. right:82px (not flush with the edge)
-              and mostly ABOVE the section's top edge, not hovering next to
-              the heading text at mid-height. */}
+        {/* Figma is three independent columns (brand / "let's be friends" /
+            illustration), not two flex children spread with justify-between —
+            with only two real flex children here, justify-between shoved the
+            friends column flush to the right edge, straight under the
+            illustration, instead of leaving it at its own fixed position
+            with a clear 96px gap after the brand column (Figma: brand ends
+            at x:457, friends starts at x:553, in a 1441px frame — that's the
+            lg:gap-24 below). items-start (not items-end): Figma has the
+            brand block hanging from the row's TOP, not its bottom — it's
+            shorter than the friends column (170 vs 233 tall) and starts at
+            the same y, not bottom-aligned with it. */}
+        <div className="relative flex w-full max-w-[1440px] flex-col gap-14 lg:flex-row lg:items-start lg:gap-24">
+          {/* Figma (node 945:4375): left:1149, top:-85, w:210 inside the
+              1441px SECTION (945:4350) — not inside this row div, which is
+              that section's own content box, itself inset by the section's
+              py-12 (48px). So top here has to be -85-48=-133, not -85, or
+              the illustration sits 48px lower than Figma and dips into the
+              text below it. right:82px doesn't need the same correction —
+              this row div's right edge already lines up with the section's
+              content-box right edge (no horizontal inset difference). */}
           <Image
             src="/images/footer/illustration-runner.svg"
             alt=""
             width={210}
             height={342}
             aria-hidden
-            className="pointer-events-none absolute -top-[85px] right-[82px] hidden lg:block"
+            className="pointer-events-none absolute -top-[133px] right-[82px] hidden lg:block"
+          />
+          {/* Mobile equivalent (Figma node 945:4504, inside the mobile
+              Newsletter frame 945:4477): much smaller (125x203, vs 210x342
+              on desktop) and sits lower, straddling the bottom of the
+              "let's be friends" paragraph rather than hanging above the
+              section like the desktop one — the paragraph's own max-w is
+              narrowed on mobile (below) to leave it room. */}
+          <Image
+            src="/images/footer/illustration-runner.svg"
+            alt=""
+            width={125}
+            height={203}
+            aria-hidden
+            className="pointer-events-none absolute top-[360px] right-[25px] block lg:hidden"
           />
 
           <div className="flex w-full max-w-[401px] flex-col gap-8">
@@ -156,7 +185,11 @@ export function WaitlistFooter() {
                 <SpotifyIcon />
               </a>
             </div>
-            <p className="max-w-[510px] font-display text-[14px] uppercase leading-[1.3] text-onwei-beige sm:text-[16px]">
+            {/* max-w-[219px] below lg: Figma's mobile paragraph wraps
+                narrower than its 351px column, leaving the right side clear
+                for the mobile illustration above to overlap without
+                covering text — matches its own Figma text-box width. */}
+            <p className="max-w-[219px] font-display text-[14px] uppercase leading-[1.3] text-onwei-beige sm:text-[16px] lg:max-w-[510px]">
               <span className="font-semibold">ONWEI (n.)</span>
               <br />
               <span className="font-grotesk font-medium normal-case">
@@ -173,7 +206,15 @@ export function WaitlistFooter() {
         </div>
 
         {/* Figma has no destination screen for either link yet — "#"
-            placeholders, same convention as SiteFooter's Policies column. */}
+            placeholders, same convention as SiteFooter's Policies column.
+            Mobile: centered (Figma has near-equal margins either side, x:24.5
+            in a 375px frame) — the outer items-center on this section already
+            does that for a shrink-wrapped div, so no width/justify needed
+            here. Desktop: Figma has this flush against the content's right
+            edge (x:1126-1389 of 1441), under the illustration — not centered
+            — so it needs its own w-full/max-w to reach that edge and
+            justify-end to sit at it, instead of inheriting the mobile
+            centering. */}
         <div className="mt-10 flex gap-6 font-grotesk text-[12px] text-onwei-beige lg:hidden">
           <Link href="#" className="underline">
             Terms &amp; Conditions
@@ -182,7 +223,7 @@ export function WaitlistFooter() {
             Privacy Policy
           </Link>
         </div>
-        <div className="mt-10 hidden gap-6 font-grotesk text-[12px] text-onwei-beige lg:flex">
+        <div className="mt-10 hidden w-full max-w-[1440px] gap-6 font-grotesk text-[12px] text-onwei-beige lg:flex lg:justify-end">
           <Link href="#" className="underline">
             Privacy Policy
           </Link>
