@@ -15,6 +15,11 @@ export default async function SettingsPage() {
         initialSiteMode={setting.siteMode}
         initialLaunchAt={setting.launchAt.toISOString()}
         initialAllowInternationalPhone={setting.allowInternationalPhone}
+        initialInstagramUrl={setting.instagramUrl ?? ""}
+        initialLinkedinUrl={setting.linkedinUrl ?? ""}
+        initialFacebookUrl={setting.facebookUrl ?? ""}
+        initialYoutubeUrl={setting.youtubeUrl ?? ""}
+        initialSpotifyUrl={setting.spotifyUrl ?? ""}
       />
     </main>
   );

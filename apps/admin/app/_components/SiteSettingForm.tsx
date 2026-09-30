@@ -42,10 +42,20 @@ export function SiteSettingForm({
   initialSiteMode,
   initialLaunchAt,
   initialAllowInternationalPhone,
+  initialInstagramUrl,
+  initialLinkedinUrl,
+  initialFacebookUrl,
+  initialYoutubeUrl,
+  initialSpotifyUrl,
 }: {
   initialSiteMode: SiteMode;
   initialLaunchAt: string;
   initialAllowInternationalPhone: boolean;
+  initialInstagramUrl: string;
+  initialLinkedinUrl: string;
+  initialFacebookUrl: string;
+  initialYoutubeUrl: string;
+  initialSpotifyUrl: string;
 }) {
   const router = useRouter();
   const [siteMode, setSiteMode] = useState<SiteMode>(initialSiteMode);
@@ -55,6 +65,11 @@ export function SiteSettingForm({
   const [allowInternationalPhone, setAllowInternationalPhone] = useState(
     initialAllowInternationalPhone,
   );
+  const [instagramUrl, setInstagramUrl] = useState(initialInstagramUrl);
+  const [linkedinUrl, setLinkedinUrl] = useState(initialLinkedinUrl);
+  const [facebookUrl, setFacebookUrl] = useState(initialFacebookUrl);
+  const [youtubeUrl, setYoutubeUrl] = useState(initialYoutubeUrl);
+  const [spotifyUrl, setSpotifyUrl] = useState(initialSpotifyUrl);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -76,6 +91,11 @@ export function SiteSettingForm({
           siteMode,
           launchAt: new Date(launchAt).toISOString(),
           allowInternationalPhone,
+          instagramUrl: instagramUrl.trim() || null,
+          linkedinUrl: linkedinUrl.trim() || null,
+          facebookUrl: facebookUrl.trim() || null,
+          youtubeUrl: youtubeUrl.trim() || null,
+          spotifyUrl: spotifyUrl.trim() || null,
         }),
       });
       const data = (await response.json()) as { ok: boolean; error?: string };
@@ -149,6 +169,61 @@ export function SiteSettingForm({
         />
         Accept phone numbers from outside India on the waitlist form
       </label>
+
+      <div className="flex flex-col gap-3 border-t border-onwei-blue/10 pt-6">
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium">Social links</p>
+          <p className="text-xs text-onwei-blue/70">
+            Shown as icons in the site footer. Leave a field blank to hide that
+            icon instead of linking somewhere empty.
+          </p>
+        </div>
+
+        <label className="flex flex-col gap-1.5 text-sm">
+          Instagram
+          <AdminInput
+            value={instagramUrl}
+            onChange={(event) => setInstagramUrl(event.target.value)}
+            placeholder="https://www.instagram.com/onweimoves"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm">
+          LinkedIn
+          <AdminInput
+            value={linkedinUrl}
+            onChange={(event) => setLinkedinUrl(event.target.value)}
+            placeholder="https://www.linkedin.com/company/onwei"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm">
+          Facebook
+          <AdminInput
+            value={facebookUrl}
+            onChange={(event) => setFacebookUrl(event.target.value)}
+            placeholder="https://www.facebook.com/onwei"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm">
+          YouTube
+          <AdminInput
+            value={youtubeUrl}
+            onChange={(event) => setYoutubeUrl(event.target.value)}
+            placeholder="https://www.youtube.com/@onwei"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm">
+          Spotify
+          <AdminInput
+            value={spotifyUrl}
+            onChange={(event) => setSpotifyUrl(event.target.value)}
+            placeholder="https://open.spotify.com/user/onwei"
+          />
+        </label>
+      </div>
 
       {error ? <p className="text-sm text-onwei-black">{error}</p> : null}
       {saved ? <p className="text-sm text-green-700">Saved.</p> : null}

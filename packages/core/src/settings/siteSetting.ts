@@ -15,6 +15,13 @@ export interface SiteSettingSummary {
   siteMode: SiteMode;
   launchAt: Date;
   allowInternationalPhone: boolean;
+  // Shown in apps/web's SiteFooter/WaitlistFooter — null means "don't show
+  // this icon" rather than the dead "#" link every one of these used to be.
+  instagramUrl: string | null;
+  linkedinUrl: string | null;
+  facebookUrl: string | null;
+  youtubeUrl: string | null;
+  spotifyUrl: string | null;
 }
 
 let cached: { value: SiteSettingSummary; expiresAt: number } | null = null;
@@ -23,11 +30,21 @@ function toSummary(row: {
   siteMode: SiteMode;
   launchAt: Date;
   allowInternationalPhone: boolean;
+  instagramUrl: string | null;
+  linkedinUrl: string | null;
+  facebookUrl: string | null;
+  youtubeUrl: string | null;
+  spotifyUrl: string | null;
 }): SiteSettingSummary {
   return {
     siteMode: row.siteMode,
     launchAt: row.launchAt,
     allowInternationalPhone: row.allowInternationalPhone,
+    instagramUrl: row.instagramUrl,
+    linkedinUrl: row.linkedinUrl,
+    facebookUrl: row.facebookUrl,
+    youtubeUrl: row.youtubeUrl,
+    spotifyUrl: row.spotifyUrl,
   };
 }
 
@@ -53,6 +70,11 @@ export interface UpdateSiteSettingInput {
   siteMode?: SiteMode;
   launchAt?: Date;
   allowInternationalPhone?: boolean;
+  instagramUrl?: string | null;
+  linkedinUrl?: string | null;
+  facebookUrl?: string | null;
+  youtubeUrl?: string | null;
+  spotifyUrl?: string | null;
 }
 
 export async function updateSiteSetting(
@@ -69,6 +91,11 @@ export async function updateSiteSetting(
       siteMode: input.siteMode,
       launchAt: input.launchAt,
       allowInternationalPhone: input.allowInternationalPhone,
+      instagramUrl: input.instagramUrl,
+      linkedinUrl: input.linkedinUrl,
+      facebookUrl: input.facebookUrl,
+      youtubeUrl: input.youtubeUrl,
+      spotifyUrl: input.spotifyUrl,
       updatedByStaffId: actor.staffUserId,
     },
   });

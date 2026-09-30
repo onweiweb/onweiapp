@@ -73,7 +73,15 @@ function SpotifyIcon() {
 // differs by breakpoint in Figma: web is Privacy Policy then Terms &
 // Conditions, mobile is the reverse — kept as two literal lists rather than
 // one reordered with CSS so the DOM/reading order matches each breakpoint.
-export function WaitlistFooter() {
+export function WaitlistFooter({
+  instagramUrl,
+  youtubeUrl,
+  spotifyUrl,
+}: {
+  instagramUrl: string | null;
+  youtubeUrl: string | null;
+  spotifyUrl: string | null;
+}) {
   return (
     // <footer> itself stays bare (block, full width by default) — putting
     // the flex/background classes directly on it instead made it a flex
@@ -190,30 +198,42 @@ export function WaitlistFooter() {
                 Let&apos;s be friends
               </p>
               <div className="flex items-center gap-5 text-onwei-beige">
-                <MotionLink
-                  href="#"
-                  aria-label="Onwei on Instagram"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <InstagramIcon />
-                </MotionLink>
-                <MotionLink
-                  href="#"
-                  aria-label="Onwei on YouTube"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <YoutubeIcon />
-                </MotionLink>
-                <MotionLink
-                  href="#"
-                  aria-label="Onwei on Spotify"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <SpotifyIcon />
-                </MotionLink>
+                {instagramUrl ? (
+                  <MotionLink
+                    href={instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Onwei on Instagram"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <InstagramIcon />
+                  </MotionLink>
+                ) : null}
+                {youtubeUrl ? (
+                  <MotionLink
+                    href={youtubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Onwei on YouTube"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <YoutubeIcon />
+                  </MotionLink>
+                ) : null}
+                {spotifyUrl ? (
+                  <MotionLink
+                    href={spotifyUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Onwei on Spotify"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <SpotifyIcon />
+                  </MotionLink>
+                ) : null}
               </div>
               {/* max-w-[219px] below lg: Figma's mobile paragraph wraps
                 narrower than its 351px column, leaving the right side clear

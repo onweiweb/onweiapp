@@ -11,6 +11,10 @@ function isSiteMode(value: unknown): value is SiteModeInput {
   );
 }
 
+function parseUrlField(value: unknown): string | null | undefined {
+  return typeof value === "string" || value === null ? value : undefined;
+}
+
 export async function PATCH(request: Request) {
   const session = await requireStaffSession(request, "settings:manage");
   if (!session.ok) return session.response;
@@ -19,6 +23,11 @@ export async function PATCH(request: Request) {
     siteMode?: unknown;
     launchAt?: unknown;
     allowInternationalPhone?: unknown;
+    instagramUrl?: unknown;
+    linkedinUrl?: unknown;
+    facebookUrl?: unknown;
+    youtubeUrl?: unknown;
+    spotifyUrl?: unknown;
   } | null;
 
   if (!body) {
@@ -42,6 +51,11 @@ export async function PATCH(request: Request) {
         typeof body.allowInternationalPhone === "boolean"
           ? body.allowInternationalPhone
           : undefined,
+      instagramUrl: parseUrlField(body.instagramUrl),
+      linkedinUrl: parseUrlField(body.linkedinUrl),
+      facebookUrl: parseUrlField(body.facebookUrl),
+      youtubeUrl: parseUrlField(body.youtubeUrl),
+      spotifyUrl: parseUrlField(body.spotifyUrl),
     },
     { staffUserId: session.context.staffUserId },
   );

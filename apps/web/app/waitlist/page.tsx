@@ -22,7 +22,8 @@ export const revalidate = 30;
 // card-scroll section, and the form are client islands (see each
 // component's own file); everything else here ships with zero client JS.
 export default async function WaitlistPage() {
-  const { launchAt } = await getSiteSetting();
+  const { launchAt, instagramUrl, youtubeUrl, spotifyUrl } =
+    await getSiteSetting();
 
   return (
     <main className="flex flex-col items-center bg-onwei-beige">
@@ -135,7 +136,11 @@ export default async function WaitlistPage() {
         </ScrollReveal>
       </section>
 
-      <WaitlistFooter />
+      <WaitlistFooter
+        instagramUrl={instagramUrl}
+        youtubeUrl={youtubeUrl}
+        spotifyUrl={spotifyUrl}
+      />
     </main>
   );
 }
