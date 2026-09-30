@@ -133,24 +133,51 @@ export function SiteFooter() {
                 </div>
                 <p className="font-grotesk text-[14px] leading-[1.3]">
                   ONWEI (n.)
-                  <br />
-                  <br />
-                  1. The weight of your own effort. The only thing that&apos;s
-                  always yours.
-                  <br />
-                  <br />
-                  2. From On — present, engaged, showing up — and Wei (为) —
-                  intentional action. Not hustle. Not noise. Just the choice to
-                  participate.
-                  <br />
-                  <br />
-                  <span className="font-semibold">
-                    3. The feeling when you stop waiting to feel ready and just
-                    show up.
-                    <br />
-                    Because progress belongs to those who — Show up. Stay on.
-                  </span>
                 </p>
+                <ul className="flex flex-col gap-4 font-grotesk text-[14px] leading-[1.3]">
+                  <li className="flex gap-2">
+                    <span
+                      aria-hidden
+                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                    />
+                    <span>
+                      The weight of your own effort. The only thing that&apos;s
+                      always yours.
+                    </span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span
+                      aria-hidden
+                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                    />
+                    <span>
+                      On - present, engaged, showing up.
+                      <br />
+                      Wei (way) - intentional action. Not hustle, not noise.
+                      <br />
+                      Onwei is just the choice to participate.
+                    </span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span
+                      aria-hidden
+                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                    />
+                    <span>
+                      The feeling when you stop waiting to feel ready and just
+                      show up.
+                    </span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span
+                      aria-hidden
+                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                    />
+                    <span>
+                      Because progress belongs to those who show up. Stay on.
+                    </span>
+                  </li>
+                </ul>
               </div>
             </div>
 
@@ -172,7 +199,7 @@ export function SiteFooter() {
                   </p>
                   <p className="font-grotesk text-[14px]">
                     New releases, movement stories, and what&apos;s moving at
-                    Onwei — no unnecessary pings!
+                    Onwei (no unnecessary pings!)
                   </p>
                 </div>
                 <NewsletterForm />

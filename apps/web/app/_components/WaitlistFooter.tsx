@@ -154,9 +154,11 @@ export function WaitlistFooter() {
                   </p>
                 </div>
                 <p className="font-grotesk text-[14px] leading-[1.3] text-onwei-beige">
-                  From On &mdash; present, engaged, showing up &mdash; and Wei
-                  (way) intentional action. Not hustle. Not noise. Just the
-                  choice to participate.
+                  On - present, engaged, showing up.
+                  <br />
+                  Wei (way) - intentional action. Not hustle, not noise.
+                  <br />
+                  Onwei is just the choice to participate.
                 </p>
               </div>
               <div className="relative inline-block w-fit">
@@ -217,19 +219,42 @@ export function WaitlistFooter() {
                 narrower than its 351px column, leaving the right side clear
                 for the mobile illustration above to overlap without
                 covering text — matches its own Figma text-box width. */}
-              <p className="max-w-[219px] font-display text-[14px] uppercase leading-[1.3] text-onwei-beige sm:text-[16px] lg:max-w-[510px]">
-                <span className="font-semibold">ONWEI (n.)</span>
-                <br />
-                <span className="font-grotesk font-medium normal-case">
-                  The weight of your own effort. The only thing that&apos;s
-                  always yours.
-                  <br />
-                  The feeling when you stop waiting to feel ready and just show
-                  up.
-                  <br />
-                  Because progress belongs to those who - Show up. Stay on.
-                </span>
-              </p>
+              <div className="flex max-w-[219px] flex-col gap-2 lg:max-w-[510px]">
+                <p className="font-grotesk text-[14px] font-semibold uppercase leading-[1.3] text-onwei-beige">
+                  ONWEI (n.)
+                </p>
+                <ul className="flex flex-col gap-4 font-grotesk text-[14px] leading-[1.3] text-onwei-beige">
+                  <li className="flex gap-2">
+                    <span
+                      aria-hidden
+                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                    />
+                    <span>
+                      The weight of your own effort. The only thing that&apos;s
+                      always yours.
+                    </span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span
+                      aria-hidden
+                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                    />
+                    <span>
+                      The feeling when you stop waiting to feel ready and just
+                      show up.
+                    </span>
+                  </li>
+                  <li className="flex gap-2">
+                    <span
+                      aria-hidden
+                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                    />
+                    <span>
+                      Because progress belongs to those who show up. Stay on.
+                    </span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
 
