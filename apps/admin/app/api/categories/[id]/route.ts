@@ -1,6 +1,7 @@
 import { updateCategory } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { requireStaffSession } from "../../_lib/requireStaffSession";
+import { triggerCatalogRevalidate } from "../../_lib/triggerCatalogRevalidate";
 
 export async function PATCH(
   request: Request,
@@ -47,6 +48,7 @@ export async function PATCH(
       },
       { staffUserId: session.context.staffUserId },
     );
+    await triggerCatalogRevalidate();
     return NextResponse.json({ ok: true, category });
   } catch {
     return NextResponse.json(

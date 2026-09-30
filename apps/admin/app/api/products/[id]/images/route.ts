@@ -2,6 +2,7 @@ import { addProductImage } from "@onwei/core";
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 import { requireStaffSession } from "../../../_lib/requireStaffSession";
+import { triggerCatalogRevalidate } from "../../../_lib/triggerCatalogRevalidate";
 
 const MAX_SIZE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -50,5 +51,6 @@ export async function POST(
     { staffUserId: session.context.staffUserId },
   );
 
+  await triggerCatalogRevalidate();
   return NextResponse.json({ ok: true, image }, { status: 201 });
 }

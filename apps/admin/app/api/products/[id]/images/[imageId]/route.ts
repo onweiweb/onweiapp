@@ -1,6 +1,7 @@
 import { removeProductImage } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { requireStaffSession } from "../../../../_lib/requireStaffSession";
+import { triggerCatalogRevalidate } from "../../../../_lib/triggerCatalogRevalidate";
 
 export async function DELETE(
   request: Request,
@@ -14,6 +15,7 @@ export async function DELETE(
     await removeProductImage(imageId, {
       staffUserId: session.context.staffUserId,
     });
+    await triggerCatalogRevalidate();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

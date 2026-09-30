@@ -2,6 +2,7 @@ import { createCategory } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { NextResponse } from "next/server";
 import { requireStaffSession } from "../_lib/requireStaffSession";
+import { triggerCatalogRevalidate } from "../_lib/triggerCatalogRevalidate";
 
 export async function GET(request: Request) {
   const session = await requireStaffSession(request);
@@ -47,5 +48,6 @@ export async function POST(request: Request) {
     { staffUserId: session.context.staffUserId },
   );
 
+  await triggerCatalogRevalidate();
   return NextResponse.json({ ok: true, category }, { status: 201 });
 }

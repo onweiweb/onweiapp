@@ -11,8 +11,26 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function ProductsPage() {
   const products = await prisma.product.findMany({
     where: { deletedAt: null },
-    include: { category: true, variants: { include: { inventory: true } } },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      category: { select: { name: true } },
+      variants: {
+        select: {
+          inventory: {
+            select: { quantityOnHand: true, quantityReserved: true },
+          },
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
+    // Bounded the same way apps/admin/app/customers/page.tsx and
+    // orders/page.tsx already cap their own lists - this had neither a
+    // take nor a select, so it hydrated every product row (with every
+    // variant and inventory row nested inside) on every page load. Fine
+    // at today's catalog size, a full-collection fetch once it grows.
+    take: 100,
   });
 
   return (

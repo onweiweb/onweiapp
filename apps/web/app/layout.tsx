@@ -33,19 +33,24 @@ const author = localFont({
 });
 
 // Self-hosted trial files from the client (Fonts/ABC Monument Grotesk/) —
-// unlicensed for production use, see file header comment above.
+// unlicensed for production use, see file header comment above. Converted
+// from the client's original .otf to .woff2 (fonttools ttLib.woff2
+// compress) — same glyphs, ~40% smaller, and this is the nav/body font so
+// it loads on every route. Never edit the .woff2 by hand; the original
+// .otf lives in the untracked root Fonts/ABC Monument Grotesk/ folder,
+// regenerate from there if the source ever changes.
 const groteskMono = localFont({
   src: [
     {
-      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Regular-Trial.otf",
+      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Regular-Trial.woff2",
       weight: "400",
     },
     {
-      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Medium-Trial.otf",
+      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Medium-Trial.woff2",
       weight: "500",
     },
     {
-      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Bold-Trial.otf",
+      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Bold-Trial.woff2",
       weight: "700",
     },
   ],
@@ -54,9 +59,11 @@ const groteskMono = localFont({
 });
 
 // Self-hosted trial file from the client (Fonts/SummerMood.otf) — unlicensed
-// for production use, see file header comment above.
+// for production use, see file header comment above. Same .otf-to-.woff2
+// conversion as groteskMono, for the same payload-size reason; regenerate
+// from the untracked root Fonts/SummerMood.otf if the source ever changes.
 const summerMood = localFont({
-  src: "../public/fonts/summer-mood/SummerMood.otf",
+  src: "../public/fonts/summer-mood/SummerMood.woff2",
   variable: "--font-caveat",
   display: "swap",
 });

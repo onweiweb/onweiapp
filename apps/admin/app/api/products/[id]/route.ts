@@ -3,6 +3,7 @@ import type { ProductSpecInput } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { NextResponse } from "next/server";
 import { requireStaffSession } from "../../_lib/requireStaffSession";
+import { triggerCatalogRevalidate } from "../../_lib/triggerCatalogRevalidate";
 
 function parseSpecs(value: unknown): ProductSpecInput[] | undefined {
   return Array.isArray(value) ? (value as ProductSpecInput[]) : undefined;
@@ -107,6 +108,7 @@ export async function PATCH(
       },
       { staffUserId: session.context.staffUserId },
     );
+    await triggerCatalogRevalidate();
     return NextResponse.json({ ok: true, product });
   } catch (error) {
     console.error(error);
@@ -134,6 +136,7 @@ export async function DELETE(
     const product = await deleteProduct(id, {
       staffUserId: session.context.staffUserId,
     });
+    await triggerCatalogRevalidate();
     return NextResponse.json({ ok: true, product });
   } catch {
     return NextResponse.json(
