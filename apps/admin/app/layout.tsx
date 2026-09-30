@@ -132,9 +132,9 @@ export default async function RootLayout({
           <div className="flex min-h-screen">
             <nav
               aria-label="Admin"
-              className="flex w-56 shrink-0 flex-col justify-between rounded-r-[30px] bg-onwei-blue p-4 text-onwei-beige"
+              className="sticky top-0 flex h-screen w-56 shrink-0 flex-col justify-between gap-4 self-start rounded-r-[30px] bg-onwei-blue p-4 text-onwei-beige"
             >
-              <div>
+              <div className="admin-nav-scroll -mr-2 min-h-0 flex-1 overflow-y-auto pr-2">
                 <div className="mb-6 flex items-center gap-2 px-2">
                   <Image
                     src="/images/footer/logo-circle.svg"
@@ -149,7 +149,7 @@ export default async function RootLayout({
                 </div>
                 <AdminNav groups={NAV_GROUPS} />
               </div>
-              <div className="flex flex-col gap-2 border-t border-onwei-beige/30 pt-4">
+              <div className="flex shrink-0 flex-col gap-2 border-t border-onwei-beige/30 pt-4">
                 <p className="px-2 text-xs text-onwei-beige/80">
                   Signed in as
                   <br />

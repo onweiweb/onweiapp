@@ -138,25 +138,27 @@ function NavSection({ group }: { group: AdminNavGroup }) {
         type="button"
         onClick={() => setExpanded(group.label, !expanded)}
         aria-expanded={expanded}
-        className="flex w-full items-center justify-between px-3 pb-1 text-left text-sm uppercase tracking-wide text-onwei-beige/50 hover:text-onwei-beige/80"
+        className="flex w-full items-center justify-between gap-2 rounded-[30px] px-3 py-2 text-left text-sm uppercase tracking-wide text-onwei-beige/50 hover:text-onwei-beige/80"
       >
-        <span className="flex items-center gap-2">
-          <GroupIcon size={14} aria-hidden />
+        <span className="flex items-center gap-3">
+          <GroupIcon size={16} aria-hidden className="shrink-0" />
           {group.label}
         </span>
-        <ChevronIcon expanded={expanded} />
+        <span className="shrink-0">
+          <ChevronIcon expanded={expanded} />
+        </span>
       </button>
       {expanded ? (
-        <ul className="flex flex-col gap-1 pl-2">
+        <ul className="mb-2 ml-5 mt-1 flex flex-col gap-1 border-l border-onwei-beige/20 pl-2">
           {group.items.map((item) => {
             const ItemIcon = ICONS[item.icon];
             return (
               <li key={item.label}>
                 <Link
                   href={item.href}
-                  className="flex items-center gap-2 rounded-[30px] px-3 py-1.5 text-xs uppercase tracking-wide hover:bg-onwei-green hover:text-onwei-blue"
+                  className="flex items-center gap-3 rounded-[30px] px-3 py-2 text-xs uppercase tracking-wide hover:bg-onwei-green hover:text-onwei-blue"
                 >
-                  <ItemIcon size={14} aria-hidden />
+                  <ItemIcon size={14} aria-hidden className="shrink-0" />
                   {item.label}
                 </Link>
               </li>
@@ -170,7 +172,7 @@ function NavSection({ group }: { group: AdminNavGroup }) {
 
 export function AdminNav({ groups }: { groups: readonly AdminNavGroup[] }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2">
       {groups.map((group) => (
         <NavSection key={group.label} group={group} />
       ))}
