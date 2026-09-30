@@ -109,7 +109,7 @@ export default async function CustomerDetailPage({
           <ul className="flex flex-col gap-1 text-sm">
             {customer.consentLogs.map((log) => (
               <li key={log.id}>
-                {CONSENT_TYPE_LABELS[log.consentType]} (v{log.version}) —{" "}
+                {CONSENT_TYPE_LABELS[log.consentType]} (v{log.version}) -{" "}
                 {log.acceptedAt.toLocaleDateString()}
               </li>
             ))}

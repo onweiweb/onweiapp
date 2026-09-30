@@ -2,7 +2,7 @@ import type { Prisma } from "@onwei/database";
 import { prisma } from "@onwei/database";
 
 /**
- * Every admin write function in this directory calls this — per
+ * Every admin write function in this directory calls this, per
  * docs/DATABASE_SCHEMA.md: "An audit-log entry for anything that touches
  * money, inventory, or access." Not just inventory: every category/product/
  * variant/image write too, since all of them are admin-authored changes to
@@ -11,7 +11,7 @@ import { prisma } from "@onwei/database";
  * Pass a transaction client (the `tx` a `prisma.$transaction(async (tx) =>
  * ...)` callback receives) when the audit entry should commit atomically
  * with the write it's documenting, e.g. inventory adjustments and return
- * approvals — otherwise a failed log write silently leaves an unlogged
+ * approvals, otherwise a failed log write silently leaves an unlogged
  * money/inventory change. Defaults to the global client for call sites that
  * don't need that guarantee.
  */

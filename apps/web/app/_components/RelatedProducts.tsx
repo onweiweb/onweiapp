@@ -3,7 +3,7 @@ import { ProductCard } from "./ProductCard";
 
 // Figma PDP (frame "PDP_draft 2", node 759:3267 "you may also like") shows
 // a 4-up product grid reusing the same product card component as the
-// Homepage/Collection shop grid — backed here by `listRelatedProducts`
+// Homepage/Collection shop grid, backed here by `listRelatedProducts`
 // (same category, excludes the current product) instead of a static list.
 export function RelatedProducts({ products }: { products: ProductListItem[] }) {
   if (products.length === 0) return null;

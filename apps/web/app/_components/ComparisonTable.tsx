@@ -6,7 +6,7 @@ import { CtaLink } from "./CtaLink";
 // Figma PDP (frame "PDP_draft 2", node 759:3121 "Table" / "pick what fits
 // you") compares the current product against up to two others side by side.
 // The third column in Figma was left as literal "Lorem ipsum" placeholders
-// — real sibling products (from `listRelatedProducts`) fill that column
+//, real sibling products (from `listRelatedProducts`) fill that column
 // here instead. Rows are the union of every product's spec labels, in the
 // order the first product that has that label lists it, so a spec unique
 // to one product still gets its own row rather than being dropped.
@@ -28,7 +28,7 @@ export function ComparisonTable({
   return (
     <section className="flex flex-col items-center gap-8 bg-onwei-green px-3 py-14 sm:px-6 lg:px-14">
       {/* Figma (Frame 2085661702) only shares this row's width with the
-          heading — the spec-label rows below live in a separate sibling
+          heading, the spec-label rows below live in a separate sibling
           frame and get the full row width to themselves. Splitting into two
           blocks (rather than one shared flex row) keeps that budget: nesting
           the per-row 359px label inside a row that also reserves 299px+gap
@@ -88,7 +88,7 @@ export function ComparisonTable({
                     key={product.slug}
                     className="w-[307px] shrink-0 font-grotesk text-[14px] text-onwei-blue"
                   >
-                    {value ?? "—"}
+                    {value ?? "-"}
                   </p>
                 );
               })}

@@ -1,8 +1,10 @@
 import { prisma } from "@onwei/database";
 import { requirePageSession } from "../_lib/requirePageSession";
+import { pageWindow, parsePage, trimPage } from "../_lib/pagination";
 import {
   AdminButton,
   AdminInput,
+  AdminPager,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
@@ -13,20 +15,26 @@ import {
 export default async function AuditLogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ entityType?: string; entityId?: string }>;
+  searchParams: Promise<{
+    entityType?: string;
+    entityId?: string;
+    page?: string;
+  }>;
 }) {
   await requirePageSession("auditLog:view");
-  const { entityType, entityId } = await searchParams;
+  const { entityType, entityId, page: pageParam } = await searchParams;
+  const page = parsePage(pageParam);
 
-  const logs = await prisma.auditLog.findMany({
+  const fetched = await prisma.auditLog.findMany({
     where: {
       ...(entityType ? { entityType } : {}),
       ...(entityId ? { entityId } : {}),
     },
     include: { staffUser: true },
-    orderBy: { createdAt: "desc" },
-    take: 200,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    ...pageWindow(page),
   });
+  const { rows: logs, hasNext } = trimPage(fetched);
 
   return (
     <main className="flex flex-col gap-6">
@@ -83,6 +91,12 @@ export default async function AuditLogPage({
           </tbody>
         </AdminTable>
       )}
+      <AdminPager
+        pathname="/audit-log"
+        page={page}
+        hasNext={hasNext}
+        params={{ entityType, entityId }}
+      />
     </main>
   );
 }

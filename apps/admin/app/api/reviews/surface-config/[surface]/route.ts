@@ -1,48 +1,41 @@
 import { updateReviewSurfaceLimit } from "@onwei/core";
-import type { ReviewSurface } from "@onwei/database";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 
-const SURFACES: ReviewSurface[] = ["HOME_HERO", "HOME_WALL", "PRODUCT_WALL"];
+const surfaceSchema = z.enum(["HOME_HERO", "HOME_WALL", "PRODUCT_WALL"]);
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ surface: string }> },
-) {
-  const session = await requireStaffSession(request, "review:feature");
-  if (!session.ok) return session.response;
+const LIMIT_MESSAGE = "Enter a whole number of at least 1.";
 
-  const { surface } = await params;
-  if (!SURFACES.includes(surface as ReviewSurface)) {
-    return NextResponse.json(
-      { ok: false, error: "Unknown surface." },
-      { status: 400 },
+const bodySchema = z.object({
+  limit: z
+    .number({ error: LIMIT_MESSAGE })
+    .int({ error: LIMIT_MESSAGE })
+    .min(1, { error: LIMIT_MESSAGE }),
+  productId: z.string().nullish(),
+});
+
+export const PATCH = defineAdminRoute<typeof bodySchema, { surface: string }>(
+  {
+    permission: "review:feature",
+    body: bodySchema,
+    emptyBodyMessage: LIMIT_MESSAGE,
+  },
+  async ({ staff, body, params }) => {
+    const surface = surfaceSchema.safeParse(params.surface);
+    if (!surface.success) {
+      return NextResponse.json(
+        { ok: false, error: "Unknown surface." },
+        { status: 400 },
+      );
+    }
+
+    const config = await updateReviewSurfaceLimit(
+      surface.data,
+      body.limit,
+      { staffUserId: staff.staffUserId },
+      body.productId ?? null,
     );
-  }
-
-  const body = (await request.json().catch(() => null)) as unknown;
-  const record =
-    typeof body === "object" && body !== null
-      ? (body as Record<string, unknown>)
-      : null;
-  const limit = record?.limit;
-  const productId =
-    typeof record?.productId === "string" ? record.productId : null;
-
-  if (typeof limit !== "number" || !Number.isInteger(limit) || limit < 1) {
-    return NextResponse.json(
-      { ok: false, error: "Enter a whole number of at least 1." },
-      { status: 400 },
-    );
-  }
-
-  const config = await updateReviewSurfaceLimit(
-    surface as ReviewSurface,
-    limit,
-    {
-      staffUserId: session.context.staffUserId,
-    },
-    productId,
-  );
-  return NextResponse.json({ ok: true, config });
-}
+    return NextResponse.json({ ok: true, config });
+  },
+);

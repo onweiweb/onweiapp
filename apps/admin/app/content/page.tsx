@@ -24,7 +24,7 @@ export default async function ContentPage() {
         orderBy: { sortOrder: "asc" },
       }),
       // Unlike the other three content types, this one intentionally
-      // includes drafts (isPublished: false) — the admin needs to see and
+      // includes drafts (isPublished: false), the admin needs to see and
       // manage unpublished articles here too, not just live ones.
       prisma.article.findMany({
         orderBy: { createdAt: "desc" },

@@ -18,7 +18,7 @@ export async function createStaffUser(
     },
   });
 
-  // Never log the password hash — redact it from the audit trail even
+  // Never log the password hash, redact it from the audit trail even
   // though it isn't the plaintext.
   await writeAuditLog({
     staffUserId: actor.staffUserId,
@@ -38,7 +38,7 @@ export async function updateStaffUser(
 ) {
   if (id === actor.staffUserId && input.isActive === false) {
     throw new Error(
-      "self-deactivate: You can't deactivate your own account — ask another admin to do it.",
+      "self-deactivate: You can't deactivate your own account, ask another admin to do it.",
     );
   }
 

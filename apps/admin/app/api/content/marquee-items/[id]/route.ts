@@ -1,56 +1,49 @@
 import { deleteMarqueeItem, updateMarqueeItem } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "content:manage");
-  if (!session.ok) return session.response;
+// Every field is optional: an omitted field is left alone.
+const bodySchema = z.object({
+  label: z.string().optional(),
+  sortOrder: z.number().optional(),
+  isActive: z.boolean().optional(),
+});
 
-  const { id } = await params;
-  const body = (await request.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+const NOT_FOUND = "Couldn't find that marquee item.";
 
-  try {
-    const item = await updateMarqueeItem(
-      id,
-      {
-        label: typeof body.label === "string" ? body.label : undefined,
-        sortOrder:
-          typeof body.sortOrder === "number" ? body.sortOrder : undefined,
-        isActive:
-          typeof body.isActive === "boolean" ? body.isActive : undefined,
-      },
-      { staffUserId: session.context.staffUserId },
-    );
-    return NextResponse.json({ ok: true, item });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that marquee item." },
-      { status: 404 },
-    );
-  }
-}
+export const PATCH = defineAdminRoute<typeof bodySchema, { id: string }>(
+  {
+    permission: "content:manage",
+    body: bodySchema,
+    emptyBodyMessage: "Nothing to update.",
+  },
+  async ({ staff, body, params }) => {
+    try {
+      const item = await updateMarqueeItem(params.id, body, {
+        staffUserId: staff.staffUserId,
+      });
+      return NextResponse.json({ ok: true, item });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: NOT_FOUND },
+        { status: 404 },
+      );
+    }
+  },
+);
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "content:manage");
-  if (!session.ok) return session.response;
-
-  const { id } = await params;
-  try {
-    await deleteMarqueeItem(id, { staffUserId: session.context.staffUserId });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that marquee item." },
-      { status: 404 },
-    );
-  }
-}
+export const DELETE = defineAdminRoute<never, { id: string }>(
+  { permission: "content:manage" },
+  async ({ staff, params }) => {
+    try {
+      await deleteMarqueeItem(params.id, { staffUserId: staff.staffUserId });
+      return NextResponse.json({ ok: true });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: NOT_FOUND },
+        { status: 404 },
+      );
+    }
+  },
+);

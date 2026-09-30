@@ -19,7 +19,7 @@ export function CouponForm({
     minOrderValue: string;
     isActive: boolean;
     // "YYYY-MM-DD", matching <input type="date">'s own value format, or ""
-    // for "no limit" — see toDateInputValue in the pages that build this.
+    // for "no limit", see toDateInputValue in the pages that build this.
     startsAt: string;
     endsAt: string;
   };
@@ -159,7 +159,7 @@ export function CouponForm({
             checked={isActive}
             onChange={(event) => setIsActive(event.target.checked)}
           />
-          Active — customers can use this code
+          Active, customers can use this code
         </label>
       ) : null}
       {error ? <p className="text-sm text-onwei-black">{error}</p> : null}

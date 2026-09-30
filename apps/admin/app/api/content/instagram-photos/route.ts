@@ -1,35 +1,31 @@
 import { createInstagramPhoto } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../../_lib/defineAdminRoute";
 
-export async function POST(request: Request) {
-  const session = await requireStaffSession(request, "content:manage");
-  if (!session.ok) return session.response;
+const bodySchema = z.object({
+  imageUrl: z
+    .string({ error: "Enter an image URL." })
+    .min(1, { error: "Enter an image URL." }),
+  altText: z.string().optional(),
+  sortOrder: z.number().optional(),
+});
 
-  const body = (await request.json().catch(() => null)) as unknown;
-  if (typeof body !== "object" || body === null) {
-    return NextResponse.json(
-      { ok: false, error: "Missing photo details." },
-      { status: 400 },
+export const POST = defineAdminRoute(
+  {
+    permission: "content:manage",
+    body: bodySchema,
+    emptyBodyMessage: "Missing photo details.",
+  },
+  async ({ staff, body }) => {
+    const photo = await createInstagramPhoto(
+      {
+        imageUrl: body.imageUrl,
+        altText: body.altText ? body.altText : null,
+        sortOrder: body.sortOrder,
+      },
+      { staffUserId: staff.staffUserId },
     );
-  }
-  const { imageUrl, altText, sortOrder } = body as Record<string, unknown>;
-
-  if (typeof imageUrl !== "string" || imageUrl.length === 0) {
-    return NextResponse.json(
-      { ok: false, error: "Enter an image URL." },
-      { status: 400 },
-    );
-  }
-
-  const photo = await createInstagramPhoto(
-    {
-      imageUrl,
-      altText:
-        typeof altText === "string" && altText.length > 0 ? altText : null,
-      sortOrder: typeof sortOrder === "number" ? sortOrder : undefined,
-    },
-    { staffUserId: session.context.staffUserId },
-  );
-  return NextResponse.json({ ok: true, photo }, { status: 201 });
-}
+    return NextResponse.json({ ok: true, photo }, { status: 201 });
+  },
+);

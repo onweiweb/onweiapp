@@ -17,12 +17,12 @@ import {
 
 // Homepage/Collection/PDP call these directly with no cache config at all,
 // so Next's default full-route cache renders them once at build/first-visit
-// and serves that snapshot forever — an admin catalog/content edit never
+// and serves that snapshot forever, an admin catalog/content edit never
 // shows up on the live site without a redeploy. Wrapping each read in
 // unstable_cache gives it a bounded staleness window instead: repeat
 // requests within REVALIDATE_SECONDS are served from Next's data cache
 // (no DB round trip), and edits appear within that window rather than
-// never. Not real-time — same tradeoff already made for /waitlist's own
+// never. Not real-time, same tradeoff already made for /waitlist's own
 // 30s window (apps/web/app/waitlist/page.tsx).
 const REVALIDATE_SECONDS = 60;
 const TAGS = ["catalog"];
@@ -86,7 +86,7 @@ export const cachedListValueProps = unstable_cache(
   { revalidate: REVALIDATE_SECONDS, tags: TAGS },
 );
 
-// Used by app/sitemap.ts — same 60s/"catalog" cache as everything else here
+// Used by app/sitemap.ts, same 60s/"catalog" cache as everything else here
 // rather than inventing a separate lifetime, so it gets the same on-demand
 // revalidation for free on a product edit/slug change/archive.
 export const cachedListAllActiveProductSlugsForSitemap = unstable_cache(

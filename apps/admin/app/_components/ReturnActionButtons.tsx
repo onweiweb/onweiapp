@@ -25,7 +25,7 @@ export function ReturnActionButtons({
       if (!confirmed) return;
     } else {
       const confirmed = window.confirm(
-        "This will reject the return — no stock will be added back.",
+        "This will reject the return, no stock will be added back.",
       );
       if (!confirmed) return;
     }

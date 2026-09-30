@@ -29,7 +29,7 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, "");
 }
 
-// Backs the homepage's "From the Playbook" section and /journal/[slug] —
+// Backs the homepage's "From the Playbook" section and /journal/[slug],
 // same add/remove shape as ValuePropsEditor, plus a publish toggle since
 // draft-vs-live is the one thing this content type actually needs mid-life
 // editing for (ValueProp/Instagram/marquee rows are either live or gone).

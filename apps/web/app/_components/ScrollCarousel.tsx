@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // Figma (node 758:2445 "Frame 2085661414" / "Rectangle 73") shows a thin
-// progress track under horizontally-scrolling rows — a real scrollbar
+// progress track under horizontally-scrolling rows, a real scrollbar
 // replacement, not decoration. A static bar looks broken the moment someone
 // actually scrolls, so this tracks real scroll position. Originally built
 // for the Homepage's reviews wall, now the shared scroll affordance for

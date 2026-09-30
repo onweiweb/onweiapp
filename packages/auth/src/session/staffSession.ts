@@ -6,7 +6,7 @@ import { isRevoked, revoke } from "./sessionRevocation";
 /**
  * Separate from session.ts (the customer session) on purpose: a different
  * cookie name, a different payload, and a different secret
- * (ADMIN_SESSION_JWT_SECRET, never SESSION_JWT_SECRET) — see
+ * (ADMIN_SESSION_JWT_SECRET, never SESSION_JWT_SECRET), see
  * docs/ARCHITECTURE.md "RBAC and the two kinds of user". A leaked customer
  * session secret must never be usable to forge a staff session. Revocation
  * uses its own key prefix in sessionRevocation.ts for the same reason: a

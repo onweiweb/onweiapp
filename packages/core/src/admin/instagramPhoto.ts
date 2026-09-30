@@ -61,7 +61,7 @@ export async function updateInstagramPhoto(
   return photo;
 }
 
-/** Real delete, not soft — marketing content, not customer/order/audit data. */
+/** Real delete, not soft, marketing content, not customer/order/audit data. */
 export async function deleteInstagramPhoto(id: string, actor: AuditActor) {
   const before = await prisma.instagramPhoto.findUniqueOrThrow({
     where: { id },

@@ -2,10 +2,12 @@ import Link from "next/link";
 import { prisma } from "@onwei/database";
 import type { OrderStatus } from "@onwei/database";
 import { requirePageSession } from "../_lib/requirePageSession";
+import { pageWindow, parsePage, trimPage } from "../_lib/pagination";
 import { ORDER_STATUS_LABELS } from "../_lib/orderStatusLabels";
 import {
   AdminBadge,
   AdminButton,
+  AdminPager,
   AdminSelect,
   AdminTable,
   AdminTableCell,
@@ -20,23 +22,25 @@ const STATUS_OPTIONS = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[];
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; page?: string }>;
 }) {
   await requirePageSession("order:view");
-  const { status } = await searchParams;
+  const { status, page: pageParam } = await searchParams;
+  const page = parsePage(pageParam);
   const statusFilter = STATUS_OPTIONS.includes(status as OrderStatus)
     ? (status as OrderStatus)
     : undefined;
 
-  const orders = await prisma.order.findMany({
+  const fetched = await prisma.order.findMany({
     where: {
       deletedAt: null,
       ...(statusFilter ? { status: statusFilter } : {}),
     },
     include: { customer: true },
-    orderBy: { placedAt: "desc" },
-    take: 100,
+    orderBy: [{ placedAt: "desc" }, { id: "desc" }],
+    ...pageWindow(page),
   });
+  const { rows: orders, hasNext } = trimPage(fetched);
 
   return (
     <main className="flex flex-col gap-6">
@@ -63,7 +67,7 @@ export default async function OrdersPage({
         <p className="text-onwei-blue/70">
           {statusFilter
             ? `No orders are currently ${ORDER_STATUS_LABELS[statusFilter].toLowerCase()}.`
-            : "No orders yet — they'll show up here once a customer checks out."}
+            : "No orders yet, they'll show up here once a customer checks out."}
         </p>
       ) : (
         <AdminTable>
@@ -86,7 +90,7 @@ export default async function OrdersPage({
                   </Link>
                 </AdminTableCell>
                 <AdminTableCell>
-                  {order.customer.name ?? order.customer.email ?? "—"}
+                  {order.customer.name ?? order.customer.email ?? "-"}
                 </AdminTableCell>
                 <AdminTableCell>
                   {order.placedAt.toLocaleDateString()}
@@ -104,6 +108,12 @@ export default async function OrdersPage({
           </tbody>
         </AdminTable>
       )}
+      <AdminPager
+        pathname="/orders"
+        page={page}
+        hasNext={hasNext}
+        params={{ status: statusFilter }}
+      />
     </main>
   );
 }

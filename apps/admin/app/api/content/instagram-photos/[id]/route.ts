@@ -1,59 +1,52 @@
 import { deleteInstagramPhoto, updateInstagramPhoto } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "content:manage");
-  if (!session.ok) return session.response;
+// Every field is optional: an omitted field is left alone.
+const bodySchema = z.object({
+  imageUrl: z.string().optional(),
+  altText: z.string().optional(),
+  sortOrder: z.number().optional(),
+  isActive: z.boolean().optional(),
+});
 
-  const { id } = await params;
-  const body = (await request.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+const NOT_FOUND = "Couldn't find that photo.";
 
-  try {
-    const photo = await updateInstagramPhoto(
-      id,
-      {
-        imageUrl: typeof body.imageUrl === "string" ? body.imageUrl : undefined,
-        altText: typeof body.altText === "string" ? body.altText : undefined,
-        sortOrder:
-          typeof body.sortOrder === "number" ? body.sortOrder : undefined,
-        isActive:
-          typeof body.isActive === "boolean" ? body.isActive : undefined,
-      },
-      { staffUserId: session.context.staffUserId },
-    );
-    return NextResponse.json({ ok: true, photo });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that photo." },
-      { status: 404 },
-    );
-  }
-}
+export const PATCH = defineAdminRoute<typeof bodySchema, { id: string }>(
+  {
+    permission: "content:manage",
+    body: bodySchema,
+    emptyBodyMessage: "Nothing to update.",
+  },
+  async ({ staff, body, params }) => {
+    try {
+      const photo = await updateInstagramPhoto(params.id, body, {
+        staffUserId: staff.staffUserId,
+      });
+      return NextResponse.json({ ok: true, photo });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: NOT_FOUND },
+        { status: 404 },
+      );
+    }
+  },
+);
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "content:manage");
-  if (!session.ok) return session.response;
-
-  const { id } = await params;
-  try {
-    await deleteInstagramPhoto(id, {
-      staffUserId: session.context.staffUserId,
-    });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that photo." },
-      { status: 404 },
-    );
-  }
-}
+export const DELETE = defineAdminRoute<never, { id: string }>(
+  { permission: "content:manage" },
+  async ({ staff, params }) => {
+    try {
+      await deleteInstagramPhoto(params.id, {
+        staffUserId: staff.staffUserId,
+      });
+      return NextResponse.json({ ok: true });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: NOT_FOUND },
+        { status: 404 },
+      );
+    }
+  },
+);

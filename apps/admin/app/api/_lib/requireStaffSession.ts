@@ -16,7 +16,7 @@ export type StaffSessionResult =
 
 /**
  * Verifies the caller's session cookie and, if `permission` is given, that
- * they actually have it — a staff user without the permission gets a 403
+ * they actually have it, a staff user without the permission gets a 403
  * from the route itself, not just a hidden button (docs/TEST_PLAN.md's RBAC
  * section). apps/admin/proxy.ts already blocks requests with no session at
  * all; this is the finer-grained per-route permission check on top of that.

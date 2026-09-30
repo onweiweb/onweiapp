@@ -3,7 +3,7 @@ import { Accordion, AccordionItem } from "./Accordion";
 import { CtaLink } from "./CtaLink";
 
 // Figma PDP (frame "PDP_draft 2", node 759:3281 "Ingredient" / "frequently
-// asked questions") — accordion rows backed by `listFaqs`, real,
+// asked questions"), accordion rows backed by `listFaqs`, real,
 // CMS-editable answers instead of the literal placeholder Q&A in Figma.
 export function FaqSection({ faqs }: { faqs: FaqItem[] }) {
   if (faqs.length === 0) return null;

@@ -18,12 +18,12 @@ function computeProductDescription(product: ProductDetail): string {
   }
   const tags = product.highlightTags.slice(0, 3);
   return tags.length > 0
-    ? `Shop ${product.name} — ${tags.join(", ")} — from Onwei.`
+    ? `Shop ${product.name}, ${tags.join(", ")}, from Onwei.`
     : `Shop ${product.name} from Onwei.`;
 }
 
 /** Product.metaTitle/metaDescription override when set, otherwise a
- * computed default from name/description/highlightTags — see
+ * computed default from name/description/highlightTags, see
  * docs/OPEN_DECISIONS.md's SEO entry for why overrides exist at all. */
 export function buildProductMetadata(product: ProductDetail): Metadata {
   const title = product.metaTitle ?? product.name;
@@ -77,7 +77,7 @@ export function buildArticleMetadata(article: ArticleDetail): Metadata {
   };
 }
 
-/** The literal /collection/all route — no single Category row backs it, so
+/** The literal /collection/all route, no single Category row backs it, so
  * it needs its own static copy rather than reusing one category's. */
 export const SHOP_ALL_METADATA: Metadata = {
   title: "Shop All",

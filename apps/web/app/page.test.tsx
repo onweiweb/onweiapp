@@ -10,7 +10,7 @@ vi.mock("@/_components/SiteFooter", () => ({
 }));
 
 // HomePage is an async Server Component that queries real catalog data via
-// @onwei/core, so this needs a real DATABASE_URL — same convention as the
+// @onwei/core, so this needs a real DATABASE_URL, same convention as the
 // integration tests in packages/core and packages/database.
 describe.skipIf(!process.env.DATABASE_URL)("HomePage", () => {
   it("renders a main landmark", async () => {

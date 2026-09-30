@@ -15,7 +15,7 @@ const MODE_OPTIONS: Array<{
     value: "WAITLIST",
     label: "Waitlist only",
     consequence:
-      "Every visitor is sent to the coming-soon page — nothing else on the site is reachable.",
+      "Every visitor is sent to the coming-soon page, nothing else on the site is reachable.",
   },
   {
     value: "PREORDERS",

@@ -26,7 +26,7 @@ function pad(value: number): string {
 }
 
 // useSyncExternalStore requires getSnapshot to return a STABLE value between
-// calls unless the store actually changed — returning Date.now() directly
+// calls unless the store actually changed, returning Date.now() directly
 // from getSnapshot changes on literally every call (including calls React
 // makes just to check whether a re-render is needed), which trips React's
 // "getSnapshot should be cached" infinite-loop guard. Caching the clock
@@ -47,7 +47,7 @@ function getClockSnapshot(): number {
   return cachedNow;
 }
 
-// Figma node 945:4263 (web) / 945:4412 (mobile) — the "43 / 11 / 42 / 06"
+// Figma node 945:4263 (web) / 945:4412 (mobile), the "43 / 11 / 42 / 06"
 // figures there are a stale design-time mock, not a literal countdown; the
 // real target comes from SiteSetting.launchAt, admin-editable.
 export function WaitlistCountdown({ launchAt }: { launchAt: string }) {
@@ -55,8 +55,8 @@ export function WaitlistCountdown({ launchAt }: { launchAt: string }) {
   // useSyncExternalStore, not useEffect+setState, is React's sanctioned way
   // to read a value that changes outside of React (the clock): it renders
   // the server-snapshot value (here, `target` itself, so diff=0 and every
-  // unit shows as zero) during SSR and the first client render — so they
-  // match and there's no hydration mismatch — then switches to the real
+  // unit shows as zero) during SSR and the first client render, so they
+  // match and there's no hydration mismatch, then switches to the real
   // clock right after mount, ticking every second via the subscription.
   const now = useSyncExternalStore(
     subscribeToClock,

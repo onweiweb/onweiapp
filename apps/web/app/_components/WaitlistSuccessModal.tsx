@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 
-// Same mark as apps/web/app/icon.svg (the browser-tab favicon) — inlined
+// Same mark as apps/web/app/icon.svg (the browser-tab favicon), inlined
 // here as its own path, not a next/image of that file, so it can be themed
 // with a Tailwind text-* class (fill="currentColor") and animated
 // independently. Its asymmetric squiggle shape (unlike the round "O" blob

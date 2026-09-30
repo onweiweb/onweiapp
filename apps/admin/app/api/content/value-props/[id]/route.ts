@@ -1,63 +1,56 @@
 import { deleteValueProp, updateValueProp } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "content:manage");
-  if (!session.ok) return session.response;
+// Every field is optional: an omitted field is left alone.
+const bodySchema = z.object({
+  illustrationUrl: z.string().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+  title: z.string().optional(),
+  bodyText: z.string().optional(),
+  sortOrder: z.number().optional(),
+  isActive: z.boolean().optional(),
+});
 
-  const { id } = await params;
-  const body = (await request.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+const NOT_FOUND = "Couldn't find that value prop.";
 
-  try {
-    const prop = await updateValueProp(
-      id,
-      {
-        illustrationUrl:
-          typeof body.illustrationUrl === "string"
-            ? body.illustrationUrl
-            : undefined,
-        width: typeof body.width === "number" ? body.width : undefined,
-        height: typeof body.height === "number" ? body.height : undefined,
-        title: typeof body.title === "string" ? body.title : undefined,
-        body: typeof body.bodyText === "string" ? body.bodyText : undefined,
-        sortOrder:
-          typeof body.sortOrder === "number" ? body.sortOrder : undefined,
-        isActive:
-          typeof body.isActive === "boolean" ? body.isActive : undefined,
-      },
-      { staffUserId: session.context.staffUserId },
-    );
-    return NextResponse.json({ ok: true, valueProp: prop });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that value prop." },
-      { status: 404 },
-    );
-  }
-}
+export const PATCH = defineAdminRoute<typeof bodySchema, { id: string }>(
+  {
+    permission: "content:manage",
+    body: bodySchema,
+    emptyBodyMessage: "Nothing to update.",
+  },
+  async ({ staff, body, params }) => {
+    const { bodyText, ...rest } = body;
+    try {
+      const valueProp = await updateValueProp(
+        params.id,
+        { ...rest, body: bodyText },
+        { staffUserId: staff.staffUserId },
+      );
+      return NextResponse.json({ ok: true, valueProp });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: NOT_FOUND },
+        { status: 404 },
+      );
+    }
+  },
+);
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "content:manage");
-  if (!session.ok) return session.response;
-
-  const { id } = await params;
-  try {
-    await deleteValueProp(id, { staffUserId: session.context.staffUserId });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that value prop." },
-      { status: 404 },
-    );
-  }
-}
+export const DELETE = defineAdminRoute<never, { id: string }>(
+  { permission: "content:manage" },
+  async ({ staff, params }) => {
+    try {
+      await deleteValueProp(params.id, { staffUserId: staff.staffUserId });
+      return NextResponse.json({ ok: true });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: NOT_FOUND },
+        { status: 404 },
+      );
+    }
+  },
+);

@@ -6,11 +6,11 @@ export interface InstagramGridPhoto {
   altText: string | null;
 }
 
-// Extracted from the Homepage's InstagramSection (was page-local) — reused
+// Extracted from the Homepage's InstagramSection (was page-local), reused
 // on Collection/PDP with the same photo set (Figma duplicates this section
 // per-page rather than treating it as Homepage-only). The heading text
 // itself differs per page in Figma (Homepage: "@OnweiMoves", Collection:
-// "@onwei" — both confirmed against their own frames, not a typo), so it's
+// "@onwei", both confirmed against their own frames, not a typo), so it's
 // a prop rather than hardcoded.
 export function InstagramGrid({
   photos,

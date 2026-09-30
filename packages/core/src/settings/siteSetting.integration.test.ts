@@ -15,7 +15,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       original = await prisma.siteSetting.findUniqueOrThrow({
         where: { id: "singleton" },
       });
-      // AuditLog.staffUserId is a real FK — reuse the seeded super-admin
+      // AuditLog.staffUserId is a real FK, reuse the seeded super-admin
       // rather than a fabricated id, which would violate the constraint.
       const staffUser = await prisma.staffUser.findFirstOrThrow();
       staffUserId = staffUser.id;

@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 // Figma's Collection frame mixes a lifestyle photo tile into each category's
-// product grid — 375px wide (wider than a 282px ProductCard) with a hand-
+// product grid, 375px wide (wider than a 282px ProductCard) with a hand-
 // drawn character illustration overlaid, positioned differently per row
 // (node 760:3940 hangs off the bottom-right of the Pickleball tile; node
 // 760:3963 sits near the top-left of the Pilates tile) rather than a fixed
@@ -29,7 +29,7 @@ export function PromoTile({
         {/* Sits inside a horizontally-scrolling row, often past the
             initial viewport width. next/image's default lazy loading uses
             an IntersectionObserver against the browser viewport, which
-            never fires for an element positioned off-screen to the right —
+            never fires for an element positioned off-screen to the right,
             so the photo only loaded once the user scrolled it into view.
             loading="eager" opts it out of that. */}
         <Image

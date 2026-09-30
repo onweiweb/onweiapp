@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { CtaLink } from "./CtaLink";
 
-// Extracted from the Homepage (was page-local) — Figma repeats this exact
+// Extracted from the Homepage (was page-local), Figma repeats this exact
 // section (same heading, body copy, illustration, underline) on the
 // Collection page too, only the button label differs there ("Move With
 // Onwei" vs Homepage's "Find Your Wei").
@@ -15,7 +15,7 @@ export function JoinMovementSection({
   return (
     <section className="flex items-end justify-center bg-onwei-green px-3 py-14 sm:px-8 lg:px-[120px]">
       <div className="relative flex w-full max-w-[1440px] items-end justify-center gap-2.5">
-        {/* Straddles the section boundary in Figma — half the illustration
+        {/* Straddles the section boundary in Figma, half the illustration
           sits in the white space above this section, not fully inside it. */}
         <Image
           src="/images/about2/illustration.svg"

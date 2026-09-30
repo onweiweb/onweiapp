@@ -45,7 +45,7 @@ function csvEscape(value: string): string {
 }
 
 /**
- * Full unpaginated export for the admin CSV download — fine at waitlist
+ * Full unpaginated export for the admin CSV download, fine at waitlist
  * scale (thousands, not millions, of rows before December). Revisit if this
  * ever needs to stream rather than build the whole string in memory.
  */

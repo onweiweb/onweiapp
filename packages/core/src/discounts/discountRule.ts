@@ -53,7 +53,7 @@ export async function updateDiscountRule(
     }
     config = validated.data;
   } else if (input.type !== undefined) {
-    // Type changed but config didn't — re-validate the existing config
+    // Type changed but config didn't, re-validate the existing config
     // against the new type's schema rather than leaving a mismatched shape.
     const validated = validateDiscountRuleConfig(type, before.config);
     if (!validated.ok) {

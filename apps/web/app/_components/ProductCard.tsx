@@ -4,7 +4,7 @@ import { formatCurrency } from "@onwei/core";
 import type { ProductListItem, ReviewSummary } from "@onwei/core";
 
 // Real per-product review data (packages/core's listApprovedReviews, joined
-// in by the catalog list functions) — renders nothing when a product has no
+// in by the catalog list functions), renders nothing when a product has no
 // approved reviews yet, rather than a fake/invented count.
 function ProductRating({ summary }: { summary: ReviewSummary }) {
   const rounded = Math.round(summary.average);
@@ -40,7 +40,7 @@ export function ProductCard({
   product: ProductListItem;
   // Pass true only from a caller that's actually inside a horizontally-
   // scrolling row (ScrollCarousel, or a manual overflow-x-auto row that's
-  // genuinely scrolling at the current breakpoint) — next/image's default
+  // genuinely scrolling at the current breakpoint), next/image's default
   // lazy loading uses an IntersectionObserver against the browser viewport,
   // which never fires for a card positioned off-screen to the right, so it
   // stays blank until scrolled into view. Defaulting to eager everywhere
@@ -83,7 +83,7 @@ export function ProductCard({
       </Link>
       {/* Figma labels this "add to cart", but cart/checkout is Phase 2 and
           doesn't exist yet (see CLAUDE.md "Current phase"). It links to the
-          product page rather than performing an add-to-cart action — a
+          product page rather than performing an add-to-cart action, a
           functional stand-in, not a design change. */}
       <Link
         href={`/product/${product.slug}`}

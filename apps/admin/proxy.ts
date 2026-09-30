@@ -37,12 +37,12 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // `.*\..*` excludes any path with a file extension — every static asset
+  // `.*\..*` excludes any path with a file extension, every static asset
   // under public/ (logo.svg, favicons, fonts, etc.), not just the ones
   // named here. Without it, an unauthenticated request for e.g.
   // /images/header/logo.svg (used right on the /login page itself) hit
   // this same session check, found no cookie, and got redirected to
-  // /login — so the login page's own logo <img> request 307'd instead of
+  // /login, so the login page's own logo <img> request 307'd instead of
   // loading, rendering as a broken image.
   matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };

@@ -6,7 +6,7 @@ import type { AdjustInventoryInput, AuditActor } from "./types";
  * Applies a signed quantity change to a variant's stock at a warehouse,
  * writes an InventoryLog row (the append-only history the storefront never
  * reads but ops needs for "why is this number what it is"), and an
- * AuditLog row (per docs/DATABASE_SCHEMA.md — inventory changes always get
+ * AuditLog row (per docs/DATABASE_SCHEMA.md, inventory changes always get
  * one). The mutation itself is a single atomic `UPDATE ... WHERE qty + delta
  * >= 0` (via `updateMany`'s row-count guard) rather than a read-compute-write,
  * so two concurrent adjustments can't lose an update or push stock negative.
@@ -61,6 +61,7 @@ export async function adjustInventory(
 
     await tx.inventoryLog.create({
       data: {
+        productVariantId: row.productVariantId,
         variantSku: row.productVariant.sku,
         changeQty: input.delta,
         reason: input.reason,

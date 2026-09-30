@@ -8,7 +8,7 @@ const NAV_LINKS = [
   { label: "Pilates", href: "/collection/pilates" },
   { label: "our story", href: "/about" },
   // Figma shows this as a fifth nav item with no destination screen in the
-  // file — no route exists yet, so it's a placeholder anchor.
+  // file, no route exists yet, so it's a placeholder anchor.
   { label: "find your wei", href: "#" },
 ] as const;
 
@@ -37,7 +37,7 @@ export function SiteHeader() {
       </div>
 
       {/* Mobile (node 761:4767): decorative squiggle, logo-as-menu-button
-          (see MobileNav.tsx), account/cart icons — no visible link list. */}
+          (see MobileNav.tsx), account/cart icons, no visible link list. */}
       <div className="flex w-full items-center justify-between px-[18px] py-[18px] sm:hidden">
         <Image
           src="/images/header/icon-mobile-squiggle.svg"

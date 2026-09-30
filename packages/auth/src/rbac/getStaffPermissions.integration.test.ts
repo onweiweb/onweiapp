@@ -3,7 +3,7 @@ import { prisma } from "@onwei/database";
 import { afterEach, describe, expect, it } from "vitest";
 import { getStaffPermissions } from "./getStaffPermissions";
 
-// Runs against the real, shared Neon dev database — every test creates its
+// Runs against the real, shared Neon dev database, every test creates its
 // own uniquely-prefixed fixtures and cleans them up afterward, matching
 // packages/core/src/catalog/catalog.integration.test.ts's convention.
 describe.skipIf(!process.env.DATABASE_URL)(

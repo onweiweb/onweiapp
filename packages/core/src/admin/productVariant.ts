@@ -7,7 +7,7 @@ import type {
 } from "./types";
 
 // Decimal fields need explicit string conversion before the JSON round-trip
-// in writeAuditLog — Prisma's Decimal.toJSON() already returns a string, but
+// in writeAuditLog, Prisma's Decimal.toJSON() already returns a string, but
 // being explicit here also handles the nullable compareAtPrice safely.
 function serializeVariant(variant: {
   price: { toString(): string };

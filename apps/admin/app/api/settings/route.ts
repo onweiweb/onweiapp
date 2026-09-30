@@ -1,64 +1,58 @@
 import { updateSiteSetting } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../_lib/defineAdminRoute";
 
-const SITE_MODES = ["WAITLIST", "PREORDERS", "LIVE"] as const;
-type SiteModeInput = (typeof SITE_MODES)[number];
+// These links are rendered as <a href> in the storefront footer, so only
+// plain web addresses are accepted. A value like "javascript:..." would run
+// when a visitor clicks it. An empty string or null clears the link.
+const URL_MESSAGE = "Enter a full web address starting with https://";
 
-function isSiteMode(value: unknown): value is SiteModeInput {
-  return (
-    typeof value === "string" && SITE_MODES.includes(value as SiteModeInput)
-  );
-}
-
-function parseUrlField(value: unknown): string | null | undefined {
-  return typeof value === "string" || value === null ? value : undefined;
-}
-
-export async function PATCH(request: Request) {
-  const session = await requireStaffSession(request, "settings:manage");
-  if (!session.ok) return session.response;
-
-  const body = (await request.json().catch(() => null)) as {
-    siteMode?: unknown;
-    launchAt?: unknown;
-    allowInternationalPhone?: unknown;
-    instagramUrl?: unknown;
-    linkedinUrl?: unknown;
-    facebookUrl?: unknown;
-    youtubeUrl?: unknown;
-    spotifyUrl?: unknown;
-  } | null;
-
-  if (!body) {
-    return NextResponse.json(
-      { ok: false, error: "Nothing to update." },
-      { status: 400 },
-    );
-  }
-
-  const launchAt =
-    typeof body.launchAt === "string" &&
-    !Number.isNaN(Date.parse(body.launchAt))
-      ? new Date(body.launchAt)
-      : undefined;
-
-  const setting = await updateSiteSetting(
-    {
-      siteMode: isSiteMode(body.siteMode) ? body.siteMode : undefined,
-      launchAt,
-      allowInternationalPhone:
-        typeof body.allowInternationalPhone === "boolean"
-          ? body.allowInternationalPhone
-          : undefined,
-      instagramUrl: parseUrlField(body.instagramUrl),
-      linkedinUrl: parseUrlField(body.linkedinUrl),
-      facebookUrl: parseUrlField(body.facebookUrl),
-      youtubeUrl: parseUrlField(body.youtubeUrl),
-      spotifyUrl: parseUrlField(body.spotifyUrl),
+const linkField = z
+  .string()
+  .nullable()
+  .refine(
+    (value) => {
+      if (value === null || value === "") return true;
+      try {
+        const { protocol } = new URL(value);
+        return protocol === "https:" || protocol === "http:";
+      } catch {
+        return false;
+      }
     },
-    { staffUserId: session.context.staffUserId },
-  );
+    { error: URL_MESSAGE },
+  )
+  .optional();
 
-  return NextResponse.json({ ok: true, setting });
-}
+const bodySchema = z.object({
+  siteMode: z.enum(["WAITLIST", "PREORDERS", "LIVE"]).optional(),
+  launchAt: z
+    .unknown()
+    .optional()
+    .transform((value) =>
+      typeof value === "string" && !Number.isNaN(Date.parse(value))
+        ? new Date(value)
+        : undefined,
+    ),
+  allowInternationalPhone: z.boolean().optional(),
+  instagramUrl: linkField,
+  linkedinUrl: linkField,
+  facebookUrl: linkField,
+  youtubeUrl: linkField,
+  spotifyUrl: linkField,
+});
+
+export const PATCH = defineAdminRoute(
+  {
+    permission: "settings:manage",
+    body: bodySchema,
+    emptyBodyMessage: "Nothing to update.",
+  },
+  async ({ staff, body }) => {
+    const setting = await updateSiteSetting(body, {
+      staffUserId: staff.staffUserId,
+    });
+    return NextResponse.json({ ok: true, setting });
+  },
+);

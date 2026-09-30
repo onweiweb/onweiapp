@@ -3,7 +3,7 @@ import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
 import type { ResolveReturnInput } from "./types";
 
-/** Rejects a ReturnRequest. No inventory change — nothing was restocked. */
+/** Rejects a ReturnRequest. No inventory change, nothing was restocked. */
 export async function rejectReturn(
   input: ResolveReturnInput,
   actor: AuditActor,

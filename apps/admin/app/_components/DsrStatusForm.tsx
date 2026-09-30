@@ -15,7 +15,7 @@ const NEXT_STATUSES: Record<DsrStatus, DsrStatus[]> = {
 
 const CONSEQUENCE_COPY: Partial<Record<DsrStatus, string>> = {
   FULFILLED:
-    "This marks the request as fulfilled — make sure the data has actually been provided/corrected/deleted first.",
+    "This marks the request as fulfilled, make sure the data has actually been provided/corrected/deleted first.",
   REJECTED: "This closes the request without fulfilling it.",
 };
 
@@ -35,7 +35,7 @@ export function DsrStatusForm({
   if (options.length === 0) {
     return (
       <p className="text-sm text-onwei-blue/60">
-        This request is closed — there&apos;s nothing left to do.
+        This request is closed, there&apos;s nothing left to do.
       </p>
     );
   }

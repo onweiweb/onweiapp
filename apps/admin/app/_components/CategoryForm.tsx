@@ -169,7 +169,7 @@ export function CategoryForm({
           value={metaDescription}
           onChange={(event) => setMetaDescription(event.target.value)}
           rows={3}
-          placeholder="Shown under the title in Google's results — a sentence or two about this category."
+          placeholder="Shown under the title in Google's results, a sentence or two about this category."
           className="rounded-md border border-neutral-300 px-3 py-2"
         />
       </div>

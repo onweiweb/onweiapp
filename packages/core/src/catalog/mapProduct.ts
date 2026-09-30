@@ -13,7 +13,7 @@ import type {
 } from "./types";
 
 /**
- * Structural shape this module needs from a Prisma `Product` query result —
+ * Structural shape this module needs from a Prisma `Product` query result,
  * not a Prisma.ProductGetPayload<...> generic, so callers stay decoupled
  * from the exact `include` shape as long as it fetches these fields.
  */
@@ -58,7 +58,7 @@ export function mapImage(image: {
   };
 }
 
-/** `ProductVariant.attributes` is a Json column — defensively coerced like
+/** `ProductVariant.attributes` is a Json column, defensively coerced like
  * mapSpecs below, falling back to an empty object on an unexpected shape
  * instead of trusting a raw `as Record<string, string>` cast (a non-string
  * value or a non-object shape would otherwise flow straight through to the
@@ -93,7 +93,7 @@ export function mapVariant(
   };
 }
 
-/** `Product.specs` is a nullable Json column — defensively coerced, same
+/** `Product.specs` is a nullable Json column, defensively coerced, same
  * pragmatic-cast convention as `mapVariant`'s `attributes`, but falls back
  * to an empty list rather than crashing the PDP on an unexpected shape. */
 export function mapSpecs(specs: unknown): ProductSpec[] {

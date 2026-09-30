@@ -129,6 +129,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
         where: { variantSku: variant.sku },
       });
       expect(inventoryLog?.changeQty).toBe(5);
+      expect(inventoryLog?.productVariantId).toBe(variant.id);
       expect(inventoryLog?.reason).toBe("RESTOCK");
 
       const auditLogs = await trackAuditLogsFor(inventory.id);

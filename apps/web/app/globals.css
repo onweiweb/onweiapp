@@ -2,7 +2,7 @@
 @import "@onwei/config/tailwind/base.css";
 
 /* "I want in!" on /waitlist jumps to the form via a plain #hash href (see
-   HoverLink in waitlist/page.tsx) — CSS smooth-scroll, not a JS handler, so
+   HoverLink in waitlist/page.tsx), CSS smooth-scroll, not a JS handler, so
    it works the same for that and any future same-page anchor without
    needing a client component just to intercept the click. Gated behind
    prefers-reduced-motion so it doesn't override that preference. */
@@ -26,13 +26,13 @@
   --color-onwei-purple: #8e94ca;
   --color-onwei-white: #ffffff;
 
-  /* --font-display is the real Figma font, "Author" (headlines — weights
+  /* --font-display is the real Figma font, "Author" (headlines, weights
      vary per instance: Medium/Semibold/Bold, never left at default),
-     self-hosted from Fontshare (free, ITF Free Font License) — see
+     self-hosted from Fontshare (free, ITF Free Font License), see
      layout.tsx. --font-grotesk still approximates "ABC Monument Grotesk
      Mono Unlicensed Trial" with IBM Plex Mono (a true monospace grotesk,
      unlike the earlier Space Grotesk which isn't monospace at all), and
-     --font-script still approximates "Summer Mood" with Caveat — both are
+     --font-script still approximates "Summer Mood" with Caveat, both are
      paid fonts the client hasn't purchased yet; swap in real files once
      provided (see layout.tsx's font registrations). */
   --font-display: var(--font-author), sans-serif;
@@ -70,7 +70,7 @@
 
 /* Every horizontally-scrolling row in this Figma file (reviews, Instagram,
    the mobile product/journal carousels) is scrolled by drag/swipe with no
-   visible OS scrollbar — only the Reviews section has its own custom
+   visible OS scrollbar, only the Reviews section has its own custom
    progress track (see ReviewCarousel.tsx). The native scrollbar the
    browser draws by default isn't part of any of these designs. */
 .no-scrollbar {

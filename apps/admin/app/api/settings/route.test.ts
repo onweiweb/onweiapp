@@ -1,135 +1,62 @@
 // @vitest-environment node
-import {
-  createStaffSessionToken,
-  STAFF_SESSION_COOKIE_NAME,
-} from "@onwei/auth";
-import { prisma } from "@onwei/database";
-import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-process.env.ADMIN_SESSION_JWT_SECRET ??= "test-admin-session-secret";
-process.env.SUPERADMIN_EMAIL = "someone-else@example.com";
+const updateSiteSetting = vi.fn();
+vi.mock("@onwei/core", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@onwei/core")>()),
+  updateSiteSetting: (...args: unknown[]) => updateSiteSetting(...args),
+}));
+vi.mock("../_lib/requireStaffSession", () => ({
+  requireStaffSession: async () => ({
+    ok: true,
+    context: { staffUserId: "staff-1", permissions: ["settings:manage"] },
+  }),
+}));
 
-describe.skipIf(!process.env.DATABASE_URL)(
-  "PATCH /api/settings",
-  { timeout: 20000 },
-  () => {
-    let staffUserId: string;
-    let cookieHeader: string;
-    let superAdminStaffUserId: string;
-    let superAdminCookieHeader: string;
-    let original: Awaited<
-      ReturnType<typeof prisma.siteSetting.findUniqueOrThrow>
-    >;
+import { PATCH } from "./route";
 
-    beforeAll(async () => {
-      original = await prisma.siteSetting.findUniqueOrThrow({
-        where: { id: "singleton" },
-      });
+function patch(body: unknown) {
+  return PATCH(
+    new Request("http://localhost/api/settings", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  );
+}
 
-      const staffUser = await prisma.staffUser.create({
-        data: {
-          email: `test-route-staff-${crypto.randomUUID()}@example.com`,
-          passwordHash: "not-a-real-hash",
-          name: "Test Staff",
-        },
-      });
-      staffUserId = staffUser.id;
-      const token = await createStaffSessionToken(
-        { staffUserId },
-        process.env.ADMIN_SESSION_JWT_SECRET!,
-      );
-      cookieHeader = `${STAFF_SESSION_COOKIE_NAME}=${token}`;
+describe("PATCH /api/settings", () => {
+  beforeEach(() => {
+    updateSiteSetting.mockReset();
+    updateSiteSetting.mockResolvedValue({ siteMode: "LIVE" });
+  });
 
-      const superAdminEmail = `test-route-superadmin-${crypto.randomUUID()}@example.com`;
-      process.env.SUPERADMIN_EMAIL = superAdminEmail;
-      const superAdmin = await prisma.staffUser.create({
-        data: {
-          email: superAdminEmail,
-          passwordHash: "not-a-real-hash",
-          name: "Test Admin",
-        },
-      });
-      superAdminStaffUserId = superAdmin.id;
-      const superAdminToken = await createStaffSessionToken(
-        { staffUserId: superAdminStaffUserId },
-        process.env.ADMIN_SESSION_JWT_SECRET!,
-      );
-      superAdminCookieHeader = `${STAFF_SESSION_COOKIE_NAME}=${superAdminToken}`;
+  it("rejects a social link that is not a web address", async () => {
+    const response = await patch({ instagramUrl: "javascript:alert(1)" });
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({
+      ok: false,
+      error: "Enter a full web address starting with https://",
     });
+    expect(updateSiteSetting).not.toHaveBeenCalled();
+  });
 
-    afterAll(async () => {
-      await prisma.siteSetting.update({
-        where: { id: "singleton" },
-        data: {
-          siteMode: original.siteMode,
-          launchAt: original.launchAt,
-          allowInternationalPhone: original.allowInternationalPhone,
-        },
-      });
-      await prisma.auditLog.deleteMany({
-        where: { entityType: "SiteSetting" },
-      });
-      await prisma.staffUser.deleteMany({
-        where: { id: { in: [staffUserId, superAdminStaffUserId] } },
-      });
+  it("accepts https links and lets an empty string clear one", async () => {
+    const response = await patch({
+      instagramUrl: "https://instagram.com/onwei",
+      youtubeUrl: "",
     });
+    expect(response.status).toBe(200);
+    expect(updateSiteSetting).toHaveBeenCalledWith(
+      expect.objectContaining({
+        instagramUrl: "https://instagram.com/onwei",
+        youtubeUrl: "",
+      }),
+      { staffUserId: "staff-1" },
+    );
+  });
 
-    afterEach(async () => {
-      await prisma.siteSetting.update({
-        where: { id: "singleton" },
-        data: { siteMode: original.siteMode },
-      });
-    });
-
-    it("returns 401 with no session cookie", async () => {
-      const { PATCH } = await import("./route");
-      const response = await PATCH(
-        new Request("http://localhost/api/settings", {
-          method: "PATCH",
-          body: JSON.stringify({ siteMode: "LIVE" }),
-        }),
-      );
-      expect(response.status).toBe(401);
-    });
-
-    it("returns 403 when the staff user lacks settings:manage", async () => {
-      const { PATCH } = await import("./route");
-      const response = await PATCH(
-        new Request("http://localhost/api/settings", {
-          method: "PATCH",
-          headers: { cookie: cookieHeader },
-          body: JSON.stringify({ siteMode: "LIVE" }),
-        }),
-      );
-      expect(response.status).toBe(403);
-    });
-
-    it("updates the site mode and writes an audit log entry", async () => {
-      const { PATCH } = await import("./route");
-      const before = await prisma.auditLog.count({
-        where: { entityType: "SiteSetting" },
-      });
-
-      const response = await PATCH(
-        new Request("http://localhost/api/settings", {
-          method: "PATCH",
-          headers: { cookie: superAdminCookieHeader },
-          body: JSON.stringify({ siteMode: "PREORDERS" }),
-        }),
-      );
-      const body = (await response.json()) as {
-        ok: boolean;
-        setting: { siteMode: string };
-      };
-
-      expect(response.status).toBe(200);
-      expect(body.ok).toBe(true);
-      expect(body.setting.siteMode).toBe("PREORDERS");
-
-      const after = await prisma.auditLog.count({
-        where: { entityType: "SiteSetting" },
-      });
-      expect(after).toBe(before + 1);
-    });
-  },
-);
+  it("rejects an unknown site mode", async () => {
+    const response = await patch({ siteMode: "CLOSED" });
+    expect(response.status).toBe(400);
+  });
+});

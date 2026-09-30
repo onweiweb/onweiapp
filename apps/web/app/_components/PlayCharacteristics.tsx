@@ -1,8 +1,8 @@
 import type { PlayCharacteristics as PlayCharacteristicsDTO } from "@onwei/core";
 
-// Decorative (non-interactive) — Figma's Slider component (node 759:3088 /
+// Decorative (non-interactive), Figma's Slider component (node 759:3088 /
 // 438:3117) is a flat, uncolored track with just a dot marker positioned at
-// the value — no filled/progress segment. Renders real per-product data
+// the value, no filled/progress segment. Renders real per-product data
 // (power/spin/control ratings entered in admin), not a fake/invented
 // reading.
 function Bar({ label, value }: { label: string; value: number }) {

@@ -40,11 +40,11 @@ import { VariantPrice } from "@/_components/VariantPrice";
 // 2", node 759:3025 "INFO.", plus the mobile info-panel mockup at node
 // 759:3410 "Product info"). All sections below the gallery/info panel are
 // now built and DB-backed: comparison table (759:3121), review wall
-// (759:3207), related products (759:3267), FAQ accordion (759:3281) — see
+// (759:3207), related products (759:3267), FAQ accordion (759:3281), see
 // each component's own file for the specific node and what was adapted vs.
 // literal Figma copy. Two adaptations from the literal info-panel frames,
 // noted rather than silent: (1) desktop's own ACCORDIONS node only groups
-// content into DESCRIPTION/MATERIALS & CARE/SHIPPING — "who this is for"
+// content into DESCRIPTION/MATERIALS & CARE/SHIPPING, "who this is for"
 // and "care" share the "Materials & care" item to match that 3-item list,
 // rather than the mobile mockup's separate 5-item breakdown; (2) "Shipping
 // & Returns" is static shared copy (it read as generic store policy in

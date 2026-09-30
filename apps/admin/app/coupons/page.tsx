@@ -32,7 +32,7 @@ export default async function CouponsPage() {
 
       {coupons.length === 0 ? (
         <p className="text-onwei-blue/70">
-          No coupons yet — add your first one.
+          No coupons yet, add your first one.
         </p>
       ) : (
         <AdminTable>

@@ -5,7 +5,7 @@ export interface RenderedEmail {
 }
 
 /**
- * Plain-function email template — no templating library chosen yet (flagged
+ * Plain-function email template, no templating library chosen yet (flagged
  * as an open choice, not a default; see docs/PHASE_1_SCAFFOLD_PROGRESS.md).
  * Easy to swap for react-email/mjml/etc. later without touching callers.
  */

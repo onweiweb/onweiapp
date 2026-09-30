@@ -14,9 +14,9 @@ function slugify(name: string) {
 }
 
 const STATUS_OPTIONS = [
-  { value: "DRAFT", label: "Draft — hidden from the storefront" },
-  { value: "ACTIVE", label: "Live — visible on the storefront" },
-  { value: "ARCHIVED", label: "Discontinued — hidden from the storefront" },
+  { value: "DRAFT", label: "Draft, hidden from the storefront" },
+  { value: "ACTIVE", label: "Live, visible on the storefront" },
+  { value: "ARCHIVED", label: "Discontinued, hidden from the storefront" },
 ] as const;
 
 interface ProductSpecRow {
@@ -221,7 +221,7 @@ export function ProductForm({
         <div className="flex max-w-xl flex-col gap-4">
           <p className="text-xs text-onwei-blue/60">
             Shown on the product&apos;s storefront page. Leave blank to hide a
-            section — nothing shows a placeholder.
+            section, nothing shows a placeholder.
           </p>
 
           <label className="flex flex-col gap-1 text-sm">
@@ -358,7 +358,7 @@ export function ProductForm({
               value={metaDescription}
               onChange={(event) => setMetaDescription(event.target.value)}
               rows={3}
-              placeholder="Shown under the title in Google's results — a sentence or two about the product."
+              placeholder="Shown under the title in Google's results, a sentence or two about the product."
             />
           </label>
         </div>

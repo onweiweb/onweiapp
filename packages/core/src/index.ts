@@ -114,8 +114,12 @@ export type {
   ReviewSummary,
   ValuePropItem,
 } from "./catalog/types";
+export { getClientIp } from "./http/getClientIp";
+export { parseJsonBody } from "./http/parseJsonBody";
+export type { ParseJsonBodyResult } from "./http/parseJsonBody";
 export { formatCurrency } from "./money/formatCurrency";
 export { createRole, updateRolePermissions } from "./staff/role";
+export { checkStaffLoginRateLimit } from "./staff/staffLoginRateLimit";
 export { createStaffUser, updateStaffUser } from "./staff/staffUser";
 export { assignStaffRole, unassignStaffRole } from "./staff/staffUserRole";
 export type {
@@ -124,6 +128,7 @@ export type {
   UpdateRoleInput,
   UpdateStaffUserInput,
 } from "./staff/types";
+export { checkNewsletterRateLimit } from "./newsletter/newsletterRateLimit";
 export { subscribeToNewsletter } from "./newsletter/subscribeToNewsletter";
 export { canTransition, nextStatuses } from "./orders/orderStateMachine";
 export { updateOrderStatus } from "./orders/updateOrderStatus";

@@ -68,7 +68,7 @@ function LinkedInIcon() {
 }
 
 // Figma's footer (About Us node 760:4661, and the same pattern on
-// Homepage/PDP/Collection) lists Instagram / LinkedIn / Facebook — a
+// Homepage/PDP/Collection) lists Instagram / LinkedIn / Facebook, a
 // Substack icon was used here instead of Facebook in an earlier pass.
 function FacebookIcon() {
   return (

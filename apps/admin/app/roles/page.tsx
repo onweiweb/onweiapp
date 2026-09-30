@@ -29,7 +29,7 @@ export default async function RolesPage() {
 
       {roles.length === 0 ? (
         <p className="text-onwei-blue/70">
-          No roles yet — add one, then assign it to a staff account.
+          No roles yet, add one, then assign it to a staff account.
         </p>
       ) : (
         <AdminTable>
@@ -50,7 +50,7 @@ export default async function RolesPage() {
                     {role.name}
                   </Link>
                 </AdminTableCell>
-                <AdminTableCell>{role.description ?? "—"}</AdminTableCell>
+                <AdminTableCell>{role.description ?? "-"}</AdminTableCell>
                 <AdminTableCell>{role._count.permissions}</AdminTableCell>
                 <AdminTableCell>{role._count.staffUsers}</AdminTableCell>
               </AdminTableRow>

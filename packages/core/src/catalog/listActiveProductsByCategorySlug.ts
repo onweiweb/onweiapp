@@ -6,7 +6,7 @@ import type { CategorySummary, ProductListItem } from "./types";
 
 /**
  * Products visible on the storefront for a category, excluding DRAFT and
- * ARCHIVED products (not just DRAFT — the defensible reading of
+ * ARCHIVED products (not just DRAFT, the defensible reading of
  * "discontinued") and soft-deleted ones. Returns null if the category
  * doesn't exist or isn't active.
  */

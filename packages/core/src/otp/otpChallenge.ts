@@ -21,7 +21,7 @@ export interface RequestOtpResult {
 
 /**
  * Creates a hashed OTP challenge. Returns the plaintext code ONLY for the
- * caller (an API route) to hand to OtpSender.send() — never put it in an
+ * caller (an API route) to hand to OtpSender.send(), never put it in an
  * HTTP response or log it anywhere durable.
  */
 export async function requestOtpChallenge(
@@ -60,7 +60,7 @@ export type VerifyOtpResult =
  *
  * The attempt slot is claimed atomically (`updateMany ... WHERE attempts <
  * maxAttempts`) BEFORE the code is compared, not read-checked-then-
- * incremented afterward — otherwise concurrent verify calls can all read
+ * incremented afterward, otherwise concurrent verify calls can all read
  * the same stale `attempts` value and each get a free code comparison past
  * maxAttempts, defeating the lockout under parallel brute-force. The code
  * comparison itself is constant-time (`verifyOtpCode`) to avoid leaking
@@ -110,7 +110,7 @@ export type VerifyAndAuthenticateResult = VerifyOtpResult & {
 /**
  * Verifies the code, then finds-or-creates a Customer keyed on the
  * identifier (email or phone depending on channel), marking it verified.
- * No Customer.status (SUSPENDED) check — deliberately excluded from this
+ * No Customer.status (SUSPENDED) check, deliberately excluded from this
  * pass's dummy flow, see the plan.
  */
 export async function verifyOtpAndAuthenticate(

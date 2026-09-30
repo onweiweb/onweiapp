@@ -65,7 +65,7 @@ export async function updateValueProp(
   return prop;
 }
 
-/** Real delete, not soft — marketing content, not customer/order/audit data. */
+/** Real delete, not soft, marketing content, not customer/order/audit data. */
 export async function deleteValueProp(id: string, actor: AuditActor) {
   const before = await prisma.valueProp.findUniqueOrThrow({ where: { id } });
   await prisma.valueProp.delete({ where: { id } });

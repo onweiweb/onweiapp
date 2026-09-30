@@ -2,7 +2,7 @@ import type { ArticleDetail, FaqItem, ProductDetail } from "@onwei/core";
 import { SITE_URL } from "./siteUrl";
 
 /** Sitewide, rendered once from app/layout.tsx. No `potentialAction`
- * SearchAction — no real site-search route exists to point it at. */
+ * SearchAction, no real site-search route exists to point it at. */
 export function buildOrganizationJsonLd() {
   return {
     "@context": "https://schema.org",
@@ -40,7 +40,7 @@ export function buildBreadcrumbJsonLd(entries: BreadcrumbEntry[]) {
   };
 }
 
-/** AggregateOffer across variants, not a single Offer — the PDP shows a
+/** AggregateOffer across variants, not a single Offer, the PDP shows a
  * variant picker, so a single price would misrepresent a product whose
  * variants span a price range. */
 export function buildProductJsonLd(product: ProductDetail) {

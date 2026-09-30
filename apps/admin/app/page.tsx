@@ -26,7 +26,7 @@ export default async function DashboardPage() {
 
       {!hasAnyData ? (
         <p className="text-onwei-blue/70">
-          Nothing to show yet — once you add a category and a product,
+          Nothing to show yet, once you add a category and a product,
           you&apos;ll see them here.
         </p>
       ) : (

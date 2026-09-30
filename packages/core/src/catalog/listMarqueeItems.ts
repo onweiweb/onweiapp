@@ -1,7 +1,7 @@
 import { prisma } from "@onwei/database";
 import type { MarqueePlacement } from "@onwei/database";
 
-/** One marquee ticker's text lines — Homepage has two (hero, showcase),
+/** One marquee ticker's text lines, Homepage has two (hero, showcase),
  * the PDP has its own. */
 export async function listMarqueeItems(
   placement: MarqueePlacement,

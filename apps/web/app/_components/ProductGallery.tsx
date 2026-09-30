@@ -5,7 +5,7 @@ import Image from "next/image";
 import type { ProductImageDTO } from "@onwei/core";
 
 // Figma (frame "PDP_draft 2", node 759:3026 "Img") only specs the static
-// layout — 3 thumbnails + 1 large image — with no click/active state
+// layout, 3 thumbnails + 1 large image, with no click/active state
 // defined. Clicking a thumbnail swapping it into the main view is standard
 // PDP gallery behavior, not literally shown in the file.
 export function ProductGallery({

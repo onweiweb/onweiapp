@@ -1,6 +1,6 @@
 # CLAUDE.md: packages/database
 
-Scoped rules for this package only. Read the root `CLAUDE.md` first — this
+Scoped rules for this package only. Read the root `CLAUDE.md` first, this
 file adds detail specific to the Prisma schema and client, it doesn't repeat
 the project-wide ground rules.
 
@@ -13,10 +13,10 @@ a Prisma client instance anywhere else.
 
 ## Every schema change
 
-1. Plan Mode first (root ground rule 1) — a schema change always needs an
+1. Plan Mode first (root ground rule 1), a schema change always needs an
    approved plan before editing `schema.prisma`.
 2. Generate the migration with `prisma migrate dev --name <description>`.
-   Never `prisma db push` — see `.claude/skills/db-migrations/` and
+   Never `prisma db push`, see `.claude/skills/db-migrations/` and
    `docs/DATABASE_SCHEMA.md` for why, and why non-additive changes are
    expand-contract across multiple migrations rather than one in-place edit.
 3. Check the change against the cross-cutting conventions in
@@ -25,10 +25,10 @@ a Prisma client instance anywhere else.
    entry for anything touching money/inventory/access, typed `config` JSON
    for anything with more than one shape.
 4. Files under `prisma/migrations/` are append-only once applied anywhere
-   shared (staging/prod) — write a new migration to undo one, never edit or
+   shared (staging/prod), write a new migration to undo one, never edit or
    delete an existing one.
 5. `prisma migrate deploy` against production is run by hand, not by Vercel's
-   build step — see the parent workspace's standing deploy rule.
+   build step, see the parent workspace's standing deploy rule.
 
 Full rationale: `docs/DATABASE_SCHEMA.md`. Open questions affecting this
 package (payment gateway placeholder, PITR retention, sensitive-field

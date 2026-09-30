@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from "react";
 
-/** Renders children for screen readers only — visually hidden, not display:none. */
+/** Renders children for screen readers only, visually hidden, not display:none. */
 export function VisuallyHidden(props: HTMLAttributes<HTMLSpanElement>) {
   return (
     <span

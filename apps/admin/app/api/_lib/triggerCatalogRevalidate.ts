@@ -4,7 +4,7 @@
 // processes/deployments with no shared cache to reach into directly, so
 // this is the only path from an admin mutation to web's Data Cache.
 // Missing env vars, the storefront being down, or a network hiccup here
-// never blocks the admin mutation itself — the 60s fallback still applies
+// never blocks the admin mutation itself, the 60s fallback still applies
 // either way, so failures are logged and swallowed, not thrown.
 export async function triggerCatalogRevalidate(
   tag: string = "catalog",

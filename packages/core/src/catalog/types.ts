@@ -20,7 +20,7 @@ export interface ProductListItem {
   image: ProductImageDTO | null;
   priceRangeMinorUnits: { min: number; max: number };
   inStock: boolean;
-  // null when the product has no approved reviews yet — the card shows no
+  // null when the product has no approved reviews yet, the card shows no
   // rating row at all rather than a fake/invented count.
   reviewSummary: ReviewSummary | null;
 }
@@ -28,7 +28,7 @@ export interface ProductListItem {
 export interface ProductVariantDTO {
   id: string;
   sku: string;
-  // Seed data controls the shape of the underlying JSON — cast at the query
+  // Seed data controls the shape of the underlying JSON, cast at the query
   // boundary, not validated here.
   attributes: Record<string, string>;
   priceMinorUnits: number;
@@ -58,7 +58,7 @@ export interface ProductDetail {
   specs: ProductSpec[];
   whoThisIsFor: string | null;
   careInstructions: string | null;
-  // null unless power/spin/control are all set — a category like Pilates
+  // null unless power/spin/control are all set, a category like Pilates
   // simply never has this data, so the section it drives never renders.
   playCharacteristics: PlayCharacteristics | null;
   highlightTags: string[];
@@ -86,7 +86,7 @@ export interface FaqItem {
   answer: string;
 }
 
-/** One column of the PDP comparison table — lighter than `ProductDetail`,
+/** One column of the PDP comparison table, lighter than `ProductDetail`,
  * just what the table needs to render a sibling product's specs. */
 export interface ComparisonProduct {
   slug: string;
@@ -109,7 +109,7 @@ export interface InstagramPhotoItem {
   altText: string | null;
 }
 
-/** Card-sized shape for the homepage's "From the Playbook" section — no
+/** Card-sized shape for the homepage's "From the Playbook" section, no
  * bodyHtml, that's only needed once you're actually on the article. */
 export interface ArticleListItem {
   slug: string;

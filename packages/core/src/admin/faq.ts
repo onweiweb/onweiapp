@@ -54,7 +54,7 @@ export async function updateFaq(
   return faq;
 }
 
-/** Real delete, not soft — FAQs aren't customer-facing order/audit data. */
+/** Real delete, not soft, FAQs aren't customer-facing order/audit data. */
 export async function deleteFaq(id: string, actor: AuditActor) {
   const before = await prisma.faq.findUniqueOrThrow({ where: { id } });
   await prisma.faq.delete({ where: { id } });

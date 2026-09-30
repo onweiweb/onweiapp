@@ -13,7 +13,7 @@ export interface PageStaffContext {
 }
 
 /**
- * Page-level counterpart to requireStaffSession (apps/admin/app/api/_lib) —
+ * Page-level counterpart to requireStaffSession (apps/admin/app/api/_lib),
  * the root layout only checks "is there a session," so read pages showing
  * sensitive data (payments, customers, DSR, consent, audit log) need this
  * finer-grained check too, not just a hidden nav link. Redirects to /login

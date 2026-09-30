@@ -59,7 +59,7 @@ export async function updateMarqueeItem(
   return item;
 }
 
-/** Real delete, not soft — marketing content, not customer/order/audit data. */
+/** Real delete, not soft, marketing content, not customer/order/audit data. */
 export async function deleteMarqueeItem(id: string, actor: AuditActor) {
   const before = await prisma.marqueeItem.findUniqueOrThrow({ where: { id } });
   await prisma.marqueeItem.delete({ where: { id } });

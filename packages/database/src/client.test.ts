@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 describe("prisma client", () => {
   it("exposes the expected model delegates for the current schema", async () => {
-    // A placeholder connection string is enough here — this test proves
+    // A placeholder connection string is enough here, this test proves
     // `prisma generate` produced a client matching schema.prisma, it never
     // opens a connection. The real connection is exercised in
     // client.integration.test.ts, gated on a real DATABASE_URL.

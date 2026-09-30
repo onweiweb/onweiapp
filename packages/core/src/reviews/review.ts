@@ -56,7 +56,7 @@ export async function rejectReview(id: string, actor: AuditActor) {
 
 /**
  * Staff-transcribed review from a source outside the site (e.g. email).
- * Lands unapproved by default, same as any other review — staff approves it
+ * Lands unapproved by default, same as any other review, staff approves it
  * as a separate, explicit step rather than auto-publishing.
  */
 export async function createManualReview(

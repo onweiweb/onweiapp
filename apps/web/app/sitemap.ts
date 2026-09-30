@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const { siteMode } = await getSiteSetting();
 
   if (siteMode === "WAITLIST") {
-    // Matches proxy.ts's own allowlist — /waitlist is the only route a
+    // Matches proxy.ts's own allowlist, /waitlist is the only route a
     // crawler can actually reach right now, nothing else exists to list.
     return [{ url: `${SITE_URL}/waitlist`, changeFrequency: "daily" }];
   }

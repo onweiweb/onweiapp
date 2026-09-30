@@ -129,7 +129,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 
     it("falls back to most-recent-approved when nothing is curated", async () => {
       const review = await createApprovedBrandReview("Nothing curated here.");
-      // No placements created for PRODUCT_WALL/this product — should still
+      // No placements created for PRODUCT_WALL/this product, should still
       // surface real approved reviews rather than an empty list.
       const results = await listSurfaceReviews({ surface: "HOME_WALL" });
       expect(results.length).toBeGreaterThan(0);

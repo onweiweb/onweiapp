@@ -2,157 +2,101 @@ import { deleteProduct, updateProduct } from "@onwei/core";
 import type { ProductSpecInput } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../../_lib/defineAdminRoute";
 import { triggerCatalogRevalidate } from "../../_lib/triggerCatalogRevalidate";
 
-function parseSpecs(value: unknown): ProductSpecInput[] | undefined {
-  return Array.isArray(value) ? (value as ProductSpecInput[]) : undefined;
-}
-
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request);
-  if (!session.ok) return session.response;
-
-  const { id } = await params;
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      category: true,
-      images: { orderBy: { sortOrder: "asc" } },
-      variants: { include: { inventory: { include: { warehouse: true } } } },
-    },
-  });
-
-  if (!product) {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that product." },
-      { status: 404 },
-    );
-  }
-
-  return NextResponse.json({ ok: true, product });
-}
-
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "product:update");
-  if (!session.ok) return session.response;
-
-  const { id } = await params;
-  const body = (await request.json().catch(() => null)) as {
-    name?: unknown;
-    slug?: unknown;
-    categoryId?: unknown;
-    description?: unknown;
-    status?: unknown;
-    specs?: unknown;
-    whoThisIsFor?: unknown;
-    careInstructions?: unknown;
-    powerRating?: unknown;
-    spinRating?: unknown;
-    controlRating?: unknown;
-    metaTitle?: unknown;
-    metaDescription?: unknown;
-  } | null;
-
-  if (!body) {
-    return NextResponse.json(
-      { ok: false, error: "Nothing to update." },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const product = await updateProduct(
-      id,
-      {
-        name: typeof body.name === "string" ? body.name.trim() : undefined,
-        slug: typeof body.slug === "string" ? body.slug.trim() : undefined,
-        categoryId:
-          typeof body.categoryId === "string" ? body.categoryId : undefined,
-        description:
-          typeof body.description === "string" || body.description === null
-            ? body.description
-            : undefined,
-        status:
-          body.status === "DRAFT" ||
-          body.status === "ACTIVE" ||
-          body.status === "ARCHIVED"
-            ? body.status
-            : undefined,
-        specs: parseSpecs(body.specs),
-        whoThisIsFor:
-          typeof body.whoThisIsFor === "string" || body.whoThisIsFor === null
-            ? body.whoThisIsFor
-            : undefined,
-        careInstructions:
-          typeof body.careInstructions === "string" ||
-          body.careInstructions === null
-            ? body.careInstructions
-            : undefined,
-        powerRating:
-          typeof body.powerRating === "number" || body.powerRating === null
-            ? body.powerRating
-            : undefined,
-        spinRating:
-          typeof body.spinRating === "number" || body.spinRating === null
-            ? body.spinRating
-            : undefined,
-        controlRating:
-          typeof body.controlRating === "number" || body.controlRating === null
-            ? body.controlRating
-            : undefined,
-        metaTitle:
-          typeof body.metaTitle === "string" || body.metaTitle === null
-            ? body.metaTitle
-            : undefined,
-        metaDescription:
-          typeof body.metaDescription === "string" ||
-          body.metaDescription === null
-            ? body.metaDescription
-            : undefined,
+export const GET = defineAdminRoute<never, { id: string }>(
+  {},
+  async ({ params }) => {
+    const product = await prisma.product.findUnique({
+      where: { id: params.id },
+      include: {
+        category: true,
+        images: { orderBy: { sortOrder: "asc" } },
+        variants: { include: { inventory: { include: { warehouse: true } } } },
       },
-      { staffUserId: session.context.staffUserId },
-    );
-    await triggerCatalogRevalidate();
-    return NextResponse.json({ ok: true, product });
-  } catch (error) {
-    console.error(error);
-    const message =
-      error instanceof Error && error.message.startsWith("invalid-specs")
-        ? error.message.replace("invalid-specs: ", "")
-        : "Couldn't find that product.";
-    const status =
-      error instanceof Error && error.message.startsWith("invalid-specs")
-        ? 400
-        : 404;
-    return NextResponse.json({ ok: false, error: message }, { status });
-  }
-}
-
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "product:delete");
-  if (!session.ok) return session.response;
-
-  const { id } = await params;
-  try {
-    const product = await deleteProduct(id, {
-      staffUserId: session.context.staffUserId,
     });
-    await triggerCatalogRevalidate();
+    if (!product) {
+      return NextResponse.json(
+        { ok: false, error: "Couldn't find that product." },
+        { status: 404 },
+      );
+    }
     return NextResponse.json({ ok: true, product });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that product." },
-      { status: 404 },
-    );
-  }
-}
+  },
+);
+
+// Only checks that specs is a list of objects. What each spec must contain is
+// checked in core (validateSpecs), which answers with "invalid-specs" text.
+const specsSchema = z.array(
+  z.custom<ProductSpecInput>(
+    (value) => typeof value === "object" && value !== null,
+  ),
+);
+
+// Every field is optional: an omitted field is left alone, null clears the
+// nullable ones.
+const bodySchema = z.object({
+  name: z.string().trim().optional(),
+  slug: z.string().trim().optional(),
+  categoryId: z.string().optional(),
+  status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).optional(),
+  specs: specsSchema.optional(),
+  description: z.string().nullable().optional(),
+  whoThisIsFor: z.string().nullable().optional(),
+  careInstructions: z.string().nullable().optional(),
+  powerRating: z.number().nullable().optional(),
+  spinRating: z.number().nullable().optional(),
+  controlRating: z.number().nullable().optional(),
+  metaTitle: z.string().nullable().optional(),
+  metaDescription: z.string().nullable().optional(),
+});
+
+export const PATCH = defineAdminRoute<typeof bodySchema, { id: string }>(
+  {
+    permission: "product:update",
+    body: bodySchema,
+    emptyBodyMessage: "Nothing to update.",
+  },
+  async ({ staff, body, params }) => {
+    try {
+      const product = await updateProduct(params.id, body, {
+        staffUserId: staff.staffUserId,
+      });
+      await triggerCatalogRevalidate();
+      return NextResponse.json({ ok: true, product });
+    } catch (error) {
+      console.error(error);
+      const invalidSpecs =
+        error instanceof Error && error.message.startsWith("invalid-specs");
+      return NextResponse.json(
+        {
+          ok: false,
+          error: invalidSpecs
+            ? (error as Error).message.replace("invalid-specs: ", "")
+            : "Couldn't find that product.",
+        },
+        { status: invalidSpecs ? 400 : 404 },
+      );
+    }
+  },
+);
+
+export const DELETE = defineAdminRoute<never, { id: string }>(
+  { permission: "product:delete" },
+  async ({ staff, params }) => {
+    try {
+      const product = await deleteProduct(params.id, {
+        staffUserId: staff.staffUserId,
+      });
+      await triggerCatalogRevalidate();
+      return NextResponse.json({ ok: true, product });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Couldn't find that product." },
+        { status: 404 },
+      );
+    }
+  },
+);

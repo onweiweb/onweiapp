@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { prisma } from "@onwei/database";
 import { requirePageSession } from "../_lib/requirePageSession";
+import { pageWindow, parsePage, trimPage } from "../_lib/pagination";
 import { REVIEW_SOURCE_LABELS } from "../_lib/reviewLabels";
 import { ReviewModerationButtons } from "../_components/ReviewModerationButtons";
 import {
   AdminBadge,
   AdminButton,
+  AdminPager,
   AdminSelect,
   AdminTable,
   AdminTableCell,
@@ -18,19 +20,21 @@ import {
 export default async function ReviewsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ isApproved?: string }>;
+  searchParams: Promise<{ isApproved?: string; page?: string }>;
 }) {
   await requirePageSession("review:moderate");
-  const { isApproved } = await searchParams;
+  const { isApproved, page: pageParam } = await searchParams;
+  const page = parsePage(pageParam);
   const filter =
     isApproved === "true" ? true : isApproved === "false" ? false : undefined;
 
-  const reviews = await prisma.review.findMany({
+  const fetched = await prisma.review.findMany({
     where: filter === undefined ? {} : { isApproved: filter },
     include: { product: true },
-    orderBy: { submittedAt: "desc" },
-    take: 100,
+    orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
+    ...pageWindow(page),
   });
+  const { rows: reviews, hasNext } = trimPage(fetched);
 
   return (
     <main className="flex flex-col gap-6">
@@ -99,6 +103,12 @@ export default async function ReviewsPage({
           </tbody>
         </AdminTable>
       )}
+      <AdminPager
+        pathname="/reviews"
+        page={page}
+        hasNext={hasNext}
+        params={{ isApproved }}
+      />
     </main>
   );
 }

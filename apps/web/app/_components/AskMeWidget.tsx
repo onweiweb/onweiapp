@@ -5,13 +5,13 @@ import type { FaqItem } from "@onwei/core";
 import { OPEN_ACCORDION_ITEM_EVENT } from "./Accordion";
 import { ScrollCarousel } from "./ScrollCarousel";
 
-// Figma PDP info panel (frame "PDP_draft 2", node 759:3102 "FAQ") — a
+// Figma PDP info panel (frame "PDP_draft 2", node 759:3102 "FAQ"), a
 // purple "have questions?" teaser sitting right after the accordion, with
 // suggested-question chips. Confirmed behavior: this is a scroll-link, not
-// a live search — clicking a chip scrolls to and expands the matching
+// a live search, clicking a chip scrolls to and expands the matching
 // entry in FaqSection further down the page (no new backend). Sourced from
 // the same `faqs` the page already fetches via listFaqs, not hardcoded
-// copy — the input itself has no real search behind it, so it's decorative
+// copy, the input itself has no real search behind it, so it's decorative
 // framing rather than a functional field.
 export function AskMeWidget({ faqs }: { faqs: FaqItem[] }) {
   if (faqs.length === 0) return null;

@@ -36,7 +36,7 @@ export async function subscribeToWaitlist(
   ]);
 
   // Same person resubmitting the identical pair reads as "already joined,"
-  // not an error — only a genuine collision (one field matches a different
+  // not an error, only a genuine collision (one field matches a different
   // person's row) is rejected.
   if (existingEmail && existingEmail.id === existingPhone?.id) {
     return { ok: true, alreadyJoined: true };

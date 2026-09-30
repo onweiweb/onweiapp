@@ -1,27 +1,22 @@
 import { approveReview } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../../_lib/requireStaffSession";
+import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "review:moderate");
-  if (!session.ok) return session.response;
-
-  const { id } = await params;
-
-  try {
-    const review = await approveReview(id, {
-      staffUserId: session.context.staffUserId,
-    });
-    return NextResponse.json({ ok: true, review });
-  } catch (error) {
-    console.error(error);
-    const message =
-      error instanceof Error && error.message.startsWith("already-approved")
-        ? "This review is already live."
-        : "Couldn't find that review.";
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
-  }
-}
+export const POST = defineAdminRoute<never, { id: string }>(
+  { permission: "review:moderate" },
+  async ({ staff, params }) => {
+    try {
+      const review = await approveReview(params.id, {
+        staffUserId: staff.staffUserId,
+      });
+      return NextResponse.json({ ok: true, review });
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error && error.message.startsWith("already-approved")
+          ? "This review is already live."
+          : "Couldn't find that review.";
+      return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    }
+  },
+);

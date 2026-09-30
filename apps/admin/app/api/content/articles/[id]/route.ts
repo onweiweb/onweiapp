@@ -1,67 +1,56 @@
 import { deleteArticle, updateArticle } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 import { triggerCatalogRevalidate } from "../../../_lib/triggerCatalogRevalidate";
 
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "content:manage");
-  if (!session.ok) return session.response;
+// Every field is optional: an omitted field is left alone, null clears
+// excerpt and cover image.
+const bodySchema = z.object({
+  title: z.string().optional(),
+  slug: z.string().optional(),
+  excerpt: z.string().nullable().optional(),
+  bodyHtml: z.string().optional(),
+  coverImageUrl: z.string().nullable().optional(),
+  isPublished: z.boolean().optional(),
+});
 
-  const { id } = await params;
-  const body = (await request.json().catch(() => ({}))) as Record<
-    string,
-    unknown
-  >;
+const NOT_FOUND = "Couldn't find that article.";
 
-  try {
-    const article = await updateArticle(
-      id,
-      {
-        title: typeof body.title === "string" ? body.title : undefined,
-        slug: typeof body.slug === "string" ? body.slug : undefined,
-        excerpt:
-          typeof body.excerpt === "string" || body.excerpt === null
-            ? body.excerpt
-            : undefined,
-        bodyHtml: typeof body.bodyHtml === "string" ? body.bodyHtml : undefined,
-        coverImageUrl:
-          typeof body.coverImageUrl === "string" || body.coverImageUrl === null
-            ? body.coverImageUrl
-            : undefined,
-        isPublished:
-          typeof body.isPublished === "boolean" ? body.isPublished : undefined,
-      },
-      { staffUserId: session.context.staffUserId },
-    );
-    await triggerCatalogRevalidate();
-    return NextResponse.json({ ok: true, article });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that article." },
-      { status: 404 },
-    );
-  }
-}
+export const PATCH = defineAdminRoute<typeof bodySchema, { id: string }>(
+  {
+    permission: "content:manage",
+    body: bodySchema,
+    emptyBodyMessage: "Nothing to update.",
+  },
+  async ({ staff, body, params }) => {
+    try {
+      const article = await updateArticle(params.id, body, {
+        staffUserId: staff.staffUserId,
+      });
+      await triggerCatalogRevalidate();
+      return NextResponse.json({ ok: true, article });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: NOT_FOUND },
+        { status: 404 },
+      );
+    }
+  },
+);
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "content:manage");
-  if (!session.ok) return session.response;
-
-  const { id } = await params;
-  try {
-    await deleteArticle(id, { staffUserId: session.context.staffUserId });
-    await triggerCatalogRevalidate();
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that article." },
-      { status: 404 },
-    );
-  }
-}
+export const DELETE = defineAdminRoute<never, { id: string }>(
+  { permission: "content:manage" },
+  async ({ staff, params }) => {
+    try {
+      await deleteArticle(params.id, { staffUserId: staff.staffUserId });
+      await triggerCatalogRevalidate();
+      return NextResponse.json({ ok: true });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: NOT_FOUND },
+        { status: 404 },
+      );
+    }
+  },
+);

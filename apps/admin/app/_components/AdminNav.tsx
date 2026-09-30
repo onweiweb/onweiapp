@@ -62,11 +62,11 @@ export interface AdminNavGroup {
 }
 
 /**
- * Sections default collapsed — only a label explicitly expanded before
+ * Sections default collapsed, only a label explicitly expanded before
  * (persisted here) starts open on a later visit. useSyncExternalStore reads
  * localStorage safely: the server snapshot is always "collapsed" (no
  * window on the server), and the real per-viewer value takes over after
- * hydration with no mismatch warning — the pattern React designed this
+ * hydration with no mismatch warning, the pattern React designed this
  * hook for, instead of setting state from inside an effect.
  */
 const STORAGE_KEY_PREFIX = "onwei-admin-nav-expanded:";
@@ -97,7 +97,7 @@ function setExpanded(label: string, expanded: boolean) {
       window.localStorage.removeItem(STORAGE_KEY_PREFIX + label);
     }
   } catch {
-    // localStorage unavailable (private window, blocked storage) — expanded
+    // localStorage unavailable (private window, blocked storage), expanded
     // state just won't persist, section still works collapsed by default.
   }
   listeners.forEach((listener) => listener());

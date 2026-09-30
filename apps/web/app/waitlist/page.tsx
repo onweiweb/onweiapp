@@ -10,7 +10,7 @@ import { SmoothScrollLink } from "@/_components/SmoothScrollLink";
 
 // This page reads launchAt via Prisma, not `fetch`, so Next's automatic
 // static/dynamic detection has no signal that it depends on data that
-// changes — without this, it gets fully static-generated once and never
+// changes, without this, it gets fully static-generated once and never
 // re-rendered, so an admin changing the countdown target on /settings would
 // never show up here short of a redeploy. Revalidating every 30s keeps most
 // of the caching benefit (not a live DB hit per request) while keeping that
@@ -18,7 +18,7 @@ import { SmoothScrollLink } from "@/_components/SmoothScrollLink";
 export const revalidate = 30;
 
 // Figma "Coming Soon" screens: draft 3 (web, node 945:4238) and draft 4
-// (mobile, node 945:4388). Server component — only the countdown, the
+// (mobile, node 945:4388). Server component, only the countdown, the
 // card-scroll section, and the form are client islands (see each
 // component's own file); everything else here ships with zero client JS.
 export default async function WaitlistPage() {
@@ -31,14 +31,14 @@ export default async function WaitlistPage() {
 
       <section className="w-full max-w-[1440px]">
         <WaitlistCardScroll>
-          {/* py-6/gap-4 on mobile (was py-12/gap-[30px], same as desktop) —
+          {/* py-6/gap-4 on mobile (was py-12/gap-[30px], same as desktop),
               this card sits next to the h-[300px] card viewport on mobile;
               the old desktop-sized padding/gaps alone made that too tall. */}
           <div className="flex w-full flex-col justify-between gap-4 rounded-[30px] bg-onwei-purple px-5 py-6 sm:h-[635px] sm:w-[665px] sm:gap-[30px] sm:px-14 sm:py-12">
             <div className="relative flex flex-col gap-3 sm:gap-6">
               {/* Figma mobile (node 945:4427) puts this line in normal flow
                   ABOVE the heading, right-aligned, ending right where "Join
-                  the Movement" begins — not absolutely offset above the
+                  the Movement" begins, not absolutely offset above the
                   card like desktop's -top-10/right-0 treatment (node
                   945:4241 area). At mobile's tighter py-6 card padding, that
                   desktop offset pushed the text 16px above the card's own
@@ -76,7 +76,7 @@ export default async function WaitlistPage() {
             <div className="flex flex-col gap-3">
               <WaitlistCountdown launchAt={launchAt.toISOString()} />
               {/* SmoothScrollLink (not a plain anchor, not HoverLink) so
-                  the click reliably scrolls smoothly to the form — Next's
+                  the click reliably scrolls smoothly to the form, Next's
                   Link doesn't do this on its own for a same-page hash, see
                   that component's comment. Still no new client boundary,
                   already inside WaitlistCardScroll's. */}

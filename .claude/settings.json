@@ -10,7 +10,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(cat); cmd=$(echo \"$f\" | jq -r '.tool_input.command // empty'); if echo \"$cmd\" | grep -qE 'prisma[^&|;]*\\b(db push|migrate reset)\\b'; then printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Blocked: prisma db push / migrate reset bypasses versioned migrations and can wipe data. Use prisma migrate dev locally or migrate deploy in prod — see docs/DATABASE_SCHEMA.md (Migrations, versioning, and rollback).\"}}'; fi",
+            "command": "f=$(cat); cmd=$(echo \"$f\" | jq -r '.tool_input.command // empty'); if echo \"$cmd\" | grep -qE 'prisma[^&|;]*\\b(db push|migrate reset)\\b'; then printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Blocked: prisma db push / migrate reset bypasses versioned migrations and can wipe data. Use prisma migrate dev locally or migrate deploy in prod, see docs/DATABASE_SCHEMA.md (Migrations, versioning, and rollback).\"}}'; fi",
             "statusMessage": "Checking for unsafe prisma commands..."
           },
           {
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "f=$(cat); p=$(echo \"$f\" | jq -r '.tool_input.file_path // .tool_input.path // empty'); if echo \"$p\" | grep -q 'packages/database/prisma/migrations/'; then printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Blocked: migration files are append-only once committed. Generate a new migration with prisma migrate dev instead of hand-editing an existing one — see docs/DATABASE_SCHEMA.md (Migrations, versioning, and rollback).\"}}'; fi",
+            "command": "f=$(cat); p=$(echo \"$f\" | jq -r '.tool_input.file_path // .tool_input.path // empty'); if echo \"$p\" | grep -q 'packages/database/prisma/migrations/'; then printf '%s' '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Blocked: migration files are append-only once committed. Generate a new migration with prisma migrate dev instead of hand-editing an existing one, see docs/DATABASE_SCHEMA.md (Migrations, versioning, and rollback).\"}}'; fi",
             "statusMessage": "Checking migration file edit..."
           }
         ]

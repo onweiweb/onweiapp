@@ -9,20 +9,20 @@ import { ScrollReveal } from "@/_components/ScrollReveal";
 import { HoverLink } from "@/_components/HoverLink";
 
 // Built from Figma (file dQvPgsv3kEAYb4ca5mu08U, frame 760:4492 "About Us" /
-// 969:3987 "About Us - mobile" — supersedes an earlier note here claiming no
+// 969:3987 "About Us - mobile", supersedes an earlier note here claiming no
 // mobile variant existed; it does, in this file, and the decorative accents
 // below now have mobile positions measured from it). Decorative accents
 // (squiggles/arrows/ribbon banners, nodes 760:4566, 760:4600, 760:4639,
 // 760:4642, 760:4654, 760:4658, 760:4660) are exported SVGs/PNGs from those
 // exact nodes, positioned relative to their anchor text/photo rather than at
-// Figma's raw canvas coordinates — those coordinates assume a fixed 1440px
+// Figma's raw canvas coordinates, those coordinates assume a fixed 1440px
 // frame and don't survive this page's responsive layout. Mobile sizes/offsets
 // below are the desktop figure scaled by 0.625 (the ratio between this page's
 // mobile and desktop heading font sizes), not independently re-measured node
-// positions — close enough for decorative elements, but a visual check after
+// positions, close enough for decorative elements, but a visual check after
 // deploy is worth it.
 // Reads siteMode so this branches the same way `apps/web/proxy.ts` already
-// gates routing — /about is the one normal page still reachable while
+// gates routing, /about is the one normal page still reachable while
 // siteMode === "WAITLIST" (see proxy.ts's allow-list), so its chrome needs
 // to match the waitlist page's, not the full storefront's. Same revalidate
 // reasoning as apps/web/app/waitlist/page.tsx: getSiteSetting() isn't a
@@ -34,7 +34,7 @@ export const revalidate = 30;
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Built to move, built with intent, built by an athlete — the story behind Onwei.",
+    "Built to move, built with intent, built by an athlete, the story behind Onwei.",
   alternates: { canonical: "/about" },
 };
 
@@ -63,11 +63,11 @@ export default async function AboutPage() {
             ( on&middot;wei, \ &#712;&auml;n-w&#257; / &ldquo;on-way&rdquo; )
           </p>
           {/* Mobile (Figma node 969:4038): tucked under the tail end of the
-              text, not out in a side margin like desktop — there's no wide
+              text, not out in a side margin like desktop, there's no wide
               margin to sit in at this width. Same asset, same aspect ratio,
               just repositioned and scaled down for the narrower layout.
               top-full (not a small -bottom offset) so it starts right at
-              the text's baseline — a negative bottom offset here previously
+              the text's baseline, a negative bottom offset here previously
               pulled most of the image's height up into the glyphs instead
               of below them, crossing out "on-way" instead of underlining
               it. */}
@@ -94,17 +94,17 @@ export default async function AboutPage() {
             discovered sport after reading a trend report.
           </p>
           <p>
-            Onwei exists because two people — one who spent 15 years at the
-            sharp end of competitive sport, and one who built careers around why
-            people want the things they want —{" "}
+            Onwei exists because two people, one who spent 15 years at the sharp
+            end of competitive sport, and one who built careers around why
+            people want the things they want -{" "}
             {/* Figma highlights this run with an actual asset (a painted
                 purple brush stroke, node 760:4526 for this phrase, "Onwei
-                Brand Assets-149" — jagged hand-cut edges and a slight
+                Brand Assets-149", jagged hand-cut edges and a slight
                 rotation, not a clean rectangle), not a flat CSS
                 background-color. Each of the three highlighted phrases on
                 this page has its OWN export, sized to that phrase's own
                 width (701x27 here vs 352x27 for the other two, node
-                760:4527/760:4634) — reusing one shared texture across all
+                760:4527/760:4634), reusing one shared texture across all
                 three stretched the shorter phrases' strokes noticeably out
                 of proportion, most visible at mobile's narrower line
                 width. [box-decoration-break:clone] + a 100%/100%
@@ -126,8 +126,8 @@ export default async function AboutPage() {
             The equipment was either cheap and forgettable, or excellent and
             completely unaffordable. The design was an afterthought. The brands
             behind it were either intimidating or embarrassing. And the person
-            this all hurt most was the one showing up every single day — not
-            training for a podium, not a complete beginner — just someone who
+            this all hurt most was the one showing up every single day, not
+            training for a podium, not a complete beginner, just someone who
             takes their movement seriously and deserves gear that does the same.
           </p>
           <p
@@ -148,7 +148,7 @@ export default async function AboutPage() {
         >
           <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
             {/* Figma: an oval outline wraps the whole name (node 969:4048
-                mobile, 760:4566 desktop) — not the small corner squiggle
+                mobile, 760:4566 desktop), not the small corner squiggle
                 this used before, which was the wrong decoration entirely. */}
             <Image
               src="/images/about-us/circle-sabhya-mobile.svg"
@@ -170,7 +170,7 @@ export default async function AboutPage() {
           </p>
           <div className="font-grotesk text-[14px] leading-[1.3] text-onwei-white">
             <p>
-              He grew up playing table tennis professionally — the kind of
+              He grew up playing table tennis professionally, the kind of
               professional where weekends were tournaments, not plans. He
               represented India internationally and was ranked among the top 4
               in the country. Sport wasn&apos;t something he did on the side. It
@@ -178,15 +178,15 @@ export default async function AboutPage() {
             </p>
             <br />
             <p>
-              Playing at that level meant access — to training, to facilities,
-              to gear that actually matched how hard he was working. He
-              didn&apos;t think much of it then. That&apos;s just how it worked
-              when you were in those circles.
+              Playing at that level meant access, to training, to facilities, to
+              gear that actually matched how hard he was working. He didn&apos;t
+              think much of it then. That&apos;s just how it worked when you
+              were in those circles.
             </p>
             <br />
             <p>
               He eventually stepped back from professional table tennis. Picked
-              up tennis, running, pickleball, padel — got deep into all of them.
+              up tennis, running, pickleball, padel, got deep into all of them.
               And somewhere in that shift from professional athlete to regular
               person at a sports store, the gap became impossible to ignore: the
               gear he&apos;d taken for granted as a pro simply wasn&apos;t
@@ -212,7 +212,7 @@ export default async function AboutPage() {
             does in Figma, instead of getting clipped. order-1/lg:order-2:
             Figma's mobile frame (969:3987) stacks the photo above the text
             card for this section, but desktop (760:4533) puts text on the
-            left — this section is the only one of the two where the two
+            left, this section is the only one of the two where the two
             breakpoints disagree on which comes first. */}
         <ScrollReveal
           as="div"
@@ -237,7 +237,7 @@ export default async function AboutPage() {
             />
           </div>
           {/* Figma's mobile frame has this on the RIGHT of the photo (not
-              left, like desktop) — the two breakpoints mirror each other
+              left, like desktop), the two breakpoints mirror each other
               here, matching how the mobile frame also flips which comes
               first, photo vs text card. */}
           <Image
@@ -262,14 +262,14 @@ export default async function AboutPage() {
       <section className="relative mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-6 px-6 pb-6 sm:px-11 lg:grid-cols-2">
         {/* Outer wrapper (not the photo div itself, which clips via
             overflow-hidden) so the mobile plank illustration can hang below
-            the photo's bottom edge — same reasoning as the Sabhya photo
+            the photo's bottom edge, same reasoning as the Sabhya photo
             above. Needed only for mobile: on desktop the two grid columns
             are equal height (grid's default stretch), so bottom-0 on the
             plank image below, positioned relative to the whole section,
             already lands exactly on the seam between them. On mobile the
             columns stack, so that same bottom-0 would land at the very
             bottom of the second (text) column instead of at the photo/card
-            seam — the plank needs its own anchor here instead. */}
+            seam, the plank needs its own anchor here instead. */}
         <ScrollReveal as="div" className="relative">
           <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
             <Image
@@ -312,7 +312,7 @@ export default async function AboutPage() {
         >
           <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
             {/* Figma gives Sakshi's name the oval-outline treatment on
-                mobile only (node 969:4059) — confirmed no such decoration
+                mobile only (node 969:4059), confirmed no such decoration
                 on desktop (760:4568's Sakshi section has none), unlike
                 Sabhya who keeps it at both breakpoints. Previously used the
                 same corner squiggle at both sizes for both names, which was
@@ -332,7 +332,7 @@ export default async function AboutPage() {
             <p>
               Even at 22, she couldn&apos;t buy something ugly. Life was too
               short. She spent years at LVMH understanding why people pay a
-              premium for things that make them feel something — and years at
+              premium for things that make them feel something, and years at
               Marico and Diageo understanding how to make that feeling
               accessible to more people. She got very good at the gap between
               the two. She found Pilates. Then functional movement. Then a
@@ -344,8 +344,8 @@ export default async function AboutPage() {
             <p>
               Her mat looked clinical. Her resistance band came in a zip-lock
               bag, like a snack. Her gym bag had given up on life. Meanwhile
-              everything she was watching online — the studios, the creators,
-              the aesthetic — looked aspirational and effortless.
+              everything she was watching online, the studios, the creators, the
+              aesthetic, looked aspirational and effortless.
             </p>
             <br />
             <p>
@@ -362,14 +362,14 @@ export default async function AboutPage() {
         as="section"
         className="relative mx-auto flex w-full max-w-[1440px] flex-col items-center gap-6 px-6 pb-6 pt-12 text-center sm:px-14"
       >
-        {/* Mobile only (Figma node 969:4237) — a small double-stroke
+        {/* Mobile only (Figma node 969:4237), a small double-stroke
             underline beneath "THEN THEY GOT" (first line of the heading),
             near the section's left margin, not the swirled arrow desktop
             gets to the heading's right (which Figma's mobile frame doesn't
-            have at all — confirmed absent, not just hidden here). Top offset
+            have at all, confirmed absent, not just hidden here). Top offset
             is an approximation (Figma's own y-coordinate doesn't map 1:1
             onto this section's padding), eyeballed to land under the first
-            line at this font size — worth a visual check after deploy. */}
+            line at this font size, worth a visual check after deploy. */}
         <Image
           src="/images/about-us/underline-married-heading-mobile.png"
           alt=""
@@ -418,8 +418,8 @@ export default async function AboutPage() {
               }}
             >
               whether you&apos;d actually want it. Together they&apos;ve set a
-              bar that&apos;s probably unreasonable — and are having a great
-              time trying to clear it.
+              bar that&apos;s probably unreasonable, and are having a great time
+              trying to clear it.
             </span>
           </p>
         </div>
@@ -486,7 +486,7 @@ export default async function AboutPage() {
               affordable was all that was on offer.
             </p>
             <p>
-              On — present, engaged, in it. Wei (&#20026;) — the choice to act.
+              On, present, engaged, in it. Wei (&#20026;), the choice to act.
               Not forcing it. Not performing it. Just doing it, on your terms,
               at your pace, consistently.
             </p>

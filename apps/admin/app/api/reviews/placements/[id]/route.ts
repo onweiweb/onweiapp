@@ -1,24 +1,20 @@
 import { removeReviewPlacement } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../../_lib/requireStaffSession";
+import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "review:feature");
-  if (!session.ok) return session.response;
-
-  const { id } = await params;
-  try {
-    await removeReviewPlacement(id, {
-      staffUserId: session.context.staffUserId,
-    });
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that placement." },
-      { status: 404 },
-    );
-  }
-}
+export const DELETE = defineAdminRoute<never, { id: string }>(
+  { permission: "review:feature" },
+  async ({ staff, params }) => {
+    try {
+      await removeReviewPlacement(params.id, {
+        staffUserId: staff.staffUserId,
+      });
+      return NextResponse.json({ ok: true });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Couldn't find that placement." },
+        { status: 404 },
+      );
+    }
+  },
+);

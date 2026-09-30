@@ -3,12 +3,12 @@ import { prisma } from "@onwei/database";
 /**
  * Every permission key a staff user effectively has. The bootstrapped
  * super-admin (SUPERADMIN_EMAIL) gets every permission in the system
- * automatically — no Role/Permission rows needed for that one account, per
+ * automatically, no Role/Permission rows needed for that one account, per
  * docs/ARCHITECTURE.md. Every other staff user's permissions come from the
  * union of their assigned roles.
  *
  * This is the DB lookup that feeds packages/auth/src/rbac/hasPermission.ts's
- * pure `hasPermission`/`hasAllPermissions` checks — those stay DB-free by
+ * pure `hasPermission`/`hasAllPermissions` checks, those stay DB-free by
  * design; this is where the actual query lives.
  */
 export async function getStaffPermissions(

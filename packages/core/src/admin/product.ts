@@ -93,7 +93,7 @@ export async function updateProduct(
   return product;
 }
 
-/** Soft delete only — see docs/DATABASE_SCHEMA.md, Product is never hard-deleted. */
+/** Soft delete only, see docs/DATABASE_SCHEMA.md, Product is never hard-deleted. */
 export async function deleteProduct(id: string, actor: AuditActor) {
   const before = await prisma.product.findUniqueOrThrow({
     where: { id },
@@ -114,7 +114,7 @@ export async function deleteProduct(id: string, actor: AuditActor) {
     afterState: product,
   });
 
-  // No single new URL to send a delisted product to — its own category
+  // No single new URL to send a delisted product to, its own category
   // collection page is more useful than a bare 404 for any residual
   // backlinks/search-index entries.
   await upsertRedirect(

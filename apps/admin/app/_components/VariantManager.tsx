@@ -82,7 +82,7 @@ export function VariantManager({
     <div className="flex flex-col gap-4">
       {variants.length === 0 ? (
         <p className="text-sm text-neutral-600">
-          No variants yet — this product won&apos;t be purchasable on the
+          No variants yet, this product won&apos;t be purchasable on the
           storefront until it has at least one.
         </p>
       ) : (
@@ -102,7 +102,7 @@ export function VariantManager({
                 <td className="px-3 py-2">
                   {Object.entries(variant.attributes)
                     .map(([key, value]) => `${key}: ${value}`)
-                    .join(", ") || "—"}
+                    .join(", ") || "-"}
                 </td>
                 <td className="px-3 py-2">{variant.priceFormatted}</td>
                 <td className="px-3 py-2">

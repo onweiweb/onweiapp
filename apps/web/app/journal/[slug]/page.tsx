@@ -11,7 +11,7 @@ import {
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
 
-// No Figma frame exists for this page yet — it's new infrastructure (see
+// No Figma frame exists for this page yet, it's new infrastructure (see
 // docs/OPEN_DECISIONS.md's SEO entry), not a designed screen, so this
 // intentionally reuses the site's existing type/color tokens rather than
 // inventing a new visual language. Replace with a Figma-driven layout once
@@ -75,7 +75,7 @@ export default async function JournalArticlePage({
           <div
             className="flex flex-col gap-4 font-grotesk text-[16px] text-onwei-blue [&_a]:underline [&_h2]:font-display [&_h2]:text-[24px] [&_h2]:uppercase [&_ul]:list-disc [&_ul]:pl-5"
             // Staff-authored via apps/admin's content:manage-gated editor,
-            // same trust boundary as everything else in that CMS — not
+            // same trust boundary as everything else in that CMS, not
             // user-submitted content.
             dangerouslySetInnerHTML={{ __html: article.bodyHtml }}
           />

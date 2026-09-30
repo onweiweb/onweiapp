@@ -2,20 +2,16 @@ import { createProduct } from "@onwei/core";
 import type { ProductSpecInput } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../_lib/defineAdminRoute";
+import { requiredText } from "../_lib/schemas";
 import { triggerCatalogRevalidate } from "../_lib/triggerCatalogRevalidate";
 
-function parseSpecs(value: unknown): ProductSpecInput[] | undefined {
-  return Array.isArray(value) ? (value as ProductSpecInput[]) : undefined;
-}
+const PAGE_SIZE = 25;
 
-export async function GET(request: Request) {
-  const session = await requireStaffSession(request);
-  if (!session.ok) return session.response;
-
+export const GET = defineAdminRoute({}, async ({ request }) => {
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, Number(searchParams.get("page") ?? 1) || 1);
-  const pageSize = 25;
 
   const [products, total] = await Promise.all([
     prisma.product.findMany({
@@ -24,9 +20,9 @@ export async function GET(request: Request) {
         category: true,
         variants: { include: { inventory: true } },
       },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * pageSize,
-      take: pageSize,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
     }),
     prisma.product.count({ where: { deletedAt: null } }),
   ]);
@@ -34,88 +30,67 @@ export async function GET(request: Request) {
   return NextResponse.json({
     ok: true,
     products,
-    pagination: { page, pageSize, total },
+    pagination: { page, pageSize: PAGE_SIZE, total },
   });
-}
+});
 
-export async function POST(request: Request) {
-  const session = await requireStaffSession(request, "product:create");
-  if (!session.ok) return session.response;
+// Only checks that specs is a list of objects. What each spec must contain is
+// checked in core (validateSpecs), which answers with "invalid-specs" text.
+const specsSchema = z.array(
+  z.custom<ProductSpecInput>(
+    (value) => typeof value === "object" && value !== null,
+  ),
+);
 
-  const body = (await request.json().catch(() => null)) as {
-    name?: unknown;
-    slug?: unknown;
-    categoryId?: unknown;
-    description?: unknown;
-    status?: unknown;
-    specs?: unknown;
-    whoThisIsFor?: unknown;
-    careInstructions?: unknown;
-    powerRating?: unknown;
-    spinRating?: unknown;
-    controlRating?: unknown;
-    metaTitle?: unknown;
-    metaDescription?: unknown;
-  } | null;
+const MESSAGE = "Give the product a name, a URL slug, and a category.";
 
-  const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const slug = typeof body?.slug === "string" ? body.slug.trim() : "";
-  const categoryId =
-    typeof body?.categoryId === "string" ? body.categoryId : "";
-  if (!name || !slug || !categoryId) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error: "Give the product a name, a URL slug, and a category.",
-      },
-      { status: 400 },
-    );
-  }
+const bodySchema = z.object({
+  name: requiredText(MESSAGE),
+  slug: requiredText(MESSAGE),
+  categoryId: requiredText(MESSAGE),
+  status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).catch("DRAFT"),
+  description: z.string().nullish(),
+  specs: specsSchema.optional(),
+  whoThisIsFor: z.string().nullish(),
+  careInstructions: z.string().nullish(),
+  powerRating: z.number().nullish(),
+  spinRating: z.number().nullish(),
+  controlRating: z.number().nullish(),
+  metaTitle: z.string().nullish(),
+  metaDescription: z.string().nullish(),
+});
 
-  const status =
-    body?.status === "ACTIVE" || body?.status === "ARCHIVED"
-      ? body.status
-      : "DRAFT";
-
-  try {
-    const product = await createProduct(
-      {
-        name,
-        slug,
-        categoryId,
-        description:
-          typeof body?.description === "string" ? body.description : null,
-        status,
-        specs: parseSpecs(body?.specs),
-        whoThisIsFor:
-          typeof body?.whoThisIsFor === "string" ? body.whoThisIsFor : null,
-        careInstructions:
-          typeof body?.careInstructions === "string"
-            ? body.careInstructions
-            : null,
-        powerRating:
-          typeof body?.powerRating === "number" ? body.powerRating : null,
-        spinRating:
-          typeof body?.spinRating === "number" ? body.spinRating : null,
-        controlRating:
-          typeof body?.controlRating === "number" ? body.controlRating : null,
-        metaTitle: typeof body?.metaTitle === "string" ? body.metaTitle : null,
-        metaDescription:
-          typeof body?.metaDescription === "string"
-            ? body.metaDescription
-            : null,
-      },
-      { staffUserId: session.context.staffUserId },
-    );
-
-    await triggerCatalogRevalidate();
-    return NextResponse.json({ ok: true, product }, { status: 201 });
-  } catch (error) {
-    console.error(error);
-    const message =
-      error instanceof Error && error.message.startsWith("invalid-specs")
-        ? error.message.replace("invalid-specs: ", "")
-        : "Couldn't create that product.";
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
-  }
-}
+export const POST = defineAdminRoute(
+  { permission: "product:create", body: bodySchema, emptyBodyMessage: MESSAGE },
+  async ({ staff, body }) => {
+    try {
+      const product = await createProduct(
+        {
+          name: body.name,
+          slug: body.slug,
+          categoryId: body.categoryId,
+          description: body.description ?? null,
+          status: body.status,
+          specs: body.specs,
+          whoThisIsFor: body.whoThisIsFor ?? null,
+          careInstructions: body.careInstructions ?? null,
+          powerRating: body.powerRating ?? null,
+          spinRating: body.spinRating ?? null,
+          controlRating: body.controlRating ?? null,
+          metaTitle: body.metaTitle ?? null,
+          metaDescription: body.metaDescription ?? null,
+        },
+        { staffUserId: staff.staffUserId },
+      );
+      await triggerCatalogRevalidate();
+      return NextResponse.json({ ok: true, product }, { status: 201 });
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error && error.message.startsWith("invalid-specs")
+          ? error.message.replace("invalid-specs: ", "")
+          : "Couldn't create that product.";
+      return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    }
+  },
+);

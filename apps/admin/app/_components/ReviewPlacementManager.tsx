@@ -33,7 +33,7 @@ export interface ReviewCandidate {
 /**
  * Shared by the PDP's "Featured reviews" panel (surface PRODUCT_WALL, one
  * instance per product) and /reviews/placements (surfaces HOME_HERO/
- * HOME_WALL, site-wide) — same add/reorder/remove/limit shape, just scoped
+ * HOME_WALL, site-wide), same add/reorder/remove/limit shape, just scoped
  * differently. No drag-and-drop library exists in this app, so reordering
  * is up/down buttons that resubmit the full new order.
  */
@@ -140,7 +140,7 @@ export function ReviewPlacementManager({
     <div className="flex flex-col gap-4">
       {placements.length === 0 ? (
         <p className="text-sm text-onwei-blue/70">
-          No reviews featured here yet — the storefront automatically shows the
+          No reviews featured here yet, the storefront automatically shows the
           most recent approved reviews instead, up to the limit below.
         </p>
       ) : (

@@ -2,7 +2,7 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 export interface PhoneValidationResult {
   valid: boolean;
-  // E.164 (e.g. "+919876543210") — only present when valid: true.
+  // E.164 (e.g. "+919876543210"), only present when valid: true.
   e164?: string;
 }
 
@@ -10,7 +10,7 @@ export interface PhoneValidationResult {
  * Accepts a bare 10-digit Indian mobile number (no country code needed,
  * region-hinted to "IN") or any number with an explicit "+<country code>"
  * prefix. When allowInternational is false, only numbers that resolve to
- * India are accepted — see SiteSetting.allowInternationalPhone, which this
+ * India are accepted, see SiteSetting.allowInternationalPhone, which this
  * flag is meant to be threaded from.
  */
 export function validatePhone(

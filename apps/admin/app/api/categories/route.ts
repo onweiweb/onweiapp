@@ -1,58 +1,53 @@
 import { createCategory } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../_lib/defineAdminRoute";
+import { optionalText, requiredText } from "../_lib/schemas";
 import { triggerCatalogRevalidate } from "../_lib/triggerCatalogRevalidate";
 
-export async function GET(request: Request) {
-  const session = await requireStaffSession(request);
-  if (!session.ok) return session.response;
-
+export const GET = defineAdminRoute({}, async () => {
   const categories = await prisma.category.findMany({
     orderBy: { sortOrder: "asc" },
   });
   return NextResponse.json({ ok: true, categories });
-}
+});
 
-export async function POST(request: Request) {
-  const session = await requireStaffSession(request, "category:create");
-  if (!session.ok) return session.response;
+const MESSAGE = "Give the category a name and a URL slug.";
 
-  const body = (await request.json().catch(() => null)) as {
-    name?: unknown;
-    slug?: unknown;
-    parentId?: unknown;
-    imageUrl?: unknown;
-    isActive?: unknown;
-    sortOrder?: unknown;
-    metaTitle?: unknown;
-    metaDescription?: unknown;
-  } | null;
+const bodySchema = z.object({
+  name: requiredText(MESSAGE),
+  slug: requiredText(MESSAGE),
+  parentId: z.string().nullish(),
+  imageUrl: z.string().nullish(),
+  isActive: z.boolean().default(true),
+  sortOrder: z.number().default(0),
+  metaTitle: optionalText,
+  metaDescription: optionalText,
+});
 
-  const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const slug = typeof body?.slug === "string" ? body.slug.trim() : "";
-  if (!name || !slug) {
-    return NextResponse.json(
-      { ok: false, error: "Give the category a name and a URL slug." },
-      { status: 400 },
+export const POST = defineAdminRoute(
+  {
+    permission: "category:create",
+    body: bodySchema,
+    emptyBodyMessage: MESSAGE,
+  },
+  async ({ staff, body }) => {
+    const category = await createCategory(
+      {
+        name: body.name,
+        slug: body.slug,
+        parentId: body.parentId ?? null,
+        imageUrl: body.imageUrl ?? null,
+        isActive: body.isActive,
+        sortOrder: body.sortOrder,
+        metaTitle: body.metaTitle ?? null,
+        metaDescription: body.metaDescription ?? null,
+      },
+      { staffUserId: staff.staffUserId },
     );
-  }
 
-  const category = await createCategory(
-    {
-      name,
-      slug,
-      parentId: typeof body?.parentId === "string" ? body.parentId : null,
-      imageUrl: typeof body?.imageUrl === "string" ? body.imageUrl : null,
-      isActive: typeof body?.isActive === "boolean" ? body.isActive : true,
-      sortOrder: typeof body?.sortOrder === "number" ? body.sortOrder : 0,
-      metaTitle: typeof body?.metaTitle === "string" ? body.metaTitle : null,
-      metaDescription:
-        typeof body?.metaDescription === "string" ? body.metaDescription : null,
-    },
-    { staffUserId: session.context.staffUserId },
-  );
-
-  await triggerCatalogRevalidate();
-  return NextResponse.json({ ok: true, category }, { status: 201 });
-}
+    await triggerCatalogRevalidate();
+    return NextResponse.json({ ok: true, category }, { status: 201 });
+  },
+);

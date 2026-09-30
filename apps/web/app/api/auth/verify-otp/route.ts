@@ -1,29 +1,19 @@
 import { createSessionToken, SESSION_COOKIE_NAME } from "@onwei/auth";
-import type { OtpChannel } from "@onwei/auth";
-import { verifyOtpAndAuthenticate } from "@onwei/core";
+import { parseJsonBody, verifyOtpAndAuthenticate } from "@onwei/core";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { invalidInput } from "../../_lib/invalidInput";
 
-function isOtpChannel(value: unknown): value is OtpChannel {
-  return value === "EMAIL" || value === "SMS";
-}
+const bodySchema = z.object({
+  identifier: z.string().trim().min(1),
+  channel: z.enum(["EMAIL", "SMS"]),
+  code: z.string().trim().min(1),
+});
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as {
-    identifier?: unknown;
-    channel?: unknown;
-    code?: unknown;
-  } | null;
-
-  const identifier =
-    typeof body?.identifier === "string" ? body.identifier.trim() : "";
-  const code = typeof body?.code === "string" ? body.code.trim() : "";
-  if (!identifier || !code || !isOtpChannel(body?.channel)) {
-    return NextResponse.json(
-      { ok: false, reason: "INVALID_INPUT" },
-      { status: 400 },
-    );
-  }
-  const channel = body.channel;
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.ok) return invalidInput();
+  const { identifier, channel, code } = parsed.data;
 
   const otpSecret = process.env.OTP_HASH_SECRET;
   const sessionSecret = process.env.SESSION_JWT_SECRET;
@@ -37,7 +27,7 @@ export async function POST(request: Request) {
   );
 
   if (!result.ok) {
-    // Never leak attempts/hash details — just the reason.
+    // Never leak attempts/hash details, just the reason.
     return NextResponse.json(
       { ok: false, reason: result.reason },
       { status: 400 },

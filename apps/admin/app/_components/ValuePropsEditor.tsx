@@ -21,7 +21,7 @@ export interface ValuePropRow {
   body: string;
 }
 
-// Shared Homepage + PDP "value prop" cards — one CMS list, both pages read
+// Shared Homepage + PDP "value prop" cards, one CMS list, both pages read
 // the same rows (packages/core's listValueProps).
 export function ValuePropsEditor({ items }: { items: ValuePropRow[] }) {
   const router = useRouter();

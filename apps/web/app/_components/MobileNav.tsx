@@ -4,12 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-// Figma's mobile header (node 761:4767) has no menu affordance at all — no
+// Figma's mobile header (node 761:4767) has no menu affordance at all, no
 // hamburger, no drawer state anywhere in the file, just logo + a decorative
 // squiggle + account/cart icons. A real mobile visitor still needs a way to
 // reach Shop/Pickleball/Pilates/etc., so per explicit approval this makes
 // the logo itself the menu trigger, opening a panel that drops down from
-// it — an intentional addition, not something copied from a Figma state.
+// it, an intentional addition, not something copied from a Figma state.
 const NAV_LINKS = [
   { label: "Shop All", href: "/collection/all" },
   { label: "Pickleball", href: "/collection/pickleball" },
@@ -29,7 +29,7 @@ export function MobileNav() {
   }
 
   // Escape-to-close, click-outside-to-close, and moving focus into the
-  // panel on open — none of this existed before, so a keyboard user had no
+  // panel on open, none of this existed before, so a keyboard user had no
   // way to close the menu short of tabbing all the way through it, and a
   // screen reader had no indication this was a menu at all (no role, no
   // focus management).

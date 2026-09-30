@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { DiscountType } from "@onwei/database";
 
 /**
- * DiscountRule.config is a typed JSON field, validated per `type` — one zod
+ * DiscountRule.config is a typed JSON field, validated per `type`, one zod
  * schema per type, per .claude/skills/discount-rule-engine/SKILL.md. Adding
  * a new discount type means adding a schema + branch here, never a new
  * nullable column on DiscountRule.

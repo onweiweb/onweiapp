@@ -57,7 +57,7 @@ export function StaffRoleAssignment({
   if (allRoles.length === 0) {
     return (
       <p className="text-sm text-onwei-blue/60">
-        No roles exist yet — create one on the Roles page first.
+        No roles exist yet, create one on the Roles page first.
       </p>
     );
   }

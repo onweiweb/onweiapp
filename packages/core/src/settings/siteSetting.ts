@@ -4,8 +4,8 @@ import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
 
 const SINGLETON_ID = "singleton";
-// Read on effectively every request — apps/web/proxy.ts's site-mode gate,
-// and every waitlist submission for the phone-validation flag — so a live
+// Read on effectively every request, apps/web/proxy.ts's site-mode gate,
+// and every waitlist submission for the phone-validation flag, so a live
 // query per request doesn't scale. An admin change on /settings takes up to
 // this long to actually take effect for other readers; updateSiteSetting
 // below clears it immediately for the process that made the change.
@@ -15,7 +15,7 @@ export interface SiteSettingSummary {
   siteMode: SiteMode;
   launchAt: Date;
   allowInternationalPhone: boolean;
-  // Shown in apps/web's SiteFooter/WaitlistFooter — null means "don't show
+  // Shown in apps/web's SiteFooter/WaitlistFooter, null means "don't show
   // this icon" rather than the dead "#" link every one of these used to be.
   instagramUrl: string | null;
   linkedinUrl: string | null;

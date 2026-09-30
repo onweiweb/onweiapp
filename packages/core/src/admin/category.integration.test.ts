@@ -3,7 +3,7 @@ import { prisma } from "@onwei/database";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { createCategory, updateCategory } from "./category";
 
-// Runs against the real, shared Neon dev database — matches
+// Runs against the real, shared Neon dev database, matches
 // packages/core/src/catalog/catalog.integration.test.ts's convention.
 describe.skipIf(!process.env.DATABASE_URL)(
   "admin category writes (integration)",

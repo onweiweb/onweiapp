@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 // Skipped until a real DATABASE_URL is provided (Vercel Postgres / Neon).
-// Not run as part of this scaffolding pass — see docs/PHASE_1_SCAFFOLD_PROGRESS.md.
+// Not run as part of this scaffolding pass, see docs/PHASE_1_SCAFFOLD_PROGRESS.md.
 describe.skipIf(!process.env.DATABASE_URL)(
   "prisma client (integration)",
   () => {

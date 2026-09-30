@@ -63,7 +63,7 @@ export function NewsletterForm() {
         {status === "submitting" ? "submitting..." : "submit"}
       </Button>
       <p role="status" className="font-grotesk text-[12px] text-onwei-beige">
-        {status === "success" && "You're on the list — welcome to Onwei."}
+        {status === "success" && "You're on the list, welcome to Onwei."}
         {status === "already" && "You're already subscribed."}
         {status === "error" && "Something went wrong. Please try again."}
       </p>

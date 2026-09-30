@@ -35,7 +35,7 @@ export async function unassignStaffRole(
     });
     if (roleCount <= 1) {
       throw new Error(
-        "self-unassign: You can't remove your own last role — ask another admin to do it.",
+        "self-unassign: You can't remove your own last role, ask another admin to do it.",
       );
     }
   }

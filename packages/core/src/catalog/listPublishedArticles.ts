@@ -1,7 +1,7 @@
 import { prisma } from "@onwei/database";
 import type { ArticleListItem } from "./types";
 
-/** Backs the homepage's "From the Playbook" section — replaces the
+/** Backs the homepage's "From the Playbook" section, replaces the
  * previous hardcoded JOURNAL_ARTICLES placeholder. */
 export async function listPublishedArticles(
   limit?: number,

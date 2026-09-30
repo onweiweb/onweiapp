@@ -7,14 +7,14 @@ export function generateOtpCode(): string {
 
 /**
  * One-way hash of an OTP code for storage in OtpChallenge.codeHash
- * (packages/database/prisma/schema.prisma) — the plaintext code is never
+ * (packages/database/prisma/schema.prisma), the plaintext code is never
  * persisted, only sent once via OtpSender and compared by re-hashing.
  *
  * A 6-digit code only has 1,000,000 possibilities, so a plain hash (sha256,
  * etc.) would let a leaked codeHash be brute-forced offline in milliseconds.
  * HMAC-ing with a server-only secret (never stored in the database) makes
  * that infeasible without the secret. `secret` should come from an env var
- * such as OTP_HASH_SECRET — never hardcode it, never commit it.
+ * such as OTP_HASH_SECRET, never hardcode it, never commit it.
  */
 export function hashOtpCode(code: string, secret: string): string {
   if (!secret) {

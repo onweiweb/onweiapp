@@ -2,7 +2,7 @@ import { prisma } from "@onwei/database";
 
 /**
  * Upserts a newsletter subscription. Basic email format validation happens
- * at the API route boundary, not here — this function trusts its caller.
+ * at the API route boundary, not here, this function trusts its caller.
  */
 export async function subscribeToNewsletter(
   email: string,

@@ -13,7 +13,7 @@ import "./globals.css";
 
 // Same font families as apps/web (see apps/web/app/layout.tsx) so admin
 // reads as the same product, minus the display-headline scale, which is
-// storefront-only. No --font-script (Caveat) here — marketing accent only.
+// storefront-only. No --font-script (Caveat) here, marketing accent only.
 const raleway = Raleway({
   subsets: ["latin"],
   variable: "--font-raleway",

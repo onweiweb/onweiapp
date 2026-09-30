@@ -4,7 +4,7 @@ import { getSiteSetting } from "@onwei/core";
 import AboutPage from "./page";
 
 // AboutPage is an async Server Component that reads real site settings via
-// @onwei/core, so this needs a real DATABASE_URL — same convention as
+// @onwei/core, so this needs a real DATABASE_URL, same convention as
 // apps/web/app/page.test.tsx.
 describe.skipIf(!process.env.DATABASE_URL)("AboutPage", () => {
   it("renders chrome matching the current site mode", async () => {

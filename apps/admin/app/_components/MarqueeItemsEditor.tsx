@@ -9,7 +9,7 @@ export interface MarqueeItemRow {
   label: string;
 }
 
-// One instance per marquee (HOME_HERO / HOME_SHOWCASE / PDP) — same ticker
+// One instance per marquee (HOME_HERO / HOME_SHOWCASE / PDP), same ticker
 // text list shape everywhere, just a different placement.
 export function MarqueeItemsEditor({
   placement,

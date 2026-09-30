@@ -3,7 +3,7 @@ import { mapToListItem } from "./mapProduct";
 import type { ProductListItem } from "./types";
 
 /**
- * "You may also like" / comparison-table siblings — same category, excludes
+ * "You may also like" / comparison-table siblings, same category, excludes
  * the product itself, ACTIVE + not soft-deleted only. Derived from the
  * existing Category relation rather than a new join table: no curation
  * concept exists yet, and "same category" is a reasonable, honest default.

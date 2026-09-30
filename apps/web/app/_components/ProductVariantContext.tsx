@@ -4,7 +4,7 @@ import { createContext, useContext, useMemo, useState } from "react";
 import type { ProductVariantDTO } from "@onwei/core";
 
 // Seed data only ever puts "size" and "color" keys in a variant's
-// attributes JSON (see packages/database/prisma/seed.ts) — this reads
+// attributes JSON (see packages/database/prisma/seed.ts), this reads
 // those two specifically rather than rendering an arbitrary attribute list.
 export function uniqueValues(
   variants: ProductVariantDTO[],
@@ -27,13 +27,13 @@ interface ProductVariantContextValue {
   setSelectedSize: (size: string) => void;
   // A product with an ACTIVE status always has at least one ACTIVE variant
   // in practice (see packages/database/prisma/seed.ts and
-  // getActiveProductBySlug's query) — that's what makes the fallback here
+  // getActiveProductBySlug's query), that's what makes the fallback here
   // safe, not the schema itself.
   selectedVariant: ProductVariantDTO;
   // Keyed by variant id, formatted server-side (page.tsx) with
   // formatCurrency. `@onwei/core` has no subpath exports, so importing
-  // formatCurrency as a value here would pull its whole barrel — including
-  // Prisma-backed modules — into the client bundle; passing pre-formatted
+  // formatCurrency as a value here would pull its whole barrel, including
+  // Prisma-backed modules, into the client bundle; passing pre-formatted
   // strings down avoids that entirely.
   formattedPrices: Record<string, string>;
 }
@@ -43,7 +43,7 @@ const ProductVariantContext = createContext<ProductVariantContextValue | null>(
 );
 
 // Shared selection state between the price display (next to the product
-// name, top of the info panel) and the color/size picker (further down) —
+// name, top of the info panel) and the color/size picker (further down),
 // they're not adjacent in the DOM, so the price can't just read the
 // picker's local state. One provider wraps both.
 export function ProductVariantProvider({

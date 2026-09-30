@@ -5,7 +5,7 @@ import { getActiveProductBySlug } from "./getActiveProductBySlug";
 import { listActiveCategories } from "./listActiveCategories";
 import { listActiveProductsByCategorySlug } from "./listActiveProductsByCategorySlug";
 
-// Runs against the real, shared Neon dev database — every test creates its
+// Runs against the real, shared Neon dev database, every test creates its
 // own uniquely-prefixed fixtures and cleans them up afterward so this is
 // safe to run repeatedly and never touches real seed data. Skipped when no
 // DATABASE_URL is set (e.g. CI), matching packages/database's own

@@ -22,8 +22,7 @@ export function OrderStatusForm({
   if (nextStatuses.length === 0) {
     return (
       <p className="text-sm text-onwei-blue/60">
-        This order is in a final state — there&apos;s nothing left to move it
-        to.
+        This order is in a final state, there&apos;s nothing left to move it to.
       </p>
     );
   }
@@ -35,7 +34,7 @@ export function OrderStatusForm({
     const label = statusLabels[status];
     if (
       !window.confirm(
-        `This will mark the order as "${label}". This can't be undone from here — make sure that's correct.`,
+        `This will mark the order as "${label}". This can't be undone from here, make sure that's correct.`,
       )
     ) {
       return;

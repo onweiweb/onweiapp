@@ -193,6 +193,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
         where: { variantSku: variant.sku, reason: "RETURN" },
       });
       expect(inventoryLog?.changeQty).toBe(2);
+      expect(inventoryLog?.productVariantId).toBe(variant.id);
 
       const auditLogs = await trackAuditLogsFor(returnRequest.id);
       expect(auditLogs.some((log) => log.action === "return.approve")).toBe(

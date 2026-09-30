@@ -19,7 +19,7 @@ export async function createArticle(
       bodyHtml: input.bodyHtml,
       coverImageUrl: input.coverImageUrl ?? null,
       isPublished,
-      // First-published timestamp, not "currently published" — set once,
+      // First-published timestamp, not "currently published", set once,
       // on the transition into published, same as updateArticle below.
       publishedAt: isPublished ? new Date() : null,
     },
@@ -43,7 +43,7 @@ export async function updateArticle(
 ) {
   const before = await prisma.article.findUniqueOrThrow({ where: { id } });
 
-  // publishedAt is "first published at," not "currently published" — only
+  // publishedAt is "first published at," not "currently published", only
   // stamp it the moment isPublished actually flips false → true. Toggling
   // back off (a correction, a scheduling mistake) leaves it as-is rather
   // than clearing it, so re-publishing later doesn't read as brand new.
@@ -74,7 +74,7 @@ export async function updateArticle(
   return article;
 }
 
-/** Real delete, not soft — marketing/editorial content, same convention as
+/** Real delete, not soft, marketing/editorial content, same convention as
  * ValueProp/InstagramPhoto/MarqueeItem, not customer/order/audit data. */
 export async function deleteArticle(id: string, actor: AuditActor) {
   const before = await prisma.article.findUniqueOrThrow({ where: { id } });

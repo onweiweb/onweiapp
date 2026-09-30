@@ -12,14 +12,14 @@ export default async function InventoryPage({
   return (
     <main className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">
-        Inventory{lowStockOnly === "true" ? " — running low" : ""}
+        Inventory{lowStockOnly === "true" ? ", running low" : ""}
       </h1>
 
       {rows.length === 0 ? (
         <p className="text-neutral-600">
           {lowStockOnly === "true"
             ? "Nothing is running low right now."
-            : "No stock records yet — add a product with a variant first."}
+            : "No stock records yet, add a product with a variant first."}
         </p>
       ) : (
         <table className="w-full border-collapse overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm">

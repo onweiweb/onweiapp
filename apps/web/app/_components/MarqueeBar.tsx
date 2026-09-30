@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-// Extracted from the Homepage (was page-local) — the PDP has its own
+// Extracted from the Homepage (was page-local), the PDP has its own
 // marquee bar too (Figma node 759:3115), same component, different copy.
 //
 // Seamless loop: the track is two identical groups and animates by exactly

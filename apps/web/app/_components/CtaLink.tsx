@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-// Extracted from the Homepage (was page-local) — the pill-shaped CTA button
+// Extracted from the Homepage (was page-local), the pill-shaped CTA button
 // shape reused across every "view all"/"add to cart"/"explore" link.
 export function CtaLink({
   href,

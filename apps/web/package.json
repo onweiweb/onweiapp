@@ -17,10 +17,12 @@
     "@onwei/database": "*",
     "@onwei/emails": "*",
     "@onwei/ui": "*",
+    "@vercel/speed-insights": "^2.0.0",
     "motion": "^13.4.4",
     "next": "^16.3.5",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-dom": "^19.3.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@onwei/config": "*",

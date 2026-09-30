@@ -1,58 +1,36 @@
 import { reorderReviewPlacements } from "@onwei/core";
-import type { ReviewSurface } from "@onwei/database";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 
-const SURFACES: ReviewSurface[] = ["HOME_HERO", "HOME_WALL", "PRODUCT_WALL"];
+const bodySchema = z.object({
+  surface: z.enum(["HOME_HERO", "HOME_WALL", "PRODUCT_WALL"], {
+    error: "Choose a valid surface.",
+  }),
+  productId: z.string().nullish(),
+  orderedPlacementIds: z.array(z.string(), { error: "Missing the new order." }),
+});
 
-export async function POST(request: Request) {
-  const session = await requireStaffSession(request, "review:feature");
-  if (!session.ok) return session.response;
-
-  const body = (await request.json().catch(() => null)) as unknown;
-  if (typeof body !== "object" || body === null) {
-    return NextResponse.json(
-      { ok: false, error: "Missing reorder details." },
-      { status: 400 },
-    );
-  }
-
-  const { surface, productId, orderedPlacementIds } = body as Record<
-    string,
-    unknown
-  >;
-
-  if (
-    typeof surface !== "string" ||
-    !SURFACES.includes(surface as ReviewSurface)
-  ) {
-    return NextResponse.json(
-      { ok: false, error: "Choose a valid surface." },
-      { status: 400 },
-    );
-  }
-  if (
-    !Array.isArray(orderedPlacementIds) ||
-    orderedPlacementIds.some((id) => typeof id !== "string")
-  ) {
-    return NextResponse.json(
-      { ok: false, error: "Missing the new order." },
-      { status: 400 },
-    );
-  }
-
-  try {
-    await reorderReviewPlacements(
-      surface as ReviewSurface,
-      typeof productId === "string" ? productId : null,
-      orderedPlacementIds as string[],
-      { staffUserId: session.context.staffUserId },
-    );
-    return NextResponse.json({ ok: true });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't save the new order." },
-      { status: 400 },
-    );
-  }
-}
+export const POST = defineAdminRoute(
+  {
+    permission: "review:feature",
+    body: bodySchema,
+    emptyBodyMessage: "Missing reorder details.",
+  },
+  async ({ staff, body }) => {
+    try {
+      await reorderReviewPlacements(
+        body.surface,
+        body.productId ?? null,
+        body.orderedPlacementIds,
+        { staffUserId: staff.staffUserId },
+      );
+      return NextResponse.json({ ok: true });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Couldn't save the new order." },
+        { status: 400 },
+      );
+    }
+  },
+);

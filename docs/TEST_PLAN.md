@@ -36,7 +36,7 @@ features are built, not just written into the test files silently.
 
 - Adding a variant to the cart twice increases quantity rather than creating
   a duplicate line.
-- Checkout total is always recomputed server-side from live cart + rules —
+- Checkout total is always recomputed server-side from live cart + rules,
   a client-supplied total or discount amount is never trusted.
 - Checkout fails clearly (not silently) when a variant goes out of stock
   between "add to cart" and "place order."
@@ -45,7 +45,7 @@ features are built, not just written into the test files silently.
 - Placing an order writes an initial `OrderStatusHistory` row and decrements
   reserved inventory.
 
-## Discount engine (`packages/core/discounts`) — see the skill for the pattern
+## Discount engine (`packages/core/discounts`), see the skill for the pattern
 
 - A percentage discount applies correctly to a qualifying cart and not to a
   non-qualifying one (e.g. below `minOrderValue`).
@@ -87,6 +87,15 @@ features are built, not just written into the test files silently.
   permission on first run without an explicit role assignment.
 - Removing a role's permission takes effect immediately for users with that
   role (no stale cached permission set).
+
+## Admin hardening (added 2026-09-30)
+
+- Staff login rate limit allows attempts when Upstash is not configured (unit test); limiter behavior
+  under load is covered by Upstash itself.
+- Pagination helper: invalid `?page=` falls back to 1, window fetches one look-ahead row, trim reports
+  whether a next page exists (`apps/admin/app/_lib/pagination.test.ts`).
+- `updateOrderStatus`: two concurrent legal transitions from the same status apply exactly one and
+  write exactly one history row (integration, needs `DATABASE_URL`).
 
 ## Admin analytics (`apps/admin`)
 

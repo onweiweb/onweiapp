@@ -60,8 +60,8 @@ export default async function ReviewPlacementsPage() {
         <div>
           <h2 className="text-lg font-semibold">Hero testimonial</h2>
           <p className="text-sm text-onwei-blue/70">
-            The single featured review shown on the homepage hero — most
-            surfaces only need one review picked here.
+            The single featured review shown on the homepage hero, most surfaces
+            only need one review picked here.
           </p>
         </div>
         <ReviewPlacementManager surface="HOME_HERO" {...hero} />

@@ -58,7 +58,7 @@ export default async function WaitlistPage({
         <p className="text-onwei-blue/70">
           {q
             ? "No one on the waitlist matches that search."
-            : "No one has joined the waitlist yet — they'll show up here once someone signs up."}
+            : "No one has joined the waitlist yet, they'll show up here once someone signs up."}
         </p>
       ) : (
         <>
@@ -77,7 +77,7 @@ export default async function WaitlistPage({
                   <AdminTableCell>{entry.fullName}</AdminTableCell>
                   <AdminTableCell>{entry.email}</AdminTableCell>
                   <AdminTableCell>{entry.phone}</AdminTableCell>
-                  <AdminTableCell>{entry.movementFlex ?? "—"}</AdminTableCell>
+                  <AdminTableCell>{entry.movementFlex ?? "-"}</AdminTableCell>
                   <AdminTableCell>
                     <AdminBadge
                       tone={entry.unsubscribedAt ? "problem" : "success"}

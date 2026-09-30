@@ -20,7 +20,7 @@ export async function createRole(input: CreateRoleInput, actor: AuditActor) {
 }
 
 /**
- * Sets a role's permission set to exactly `permissionKeys` — diffs against
+ * Sets a role's permission set to exactly `permissionKeys`, diffs against
  * what's currently assigned and only writes the delta, but the effective
  * result is a full replace, not a merge.
  */

@@ -5,7 +5,7 @@ import { StarRow } from "./StarRow";
 import { CtaLink } from "./CtaLink";
 
 // Extracted from the Homepage's ReviewsSection (was page-local, hardcoded
-// to one repeated review) — now takes real reviews from
+// to one repeated review), now takes real reviews from
 // `listApprovedReviews` and is reused on the PDP and Collection page with
 // page-specific heading/share copy (Figma duplicates this section per page
 // rather than treating it as Homepage-only).

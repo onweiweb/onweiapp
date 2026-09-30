@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 // Figma's "Shop" section (node 758:2325) turned out to be a small heading
-// plus two quick-link labels ("pickle ball" circled, "yoga mats" plain) —
+// plus two quick-link labels ("pickle ball" circled, "yoga mats" plain),
 // not image tiles, despite the section being named "Shop". There's no tile
 // artwork to place here; this renders that literal design faithfully while
 // still driving hrefs off real category data from listActiveCategories().

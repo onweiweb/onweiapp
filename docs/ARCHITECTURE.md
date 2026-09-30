@@ -23,8 +23,8 @@ apps/web        apps/admin
      packages/emails       <- transactional email templates
 ```
 
-Only `packages/database` talks to Postgres directly. Everything else — both
-apps included — goes through it or through `packages/core`, so a schema
+Only `packages/database` talks to Postgres directly. Everything else, both
+apps included, goes through it or through `packages/core`, so a schema
 change has one place to ripple out from instead of two apps independently
 querying the database.
 
@@ -41,7 +41,7 @@ querying the database.
    (via `packages/database`), decrements reserved inventory, and hands off to
    the payment provider.
 5. A payment webhook (also in `apps/web`'s API routes) confirms payment and
-   flips the order to `CONFIRMED`, writing an `OrderStatusHistory` row — this
+   flips the order to `CONFIRMED`, writing an `OrderStatusHistory` row, this
    is what powers order tracking.
 
 ## Integrations are abstracted behind an interface
@@ -52,24 +52,48 @@ and even once chosen, vendors get switched. Each integration point is a small
 interface in `packages/core` (e.g. `PaymentProvider`, `OtpSender`,
 `ProductSearchIndex`) with one adapter implementation per vendor. Business
 logic calls the interface, never the vendor SDK directly. Swapping Razorpay
-for Stripe, or MSG91 for Twilio, means writing one new adapter file — it
+for Stripe, or MSG91 for Twilio, means writing one new adapter file, it
 doesn't touch checkout, signup, or anything else that depends on the
 interface.
+
+## Shared building blocks (keep using these, do not re-copy)
+
+- **Rate limits**: `packages/core/src/rateLimit/lazyLimiter.ts` (`createLazyLimiter`). One Upstash
+  sliding-window limiter per use case; no Redis env vars means "allowed" plus a console warning.
+- **Admin list paging**: `apps/admin/app/_lib/pagination.ts` (`parsePage`, `pageWindow`, `trimPage`) and
+  `AdminPager`. Fetch `pageSize + 1` rows, trim, show Previous/Next. Always add an `id` tiebreaker to
+  `orderBy` so pages are stable.
+- **Status changes**: state-machine moves go through a transaction that does a compare-and-set on the
+  old status and writes history and audit rows together (`updateOrderStatus`). Copy that shape for
+  any future state machine (shipment, payment, invoice).
+
+- **Request bodies**: `parseJsonBody` and `getClientIp` in `packages/core/src/http/`. Both apps validate
+  bodies with zod through it. Admin wraps it in `defineAdminRoute` (session, permission, body, params in one
+  place); the storefront calls it directly and answers with `{ ok: false, reason }`.
+- **Rate limits fail closed in production** for staff login and OTP (`failClosedInProduction`). Waitlist and
+  newsletter stay open without Redis. `RATE_LIMIT_ALLOW_UNCONFIGURED=true` is the explicit override.
+
+## Planned, not built (no decisions yet)
+
+Orders/checkout, GST invoicing, delivery partner and CRM. When these are scoped, the intended shape is
+an interface plus one adapter per vendor in `packages/core`, idempotent webhook intake, and an outbox
+of domain events (`order.confirmed`, `order.shipped`) consumed by each integration. None of that
+exists yet; do not build it without an approved plan.
 
 ## RBAC and the two kinds of "user"
 
 Customers and CMS staff are modeled as separate tables (`Customer`,
 `StaffUser`) rather than one `User` table with a role flag. They have
 different auth flows (OTP-only for customers; email + password, with room for
-MFA later, for staff) and different threat models — a leaked customer session
+MFA later, for staff) and different threat models, a leaked customer session
 should never be able to touch the admin surface, and keeping them structurally
 separate makes that a property of the schema, not just of the code. RBAC
 (`Role`, `Permission`, `StaffUserRole`) only applies to `StaffUser`. The
 super-admin is bootstrapped from the `SUPERADMIN_EMAIL` environment variable
-on first run — that account gets every permission automatically, and after
+on first run, that account gets every permission automatically, and after
 that, role management happens inside the CMS like any other admin.
 
-## Analytics — read path stays off the OLTP hot path
+## Analytics, read path stays off the OLTP hot path
 
 Order-value, drop-off, and return-rate metrics (an admin requirement) are
 cheap at low volume but get expensive as order volume grows if they're

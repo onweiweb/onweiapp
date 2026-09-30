@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 
 // The "Ask me" FAQ teaser (AskMeWidget, on the PDP) opens a specific FAQ
-// entry further down the page from a click above it — a custom window
+// entry further down the page from a click above it, a custom window
 // event rather than a URL hash, so it doesn't fight FaqSection's own
 // existing "ask a question" link (href="/#faqs").
 export const OPEN_ACCORDION_ITEM_EVENT = "onwei:open-accordion-item";
 
-// No accordion existed anywhere in this codebase (confirmed via grep) — the
+// No accordion existed anywhere in this codebase (confirmed via grep), the
 // expand/collapse shape (useState + aria-expanded + conditional render) is
 // modeled on MobileNav.tsx, the only precedent, styled for the PDP's
 // DESCRIPTION/MATERIALS & CARE/SHIPPING sections (Figma frame 759:2979,

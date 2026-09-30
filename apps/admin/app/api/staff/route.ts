@@ -1,45 +1,35 @@
 import { createStaffUser } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../_lib/defineAdminRoute";
+import { requiredText } from "../_lib/schemas";
 
-export async function POST(request: Request) {
-  const session = await requireStaffSession(request, "staffUser:create");
-  if (!session.ok) return session.response;
+const CREATE_MESSAGE =
+  "Enter an email, a name, and a password of at least 8 characters.";
 
-  const body = (await request.json().catch(() => null)) as {
-    email?: unknown;
-    name?: unknown;
-    initialPassword?: unknown;
-  } | null;
+const bodySchema = z.object({
+  email: requiredText(CREATE_MESSAGE),
+  name: requiredText(CREATE_MESSAGE),
+  initialPassword: z
+    .string({ error: CREATE_MESSAGE })
+    .min(8, { error: CREATE_MESSAGE }),
+});
 
-  const email = typeof body?.email === "string" ? body.email.trim() : "";
-  const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const initialPassword =
-    typeof body?.initialPassword === "string" ? body.initialPassword : "";
-
-  if (!email || !name || initialPassword.length < 8) {
-    return NextResponse.json(
-      {
-        ok: false,
-        error:
-          "Enter an email, a name, and a password of at least 8 characters.",
-      },
-      { status: 400 },
-    );
-  }
-
-  try {
-    const staffUser = await createStaffUser(
-      { email, name, initialPassword },
-      { staffUserId: session.context.staffUserId },
-    );
-    return NextResponse.json({ ok: true, staffUser }, { status: 201 });
-  } catch (error) {
-    console.error(error);
-    const message =
-      error instanceof Error && error.message.includes("Unique constraint")
-        ? "Someone already has an account with that email."
-        : "Couldn't create that staff account.";
-    return NextResponse.json({ ok: false, error: message }, { status: 400 });
-  }
-}
+export const POST = defineAdminRoute(
+  { permission: "staffUser:create", body: bodySchema },
+  async ({ staff, body }) => {
+    try {
+      const staffUser = await createStaffUser(body, {
+        staffUserId: staff.staffUserId,
+      });
+      return NextResponse.json({ ok: true, staffUser }, { status: 201 });
+    } catch (error) {
+      console.error(error);
+      const message =
+        error instanceof Error && error.message.includes("Unique constraint")
+          ? "Someone already has an account with that email."
+          : "Couldn't create that staff account.";
+      return NextResponse.json({ ok: false, error: message }, { status: 400 });
+    }
+  },
+);

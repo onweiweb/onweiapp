@@ -10,7 +10,7 @@ const SORT_LABELS: Record<ProductSort, string> = {
 };
 
 // Figma (Collection frame, node 760:3925 "Filters") specs "SORT BY:
-// FEATURED" with a chevron — real sorting behind it (packages/core's
+// FEATURED" with a chevron, real sorting behind it (packages/core's
 // sortProductList), driven by a `sort` URL param rather than client state,
 // so the selection survives navigation/sharing like the category tabs do.
 export function SortDropdown({ value }: { value: ProductSort }) {

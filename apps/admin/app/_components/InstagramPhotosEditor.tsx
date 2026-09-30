@@ -72,7 +72,7 @@ export function InstagramPhotosEditor({
             {items.map((item) => (
               <AdminTableRow key={item.id}>
                 <AdminTableCell>{item.imageUrl}</AdminTableCell>
-                <AdminTableCell>{item.altText ?? "—"}</AdminTableCell>
+                <AdminTableCell>{item.altText ?? "-"}</AdminTableCell>
                 <AdminTableCell>
                   <AdminButton
                     type="button"

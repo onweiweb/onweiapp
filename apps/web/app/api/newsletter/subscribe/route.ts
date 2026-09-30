@@ -1,21 +1,47 @@
-import { isValidEmail, subscribeToNewsletter } from "@onwei/core";
+import {
+  checkNewsletterRateLimit,
+  getClientIp,
+  isValidEmail,
+  parseJsonBody,
+  subscribeToNewsletter,
+} from "@onwei/core";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { invalidInput } from "../../_lib/invalidInput";
+
+const bodySchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .refine(isValidEmail, { error: "INVALID_EMAIL" }),
+});
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as {
-    email?: unknown;
-  } | null;
-  const email =
-    typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-
-  if (!isValidEmail(email)) {
+  const { allowed } = await checkNewsletterRateLimit(
+    getClientIp(request) ?? "unknown",
+  );
+  if (!allowed) {
     return NextResponse.json(
-      { ok: false, reason: "INVALID_EMAIL" },
-      { status: 400 },
+      { ok: false, reason: "RATE_LIMITED" },
+      { status: 429 },
     );
   }
 
-  const result = await subscribeToNewsletter(email, "homepage_footer");
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.ok) {
+    return parsed.kind === "INVALID"
+      ? NextResponse.json(
+          { ok: false, reason: "INVALID_EMAIL" },
+          { status: 400 },
+        )
+      : invalidInput();
+  }
+
+  const result = await subscribeToNewsletter(
+    parsed.data.email,
+    "homepage_footer",
+  );
   return NextResponse.json({
     ok: true,
     alreadySubscribed: result.alreadySubscribed,

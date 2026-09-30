@@ -3,10 +3,10 @@ import { prisma } from "../src/client";
 
 // Runs against the same shared Neon dev database as everything else in this
 // repo, so every write here is an `upsert` (or find-then-create for
-// Warehouse, which has no unique business key) — safe to re-run any number
+// Warehouse, which has no unique business key), safe to re-run any number
 // of times without erroring or duplicating rows. Only invoke this via
 // `prisma db seed` (wired in prisma.config.ts), never `tsx prisma/seed.ts`
-// directly — that command is what loads packages/database/.env.
+// directly, that command is what loads packages/database/.env.
 
 interface VariantSeed {
   sku: string;
@@ -49,12 +49,12 @@ interface FaqSeed {
 
 // Figma's own Homepage (node 758:2329, "Frame 31" / the "shop our gear"
 // section) reuses one placeholder product photo across every card, even
-// though the cards are conceptually different products — there is no
+// though the cards are conceptually different products, there is no
 // separate placeholder photo per product in the file. This mirrors that:
 // one shared, real Figma-exported placeholder gallery for every seeded
 // product, rather than inventing distinct flat-color mocks per SKU. Four
 // images (main + 3 thumbnails) so the PDP's gallery/thumbnail rail (Figma
-// frame "PDP_draft 2", node 759:3026 "Img") has something to render —
+// frame "PDP_draft 2", node 759:3026 "Img") has something to render,
 // exported straight from that node's own main/thumbnail children
 // (759:3031, 759:3028-3030).
 const PLACEHOLDER_IMAGE_SET = [
@@ -80,16 +80,16 @@ const PLACEHOLDER_IMAGE_SET = [
   },
 ] as const;
 
-// Shared across the three paddles below — same construction, same care
+// Shared across the three paddles below, same construction, same care
 // regardless of tier. Kept as a constant rather than repeated per product.
 const PADDLE_CARE_INSTRUCTIONS =
-  "Wipe the paddle face down with a dry or slightly damp cloth after every session — sweat and dust wear down the carbon finish faster than play does. Store it out of direct sun and away from car boots or radiators; heat softens the foam core over time. Keep it in the included cover when it's not on court. If the grip starts to feel slick, replace the overgrip rather than the whole handle.";
+  "Wipe the paddle face down with a dry or slightly damp cloth after every session, sweat and dust wear down the carbon finish faster than play does. Store it out of direct sun and away from car boots or radiators; heat softens the foam core over time. Keep it in the included cover when it's not on court. If the grip starts to feel slick, replace the overgrip rather than the whole handle.";
 
 // Copy transcribed from Figma (file kGG2vJdbqU6b1d1xmIhRwG, frame "PDP_draft 2",
-// node 759:2979) — the comparison-table rows (759:3143), the Reset Touch
+// node 759:2979), the comparison-table rows (759:3143), the Reset Touch
 // description/who-this-is-for body (759:3095, 759:3507), and the Rally Pro
 // name/positioning from the FAQ copy (759:3290-3296). The comparison table's
-// third column was left as literal "Lorem ipsum" placeholders in Figma —
+// third column was left as literal "Lorem ipsum" placeholders in Figma,
 // Rally Pro's specs/copy below are newly written to fill that gap, in the
 // same voice, consistent with how the FAQ already describes it.
 const PICKLEBALL_PRODUCTS: ProductSeed[] = [
@@ -97,7 +97,7 @@ const PICKLEBALL_PRODUCTS: ProductSeed[] = [
     slug: "reset-carbon",
     name: "Reset Carbon",
     description:
-      "Your first carbon paddle upgrade. A PP honeycomb core under a T700 carbon frosted face — more pop off the face than a standard polymer paddle, without the price tag of a full foam build. USAPA approved, built for players moving off entry-level gear and into their first real season.",
+      "Your first carbon paddle upgrade. A PP honeycomb core under a T700 carbon frosted face, more pop off the face than a standard polymer paddle, without the price tag of a full foam build. USAPA approved, built for players moving off entry-level gear and into their first real season.",
     status: "ACTIVE",
     highlightTags: ["T700 Carbon Frosted Face", "USAPA Approved"],
     specs: [
@@ -111,7 +111,7 @@ const PICKLEBALL_PRODUCTS: ProductSeed[] = [
       { label: "USAPA Approved", value: "Yes" },
     ],
     whoThisIsFor:
-      "Playing style — All court. You're still working out whether you play closer to the kitchen or the baseline, and want a paddle that doesn't punish either choice.\n\nWhat you're looking for — Pop. You want more power off the face than a beginner paddle gives you, without paying for a full foam core you might not need yet.\n\nNot for you if — You've already played a season or two of carbon and are chasing touch and arm comfort over raw pop — the Reset Touch is the better next step.",
+      "Playing style, All court. You're still working out whether you play closer to the kitchen or the baseline, and want a paddle that doesn't punish either choice.\n\nWhat you're looking for, Pop. You want more power off the face than a beginner paddle gives you, without paying for a full foam core you might not need yet.\n\nNot for you if, You've already played a season or two of carbon and are chasing touch and arm comfort over raw pop, the Reset Touch is the better next step.",
     careInstructions: PADDLE_CARE_INSTRUCTIONS,
     powerRating: 75,
     spinRating: 55,
@@ -157,7 +157,7 @@ const PICKLEBALL_PRODUCTS: ProductSeed[] = [
         attributes: { size: "Large", color: "Blue" },
         price: 1199,
         weightGrams: 215,
-        // Deliberately zero — exercises the out-of-stock UI state.
+        // Deliberately zero, exercises the out-of-stock UI state.
         quantityOnHand: 0,
       },
     ],
@@ -185,7 +185,7 @@ const PICKLEBALL_PRODUCTS: ProductSeed[] = [
       { label: "USAPA Approved", value: "Yes" },
     ],
     whoThisIsFor:
-      "You've been playing for a while now. Carbon already felt like an upgrade, and it was. But you've started noticing the gaps: mishits that sting, an arm that feels it after a long session, touch shots that should be softer. You're not a beginner anymore, and your paddle should reflect that.\n\nPlaying style — All court. You play the kitchen as well as the baseline. You want a paddle that works in a long dinking rally and on a driven return equally, not built for one or the other.\n\nWhat you're looking for — Feel. You want the foam core difference: more forgiveness on mishits, a larger sweet spot, an arm that still feels fine after 90 minutes. That's exactly what the Reset Touch is built for.\n\nNot for you if — You're picking up your first carbon paddle. The Reset Carbon is the right starting point, at a price that makes that step easier.",
+      "You've been playing for a while now. Carbon already felt like an upgrade, and it was. But you've started noticing the gaps: mishits that sting, an arm that feels it after a long session, touch shots that should be softer. You're not a beginner anymore, and your paddle should reflect that.\n\nPlaying style, All court. You play the kitchen as well as the baseline. You want a paddle that works in a long dinking rally and on a driven return equally, not built for one or the other.\n\nWhat you're looking for, Feel. You want the foam core difference: more forgiveness on mishits, a larger sweet spot, an arm that still feels fine after 90 minutes. That's exactly what the Reset Touch is built for.\n\nNot for you if, You're picking up your first carbon paddle. The Reset Carbon is the right starting point, at a price that makes that step easier.",
     careInstructions: PADDLE_CARE_INSTRUCTIONS,
     powerRating: 55,
     spinRating: 65,
@@ -260,7 +260,7 @@ const PICKLEBALL_PRODUCTS: ProductSeed[] = [
       { label: "USAPA Approved", value: "Yes" },
     ],
     whoThisIsFor:
-      "Playing style — Baseline-first. You drive the ball and close at the net on your terms; you want a paddle that rewards precision over brute force.\n\nWhat you're looking for — Control at pace. You want the largest sweet spot in the range and a face that stays predictable when a rally speeds up, not just when it slows down.\n\nNot for you if — You're new to carbon paddles altogether. Start with the Reset Carbon and move up once you've got a season of court time behind you.",
+      "Playing style, Baseline-first. You drive the ball and close at the net on your terms; you want a paddle that rewards precision over brute force.\n\nWhat you're looking for, Control at pace. You want the largest sweet spot in the range and a face that stays predictable when a rally speeds up, not just when it slows down.\n\nNot for you if, You're new to carbon paddles altogether. Start with the Reset Carbon and move up once you've got a season of court time behind you.",
     careInstructions: PADDLE_CARE_INSTRUCTIONS,
     powerRating: 60,
     spinRating: 75,
@@ -330,7 +330,7 @@ const PICKLEBALL_PRODUCTS: ProductSeed[] = [
         price: 1999,
         compareAtPrice: 2499,
         weightGrams: 220,
-        // Deliberately zero — exercises the out-of-stock UI state.
+        // Deliberately zero, exercises the out-of-stock UI state.
         quantityOnHand: 0,
       },
       {
@@ -460,7 +460,7 @@ const PILATES_PRODUCTS: ProductSeed[] = [
     ],
   },
   {
-    // Deliberately DRAFT — exercises storefront hiding. Not asserted on by
+    // Deliberately DRAFT, exercises storefront hiding. Not asserted on by
     // automated tests, which build their own fixtures; this is for manual QA.
     slug: "pilates-grip-socks-coming-soon",
     name: "Pilates Grip Socks",
@@ -482,7 +482,7 @@ const PILATES_PRODUCTS: ProductSeed[] = [
 // handful of brand-level reviews (targetType BRAND, no product) for the
 // Homepage/Collection review walls. Figma's own PDP and Homepage frames
 // each duplicate one placeholder review card 3x ("Jennifer J." / "Great
-// quality…" and "Melanie N." / "Best mat I have owned!!…") — those two
+// quality…" and "Melanie N." / "Best mat I have owned!!…"), those two
 // anchor the tone here, but every row below is distinct copy rather than
 // literal duplicates, per the "don't ship it as duplicate spam" note.
 const PADDLE_REVIEWS: ReviewSeed[] = [
@@ -594,13 +594,13 @@ const BRAND_REVIEWS: ReviewSeed[] = [
   {
     rating: 5,
     title: "Onwei gets it",
-    body: "Not stripped down, not marked up. Just genuinely well designed gear for people who show up regularly — exactly what the brand promises.",
+    body: "Not stripped down, not marked up. Just genuinely well designed gear for people who show up regularly, exactly what the brand promises.",
     authorDisplay: "Farhan I.",
   },
 ];
 
 // General FAQs transcribed/adapted from Figma's "frequently asked
-// questions" section (759:3286) — "The Baseline"/"Serve Series" in the
+// questions" section (759:3286), "The Baseline"/"Serve Series" in the
 // original copy aren't real catalog products, so those two answers are
 // reworded to reference the paddles that actually exist. Per-product
 // "Is this paddle good for beginners?" rows below come from the PDP's
@@ -622,20 +622,20 @@ const FAQS: FaqSeed[] = [
   {
     question: "What's the difference between Reset Touch and Rally Pro?",
     answer:
-      "Reset Touch is built for arm comfort and forgiveness on mishits — great for long sessions and an all-court game. Rally Pro trades a little of that forgiveness for tournament-level control at pace, built for players who already know their game.",
+      "Reset Touch is built for arm comfort and forgiveness on mishits, great for long sessions and an all-court game. Rally Pro trades a little of that forgiveness for tournament-level control at pace, built for players who already know their game.",
     sortOrder: 30,
   },
   {
     question: "Do you offer USAPA-approved paddles?",
     answer:
-      "Yes — every paddle in the Reset and Rally lineup is USAPA approved and safe to use in sanctioned play.",
+      "Yes, every paddle in the Reset and Rally lineup is USAPA approved and safe to use in sanctioned play.",
     sortOrder: 40,
   },
   {
     productSlug: "reset-carbon",
     question: "Is this paddle good for beginners?",
     answer:
-      "Yes — the Reset Carbon is designed as a first carbon paddle upgrade, with more pop than a polymer starter paddle but without the steep learning curve of a full foam core.",
+      "Yes, the Reset Carbon is designed as a first carbon paddle upgrade, with more pop than a polymer starter paddle but without the steep learning curve of a full foam core.",
     sortOrder: 5,
   },
   {
@@ -649,7 +649,7 @@ const FAQS: FaqSeed[] = [
     productSlug: "rally-pro",
     question: "Is this paddle good for beginners?",
     answer:
-      "Not really — the Rally Pro is tuned for intermediate to advanced players who want more control and touch. If you're just starting out, the Reset Carbon is a better fit.",
+      "Not really, the Rally Pro is tuned for intermediate to advanced players who want more control and touch. If you're just starting out, the Reset Carbon is a better fit.",
     sortOrder: 5,
   },
 ];
@@ -851,11 +851,11 @@ const SALT_ROUNDS = 12;
 // The full catalog of permission keys the admin app checks against
 // (apps/admin/app/api/_lib/requireStaffSession.ts). The bootstrapped
 // super-admin (packages/auth/src/rbac/getStaffPermissions.ts) gets every
-// row in this table automatically — if this table were empty, the
+// row in this table automatically, if this table were empty, the
 // super-admin would have *no* permissions despite the "gets every
 // permission automatically" rule in docs/ARCHITECTURE.md, so these rows
 // must exist for that rule to actually mean anything. Every other staff
-// user gets permissions only via an assigned Role — see apps/admin's
+// user gets permissions only via an assigned Role, see apps/admin's
 // /staff and /roles pages (packages/core/src/staff/*.ts).
 const PERMISSION_KEYS = [
   "category:create",
@@ -919,7 +919,7 @@ async function seedSuperAdmin() {
 
   if (!email || !initialPassword) {
     console.log(
-      "SUPERADMIN_EMAIL / SUPERADMIN_INITIAL_PASSWORD not set — skipping super-admin seed.",
+      "SUPERADMIN_EMAIL / SUPERADMIN_INITIAL_PASSWORD not set, skipping super-admin seed.",
     );
     return;
   }
@@ -938,7 +938,7 @@ async function seedSuperAdmin() {
 }
 
 // Shared Homepage + PDP value-prop cards (Figma reuses the same 3 cards,
-// different copy per page — this is the PDP's copy, since it's the more
+// different copy per page, this is the PDP's copy, since it's the more
 // recently authored of the two near-identical originals).
 const VALUE_PROPS = [
   {
@@ -953,7 +953,7 @@ const VALUE_PROPS = [
     width: 168,
     height: 60,
     title: "Designed for consistent use",
-    body: "You show up — between work, life and everything else. Your gear should match that effort.",
+    body: "You show up, between work, life and everything else. Your gear should match that effort.",
   },
   {
     illustrationUrl: "/images/showcase/value-prop-3.svg",
@@ -1054,7 +1054,7 @@ async function seedMarqueeItems() {
   }
 }
 
-// Single-row site config — see the SiteSetting model comment in
+// Single-row site config, see the SiteSetting model comment in
 // schema.prisma. Seeded once; an admin edits it from here on via
 // apps/admin's /settings page, this function never overwrites an existing
 // row's values.

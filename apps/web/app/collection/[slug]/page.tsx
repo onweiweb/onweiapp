@@ -32,13 +32,13 @@ import { CtaLink } from "@/_components/CtaLink";
 
 // Figma (file kGG2vJdbqU6b1d1xmIhRwG, frame 760:3829 "Collection") mocks up
 // one page that stacks a heading+grid block per category under a shared
-// "shop all" banner and category tabs — there's no separate mockup for a
+// "shop all" banner and category tabs, there's no separate mockup for a
 // single-category route. This reuses that same heading+grid block, scoped
 // to either every category ("all") or one, rather than building a second
 // layout that doesn't exist in the file.
 //
 // Below the grids, Figma repeats a "find your wei" mini CTA, a reviews
-// wall, a full "Join the Movement" CTA, and an Instagram grid — each a
+// wall, a full "Join the Movement" CTA, and an Instagram grid, each a
 // page-specific variant (different heading/button copy, some with extra
 // elements) of the same sections Homepage uses, not literal duplicates to
 // skip. The reviews wall reuses Homepage's HOME_WALL surface rather than a
@@ -51,7 +51,7 @@ const CATEGORY_TABS = [
 ] as const;
 
 // Lifestyle promo tile mixed into each category's grid (Figma nodes
-// 760:3939/3940 for Pickleball, 760:3956/3963 for Pilates) — position
+// 760:3939/3940 for Pickleball, 760:3956/3963 for Pilates), position
 // (which side of the grid) and the overlay illustration's placement differ
 // per category, not just the photo.
 const PROMO_BY_CATEGORY: Record<
@@ -96,7 +96,7 @@ function CategorySection({
   if (products.length === 0) return null;
   const promo = PROMO_BY_CATEGORY[category.slug];
   // 3 products + the promo tile is exactly what fits one row at desktop
-  // width (Figma's own layout) — no scroll affordance needed there. More
+  // width (Figma's own layout), no scroll affordance needed there. More
   // than that needs it, so only then does the row scroll.
   const needsScroll = products.length > 3;
   const productCards = products.map((product) => (
@@ -109,7 +109,7 @@ function CategorySection({
         {category.name}
       </h2>
       {needsScroll ? (
-        // Only the product cards scroll — the promo tile is a sibling
+        // Only the product cards scroll, the promo tile is a sibling
         // outside ScrollCarousel's own overflow-x-auto box, not a child
         // of it, so it stays put instead of scrolling away with the
         // products (and its illustration overlay, which intentionally
@@ -137,7 +137,7 @@ function CategorySection({
   );
 }
 
-// Figma node 760:3981 — a smaller CTA than JoinMovementSection (single-line
+// Figma node 760:3981, a smaller CTA than JoinMovementSection (single-line
 // heading, no illustration), unique to the Collection page.
 function FindYourWeiSection() {
   return (
@@ -245,7 +245,7 @@ export default async function CollectionPage({
           aria-hidden
           className="pointer-events-none absolute left-[21%] top-8 hidden lg:block"
         />
-        {/* Figma node 760:4191 — straddles the boundary with the category
+        {/* Figma node 760:4191, straddles the boundary with the category
             nav below it, same overlap pattern as JoinMovementSection's
             illustration straddling above its section. */}
         <Image
@@ -310,7 +310,7 @@ export default async function CollectionPage({
                 tab.slug === slug ? "font-medium" : "font-normal"
               }`}
             >
-              {/* Figma node 760:4210 — a hand-drawn oval circling the
+              {/* Figma node 760:4210, a hand-drawn oval circling the
                   active tab. Figma only mocks this for "Shop All" (sized
                   to its text width); Pickleball/Pilates have no matching
                   asset to circle themselves with when active. */}
@@ -335,7 +335,7 @@ export default async function CollectionPage({
         <div className="flex w-full max-w-[1440px] flex-col gap-16">
           {!hasProducts ? (
             <p className="font-grotesk text-[14px] text-onwei-blue">
-              No products yet — check back soon.
+              No products yet, check back soon.
             </p>
           ) : (
             categorySections.map((section) => (

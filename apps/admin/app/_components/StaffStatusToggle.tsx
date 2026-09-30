@@ -20,7 +20,7 @@ export function StaffStatusToggle({
   if (isViewingOwnAccount) {
     return (
       <p className="text-sm text-onwei-blue/60">
-        You can&apos;t deactivate your own account — ask another admin to do it.
+        You can&apos;t deactivate your own account, ask another admin to do it.
       </p>
     );
   }

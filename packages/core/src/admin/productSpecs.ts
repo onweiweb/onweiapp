@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-/** Ordered label/value pairs for the PDP spec table — the key set varies by
+/** Ordered label/value pairs for the PDP spec table, the key set varies by
  * category (paddle specs vs. apparel specs), so it's validated as a plain
  * array rather than a fixed shape. */
 export const productSpecsSchema = z.array(

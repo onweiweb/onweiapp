@@ -119,7 +119,7 @@ export default async function OrderDetailPage({
                 </AdminBadge>
                 <span className="ml-2 text-onwei-blue/60">
                   {entry.createdAt.toLocaleString()}
-                  {entry.note ? ` — ${entry.note}` : ""}
+                  {entry.note ? `, ${entry.note}` : ""}
                 </span>
               </li>
             ))}
@@ -180,7 +180,7 @@ export default async function OrderDetailPage({
               >
                 <div>
                   <p className="text-sm font-medium">
-                    {returnRequest.orderItem.productVariant.sku} —{" "}
+                    {returnRequest.orderItem.productVariant.sku} -{" "}
                     {returnRequest.reason}
                   </p>
                   <AdminBadge tone={returnStatusTone(returnRequest.status)}>

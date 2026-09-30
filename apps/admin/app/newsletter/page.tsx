@@ -1,9 +1,11 @@
 import { prisma } from "@onwei/database";
 import { hasPermission } from "@onwei/auth";
 import { requirePageSession } from "../_lib/requirePageSession";
+import { pageWindow, parsePage, trimPage } from "../_lib/pagination";
 import { AddNewsletterSubscriberForm } from "../_components/AddNewsletterSubscriberForm";
 import {
   AdminBadge,
+  AdminPager,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
@@ -11,14 +13,20 @@ import {
   AdminTableRow,
 } from "../_components/ui";
 
-export default async function NewsletterPage() {
+export default async function NewsletterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const { permissions } = await requirePageSession("newsletter:view");
   const canManage = hasPermission(permissions, "newsletter:manage");
+  const page = parsePage((await searchParams).page);
 
-  const subscribers = await prisma.newsletterSubscriber.findMany({
-    orderBy: { subscribedAt: "desc" },
-    take: 200,
+  const fetched = await prisma.newsletterSubscriber.findMany({
+    orderBy: [{ subscribedAt: "desc" }, { id: "desc" }],
+    ...pageWindow(page),
   });
+  const { rows: subscribers, hasNext } = trimPage(fetched);
 
   return (
     <main className="flex flex-col gap-6">
@@ -30,7 +38,7 @@ export default async function NewsletterPage() {
 
       {subscribers.length === 0 ? (
         <p className="text-onwei-blue/70">
-          No subscribers yet — they&apos;ll show up here once someone signs up.
+          No subscribers yet, they&apos;ll show up here once someone signs up.
         </p>
       ) : (
         <AdminTable>
@@ -44,7 +52,7 @@ export default async function NewsletterPage() {
             {subscribers.map((subscriber) => (
               <AdminTableRow key={subscriber.id}>
                 <AdminTableCell>{subscriber.email}</AdminTableCell>
-                <AdminTableCell>{subscriber.source ?? "—"}</AdminTableCell>
+                <AdminTableCell>{subscriber.source ?? "-"}</AdminTableCell>
                 <AdminTableCell>
                   <AdminBadge
                     tone={subscriber.unsubscribedAt ? "problem" : "success"}
@@ -60,6 +68,12 @@ export default async function NewsletterPage() {
           </tbody>
         </AdminTable>
       )}
+      <AdminPager
+        pathname="/newsletter"
+        page={page}
+        hasNext={hasNext}
+        params={{}}
+      />
     </main>
   );
 }

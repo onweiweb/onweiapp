@@ -50,7 +50,7 @@ export function pickLeadImage(
 /**
  * Collection page "SORT BY" (Figma frame "Collection", node 760:3925).
  * "featured" reuses the same "no real curation field, so newest-first"
- * convention as listFeaturedProducts — the DB query already orders by
+ * convention as listFeaturedProducts, the DB query already orders by
  * createdAt desc, so this only needs to re-sort for the two price options.
  * Sorted in JS, not via Prisma orderBy, since price is a derived min/max
  * across a product's variants rather than a single column.

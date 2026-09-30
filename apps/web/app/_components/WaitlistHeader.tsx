@@ -6,10 +6,10 @@ import { motion, useReducedMotion } from "motion/react";
 import { HoverLink } from "./HoverLink";
 
 // Figma nodes 945:4239 (web, logo lockup 945:4241) and 945:4389 (mobile,
-// 945:4391) — a minimal header just for /waitlist, not SiteHeader (which
+// 945:4391), a minimal header just for /waitlist, not SiteHeader (which
 // carries the full nav/cart/account/announcement bar this page doesn't
 // have). Web shows the "on-the-way, cause you already are" tagline next to
-// the logo; mobile omits it — see root CLAUDE.md's mobile/web difference
+// the logo; mobile omits it, see root CLAUDE.md's mobile/web difference
 // note. The logo is exported as one combined SVG (logo-lockup.svg, node
 // 945:4241), not separate mark+wordmark images with a flex gap between
 // them - Figma's O/N and WEI groups sit ~2.8px apart with letterform-level
@@ -18,7 +18,7 @@ import { HoverLink } from "./HoverLink";
 //
 // "use client" + a mount fade so this header (shared by /waitlist and
 // /about in waitlist mode) gives both pages a consistent "arriving" feel
-// on load/navigation — the practical stand-in for a full cross-page
+// on load/navigation, the practical stand-in for a full cross-page
 // transition, which would need an AnimatePresence in a layout shared by
 // both routes (they're sibling top-level routes with none today).
 export function WaitlistHeader({

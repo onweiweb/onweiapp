@@ -5,7 +5,7 @@ import type { ProductSort } from "./helpers";
 import type { ProductListItem } from "./types";
 
 /**
- * Every storefront-visible product across all categories — backs "Shop All"
+ * Every storefront-visible product across all categories, backs "Shop All"
  * / /collection/all, since there's no "All" Category row in the schema.
  */
 export async function listAllActiveProducts(

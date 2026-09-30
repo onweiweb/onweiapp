@@ -9,7 +9,7 @@ export default defineConfig({
   // @vitejs/plugin-react compiles it regardless of that tsconfig setting.
   plugins: [react()],
   resolve: {
-    // Mirrors tsconfig.json's "@/*" -> "./app/*" path — Next reads tsconfig
+    // Mirrors tsconfig.json's "@/*" -> "./app/*" path, Next reads tsconfig
     // directly, but Vitest/Vite need their own alias for the same mapping.
     alias: { "@": path.resolve(import.meta.dirname, "./app") },
   },

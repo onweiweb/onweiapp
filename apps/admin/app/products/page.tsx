@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { deriveInStock } from "@onwei/core";
 import { prisma } from "@onwei/database";
+import { pageWindow, parsePage, trimPage } from "../_lib/pagination";
+import { AdminPager } from "../_components/ui";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Draft",
@@ -8,8 +10,13 @@ const STATUS_LABELS: Record<string, string> = {
   ARCHIVED: "Discontinued",
 };
 
-export default async function ProductsPage() {
-  const products = await prisma.product.findMany({
+export default async function ProductsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const page = parsePage((await searchParams).page);
+  const fetched = await prisma.product.findMany({
     where: { deletedAt: null },
     select: {
       id: true,
@@ -24,14 +31,10 @@ export default async function ProductsPage() {
         },
       },
     },
-    orderBy: { createdAt: "desc" },
-    // Bounded the same way apps/admin/app/customers/page.tsx and
-    // orders/page.tsx already cap their own lists - this had neither a
-    // take nor a select, so it hydrated every product row (with every
-    // variant and inventory row nested inside) on every page load. Fine
-    // at today's catalog size, a full-collection fetch once it grows.
-    take: 100,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    ...pageWindow(page),
   });
+  const { rows: products, hasNext } = trimPage(fetched);
 
   return (
     <main className="flex flex-col gap-6">
@@ -46,9 +49,7 @@ export default async function ProductsPage() {
       </div>
 
       {products.length === 0 ? (
-        <p className="text-neutral-600">
-          No products yet — add your first one.
-        </p>
+        <p className="text-neutral-600">No products yet, add your first one.</p>
       ) : (
         <table className="w-full border-collapse overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm">
           <thead>
@@ -93,6 +94,12 @@ export default async function ProductsPage() {
           </tbody>
         </table>
       )}
+      <AdminPager
+        pathname="/products"
+        page={page}
+        hasNext={hasNext}
+        params={{}}
+      />
     </main>
   );
 }

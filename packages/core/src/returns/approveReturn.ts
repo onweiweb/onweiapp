@@ -5,7 +5,7 @@ import type { ResolveReturnInput } from "./types";
 
 /**
  * Approves a ReturnRequest and restocks the returned quantity. Restocks into
- * the first Inventory row found for that variant — only one warehouse
+ * the first Inventory row found for that variant, only one warehouse
  * ("Onwei Main Warehouse") exists today, so there's no routing decision to
  * make yet; this is a documented assumption, not a solved multi-warehouse
  * flow. Per docs/TEST_PLAN.md: "approved return increments stock and logs
@@ -53,6 +53,7 @@ export async function approveReturn(
     });
     await tx.inventoryLog.create({
       data: {
+        productVariantId: before.orderItem.productVariantId,
         variantSku: before.orderItem.productVariant.sku,
         changeQty: before.orderItem.quantity,
         reason: "RETURN",

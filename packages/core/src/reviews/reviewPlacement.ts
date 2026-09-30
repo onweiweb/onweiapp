@@ -8,7 +8,7 @@ import type { CreateReviewPlacementInput } from "./types";
  * Features an approved review onto a surface. Postgres treats NULL as
  * distinct in a unique constraint, so the schema's
  * @@unique([surface, productId, reviewId]) alone won't stop duplicate
- * HOME_HERO/HOME_WALL rows (productId: null) for the same review — check
+ * HOME_HERO/HOME_WALL rows (productId: null) for the same review, check
  * for an existing row first rather than relying on the DB constraint.
  */
 export async function setReviewPlacement(
@@ -60,7 +60,7 @@ export async function removeReviewPlacement(id: string, actor: AuditActor) {
 }
 
 /** Rewrites sortOrder for every placement on a surface (+ product, for
- * PRODUCT_WALL) to match the given id order — same technique as
+ * PRODUCT_WALL) to match the given id order, same technique as
  * reorderProductImages, no drag-and-drop library needed. */
 export async function reorderReviewPlacements(
   surface: ReviewSurface,
@@ -101,7 +101,7 @@ export async function updateReviewSurfaceLimit(
   // Prisma's compound-unique `where` shorthand can't take a literal null for
   // a nullable field (surface_productId requires productId: string), so the
   // global (productId: null) row has to be found via a plain filter and
-  // updated by id — no upsert-by-compound-key for that case.
+  // updated by id, no upsert-by-compound-key for that case.
   const before = productId
     ? await prisma.reviewSurfaceConfig.findUnique({
         where: { surface_productId: { surface, productId } },

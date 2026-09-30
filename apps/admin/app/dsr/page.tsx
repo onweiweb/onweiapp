@@ -30,7 +30,7 @@ export default async function DsrPage() {
 
       {requests.length === 0 ? (
         <p className="text-onwei-blue/70">
-          Nothing open — new requests will show up here.
+          Nothing open, new requests will show up here.
         </p>
       ) : (
         <AdminTable>

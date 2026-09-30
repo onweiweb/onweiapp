@@ -4,7 +4,7 @@ import type { PlayCharacteristics, ProductDetail } from "./types";
 
 /**
  * Full product detail for the PDP. Returns null for DRAFT, ARCHIVED,
- * soft-deleted, or unknown slugs alike — the page layer turns null into
+ * soft-deleted, or unknown slugs alike, the page layer turns null into
  * notFound().
  */
 export async function getActiveProductBySlug(

@@ -5,7 +5,7 @@ import type { ComparisonProduct } from "./types";
 
 /**
  * Sibling products (same category, excludes self, ACTIVE only) for the PDP
- * comparison table — a lighter query than `listRelatedProducts` since the
+ * comparison table, a lighter query than `listRelatedProducts` since the
  * table only needs specs/price/lead image, not review summaries or stock.
  */
 export async function listComparableProducts(
@@ -24,7 +24,7 @@ export async function listComparableProducts(
   if (currentLabels.size === 0) return [];
 
   // Category is a coarse grouping (Pickleball holds paddles *and* apparel),
-  // so a same-category sibling isn't necessarily comparable — a polo's
+  // so a same-category sibling isn't necessarily comparable, a polo's
   // single "Fabric" spec doesn't line up against a paddle's core/sweet-spot
   // table just because both happen to have *some* specs. Over-fetch and
   // keep only siblings whose spec labels actually overlap with this
@@ -57,7 +57,7 @@ export async function listComparableProducts(
       currentLabels.has(spec.label),
     ).length;
     // At least half of this product's spec rows need to line up, or the
-    // comparison table ends up mostly "—" for one column.
+    // comparison table ends up mostly "-" for one column.
     if (!variant || sharedLabels < currentLabels.size / 2) continue;
     comparable.push({
       slug: sibling.slug,

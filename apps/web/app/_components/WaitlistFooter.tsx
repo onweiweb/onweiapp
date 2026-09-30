@@ -8,9 +8,9 @@ import { ScrollReveal } from "./ScrollReveal";
 const MotionLink = motion.create("a");
 
 // Figma's "Font Awesome 5 Brands" text nodes are a placeholder for icon
-// glyphs (see SiteFooter.tsx for the same convention) — real inline icons
+// glyphs (see SiteFooter.tsx for the same convention), real inline icons
 // instead, for the three platforms this page actually links (Instagram,
-// YouTube, Spotify — different from SiteFooter's Instagram/LinkedIn/
+// YouTube, Spotify, different from SiteFooter's Instagram/LinkedIn/
 // Facebook set).
 function InstagramIcon() {
   return (
@@ -67,11 +67,11 @@ function SpotifyIcon() {
   );
 }
 
-// Figma "Newsletter" frames 945:4349 (web) / 945:4477 (mobile) — a footer
+// Figma "Newsletter" frames 945:4349 (web) / 945:4477 (mobile), a footer
 // distinct from SiteFooter's (no nav columns, no "Stay in the loop" form,
 // just the brand block + social row + legal links). Legal link ORDER
 // differs by breakpoint in Figma: web is Privacy Policy then Terms &
-// Conditions, mobile is the reverse — kept as two literal lists rather than
+// Conditions, mobile is the reverse, kept as two literal lists rather than
 // one reordered with CSS so the DOM/reading order matches each breakpoint.
 export function WaitlistFooter({
   instagramUrl,
@@ -83,46 +83,46 @@ export function WaitlistFooter({
   spotifyUrl: string | null;
 }) {
   return (
-    // <footer> itself stays bare (block, full width by default) — putting
+    // <footer> itself stays bare (block, full width by default), putting
     // the flex/background classes directly on it instead made it a flex
     // ITEM of <main>'s flex column, which shrink-wraps to content width
     // instead of spanning full width (SiteFooter avoids this the same way:
     // bare <footer>, flex+background on an inner div). Structural
     // row/column switch and the padding scale match SiteFooter's
-    // breakpoints (lg, not sm) — this footer's own content is intentionally
+    // breakpoints (lg, not sm), this footer's own content is intentionally
     // different from SiteFooter's, but it needs to behave like every other
     // page's footer, not switch to a cramped row layout a full breakpoint
     // earlier than everywhere else.
     // w-full on <footer> itself: WaitlistPage's <main> is a flex column with
     // items-center (not items-stretch, unlike a plain block <main> elsewhere
-    // on the site), so a flex ITEM with no explicit width — even a
-    // block-level <footer> — shrink-wraps to its content instead of
+    // on the site), so a flex ITEM with no explicit width, even a
+    // block-level <footer>, shrink-wraps to its content instead of
     // spanning full width. This is why the inner bg/flex wrapper alone
     // wasn't enough.
     <footer className="w-full">
       <div className="flex flex-col items-center bg-onwei-purple px-3 py-12 sm:px-6 lg:px-14">
         <ScrollReveal className="flex w-full flex-col items-center">
           {/* Figma is three independent columns (brand / "let's be friends" /
-            illustration), not two flex children spread with justify-between —
+            illustration), not two flex children spread with justify-between,
             with only two real flex children here, justify-between shoved the
             friends column flush to the right edge, straight under the
             illustration, instead of leaving it at its own fixed position
             with a clear 96px gap after the brand column (Figma: brand ends
-            at x:457, friends starts at x:553, in a 1441px frame — that's the
+            at x:457, friends starts at x:553, in a 1441px frame, that's the
             lg:gap-24 below). items-start (not items-end): Figma has the
-            brand block hanging from the row's TOP, not its bottom — it's
+            brand block hanging from the row's TOP, not its bottom, it's
             shorter than the friends column (170 vs 233 tall) and starts at
             the same y, not bottom-aligned with it. */}
           <div className="relative flex w-full max-w-[1440px] flex-col gap-14 lg:flex-row lg:items-start lg:gap-24">
             {/* Figma (node 945:4375): left:1149, top:-85, w:210 inside the
-              1441px SECTION (945:4350) — not inside this row div, which is
+              1441px SECTION (945:4350), not inside this row div, which is
               that section's own content box, itself inset by the section's
               py-12 (48px). So top here has to be -85-48=-133, not -85, or
               the illustration sits 48px lower than Figma and dips into the
-              text below it. right:82px doesn't need the same correction —
+              text below it. right:82px doesn't need the same correction,
               this row div's right edge already lines up with the section's
               content-box right edge (no horizontal inset difference).
-              Extra -27px beyond that (-160 vs the derived -133) — live
+              Extra -27px beyond that (-160 vs the derived -133), live
               content reflow (e.g. the "let's be friends" column wrapping to
               more lines than Figma's static mock at some widths) pushes the
               legal links up into the illustration's Figma-derived position;
@@ -140,7 +140,7 @@ export function WaitlistFooter({
               Newsletter frame 945:4477): much smaller (125x203, vs 210x342
               on desktop) and sits lower, straddling the bottom of the
               "let's be friends" paragraph rather than hanging above the
-              section like the desktop one — the paragraph's own max-w is
+              section like the desktop one, the paragraph's own max-w is
               narrowed on mobile (below) to leave it room. */}
             <Image
               src="/images/footer/illustration-runner.svg"
@@ -189,7 +189,7 @@ export function WaitlistFooter({
             </div>
 
             {/* max-w matches Figma's actual column width (two roughly-equal
-              flex-1 halves at ~616px each in the 1441px frame) — without a
+              flex-1 halves at ~616px each in the 1441px frame), without a
               cap here, the heading (the widest thing in this column, wider
               than the paragraph's own max-w-[510px] below it) grows past
               where the illustration is positioned and runs into it. */}
@@ -238,7 +238,7 @@ export function WaitlistFooter({
               {/* max-w-[219px] below lg: Figma's mobile paragraph wraps
                 narrower than its 351px column, leaving the right side clear
                 for the mobile illustration above to overlap without
-                covering text — matches its own Figma text-box width. */}
+                covering text, matches its own Figma text-box width. */}
               <div className="flex max-w-[219px] flex-col gap-2 lg:max-w-[510px]">
                 <p className="font-grotesk text-[14px] font-semibold uppercase leading-[1.3] text-onwei-beige">
                   ONWEI (n.)
@@ -278,14 +278,14 @@ export function WaitlistFooter({
             </div>
           </div>
 
-          {/* Figma has no destination screen for either link yet — "#"
+          {/* Figma has no destination screen for either link yet, "#"
             placeholders, same convention as SiteFooter's Policies column.
             Mobile: centered (Figma has near-equal margins either side, x:24.5
-            in a 375px frame) — the outer items-center on this section already
+            in a 375px frame), the outer items-center on this section already
             does that for a shrink-wrapped div, so no width/justify needed
             here. Desktop: Figma has this flush against the content's right
-            edge (x:1126-1389 of 1441), under the illustration — not centered
-            — so it needs its own w-full/max-w to reach that edge and
+            edge (x:1126-1389 of 1441), under the illustration, not centered
+           , so it needs its own w-full/max-w to reach that edge and
             justify-end to sit at it, instead of inheriting the mobile
             centering. */}
           <div className="mt-10 flex gap-6 font-grotesk text-[12px] text-onwei-beige lg:hidden">

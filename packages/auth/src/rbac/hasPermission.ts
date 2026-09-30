@@ -1,6 +1,6 @@
 /**
  * Pure permission check: does `granted` include `required`? Deliberately has
- * no DB access — looking up a StaffUser's actual permissions stays in
+ * no DB access, looking up a StaffUser's actual permissions stays in
  * packages/database per docs/ARCHITECTURE.md's module-boundary rule; this
  * just decides the yes/no once that list is in hand.
  */

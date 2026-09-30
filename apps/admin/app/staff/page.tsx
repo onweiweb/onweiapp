@@ -54,7 +54,7 @@ export default async function StaffPage() {
               </AdminTableCell>
               <AdminTableCell>
                 {staffUser.roles.length === 0
-                  ? "—"
+                  ? "-"
                   : staffUser.roles.map((r) => r.role.name).join(", ")}
               </AdminTableCell>
             </AdminTableRow>

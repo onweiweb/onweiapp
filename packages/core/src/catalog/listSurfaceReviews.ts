@@ -35,7 +35,7 @@ export async function resolveSurfaceLimit(
 /**
  * Storefront read for a review surface: curated ReviewPlacement rows if any
  * exist for this surface (+ product, for PRODUCT_WALL), otherwise the
- * most-recent-approved reviews — so a surface with nothing curated yet
+ * most-recent-approved reviews, so a surface with nothing curated yet
  * still shows real content instead of going blank. One data layer behind
  * every review-wall/testimonial instance across Homepage/PDP.
  */

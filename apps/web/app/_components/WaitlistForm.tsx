@@ -17,10 +17,10 @@ const ERROR_MESSAGES: Record<string, string> = {
     "That email is already on the list with a different phone number.",
   DUPLICATE_PHONE:
     "That phone number is already on the list with a different email.",
-  RATE_LIMITED: "Too many attempts — try again in a few minutes.",
+  RATE_LIMITED: "Too many attempts, try again in a few minutes.",
 };
 
-// Figma node 945:4323 (web) / 945:4451 (mobile) — "join onwei insiders".
+// Figma node 945:4323 (web) / 945:4451 (mobile), "join onwei insiders".
 // The movement-flex slider is decorative/fun, not required to submit.
 export function WaitlistForm() {
   const [fullName, setFullName] = useState("");
@@ -150,7 +150,7 @@ export function WaitlistForm() {
             movement flex?
           </label>
           {/* Figma shows a two-tone track: a solid fill from the left edge
-              up to the thumb, a faint unfilled remainder past it — not a
+              up to the thumb, a faint unfilled remainder past it, not a
               single uniform translucent bar. The native range input can't
               paint that split on its own, so its own track is made fully
               transparent and two sibling divs (faint full-width, solid
@@ -189,7 +189,7 @@ export function WaitlistForm() {
 
         <p role="status" className="font-grotesk text-[12px] text-onwei-blue">
           {status === "success" &&
-            "You're on the list — welcome to the warm up."}
+            "You're on the list, welcome to the warm up."}
           {status === "already" && "You're already on the list."}
           {status === "error" && error}
         </p>

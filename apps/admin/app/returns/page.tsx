@@ -32,7 +32,7 @@ export default async function ReturnsPage() {
 
       {returnRequests.length === 0 ? (
         <p className="text-onwei-blue/70">
-          Nothing waiting on you — new return requests will show up here.
+          Nothing waiting on you, new return requests will show up here.
         </p>
       ) : (
         <AdminTable>
@@ -59,7 +59,7 @@ export default async function ReturnsPage() {
                 <AdminTableCell>
                   {returnRequest.order.customer.name ??
                     returnRequest.order.customer.email ??
-                    "—"}
+                    "-"}
                 </AdminTableCell>
                 <AdminTableCell>
                   {returnRequest.orderItem.productVariant.product.name}

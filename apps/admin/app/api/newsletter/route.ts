@@ -1,32 +1,34 @@
 import { isValidEmail, subscribeToNewsletter } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../_lib/requireStaffSession";
+import { z } from "zod";
+import { defineAdminRoute } from "../_lib/defineAdminRoute";
 
-export async function POST(request: Request) {
-  const session = await requireStaffSession(request, "newsletter:manage");
-  if (!session.ok) return session.response;
+const EMAIL_MESSAGE = "Enter a valid email address.";
 
-  const body = (await request.json().catch(() => null)) as {
-    email?: unknown;
-    source?: unknown;
-  } | null;
-  const email =
-    typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
-  const source =
-    typeof body?.source === "string" && body.source.trim()
-      ? body.source.trim()
-      : "admin_manual";
+const bodySchema = z.object({
+  email: z
+    .string({ error: EMAIL_MESSAGE })
+    .trim()
+    .toLowerCase()
+    .refine(isValidEmail, { error: EMAIL_MESSAGE }),
+  source: z
+    .string()
+    .trim()
+    .optional()
+    .transform((source) => source || "admin_manual"),
+});
 
-  if (!isValidEmail(email)) {
-    return NextResponse.json(
-      { ok: false, error: "Enter a valid email address." },
-      { status: 400 },
-    );
-  }
-
-  const result = await subscribeToNewsletter(email, source);
-  return NextResponse.json({
-    ok: true,
-    alreadySubscribed: result.alreadySubscribed,
-  });
-}
+export const POST = defineAdminRoute(
+  {
+    permission: "newsletter:manage",
+    body: bodySchema,
+    emptyBodyMessage: EMAIL_MESSAGE,
+  },
+  async ({ body }) => {
+    const result = await subscribeToNewsletter(body.email, body.source);
+    return NextResponse.json({
+      ok: true,
+      alreadySubscribed: result.alreadySubscribed,
+    });
+  },
+);

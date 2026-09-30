@@ -37,7 +37,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       staffUserId = staffUser.id;
       // This fixture's email won't match SUPERADMIN_EMAIL and it has no
       // assigned roles, so getStaffPermissions returns an empty list for
-      // it — exactly what's needed to exercise the real 403 path below.
+      // it, exactly what's needed to exercise the real 403 path below.
       const token = await createStaffSessionToken(
         { staffUserId },
         process.env.ADMIN_SESSION_JWT_SECRET!,

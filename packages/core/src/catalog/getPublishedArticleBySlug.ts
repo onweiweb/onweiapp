@@ -1,7 +1,7 @@
 import { prisma } from "@onwei/database";
 import type { ArticleDetail } from "./types";
 
-/** Backs apps/web's /journal/[slug] — an unpublished (or nonexistent) slug
+/** Backs apps/web's /journal/[slug], an unpublished (or nonexistent) slug
  * returns null, same not-found contract as getActiveProductBySlug. */
 export async function getPublishedArticleBySlug(
   slug: string,

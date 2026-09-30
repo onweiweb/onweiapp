@@ -1,25 +1,20 @@
 import { rejectReview } from "@onwei/core";
 import { NextResponse } from "next/server";
-import { requireStaffSession } from "../../../_lib/requireStaffSession";
+import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await requireStaffSession(request, "review:moderate");
-  if (!session.ok) return session.response;
-
-  const { id } = await params;
-
-  try {
-    const review = await rejectReview(id, {
-      staffUserId: session.context.staffUserId,
-    });
-    return NextResponse.json({ ok: true, review });
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Couldn't find that review." },
-      { status: 404 },
-    );
-  }
-}
+export const POST = defineAdminRoute<never, { id: string }>(
+  { permission: "review:moderate" },
+  async ({ staff, params }) => {
+    try {
+      const review = await rejectReview(params.id, {
+        staffUserId: staff.staffUserId,
+      });
+      return NextResponse.json({ ok: true, review });
+    } catch {
+      return NextResponse.json(
+        { ok: false, error: "Couldn't find that review." },
+        { status: 404 },
+      );
+    }
+  },
+);

@@ -8,7 +8,7 @@ export interface ValueProp {
   body: string;
 }
 
-// Extracted from the Homepage's ShowcaseSection (was page-local) — the PDP
+// Extracted from the Homepage's ShowcaseSection (was page-local), the PDP
 // uses the same cards (Figma node 759:3117, same illustration assets,
 // different copy) in a full-width row instead of stacked beside a video, so
 // the wrapping flex direction is the caller's call, not baked in here.

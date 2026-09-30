@@ -9,7 +9,7 @@ import type {
  * apps/web's rounded-[500px] pill works for short single-line marketing
  * inputs; it breaks down on dense multi-field admin forms. AdminInput keeps
  * the full pill (single-line only); AdminSelect/AdminTextarea use a smaller
- * rounded-[20px] — same shape language, scaled for density.
+ * rounded-[20px], same shape language, scaled for density.
  *
  * Border is onwei-blue/25, not onwei-beige: most admin forms sit directly on
  * the page's onwei-beige background (not inside an AdminCard), so a

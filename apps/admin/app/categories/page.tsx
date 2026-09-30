@@ -21,7 +21,7 @@ export default async function CategoriesPage() {
 
       {categories.length === 0 ? (
         <p className="text-neutral-600">
-          No categories yet — add your first one to start organizing products.
+          No categories yet, add your first one to start organizing products.
         </p>
       ) : (
         <table className="w-full border-collapse overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm">

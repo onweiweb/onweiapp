@@ -13,7 +13,7 @@ export default async function NewProductPage() {
       <h1 className="text-2xl font-semibold">Add a product</h1>
       {categories.length === 0 ? (
         <p className="text-neutral-600">
-          You need at least one category before you can add a product —{" "}
+          You need at least one category before you can add a product -{" "}
           <Link href="/categories/new" className="underline">
             add one first
           </Link>

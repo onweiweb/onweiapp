@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { prisma } from "@onwei/database";
 import { requirePageSession } from "../_lib/requirePageSession";
+import { pageWindow, parsePage, trimPage } from "../_lib/pagination";
 import {
   AdminBadge,
   AdminButton,
   AdminInput,
+  AdminPager,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
@@ -15,13 +17,14 @@ import {
 export default async function CustomersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
   await requirePageSession("customer:view");
-  const { q } = await searchParams;
+  const { q, page: pageParam } = await searchParams;
+  const page = parsePage(pageParam);
   const query = q?.trim();
 
-  const customers = await prisma.customer.findMany({
+  const fetched = await prisma.customer.findMany({
     where: {
       deletedAt: null,
       ...(query
@@ -34,9 +37,10 @@ export default async function CustomersPage({
           }
         : {}),
     },
-    orderBy: { createdAt: "desc" },
-    take: 100,
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    ...pageWindow(page),
   });
+  const { rows: customers, hasNext } = trimPage(fetched);
 
   return (
     <main className="flex flex-col gap-6">
@@ -75,11 +79,11 @@ export default async function CustomersPage({
                     href={`/customers/${customer.id}`}
                     className="font-medium underline-offset-2 hover:underline"
                   >
-                    {customer.name ?? "—"}
+                    {customer.name ?? "-"}
                   </Link>
                 </AdminTableCell>
-                <AdminTableCell>{customer.email ?? "—"}</AdminTableCell>
-                <AdminTableCell>{customer.phone ?? "—"}</AdminTableCell>
+                <AdminTableCell>{customer.email ?? "-"}</AdminTableCell>
+                <AdminTableCell>{customer.phone ?? "-"}</AdminTableCell>
                 <AdminTableCell>
                   <AdminBadge
                     tone={customer.status === "ACTIVE" ? "success" : "problem"}
@@ -95,6 +99,12 @@ export default async function CustomersPage({
           </tbody>
         </AdminTable>
       )}
+      <AdminPager
+        pathname="/customers"
+        page={page}
+        hasNext={hasNext}
+        params={{ q: query }}
+      />
     </main>
   );
 }

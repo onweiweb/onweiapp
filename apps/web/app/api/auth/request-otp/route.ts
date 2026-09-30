@@ -1,56 +1,38 @@
 import { ConsoleOtpSender } from "@onwei/auth";
-import type { OtpChannel } from "@onwei/auth";
 import {
   checkOtpRateLimit,
+  getClientIp,
   getSiteSetting,
   isValidEmail,
+  parseJsonBody,
   requestOtpChallenge,
   validatePhone,
 } from "@onwei/core";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+import { invalidInput } from "../../_lib/invalidInput";
 
-function isOtpChannel(value: unknown): value is OtpChannel {
-  return value === "EMAIL" || value === "SMS";
-}
+const bodySchema = z.object({
+  identifier: z.string().trim().min(1),
+  channel: z.enum(["EMAIL", "SMS"]),
+});
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as {
-    identifier?: unknown;
-    channel?: unknown;
-  } | null;
-
-  const identifier =
-    typeof body?.identifier === "string" ? body.identifier.trim() : "";
-  if (!identifier || !isOtpChannel(body?.channel)) {
-    return NextResponse.json(
-      { ok: false, reason: "INVALID_INPUT" },
-      { status: 400 },
-    );
-  }
-  const channel = body.channel;
+  const parsed = await parseJsonBody(request, bodySchema);
+  if (!parsed.ok) return invalidInput();
+  const { identifier, channel } = parsed.data;
 
   if (channel === "EMAIL") {
-    if (!isValidEmail(identifier)) {
-      return NextResponse.json(
-        { ok: false, reason: "INVALID_INPUT" },
-        { status: 400 },
-      );
-    }
+    if (!isValidEmail(identifier)) return invalidInput();
   } else {
     const { allowInternationalPhone } = await getSiteSetting();
     const phoneResult = validatePhone(identifier, {
       allowInternational: allowInternationalPhone,
     });
-    if (!phoneResult.valid) {
-      return NextResponse.json(
-        { ok: false, reason: "INVALID_INPUT" },
-        { status: 400 },
-      );
-    }
+    if (!phoneResult.valid) return invalidInput();
   }
 
-  const requestIp =
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+  const requestIp = getClientIp(request);
   const { allowed } = await checkOtpRateLimit(identifier, requestIp);
   if (!allowed) {
     return NextResponse.json(
@@ -74,7 +56,7 @@ export async function POST(request: Request) {
     secret,
   );
 
-  // ConsoleOtpSender only logs to the server console — no real email/SMS is
+  // ConsoleOtpSender only logs to the server console, no real email/SMS is
   // sent. Check the dev server terminal (or the Vercel function log in
   // production) to read the code during manual testing.
   await new ConsoleOtpSender().send(identifier, channel, code);

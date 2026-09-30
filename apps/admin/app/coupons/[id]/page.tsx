@@ -83,7 +83,7 @@ export default async function CouponDetailPage({
               <AdminCard>
                 {coupon.rules.length === 0 ? (
                   <p className="mb-3 text-sm text-onwei-blue/60">
-                    No rules yet — add one below so this code actually discounts
+                    No rules yet, add one below so this code actually discounts
                     something.
                   </p>
                 ) : (
@@ -117,7 +117,7 @@ export default async function CouponDetailPage({
               <AdminCard>
                 {coupon.redemptions.length === 0 ? (
                   <p className="text-sm text-onwei-blue/60">
-                    No redemptions yet — this will fill in once a customer uses
+                    No redemptions yet, this will fill in once a customer uses
                     this code at checkout.
                   </p>
                 ) : (
@@ -137,7 +137,7 @@ export default async function CouponDetailPage({
                           <AdminTableCell>
                             {redemption.customer.name ??
                               redemption.customer.email ??
-                              "—"}
+                              "-"}
                           </AdminTableCell>
                           <AdminTableCell>
                             {redemption.discountAmount.toString()}

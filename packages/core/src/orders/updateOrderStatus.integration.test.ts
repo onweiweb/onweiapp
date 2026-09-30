@@ -113,5 +113,21 @@ describe.skipIf(!process.env.DATABASE_URL)(
         updateOrderStatus({ orderId: order.id, toStatus: "DELIVERED" }, actor),
       ).rejects.toThrow(/invalid-transition/);
     });
+
+    it("applies only one of two identical concurrent transitions", async () => {
+      const order = await createFixtureOrder();
+
+      const results = await Promise.allSettled([
+        updateOrderStatus({ orderId: order.id, toStatus: "CONFIRMED" }, actor),
+        updateOrderStatus({ orderId: order.id, toStatus: "CONFIRMED" }, actor),
+      ]);
+
+      expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+      const history = await prisma.orderStatusHistory.findMany({
+        where: { orderId: order.id },
+      });
+      expect(history).toHaveLength(1);
+      await trackAuditLogsFor(order.id);
+    });
   },
 );

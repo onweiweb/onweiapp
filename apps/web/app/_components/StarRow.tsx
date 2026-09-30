@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-// Extracted from the Homepage (was page-local) — reused anywhere a review
+// Extracted from the Homepage (was page-local), reused anywhere a review
 // card renders a rating (Homepage, ReviewWall on PDP/Collection).
 export function StarRow({
   count,
@@ -11,7 +11,7 @@ export function StarRow({
   size?: number;
   // "light" (white stars) reads on the colored/photo review-card
   // backgrounds this was built for. The PDP rating row sits on the white
-  // info panel instead, where white-on-white is invisible — pass "dark".
+  // info panel instead, where white-on-white is invisible, pass "dark".
   tone?: "light" | "dark";
 }) {
   return (

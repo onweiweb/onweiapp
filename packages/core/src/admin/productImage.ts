@@ -4,7 +4,7 @@ import type { AuditActor } from "./types";
 
 /**
  * Records an already-uploaded image (the Blob upload itself happens in the
- * API route, which has access to the request body — this just persists the
+ * API route, which has access to the request body, this just persists the
  * resulting URL). isPlaceholder is always false here: an admin-uploaded
  * photo is by definition not the storefront's placeholder fallback.
  */

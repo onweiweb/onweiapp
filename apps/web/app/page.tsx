@@ -31,7 +31,7 @@ import { CtaLink } from "@/_components/CtaLink";
 
 function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
   return (
-    // bg-onwei-green: best-effort match, not confirmed against Figma —
+    // bg-onwei-green: best-effort match, not confirmed against Figma,
     // the section previously had no background at all (rendered white).
     // Figma's API is rate-limited right now; re-verify the exact fill once
     // access resets.
@@ -257,7 +257,7 @@ function ProductGridSection({
   return (
     <section className="flex flex-col items-center bg-onwei-white px-3 pb-24 sm:px-6 lg:px-14">
       {/* Mobile (node 761:4877 "Shop"): a horizontal-scroll carousel, not a
-          wrapping grid — matches the same pattern as Reviews/Instagram. At
+          wrapping grid, matches the same pattern as Reviews/Instagram. At
           lg:+ it reverts to the desktop row, which already fits everything
           on one line at 1440px so the scroll track is hidden there. */}
       <ScrollCarousel
@@ -363,11 +363,11 @@ function AboutSection() {
   );
 }
 
-// Static — no blog/article model exists in this codebase (see
+// Static, no blog/article model exists in this codebase (see
 // docs/DATABASE_SCHEMA.md). All three posts, dates and body copy are
 // hardcoded straight from the Figma file.
 // Was 100% hardcoded lorem-ipsum placeholder with href="#" dead links (see
-// docs/OPEN_DECISIONS.md's SEO entry) — now backed by the real Article
+// docs/OPEN_DECISIONS.md's SEO entry), now backed by the real Article
 // model. No real /journal index page exists yet (out of this pass's scope,
 // only /journal/[slug] detail pages), so "explore blogs" points at the
 // most recent article rather than a listing that doesn't exist.
@@ -459,7 +459,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
-// No live Instagram feed integration exists — photos are CMS-editable
+// No live Instagram feed integration exists, photos are CMS-editable
 // (InstagramPhoto) rather than a real feed, but no longer hardcoded here.
 export default async function HomePage() {
   const [
@@ -489,7 +489,7 @@ export default async function HomePage() {
   const pilates = categories.find((category) => category.slug === "pilates");
   // ShopSection's "pickle ball" tile is always the one shown as selected
   // (Figma's Homepage frame only specifies this one state, no interactive
-  // toggle), so the grid below it shows pickleball products to match —
+  // toggle), so the grid below it shows pickleball products to match,
   // showing unrelated products under a circled "pickle ball" tab was the
   // bug reported against the live site.
   const products = (pickleballCollection?.products ?? []).slice(0, 3);
