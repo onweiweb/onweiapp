@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import {
   createSessionToken,
   revokeSessionToken,
@@ -6,6 +6,14 @@ import {
 } from "./session";
 
 describe("session token", () => {
+  // These cases assume no Redis. A build environment (for example Vercel) may
+  // have the Upstash variables set, and the revocation client caches on first
+  // use, so blank them before any call.
+  beforeAll(() => {
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "");
+  });
+
   it("round-trips a payload through sign and verify", async () => {
     const token = await createSessionToken(
       { customerId: "cust_123" },
