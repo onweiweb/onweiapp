@@ -1,6 +1,13 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import HomePage from "./page";
+
+// SiteFooter is an async Server Component (it reads site settings), which
+// RTL's client render can't resolve. This test only checks the main landmark,
+// so a sync stub is enough.
+vi.mock("@/_components/SiteFooter", () => ({
+  SiteFooter: () => <footer />,
+}));
 
 // HomePage is an async Server Component that queries real catalog data via
 // @onwei/core, so this needs a real DATABASE_URL — same convention as the
