@@ -116,61 +116,68 @@ export function SiteSettingForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex max-w-lg flex-col gap-6">
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="siteMode" className="text-sm font-medium">
-          What the public site shows right now
-        </label>
-        <AdminSelect
-          id="siteMode"
-          value={siteMode}
-          onChange={(event) => setSiteMode(event.target.value as SiteMode)}
-        >
-          {MODE_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </AdminSelect>
-        {selectedMode ? (
-          <p
-            className={`text-xs ${modeChanged ? "font-medium text-onwei-black" : "text-onwei-blue/70"}`}
+    <form
+      onSubmit={handleSubmit}
+      className="grid max-w-5xl gap-x-12 gap-y-8 lg:grid-cols-2"
+    >
+      <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="siteMode" className="text-sm font-medium">
+            What the public site shows right now
+          </label>
+          <AdminSelect
+            id="siteMode"
+            value={siteMode}
+            onChange={(event) => setSiteMode(event.target.value as SiteMode)}
           >
-            {modeChanged
-              ? "This takes effect within about 15 seconds of saving: "
-              : ""}
-            {selectedMode.consequence}
+            {MODE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </AdminSelect>
+          {selectedMode ? (
+            <p
+              className={`text-xs ${modeChanged ? "font-medium text-onwei-black" : "text-onwei-blue/70"}`}
+            >
+              {modeChanged
+                ? "This takes effect within about 15 seconds of saving: "
+                : ""}
+              {selectedMode.consequence}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="launchAt" className="text-sm font-medium">
+            Countdown target on the waitlist page
+          </label>
+          <AdminInput
+            id="launchAt"
+            type="datetime-local"
+            value={launchAt}
+            onChange={(event) => setLaunchAt(event.target.value)}
+            className="w-full max-w-xs"
+          />
+          <p className="text-xs text-onwei-blue/70">
+            The clock on the waitlist page counts down to this date and time
+            (your own timezone).
           </p>
-        ) : null}
-      </div>
+        </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="launchAt" className="text-sm font-medium">
-          Countdown target on the waitlist page
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={allowInternationalPhone}
+            onChange={(event) =>
+              setAllowInternationalPhone(event.target.checked)
+            }
+          />
+          Accept phone numbers from outside India on the waitlist form
         </label>
-        <AdminInput
-          id="launchAt"
-          type="datetime-local"
-          value={launchAt}
-          onChange={(event) => setLaunchAt(event.target.value)}
-          className="w-full max-w-xs"
-        />
-        <p className="text-xs text-onwei-blue/70">
-          The clock on the waitlist page counts down to this date and time (your
-          own timezone).
-        </p>
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
-        <input
-          type="checkbox"
-          checked={allowInternationalPhone}
-          onChange={(event) => setAllowInternationalPhone(event.target.checked)}
-        />
-        Accept phone numbers from outside India on the waitlist form
-      </label>
-
-      <div className="flex flex-col gap-3 border-t border-onwei-blue/10 pt-6">
+      <div className="flex flex-col gap-3 border-t border-onwei-blue/10 pt-6 lg:border-l lg:border-t-0 lg:pl-12 lg:pt-0">
         <div className="flex flex-col gap-1">
           <p className="text-sm font-medium">Social links</p>
           <p className="text-xs text-onwei-blue/70">
@@ -225,12 +232,14 @@ export function SiteSettingForm({
         </label>
       </div>
 
-      {error ? <p className="text-sm text-onwei-black">{error}</p> : null}
-      {saved ? <p className="text-sm text-green-700">Saved.</p> : null}
+      <div className="flex flex-col gap-3 lg:col-span-2">
+        {error ? <p className="text-sm text-onwei-black">{error}</p> : null}
+        {saved ? <p className="text-sm text-green-700">Saved.</p> : null}
 
-      <AdminButton type="submit" disabled={submitting} className="w-fit">
-        {submitting ? "Saving..." : "Save changes"}
-      </AdminButton>
+        <AdminButton type="submit" disabled={submitting} className="w-fit">
+          {submitting ? "Saving..." : "Save changes"}
+        </AdminButton>
+      </div>
     </form>
   );
 }
