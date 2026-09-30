@@ -98,7 +98,7 @@ export default async function WaitlistPage() {
       >
         <ScrollReveal
           as="div"
-          className="relative h-[400px] w-full overflow-hidden rounded-[30px] sm:h-[635px] sm:w-[665px]"
+          className="relative order-2 h-[400px] w-full overflow-hidden rounded-[30px] sm:order-1 sm:h-[635px] sm:w-[665px]"
         >
           <Image
             src="/images/waitlist/photo/hero-photo.png"
@@ -121,7 +121,7 @@ export default async function WaitlistPage() {
         <ScrollReveal
           as="div"
           delay={0.1}
-          className="flex w-full flex-col gap-6 rounded-[30px] px-0 py-6 sm:w-[665px] sm:px-14 sm:py-12"
+          className="order-1 flex w-full flex-col gap-6 rounded-[30px] px-0 py-6 sm:order-2 sm:w-[665px] sm:px-14 sm:py-12"
         >
           <div className="flex flex-col gap-3">
             <p className="font-display text-[36px] font-bold uppercase leading-[0.9] text-onwei-blue sm:text-[48px]">

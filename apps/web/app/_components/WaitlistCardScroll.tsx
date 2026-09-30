@@ -210,10 +210,12 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
   const emphasis = useEmphasisFlash(timing, [0.72, 0.85, 1], "#eded86");
   // Tennis: a scale-bounce "pop", first of the three illustrations.
   const tennis = useScaleBounce(timing, [0.45, 0.62, 0.78], 0.4, 1.18, 0);
-  // Plank and tag: slide in from the right, one slightly after the other
-  // — staggered against each other, not just against the text.
+  // Plank and the circle scribble: slide in from the right, one slightly
+  // after the other — staggered against each other, not just against the
+  // text. The circle lands last, as if it's underlining "Onwei" once the
+  // rest of the line has already landed.
   const plank = useSweepIn(timing, [0.55, 0.75, 0.9], "x", 140, -16, 0);
-  const tag = useSweepIn(timing, [0.65, 0.85, 1], "x", 140, -16, 0);
+  const circle = useSweepIn(timing, [0.65, 0.85, 1], "x", 140, -16, 0);
   return (
     <div className="relative size-full overflow-hidden rounded-[30px] bg-onwei-purple">
       {/* absolute inset-0 on each wrapper (not just a bare div) — motion
@@ -230,7 +232,7 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
           width={82}
           height={134}
           aria-hidden
-          className="absolute left-[17%] top-[12%] h-auto w-[10%] min-w-16"
+          className="absolute left-[21.2%] top-[11.65%] h-auto w-[12.3%] min-w-16"
         />
       </motion.div>
       <motion.div style={plank} className="absolute inset-0">
@@ -240,24 +242,55 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
           width={168}
           height={60}
           aria-hidden
-          className="absolute left-[54%] top-[52%] h-auto w-[20%] min-w-24 rotate-[6.34deg]"
+          className="absolute left-[66.9%] top-[52.2%] h-auto w-[25.3%] min-w-24 rotate-[6.34deg]"
         />
       </motion.div>
-      <motion.div style={tag} className="absolute inset-0">
-        <Image
-          src="/images/waitlist/cards/card2-illustration-tag.svg"
-          alt=""
-          width={183}
-          height={62}
-          aria-hidden
-          className="absolute left-[39%] top-[40%] h-auto w-[22%] min-w-28 rotate-[6.34deg]"
-        />
-      </motion.div>
+      {/* Yellow wiggle blob (Figma node 945:4521, bottom-left decoration —
+          previously unused in the codebase). No motion wrapper of its own,
+          same as AllAccessCard's card-blob.svg: it's a background element,
+          so it just rides the whole card's own fade-in rather than
+          sweeping/popping in like the foreground illustrations above. */}
+      <Image
+        src="/images/waitlist/cards/card2-blob.svg"
+        alt=""
+        width={515}
+        height={396}
+        aria-hidden
+        className="absolute -left-[11.6%] top-[59.7%] h-auto w-[77.4%] max-w-none"
+      />
+      {/* Figma sets this text whitespace-nowrap rather than wrapping to a
+          fixed box — "Next for Onwei" has to stay one line, or the wrap
+          point would land wherever this browser's font metrics happen to
+          break it, not where Figma's did. */}
       <motion.p
         style={{ ...text, color: emphasis.color, scale: emphasis.scale }}
-        className="absolute left-[15%] top-[35%] w-[65%] font-display text-[28px] font-bold uppercase leading-[0.9] sm:text-[48px]"
+        className="absolute left-[19.1%] top-[35.1%] whitespace-nowrap font-display text-[28px] font-bold uppercase leading-[0.9] sm:text-[48px]"
       >
-        Shape What&apos;s Next for Onwei
+        Shape What&apos;s
+        <br />
+        Next for{" "}
+        {/* Figma node 945:4565 ("tag") — despite the name, this is the same
+            hand-drawn scribble style as the hero's movement-circle.svg, used
+            here to circle "Onwei" specifically. Previously misplaced near
+            the plank illustration as an unrelated sticker, then positioned
+            by a fixed % of the card that assumed "Onwei" always lands at
+            the same spot — it doesn't, once font metrics shift the wrap
+            point, so the circle drifted onto "for" instead. Nesting it
+            in-flow (inline-block around just this word, sized off the
+            word's own rendered width via calc(), same trick the hero uses
+            around "movement") ties it to wherever "Onwei" actually renders
+            instead of a coordinate that can drift out from under it. */}
+        <motion.span style={circle} className="relative inline-block">
+          <Image
+            src="/images/waitlist/cards/card2-illustration-tag.svg"
+            alt=""
+            width={183}
+            height={62}
+            aria-hidden
+            className="pointer-events-none absolute -left-[10px] top-1/2 w-[calc(100%+20px)] max-w-none -translate-y-1/2 rotate-[6.34deg]"
+          />
+          <span className="relative">Onwei</span>
+        </motion.span>
       </motion.p>
     </div>
   );
@@ -268,31 +301,20 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
   // card 1's centre pop.
   const text = useSweepIn(timing, [0.3, 0.55, 0.7], "x", 280, -34, 0);
   const emphasis = useEmphasisFlash(timing, [0.72, 0.85, 1], "#8e94ca");
+  // Bubble pops in first, then the founder reacts to it — narrative order,
+  // not just a staggered stock beat.
+  const bubble = useScaleBounce(timing, [0.25, 0.42, 0.58], 0.4, 1.2, 0);
   const founder = useScaleBounce(timing, [0.45, 0.65, 0.82], 0.4, 1.18, 0);
-  // Photo badge: a quick coloured-ring flash right as it lands, on top of
-  // the same pop the founder illustration gets (it's nested inside that
-  // illustration in the layout, see the JSX below).
-  const badgeRingBeat: [number, number, number] = [0.55, 0.72, 0.88];
-  const badgeRing = useTransform(
-    timing.progress,
-    [
-      timing.start,
-      timing.start + timing.span * badgeRingBeat[0],
-      timing.start + timing.span * badgeRingBeat[1],
-      timing.start + timing.span * badgeRingBeat[2],
-    ],
-    [
-      "0 0 0 0px rgba(237,237,134,0)",
-      "0 0 0 0px rgba(237,237,134,0)",
-      "0 0 0 6px rgba(237,237,134,0.9)",
-      "0 0 0 0px rgba(237,237,134,0)",
-    ],
-  );
   return (
-    <div className="relative flex size-full flex-col items-center justify-center gap-8 overflow-hidden rounded-[30px] bg-onwei-green px-8 py-12 sm:flex-row sm:justify-between sm:px-14">
+    // Figma node 945:4567 — founder illustration, speech bubble and text are
+    // three independently absolute-positioned layers (not a flex row), so
+    // positioning them that way here instead of the old flex-row/items-end
+    // approach is what actually keeps their sizes and positions in the same
+    // proportion to each other and to the card that Figma has them in.
+    <div className="relative size-full overflow-hidden rounded-[30px] bg-onwei-green">
       <motion.div
         style={founder}
-        className="relative h-[180px] w-[110px] shrink-0 sm:h-[313px] sm:w-[192px]"
+        className="absolute left-[16.7%] top-[38.7%] h-[28%] w-[17%] sm:h-[49.3%] sm:w-[28.9%]"
       >
         <Image
           src="/images/waitlist/cards/card3-illustration-founder.svg"
@@ -302,23 +324,26 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
           aria-hidden
           className="object-contain"
         />
-        <motion.div
-          style={{ boxShadow: badgeRing }}
-          className="absolute -left-6 -top-10 h-16 w-24 rounded-[20px] sm:-left-8 sm:-top-16 sm:h-20 sm:w-32"
-        >
-          <Image
-            src="/images/waitlist/cards/card3-photo.png"
-            alt=""
-            fill
-            sizes="100px"
-            aria-hidden
-            className="object-contain"
-          />
-        </motion.div>
+      </motion.div>
+      {/* Figma node 945:4582 ("Asset 66@20x-8 1") — despite the filename,
+          this asset IS the rendered "Your future self says thanks" speech
+          bubble, not a founder photo; it was previously misused as a tiny
+          ringed photo badge pinned to the illustration's corner. */}
+      <motion.div
+        style={bubble}
+        className="absolute left-[5.9%] top-[22.2%] h-[13%] w-[16%] sm:h-[17.6%] sm:w-[21.7%]"
+      >
+        <Image
+          src="/images/waitlist/cards/card3-photo.png"
+          alt="Your future self says thanks"
+          fill
+          sizes="200px"
+          className="object-contain"
+        />
       </motion.div>
       <motion.p
         style={{ ...text, color: emphasis.color, scale: emphasis.scale }}
-        className="text-center font-display text-[28px] font-bold uppercase leading-[0.9] sm:text-[48px]"
+        className="absolute left-[53.5%] top-[18.4%] w-[34.6%] text-center font-display text-[22px] font-bold uppercase leading-[0.9] sm:text-[48px]"
       >
         Surprises
         <br />
@@ -350,7 +375,7 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
   const stickyNote = useSweepIn(timing, [0.62, 0.79, 0.92], "x", -80, 10, 0);
   const squiggle = useSweepIn(timing, [0.69, 0.86, 1], "x", 80, -10, 0);
   return (
-    <div className="relative flex size-full flex-col items-center justify-center gap-8 overflow-hidden rounded-[30px] bg-onwei-purple px-8 py-12 sm:gap-14">
+    <div className="relative flex size-full flex-col items-center justify-center gap-8 overflow-hidden rounded-[30px] bg-onwei-purple px-8 py-12 sm:gap-14 sm:px-14 sm:py-24">
       <motion.p
         style={{ ...line1, color: emphasis.color, scale: emphasis.scale }}
         className="font-display text-[32px] font-bold uppercase leading-[0.9] sm:text-[48px]"
@@ -367,11 +392,39 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
         style={line3}
         className="font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
       >
-        Event Invites
+        Event{" "}
+        {/* Anchored off "Invites" specifically (left-0 of its own box,
+            growing right), not off the whole line's right edge — the box
+            is wider than "Event Invites" itself, so right-anchoring it
+            made it balloon leftward past "Event" instead of sitting under
+            "Invites". Growing right instead is free to bleed past the
+            text/card edge (card has overflow-hidden), same as this card's
+            other decorations. */}
+        {/* motion.span, not motion.div — this whole line is a <p>, and a
+            <div> nested inside a <p> is invalid HTML (React logs a
+            hydration mismatch and blows the tree away client-side). */}
+        <span className="relative inline-block">
+          Invites
+          <motion.span
+            style={squiggle}
+            className="pointer-events-none absolute left-0 top-full mt-2 block h-[50px] w-[330px] sm:mt-4 sm:h-[116px] sm:w-[760px]"
+          >
+            <Image
+              src="/images/waitlist/cards/card4-squiggle.png"
+              alt=""
+              fill
+              sizes="200px"
+              aria-hidden
+              className="object-contain"
+            />
+          </motion.span>
+        </span>
       </motion.p>
+      {/* Figma (node 945:4589): 189x87, no CSS rotation — the tilt is baked
+          into the source asset itself, so a rotate here would double it. */}
       <motion.div
         style={dumbbell}
-        className="absolute right-[15%] top-[18%] h-[60px] w-[110px] rotate-[2deg] sm:h-[87px] sm:w-[189px]"
+        className="absolute right-[9%] top-[17%] h-[60px] w-[110px] sm:right-[8.7%] sm:top-[17.3%] sm:h-[87px] sm:w-[189px]"
       >
         <Image
           src="/images/waitlist/cards/card4-dumbbell-badge.png"
@@ -382,31 +435,25 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
           className="object-contain"
         />
       </motion.div>
+      {/* Figma (node 945:4588): a 108x109 centering box (accounts for the
+          rotated asset's bounding-box bleed) around a 96x97 rotated image —
+          matching both sizes keeps the rotation from clipping or nudging
+          the sticky note off its spec'd position the way a same-size
+          rotated box would. */}
       <motion.div
         style={stickyNote}
-        className="absolute bottom-[24%] left-[8%] h-[70px] w-[70px] rotate-[-7.59deg] sm:h-[97px] sm:w-[96px]"
+        className="absolute bottom-[22%] left-[8.3%] flex h-[68px] w-[67px] items-center justify-center sm:bottom-[22.1%] sm:h-[109px] sm:w-[108px]"
       >
-        <Image
-          src="/images/waitlist/cards/card4-sticky-note.png"
-          alt=""
-          fill
-          sizes="200px"
-          aria-hidden
-          className="object-contain"
-        />
-      </motion.div>
-      <motion.div
-        style={squiggle}
-        className="absolute bottom-[16%] right-[15%] h-[26px] w-[110px] sm:h-[38px] sm:w-[165px]"
-      >
-        <Image
-          src="/images/waitlist/cards/card4-squiggle.png"
-          alt=""
-          fill
-          sizes="200px"
-          aria-hidden
-          className="object-contain"
-        />
+        <div className="relative h-[60px] w-[60px] rotate-[-7.59deg] sm:h-[97px] sm:w-[96px]">
+          <Image
+            src="/images/waitlist/cards/card4-sticky-note.png"
+            alt=""
+            fill
+            sizes="200px"
+            aria-hidden
+            className="object-cover"
+          />
+        </div>
       </motion.div>
     </div>
   );
