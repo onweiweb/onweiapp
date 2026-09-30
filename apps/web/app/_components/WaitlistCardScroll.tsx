@@ -190,6 +190,7 @@ function AllAccessCard({ timing }: { timing: CardTiming }) {
         alt=""
         width={881}
         height={678}
+        loading="eager"
         aria-hidden
         className="absolute left-1/2 top-1/2 h-[110%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
       />
@@ -231,8 +232,9 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
           alt=""
           width={82}
           height={134}
+          loading="eager"
           aria-hidden
-          className="absolute left-[21.2%] top-[11.65%] h-auto w-[12.3%] min-w-16"
+          className="absolute left-[21.2%] top-[11.65%] h-auto w-[12.3%] sm:min-w-16"
         />
       </motion.div>
       <motion.div style={plank} className="absolute inset-0">
@@ -241,8 +243,9 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
           alt=""
           width={168}
           height={60}
+          loading="eager"
           aria-hidden
-          className="absolute left-[66.9%] top-[52.2%] h-auto w-[25.3%] min-w-24 rotate-[6.34deg]"
+          className="absolute left-[66.9%] top-[52.2%] h-auto w-[25.3%] sm:min-w-24 rotate-[6.34deg]"
         />
       </motion.div>
       {/* Yellow wiggle blob (Figma node 945:4521, bottom-left decoration —
@@ -255,16 +258,21 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
         alt=""
         width={515}
         height={396}
+        loading="eager"
         aria-hidden
         className="absolute -left-[11.6%] top-[59.7%] h-auto w-[77.4%] max-w-none"
       />
       {/* Figma sets this text whitespace-nowrap rather than wrapping to a
           fixed box — "Next for Onwei" has to stay one line, or the wrap
           point would land wherever this browser's font metrics happen to
-          break it, not where Figma's did. */}
+          break it, not where Figma's did. Only enforced from sm: up though —
+          at the mobile text size this line is wider than the card itself,
+          so forcing nowrap there pushed "Onwei" straight past the card's
+          right edge (clipped by overflow-hidden) instead of just wrapping
+          to its own line. */}
       <motion.p
         style={{ ...text, color: emphasis.color, scale: emphasis.scale }}
-        className="absolute left-[19.1%] top-[35.1%] whitespace-nowrap font-display text-[28px] font-bold uppercase leading-[0.9] sm:text-[48px]"
+        className="absolute left-[19.1%] top-[35.1%] font-display text-[28px] font-bold uppercase leading-[0.9] sm:whitespace-nowrap sm:text-[48px]"
       >
         Shape What&apos;s
         <br />
@@ -286,6 +294,7 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
             alt=""
             width={183}
             height={62}
+            loading="eager"
             aria-hidden
             className="pointer-events-none absolute -left-[10px] top-1/2 w-[calc(100%+20px)] max-w-none -translate-y-1/2 rotate-[6.34deg]"
           />
@@ -321,6 +330,7 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
           alt=""
           fill
           sizes="200px"
+          loading="eager"
           aria-hidden
           className="object-contain"
         />
@@ -338,6 +348,7 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
           alt="Your future self says thanks"
           fill
           sizes="200px"
+          loading="eager"
           className="object-contain"
         />
       </motion.div>
@@ -394,12 +405,13 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
       >
         Event{" "}
         {/* Anchored off "Invites" specifically (left-0 of its own box,
-            growing right), not off the whole line's right edge — the box
+            growing right), not off the whole line's right edge - the box
             is wider than "Event Invites" itself, so right-anchoring it
             made it balloon leftward past "Event" instead of sitting under
-            "Invites". Growing right instead is free to bleed past the
-            text/card edge (card has overflow-hidden), same as this card's
-            other decorations. */}
+            "Invites". Sized to Figma node 945:4587 (165x38, flush against
+            the text, no gap) - a previous 760x116 box was 4.6x too wide,
+            pushing this past the card's own right/bottom edge where
+            overflow-hidden clipped most of it off. */}
         {/* motion.span, not motion.div — this whole line is a <p>, and a
             <div> nested inside a <p> is invalid HTML (React logs a
             hydration mismatch and blows the tree away client-side). */}
@@ -407,13 +419,14 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
           Invites
           <motion.span
             style={squiggle}
-            className="pointer-events-none absolute left-0 top-full mt-2 block h-[50px] w-[330px] sm:mt-4 sm:h-[116px] sm:w-[760px]"
+            className="pointer-events-none absolute left-0 top-full block h-[24px] w-[104px] sm:h-[38px] sm:w-[165px]"
           >
             <Image
               src="/images/waitlist/cards/card4-squiggle.png"
               alt=""
               fill
               sizes="200px"
+              loading="eager"
               aria-hidden
               className="object-contain"
             />
@@ -431,6 +444,7 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
           alt=""
           fill
           sizes="200px"
+          loading="eager"
           aria-hidden
           className="object-contain"
         />
@@ -450,6 +464,7 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
             alt=""
             fill
             sizes="200px"
+            loading="eager"
             aria-hidden
             className="object-cover"
           />
