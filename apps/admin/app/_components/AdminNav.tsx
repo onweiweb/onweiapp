@@ -2,12 +2,63 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
-import type { LucideIcon } from "lucide-react";
+import {
+  LayoutDashboard,
+  Settings,
+  Package,
+  Tags,
+  Warehouse,
+  ShoppingCart,
+  Undo2,
+  Ticket,
+  Megaphone,
+  FileText,
+  Star,
+  LayoutList,
+  Mail,
+  ListChecks,
+  Users,
+  UserCog,
+  ShieldCheck,
+  UsersRound,
+  ShieldAlert,
+  ScrollText,
+  FileSearch,
+  type LucideIcon,
+} from "lucide-react";
+
+// Icons are referenced by name because AdminNav's props come from a Server
+// Component (layout.tsx) and component functions can't cross that boundary.
+const ICONS = {
+  LayoutDashboard,
+  Settings,
+  Package,
+  Tags,
+  Warehouse,
+  ShoppingCart,
+  Undo2,
+  Ticket,
+  Megaphone,
+  FileText,
+  Star,
+  LayoutList,
+  Mail,
+  ListChecks,
+  Users,
+  UserCog,
+  ShieldCheck,
+  UsersRound,
+  ShieldAlert,
+  ScrollText,
+  FileSearch,
+} satisfies Record<string, LucideIcon>;
+
+export type AdminNavIconName = keyof typeof ICONS;
 
 export interface AdminNavGroup {
   label: string;
-  icon: LucideIcon;
-  items: readonly { label: string; href: string; icon: LucideIcon }[];
+  icon: AdminNavIconName;
+  items: readonly { label: string; href: string; icon: AdminNavIconName }[];
 }
 
 /**
@@ -79,7 +130,7 @@ function NavSection({ group }: { group: AdminNavGroup }) {
     () => getExpandedSnapshot(group.label),
     getServerSnapshot,
   );
-  const GroupIcon = group.icon;
+  const GroupIcon = ICONS[group.icon];
 
   return (
     <div>
@@ -98,7 +149,7 @@ function NavSection({ group }: { group: AdminNavGroup }) {
       {expanded ? (
         <ul className="flex flex-col gap-1 pl-2">
           {group.items.map((item) => {
-            const ItemIcon = item.icon;
+            const ItemIcon = ICONS[item.icon];
             return (
               <li key={item.label}>
                 <Link

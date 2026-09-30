@@ -3,29 +3,6 @@ import { Archivo, IBM_Plex_Mono, Raleway } from "next/font/google";
 import Image from "next/image";
 import { cookies } from "next/headers";
 import {
-  LayoutDashboard,
-  Settings,
-  Package,
-  Tags,
-  Warehouse,
-  ShoppingCart,
-  Undo2,
-  Ticket,
-  Megaphone,
-  FileText,
-  Star,
-  LayoutList,
-  Mail,
-  ListChecks,
-  Users,
-  UserCog,
-  ShieldCheck,
-  UsersRound,
-  ShieldAlert,
-  ScrollText,
-  FileSearch,
-} from "lucide-react";
-import {
   STAFF_SESSION_COOKIE_NAME,
   verifyStaffSessionToken,
 } from "@onwei/auth";
@@ -64,60 +41,60 @@ export const metadata: Metadata = {
 const NAV_GROUPS = [
   {
     label: "Overview",
-    icon: LayoutDashboard,
+    icon: "LayoutDashboard",
     items: [
-      { label: "Dashboard", href: "/", icon: LayoutDashboard },
-      { label: "Site settings", href: "/settings", icon: Settings },
+      { label: "Dashboard", href: "/", icon: "LayoutDashboard" },
+      { label: "Site settings", href: "/settings", icon: "Settings" },
     ],
   },
   {
     label: "Catalog",
-    icon: Package,
+    icon: "Package",
     items: [
-      { label: "Products", href: "/products", icon: Package },
-      { label: "Categories", href: "/categories", icon: Tags },
-      { label: "Inventory", href: "/inventory", icon: Warehouse },
+      { label: "Products", href: "/products", icon: "Package" },
+      { label: "Categories", href: "/categories", icon: "Tags" },
+      { label: "Inventory", href: "/inventory", icon: "Warehouse" },
     ],
   },
   {
     label: "Sales",
-    icon: ShoppingCart,
+    icon: "ShoppingCart",
     items: [
-      { label: "Orders", href: "/orders", icon: ShoppingCart },
-      { label: "Returns", href: "/returns", icon: Undo2 },
-      { label: "Coupons", href: "/coupons", icon: Ticket },
+      { label: "Orders", href: "/orders", icon: "ShoppingCart" },
+      { label: "Returns", href: "/returns", icon: "Undo2" },
+      { label: "Coupons", href: "/coupons", icon: "Ticket" },
     ],
   },
   {
     label: "Marketing & content",
-    icon: Megaphone,
+    icon: "Megaphone",
     items: [
-      { label: "Content", href: "/content", icon: FileText },
-      { label: "Reviews", href: "/reviews", icon: Star },
+      { label: "Content", href: "/content", icon: "FileText" },
+      { label: "Reviews", href: "/reviews", icon: "Star" },
       {
         label: "Review placements",
         href: "/reviews/placements",
-        icon: LayoutList,
+        icon: "LayoutList",
       },
-      { label: "Newsletter", href: "/newsletter", icon: Mail },
-      { label: "Waitlist", href: "/waitlist", icon: ListChecks },
+      { label: "Newsletter", href: "/newsletter", icon: "Mail" },
+      { label: "Waitlist", href: "/waitlist", icon: "ListChecks" },
     ],
   },
   {
     label: "People",
-    icon: Users,
+    icon: "Users",
     items: [
-      { label: "Staff", href: "/staff", icon: UserCog },
-      { label: "Roles", href: "/roles", icon: ShieldCheck },
-      { label: "Customers", href: "/customers", icon: UsersRound },
+      { label: "Staff", href: "/staff", icon: "UserCog" },
+      { label: "Roles", href: "/roles", icon: "ShieldCheck" },
+      { label: "Customers", href: "/customers", icon: "UsersRound" },
     ],
   },
   {
     label: "Compliance",
-    icon: ShieldAlert,
+    icon: "ShieldAlert",
     items: [
-      { label: "Audit log", href: "/audit-log", icon: ScrollText },
-      { label: "Data requests", href: "/dsr", icon: FileSearch },
+      { label: "Audit log", href: "/audit-log", icon: "ScrollText" },
+      { label: "Data requests", href: "/dsr", icon: "FileSearch" },
     ],
   },
 ] as const;
