@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useSyncExternalStore } from "react";
+import type { LucideIcon } from "lucide-react";
 
 export interface AdminNavGroup {
   label: string;
-  items: readonly { label: string; href: string }[];
+  icon: LucideIcon;
+  items: readonly { label: string; href: string; icon: LucideIcon }[];
 }
 
 /**
@@ -77,6 +79,7 @@ function NavSection({ group }: { group: AdminNavGroup }) {
     () => getExpandedSnapshot(group.label),
     getServerSnapshot,
   );
+  const GroupIcon = group.icon;
 
   return (
     <div>
@@ -86,21 +89,28 @@ function NavSection({ group }: { group: AdminNavGroup }) {
         aria-expanded={expanded}
         className="flex w-full items-center justify-between px-3 pb-1 text-left text-sm uppercase tracking-wide text-onwei-beige/50 hover:text-onwei-beige/80"
       >
-        <span>{group.label}</span>
+        <span className="flex items-center gap-2">
+          <GroupIcon size={14} aria-hidden />
+          {group.label}
+        </span>
         <ChevronIcon expanded={expanded} />
       </button>
       {expanded ? (
         <ul className="flex flex-col gap-1 pl-2">
-          {group.items.map((item) => (
-            <li key={item.label}>
-              <Link
-                href={item.href}
-                className="block rounded-[30px] px-3 py-1.5 text-xs uppercase tracking-wide hover:bg-onwei-green hover:text-onwei-blue"
-              >
-                {item.label}
-              </Link>
-            </li>
-          ))}
+          {group.items.map((item) => {
+            const ItemIcon = item.icon;
+            return (
+              <li key={item.label}>
+                <Link
+                  href={item.href}
+                  className="flex items-center gap-2 rounded-[30px] px-3 py-1.5 text-xs uppercase tracking-wide hover:bg-onwei-green hover:text-onwei-blue"
+                >
+                  <ItemIcon size={14} aria-hidden />
+                  {item.label}
+                </Link>
+              </li>
+            );
+          })}
         </ul>
       ) : null}
     </div>

@@ -3,6 +3,29 @@ import { Archivo, IBM_Plex_Mono, Raleway } from "next/font/google";
 import Image from "next/image";
 import { cookies } from "next/headers";
 import {
+  LayoutDashboard,
+  Settings,
+  Package,
+  Tags,
+  Warehouse,
+  ShoppingCart,
+  Undo2,
+  Ticket,
+  Megaphone,
+  FileText,
+  Star,
+  LayoutList,
+  Mail,
+  ListChecks,
+  Users,
+  UserCog,
+  ShieldCheck,
+  UsersRound,
+  ShieldAlert,
+  ScrollText,
+  FileSearch,
+} from "lucide-react";
+import {
   STAFF_SESSION_COOKIE_NAME,
   verifyStaffSessionToken,
 } from "@onwei/auth";
@@ -41,50 +64,60 @@ export const metadata: Metadata = {
 const NAV_GROUPS = [
   {
     label: "Overview",
+    icon: LayoutDashboard,
     items: [
-      { label: "Dashboard", href: "/" },
-      { label: "Site settings", href: "/settings" },
+      { label: "Dashboard", href: "/", icon: LayoutDashboard },
+      { label: "Site settings", href: "/settings", icon: Settings },
     ],
   },
   {
     label: "Catalog",
+    icon: Package,
     items: [
-      { label: "Products", href: "/products" },
-      { label: "Categories", href: "/categories" },
-      { label: "Inventory", href: "/inventory" },
+      { label: "Products", href: "/products", icon: Package },
+      { label: "Categories", href: "/categories", icon: Tags },
+      { label: "Inventory", href: "/inventory", icon: Warehouse },
     ],
   },
   {
     label: "Sales",
+    icon: ShoppingCart,
     items: [
-      { label: "Orders", href: "/orders" },
-      { label: "Returns", href: "/returns" },
-      { label: "Coupons", href: "/coupons" },
+      { label: "Orders", href: "/orders", icon: ShoppingCart },
+      { label: "Returns", href: "/returns", icon: Undo2 },
+      { label: "Coupons", href: "/coupons", icon: Ticket },
     ],
   },
   {
     label: "Marketing & content",
+    icon: Megaphone,
     items: [
-      { label: "Content", href: "/content" },
-      { label: "Reviews", href: "/reviews" },
-      { label: "Review placements", href: "/reviews/placements" },
-      { label: "Newsletter", href: "/newsletter" },
-      { label: "Waitlist", href: "/waitlist" },
+      { label: "Content", href: "/content", icon: FileText },
+      { label: "Reviews", href: "/reviews", icon: Star },
+      {
+        label: "Review placements",
+        href: "/reviews/placements",
+        icon: LayoutList,
+      },
+      { label: "Newsletter", href: "/newsletter", icon: Mail },
+      { label: "Waitlist", href: "/waitlist", icon: ListChecks },
     ],
   },
   {
     label: "People",
+    icon: Users,
     items: [
-      { label: "Staff", href: "/staff" },
-      { label: "Roles", href: "/roles" },
-      { label: "Customers", href: "/customers" },
+      { label: "Staff", href: "/staff", icon: UserCog },
+      { label: "Roles", href: "/roles", icon: ShieldCheck },
+      { label: "Customers", href: "/customers", icon: UsersRound },
     ],
   },
   {
     label: "Compliance",
+    icon: ShieldAlert,
     items: [
-      { label: "Audit log", href: "/audit-log" },
-      { label: "Data requests", href: "/dsr" },
+      { label: "Audit log", href: "/audit-log", icon: ScrollText },
+      { label: "Data requests", href: "/dsr", icon: FileSearch },
     ],
   },
 ] as const;
