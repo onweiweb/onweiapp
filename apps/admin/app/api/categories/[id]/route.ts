@@ -18,6 +18,8 @@ export async function PATCH(
     imageUrl?: unknown;
     isActive?: unknown;
     sortOrder?: unknown;
+    metaTitle?: unknown;
+    metaDescription?: unknown;
   } | null;
 
   if (!body) {
@@ -45,6 +47,15 @@ export async function PATCH(
           typeof body.isActive === "boolean" ? body.isActive : undefined,
         sortOrder:
           typeof body.sortOrder === "number" ? body.sortOrder : undefined,
+        metaTitle:
+          typeof body.metaTitle === "string" || body.metaTitle === null
+            ? body.metaTitle
+            : undefined,
+        metaDescription:
+          typeof body.metaDescription === "string" ||
+          body.metaDescription === null
+            ? body.metaDescription
+            : undefined,
       },
       { staffUserId: session.context.staffUserId },
     );

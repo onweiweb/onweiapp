@@ -15,6 +15,7 @@ export {
   deleteMarqueeItem,
   updateMarqueeItem,
 } from "./admin/marqueeItem";
+export { createArticle, deleteArticle, updateArticle } from "./admin/article";
 export { updateDsrStatus } from "./compliance/updateDsrStatus";
 export { createCoupon, updateCoupon } from "./discounts/coupon";
 export { addDiscountRule, updateDiscountRule } from "./discounts/discountRule";
@@ -44,6 +45,7 @@ export { adjustInventory, listInventory } from "./admin/inventory";
 export type {
   AdjustInventoryInput,
   AuditActor,
+  CreateArticleInput,
   CreateCategoryInput,
   CreateFaqInput,
   CreateInstagramPhotoInput,
@@ -53,6 +55,7 @@ export type {
   CreateValuePropInput,
   InventoryAdjustmentReason,
   ProductSpecInput,
+  UpdateArticleInput,
   UpdateCategoryInput,
   UpdateFaqInput,
   UpdateInstagramPhotoInput,
@@ -62,6 +65,7 @@ export type {
   UpdateValuePropInput,
 } from "./admin/types";
 export { getActiveProductBySlug } from "./catalog/getActiveProductBySlug";
+export { findRedirect } from "./catalog/findRedirect";
 export {
   derivePriceRangeMinorUnits,
   deriveInStock,
@@ -73,6 +77,8 @@ export type { ProductSort } from "./catalog/helpers";
 export { listActiveCategories } from "./catalog/listActiveCategories";
 export { listActiveProductsByCategorySlug } from "./catalog/listActiveProductsByCategorySlug";
 export { listAllActiveProducts } from "./catalog/listAllActiveProducts";
+export { listAllActiveProductSlugsForSitemap } from "./catalog/listAllActiveProductSlugsForSitemap";
+export type { ProductSitemapEntry } from "./catalog/listAllActiveProductSlugsForSitemap";
 export {
   listApprovedReviews,
   summarizeReviews,
@@ -89,7 +95,11 @@ export { listRelatedProducts } from "./catalog/listRelatedProducts";
 export { listValueProps } from "./catalog/listValueProps";
 export { listInstagramPhotos } from "./catalog/listInstagramPhotos";
 export { listMarqueeItems } from "./catalog/listMarqueeItems";
+export { listPublishedArticles } from "./catalog/listPublishedArticles";
+export { getPublishedArticleBySlug } from "./catalog/getPublishedArticleBySlug";
 export type {
+  ArticleDetail,
+  ArticleListItem,
   CategorySummary,
   ComparisonProduct,
   FaqItem,

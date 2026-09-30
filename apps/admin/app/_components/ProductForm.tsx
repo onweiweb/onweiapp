@@ -45,6 +45,8 @@ export function ProductForm({
     powerRating?: string;
     spinRating?: string;
     controlRating?: string;
+    metaTitle?: string;
+    metaDescription?: string;
   };
 }) {
   const router = useRouter();
@@ -65,6 +67,10 @@ export function ProductForm({
   const [spinRating, setSpinRating] = useState(initial?.spinRating ?? "");
   const [controlRating, setControlRating] = useState(
     initial?.controlRating ?? "",
+  );
+  const [metaTitle, setMetaTitle] = useState(initial?.metaTitle ?? "");
+  const [metaDescription, setMetaDescription] = useState(
+    initial?.metaDescription ?? "",
   );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -113,6 +119,8 @@ export function ProductForm({
           powerRating: powerRating === "" ? null : Number(powerRating),
           spinRating: spinRating === "" ? null : Number(spinRating),
           controlRating: controlRating === "" ? null : Number(controlRating),
+          metaTitle: metaTitle.trim() || null,
+          metaDescription: metaDescription.trim() || null,
         }),
       });
       const data = (await response.json()) as {
@@ -321,6 +329,37 @@ export function ProductForm({
                 className="w-24"
               />
             </div>
+          </label>
+        </div>
+      ),
+    },
+    {
+      id: "seo",
+      label: "Search listing",
+      content: (
+        <div className="flex max-w-xl flex-col gap-4">
+          <p className="text-xs text-onwei-blue/60">
+            Controls how this product shows up in Google search results. Leave
+            blank and we&apos;ll build one from the name and description above.
+          </p>
+
+          <label className="flex flex-col gap-1 text-sm">
+            Search result title
+            <AdminInput
+              value={metaTitle}
+              onChange={(event) => setMetaTitle(event.target.value)}
+              placeholder={name ? `${name} | Onwei` : undefined}
+            />
+          </label>
+
+          <label className="flex flex-col gap-1 text-sm">
+            Search result description
+            <AdminTextarea
+              value={metaDescription}
+              onChange={(event) => setMetaDescription(event.target.value)}
+              rows={3}
+              placeholder="Shown under the title in Google's results — a sentence or two about the product."
+            />
           </label>
         </div>
       ),

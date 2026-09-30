@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -5,10 +6,12 @@ import {
   cachedListActiveProductsByCategorySlug as listActiveProductsByCategorySlug,
   cachedListInstagramPhotos as listInstagramPhotos,
   cachedListMarqueeItems as listMarqueeItems,
+  cachedListPublishedArticles as listPublishedArticles,
   cachedListSurfaceReviews as listSurfaceReviews,
   cachedListValueProps as listValueProps,
 } from "../lib/cachedCatalog";
 import type {
+  ArticleListItem,
   ProductListItem,
   ReviewListItem,
   ValuePropItem,
@@ -25,27 +28,6 @@ import { JoinMovementSection } from "@/_components/JoinMovementSection";
 import { ScrollCarousel } from "@/_components/ScrollCarousel";
 import { StarRow } from "@/_components/StarRow";
 import { CtaLink } from "@/_components/CtaLink";
-
-const JOURNAL_ARTICLES = [
-  {
-    image: "/images/journal/article-1.png",
-    date: "Feb 25, 2026",
-    title: "5 Drills to Improve Your Pickleball Dink Game",
-  },
-  {
-    image: "/images/journal/article-2.png",
-    date: "Feb 25, 2026",
-    title: "Morning Yoga Routine for Athletes",
-  },
-  {
-    image: "/images/journal/article-3.png",
-    date: "Feb 25, 2026",
-    title: "How to Choose Your First Pickleball Racquet",
-  },
-] as const;
-
-const JOURNAL_BODY =
-  "Lorem ipsum dolor sit amet consectetur. Arcu diam pellentesque libero iaculis adipiscing. Turpis sem odio gravida sagittis pretium velit non. Dignissim mauris purus vitae mattis turpis eu. Pharetra eu arcu integer integer elementum. Ullamcorper mattis lectus turpis nulla tristique tincidunt. Eget odio semper facilisis mauris id elementum faucibus non purus. Volutpat porta integer in feugiat tortor eu diam volutpat.";
 
 function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
   return (
@@ -66,9 +48,9 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
           />
           <div className="absolute inset-0 bg-black/30" />
           <div className="relative flex flex-col gap-8">
-            <p className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
+            <h1 className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
               Made for everyday play
-            </p>
+            </h1>
             <CtaLink
               href="/collection/pickleball"
               className="w-fit bg-onwei-beige text-onwei-blue"
@@ -109,11 +91,11 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
             className="absolute right-6 top-6 hidden sm:block"
           />
           <div className="relative flex flex-col gap-8">
-            <p className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
+            <h2 className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
               Movement,
               <br />
               your own way
-            </p>
+            </h2>
             <CtaLink
               href="/collection/pilates"
               className="w-fit bg-onwei-beige text-onwei-blue"
@@ -384,7 +366,15 @@ function AboutSection() {
 // Static — no blog/article model exists in this codebase (see
 // docs/DATABASE_SCHEMA.md). All three posts, dates and body copy are
 // hardcoded straight from the Figma file.
-function JournalSection() {
+// Was 100% hardcoded lorem-ipsum placeholder with href="#" dead links (see
+// docs/OPEN_DECISIONS.md's SEO entry) — now backed by the real Article
+// model. No real /journal index page exists yet (out of this pass's scope,
+// only /journal/[slug] detail pages), so "explore blogs" points at the
+// most recent article rather than a listing that doesn't exist.
+function JournalSection({ articles }: { articles: ArticleListItem[] }) {
+  const [mostRecent] = articles;
+  if (!mostRecent) return null;
+
   return (
     <section className="flex flex-col items-center bg-onwei-white px-3 py-24 sm:px-6 lg:px-14">
       <div className="flex w-full max-w-[1440px] flex-col gap-12">
@@ -402,7 +392,10 @@ function JournalSection() {
               className="max-w-full"
             />
           </div>
-          <CtaLink href="#" className="bg-onwei-blue text-onwei-beige">
+          <CtaLink
+            href={`/journal/${mostRecent.slug}`}
+            className="bg-onwei-blue text-onwei-beige"
+          >
             explore blogs
           </CtaLink>
         </div>
@@ -415,31 +408,40 @@ function JournalSection() {
           className="lg:overflow-visible"
           trackClassName="lg:hidden"
         >
-          {JOURNAL_ARTICLES.map((post) => (
+          {articles.map((post) => (
             <article
-              key={post.title}
+              key={post.slug}
               className="flex w-[300px] shrink-0 flex-col gap-3 lg:w-auto lg:flex-1 lg:shrink"
             >
               <div className="relative aspect-[416/280] w-full overflow-hidden rounded-[20px] bg-[#d4d4d4]">
-                <Image
-                  src={post.image}
-                  alt=""
-                  fill
-                  sizes="(min-width: 1024px) 33vw, 100vw"
-                  className="object-cover"
-                />
+                {post.coverImageUrl ? (
+                  <Image
+                    src={post.coverImageUrl}
+                    alt=""
+                    fill
+                    sizes="(min-width: 1024px) 33vw, 100vw"
+                    className="object-cover"
+                  />
+                ) : null}
               </div>
               <div className="flex flex-col items-start gap-6 text-onwei-blue">
                 <div className="flex flex-col gap-2">
-                  <p className="font-grotesk text-[11px] font-light">
-                    {post.date}
-                  </p>
+                  {post.publishedAt ? (
+                    <p className="font-grotesk text-[11px] font-light">
+                      {post.publishedAt.toLocaleDateString()}
+                    </p>
+                  ) : null}
                   <p className="font-display text-[18px] font-medium uppercase tracking-[0.216px]">
                     {post.title}
                   </p>
-                  <p className="font-grotesk text-[14px]">{JOURNAL_BODY}</p>
+                  {post.excerpt ? (
+                    <p className="font-grotesk text-[14px]">{post.excerpt}</p>
+                  ) : null}
                 </div>
-                <Link href="#" className="text-[16px] underline capitalize">
+                <Link
+                  href={`/journal/${post.slug}`}
+                  className="text-[16px] underline capitalize"
+                >
                   Read More
                 </Link>
               </div>
@@ -450,6 +452,12 @@ function JournalSection() {
     </section>
   );
 }
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Pickleball and Pilates gear for everyday movers, from Onwei.",
+  alternates: { canonical: "/" },
+};
 
 // No live Instagram feed integration exists — photos are CMS-editable
 // (InstagramPhoto) rather than a real feed, but no longer hardcoded here.
@@ -463,6 +471,7 @@ export default async function HomePage() {
     showcaseMarqueeItems,
     valueProps,
     instagramPhotos,
+    articles,
   ] = await Promise.all([
     listActiveCategories(),
     listActiveProductsByCategorySlug("pickleball"),
@@ -472,6 +481,7 @@ export default async function HomePage() {
     listMarqueeItems("HOME_SHOWCASE"),
     listValueProps(),
     listInstagramPhotos(),
+    listPublishedArticles(3),
   ]);
   const pickleball = categories.find(
     (category) => category.slug === "pickleball",
@@ -518,7 +528,7 @@ export default async function HomePage() {
         }
       />
       <JoinMovementSection />
-      <JournalSection />
+      <JournalSection articles={articles} />
       <InstagramGrid photos={instagramPhotos} />
       <SiteFooter />
     </main>

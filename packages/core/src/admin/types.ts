@@ -9,6 +9,8 @@ export interface CreateCategoryInput {
   imageUrl?: string | null;
   isActive?: boolean;
   sortOrder?: number;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
 }
 
 export type UpdateCategoryInput = Partial<CreateCategoryInput>;
@@ -40,6 +42,8 @@ export interface CreateProductInput {
   powerRating?: number | null;
   spinRating?: number | null;
   controlRating?: number | null;
+  metaTitle?: string | null;
+  metaDescription?: string | null;
 }
 
 export type UpdateProductInput = Partial<CreateProductInput>;
@@ -96,3 +100,14 @@ export interface CreateMarqueeItemInput {
 }
 
 export type UpdateMarqueeItemInput = Partial<CreateMarqueeItemInput>;
+
+export interface CreateArticleInput {
+  slug: string;
+  title: string;
+  excerpt?: string | null;
+  bodyHtml: string;
+  coverImageUrl?: string | null;
+  isPublished?: boolean;
+}
+
+export type UpdateArticleInput = Partial<CreateArticleInput>;

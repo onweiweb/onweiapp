@@ -23,6 +23,8 @@ export function CategoryForm({
     slug: string;
     isActive: boolean;
     sortOrder: number;
+    metaTitle?: string;
+    metaDescription?: string;
   };
 }) {
   const router = useRouter();
@@ -31,6 +33,10 @@ export function CategoryForm({
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [sortOrder, setSortOrder] = useState(initial?.sortOrder ?? 0);
+  const [metaTitle, setMetaTitle] = useState(initial?.metaTitle ?? "");
+  const [metaDescription, setMetaDescription] = useState(
+    initial?.metaDescription ?? "",
+  );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,7 +58,14 @@ export function CategoryForm({
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, slug, isActive, sortOrder }),
+        body: JSON.stringify({
+          name,
+          slug,
+          isActive,
+          sortOrder,
+          metaTitle: metaTitle.trim() || null,
+          metaDescription: metaDescription.trim() || null,
+        }),
       });
       const data = (await response.json()) as { ok: boolean; error?: string };
 
@@ -129,6 +142,37 @@ export function CategoryForm({
         />
         Visible on site
       </label>
+
+      <div className="flex flex-col gap-1">
+        <label htmlFor="metaTitle" className="text-sm font-medium">
+          Search result title
+        </label>
+        <input
+          id="metaTitle"
+          value={metaTitle}
+          onChange={(event) => setMetaTitle(event.target.value)}
+          placeholder={name ? `${name} | Onwei` : undefined}
+          className="rounded-md border border-neutral-300 px-3 py-2"
+        />
+        <p className="text-xs text-neutral-500">
+          Controls how this category shows up in Google search results. Leave
+          blank and we&apos;ll build one from the name above.
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-1">
+        <label htmlFor="metaDescription" className="text-sm font-medium">
+          Search result description
+        </label>
+        <textarea
+          id="metaDescription"
+          value={metaDescription}
+          onChange={(event) => setMetaDescription(event.target.value)}
+          rows={3}
+          placeholder="Shown under the title in Google's results — a sentence or two about this category."
+          className="rounded-md border border-neutral-300 px-3 py-2"
+        />
+      </div>
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 

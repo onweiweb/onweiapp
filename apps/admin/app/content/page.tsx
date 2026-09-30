@@ -3,25 +3,40 @@ import { requirePageSession } from "../_lib/requirePageSession";
 import { ValuePropsEditor } from "../_components/ValuePropsEditor";
 import { InstagramPhotosEditor } from "../_components/InstagramPhotosEditor";
 import { MarqueeItemsEditor } from "../_components/MarqueeItemsEditor";
+import { ArticlesEditor } from "../_components/ArticlesEditor";
 import { AdminTabs } from "../_components/ui";
 
 export default async function ContentPage() {
   await requirePageSession("content:manage");
 
-  const [valueProps, instagramPhotos, marqueeItems] = await Promise.all([
-    prisma.valueProp.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: "asc" },
-    }),
-    prisma.instagramPhoto.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: "asc" },
-    }),
-    prisma.marqueeItem.findMany({
-      where: { isActive: true },
-      orderBy: { sortOrder: "asc" },
-    }),
-  ]);
+  const [valueProps, instagramPhotos, marqueeItems, articles] =
+    await Promise.all([
+      prisma.valueProp.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      }),
+      prisma.instagramPhoto.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      }),
+      prisma.marqueeItem.findMany({
+        where: { isActive: true },
+        orderBy: { sortOrder: "asc" },
+      }),
+      // Unlike the other three content types, this one intentionally
+      // includes drafts (isPublished: false) — the admin needs to see and
+      // manage unpublished articles here too, not just live ones.
+      prisma.article.findMany({
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          excerpt: true,
+          isPublished: true,
+        },
+      }),
+    ]);
 
   const marqueeByPlacement = {
     HOME_HERO: marqueeItems.filter((item) => item.placement === "HOME_HERO"),
@@ -101,6 +116,20 @@ export default async function ContentPage() {
                     items={marqueeByPlacement.PDP}
                   />
                 </div>
+              </div>
+            ),
+          },
+          {
+            id: "articles",
+            label: "Articles",
+            content: (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-onwei-blue/70">
+                  The homepage&apos;s &quot;From the Playbook&quot; section and
+                  each article&apos;s own page. Drafts stay hidden from the
+                  storefront until published.
+                </p>
+                <ArticlesEditor items={articles} />
               </div>
             ),
           },

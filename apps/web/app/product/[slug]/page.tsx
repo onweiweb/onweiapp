@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
-import { formatCurrency, summarizeReviews } from "@onwei/core";
+import type { Metadata } from "next";
+import { notFound, permanentRedirect } from "next/navigation";
+import { findRedirect, formatCurrency, summarizeReviews } from "@onwei/core";
 import {
   cachedGetActiveProductBySlug as getActiveProductBySlug,
   cachedListSurfaceReviews as listSurfaceReviews,
@@ -10,6 +11,13 @@ import {
   cachedListMarqueeItems as listMarqueeItems,
   cachedListValueProps as listValueProps,
 } from "../../../lib/cachedCatalog";
+import { buildProductMetadata } from "../../../lib/seo/metadata";
+import { JsonLd } from "../../../lib/seo/jsonLd";
+import {
+  buildBreadcrumbJsonLd,
+  buildFaqJsonLd,
+  buildProductJsonLd,
+} from "../../../lib/seo/structuredData";
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
 import { ProductVariantPicker } from "@/_components/ProductVariantPicker";
@@ -41,6 +49,17 @@ import { VariantPrice } from "@/_components/VariantPrice";
 // rather than the mobile mockup's separate 5-item breakdown; (2) "Shipping
 // & Returns" is static shared copy (it read as generic store policy in
 // Figma, not product-specific), not a per-product field.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const product = await getActiveProductBySlug(slug);
+  if (!product) return {};
+  return buildProductMetadata(product);
+}
+
 export default async function ProductPage({
   params,
 }: {
@@ -48,7 +67,11 @@ export default async function ProductPage({
 }) {
   const { slug } = await params;
   const product = await getActiveProductBySlug(slug);
-  if (!product) notFound();
+  if (!product) {
+    const toPath = await findRedirect(`/product/${slug}`);
+    if (toPath) permanentRedirect(toPath);
+    notFound();
+  }
 
   const [
     reviews,
@@ -97,6 +120,18 @@ export default async function ProductPage({
 
   return (
     <main>
+      <JsonLd data={buildProductJsonLd(product)} />
+      <JsonLd
+        data={buildBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          {
+            name: product.category.name,
+            path: `/collection/${product.category.slug}`,
+          },
+          { name: product.name, path: `/product/${product.slug}` },
+        ])}
+      />
+      {faqs.length > 0 ? <JsonLd data={buildFaqJsonLd(faqs)} /> : null}
       <SiteHeader />
 
       <section className="flex flex-col items-center bg-onwei-green px-6 py-14 sm:px-14">
@@ -122,9 +157,9 @@ export default async function ProductPage({
               ) : null}
 
               <div className="flex w-full items-center justify-between gap-4">
-                <p className="font-display text-[32px] font-bold uppercase leading-none text-onwei-blue sm:text-[40px]">
+                <h1 className="font-display text-[32px] font-bold uppercase leading-none text-onwei-blue sm:text-[40px]">
                   {product.name}
-                </p>
+                </h1>
                 <VariantPrice />
               </div>
 

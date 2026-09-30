@@ -35,6 +35,8 @@ export async function listActiveProductsByCategorySlug(
       name: category.name,
       slug: category.slug,
       imageUrl: category.imageUrl,
+      metaTitle: category.metaTitle,
+      metaDescription: category.metaDescription,
     },
     products: sortProductList(products.map(mapToListItem), sort),
   };

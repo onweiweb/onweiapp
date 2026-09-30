@@ -161,6 +161,11 @@ model Category {
   isActive  Boolean    @default(true)
   sortOrder Int        @default(0)
 
+  // Nullable overrides for apps/web's generateMetadata — falls back to a
+  // computed default (from name) when unset. Same pair as Product below.
+  metaTitle       String?
+  metaDescription String?
+
   products  Product[]
 }
 
@@ -194,6 +199,11 @@ model Product {
   // table. Plain string array: shape never varies, so no JSON needed.
   highlightTags     String[] @default([])
 
+  // Nullable overrides for apps/web's generateMetadata — falls back to a
+  // computed default (from name/description/highlightTags) when unset.
+  metaTitle       String?
+  metaDescription String?
+
   variants         ProductVariant[]
   images           ProductImage[]
   reviews          Review[]
@@ -207,6 +217,23 @@ enum ProductStatus {
   DRAFT
   ACTIVE
   ARCHIVED
+}
+
+// Infrastructure, not customer/order data — hard delete, no admin UI. Rows
+// are only ever written automatically, from inside updateProduct/
+// deleteProduct/updateCategory (packages/core/src/admin/), when a slug
+// changes or a product is archived, so an old /product or /collection URL
+// 301s to the new location instead of 404ing. Consumed page-level (only on
+// the not-found path) by apps/web/app/product/[slug]/page.tsx and
+// apps/web/app/collection/[slug]/page.tsx, not proxy.ts — see
+// docs/OPEN_DECISIONS.md's SEO entry for why.
+model Redirect {
+  id        String   @id @default(cuid())
+  fromPath  String   @unique
+  toPath    String
+  createdAt DateTime @default(now())
+
+  @@index([fromPath])
 }
 
 model ProductVariant {
@@ -656,6 +683,14 @@ model SiteSetting {
   // Whether WaitlistEntry.phone accepts any valid international number or
   // only Indian mobile numbers — see packages/core/src/validation/phone.ts.
   allowInternationalPhone Boolean  @default(true)
+  // Social links shown in apps/web's SiteFooter and WaitlistFooter — null
+  // means "don't show this icon" rather than a dead "#" link, which is
+  // what every one of these defaulted to before this field existed.
+  instagramUrl            String?
+  linkedinUrl             String?
+  facebookUrl             String?
+  youtubeUrl              String?
+  spotifyUrl              String?
   updatedAt               DateTime @updatedAt
   updatedByStaffId        String?
 }
@@ -737,6 +772,26 @@ model MarqueeItem {
   isActive  Boolean          @default(true)
 
   @@index([placement, isActive])
+}
+
+// Same category as ValueProp/InstagramPhoto/MarqueeItem above — admin-
+// authored marketing/editorial content, not customer/order/audit data, so
+// hard delete (isPublished flag instead of deletedAt) matches those, not
+// Product's soft-delete convention. Backs apps/web's /journal/[slug] and
+// the homepage's "From the Playbook" section.
+model Article {
+  id            String    @id @default(cuid())
+  slug          String    @unique
+  title         String
+  excerpt       String?
+  bodyHtml      String
+  coverImageUrl String?
+  isPublished   Boolean   @default(false)
+  publishedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([isPublished, publishedAt])
 }
 
 // ---------------------------------------------------------------------------

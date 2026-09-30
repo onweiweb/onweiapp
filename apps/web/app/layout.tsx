@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { Raleway } from "next/font/google";
+import { SITE_URL } from "../lib/seo/siteUrl";
+import { JsonLd } from "../lib/seo/jsonLd";
+import {
+  buildOrganizationJsonLd,
+  buildWebSiteJsonLd,
+} from "../lib/seo/structuredData";
 import "./globals.css";
 
 // Figma specs "Author Variable" (display headlines, weights Medium/Semibold/
@@ -68,8 +74,15 @@ const summerMood = localFont({
   display: "swap",
 });
 
+// metadataBase lets every route below use a relative path for URL-based
+// metadata fields (openGraph.images, alternates.canonical, etc. — see
+// Phase 1's generateMetadata additions) instead of each one having to build
+// an absolute URL by hand. The title template means a route's own
+// `metadata.title` (or generateMetadata's) composes as "X | Onwei" instead
+// of silently overriding this default outright.
 export const metadata: Metadata = {
-  title: "Onwei",
+  metadataBase: new URL(SITE_URL),
+  title: { default: "Onwei", template: "%s | Onwei" },
   description: "Pickleball and Pilates apparel.",
 };
 
@@ -83,7 +96,11 @@ export default function RootLayout({
       lang="en"
       className={`${raleway.variable} ${author.variable} ${groteskMono.variable} ${summerMood.variable}`}
     >
-      <body>{children}</body>
+      <body>
+        <JsonLd data={buildOrganizationJsonLd()} />
+        <JsonLd data={buildWebSiteJsonLd()} />
+        {children}
+      </body>
     </html>
   );
 }

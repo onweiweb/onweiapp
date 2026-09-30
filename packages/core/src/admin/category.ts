@@ -1,5 +1,6 @@
 import { prisma } from "@onwei/database";
 import { writeAuditLog } from "./auditLog";
+import { upsertRedirect } from "./redirect";
 import type {
   AuditActor,
   CreateCategoryInput,
@@ -18,6 +19,8 @@ export async function createCategory(
       imageUrl: input.imageUrl ?? null,
       isActive: input.isActive ?? true,
       sortOrder: input.sortOrder ?? 0,
+      metaTitle: input.metaTitle ?? null,
+      metaDescription: input.metaDescription ?? null,
     },
   });
 
@@ -48,6 +51,8 @@ export async function updateCategory(
       imageUrl: input.imageUrl,
       isActive: input.isActive,
       sortOrder: input.sortOrder,
+      metaTitle: input.metaTitle,
+      metaDescription: input.metaDescription,
     },
   });
 
@@ -59,6 +64,13 @@ export async function updateCategory(
     beforeState: before,
     afterState: category,
   });
+
+  if (before.slug !== category.slug) {
+    await upsertRedirect(
+      `/collection/${before.slug}`,
+      `/collection/${category.slug}`,
+    );
+  }
 
   return category;
 }

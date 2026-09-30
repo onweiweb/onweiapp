@@ -72,6 +72,8 @@ export default async function EditProductPage({
                   powerRating: product.powerRating?.toString() ?? "",
                   spinRating: product.spinRating?.toString() ?? "",
                   controlRating: product.controlRating?.toString() ?? "",
+                  metaTitle: product.metaTitle ?? "",
+                  metaDescription: product.metaDescription ?? "",
                 }}
               />
             ),

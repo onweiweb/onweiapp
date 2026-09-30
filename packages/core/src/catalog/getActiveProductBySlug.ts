@@ -41,6 +41,8 @@ export async function getActiveProductBySlug(
       name: product.category.name,
       slug: product.category.slug,
       imageUrl: product.category.imageUrl,
+      metaTitle: product.category.metaTitle,
+      metaDescription: product.category.metaDescription,
     },
     images: product.images.map(mapImage),
     variants: product.variants.map(mapVariant),
@@ -49,5 +51,7 @@ export async function getActiveProductBySlug(
     careInstructions: product.careInstructions,
     playCharacteristics,
     highlightTags: product.highlightTags,
+    metaTitle: product.metaTitle,
+    metaDescription: product.metaDescription,
   };
 }

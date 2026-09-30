@@ -1,12 +1,15 @@
 import { unstable_cache } from "next/cache";
 import {
   getActiveProductBySlug,
+  getPublishedArticleBySlug,
   listActiveCategories,
   listActiveProductsByCategorySlug,
+  listAllActiveProductSlugsForSitemap,
   listComparableProducts,
   listFaqs,
   listInstagramPhotos,
   listMarqueeItems,
+  listPublishedArticles,
   listRelatedProducts,
   listSurfaceReviews,
   listValueProps,
@@ -80,5 +83,26 @@ export const cachedListSurfaceReviews = unstable_cache(
 export const cachedListValueProps = unstable_cache(
   listValueProps,
   ["catalog:listValueProps"],
+  { revalidate: REVALIDATE_SECONDS, tags: TAGS },
+);
+
+// Used by app/sitemap.ts — same 60s/"catalog" cache as everything else here
+// rather than inventing a separate lifetime, so it gets the same on-demand
+// revalidation for free on a product edit/slug change/archive.
+export const cachedListAllActiveProductSlugsForSitemap = unstable_cache(
+  listAllActiveProductSlugsForSitemap,
+  ["catalog:listAllActiveProductSlugsForSitemap"],
+  { revalidate: REVALIDATE_SECONDS, tags: TAGS },
+);
+
+export const cachedListPublishedArticles = unstable_cache(
+  listPublishedArticles,
+  ["catalog:listPublishedArticles"],
+  { revalidate: REVALIDATE_SECONDS, tags: TAGS },
+);
+
+export const cachedGetPublishedArticleBySlug = unstable_cache(
+  getPublishedArticleBySlug,
+  ["catalog:getPublishedArticleBySlug"],
   { revalidate: REVALIDATE_SECONDS, tags: TAGS },
 );

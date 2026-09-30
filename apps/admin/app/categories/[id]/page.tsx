@@ -22,6 +22,8 @@ export default async function EditCategoryPage({
           slug: category.slug,
           isActive: category.isActive,
           sortOrder: category.sortOrder,
+          metaTitle: category.metaTitle ?? "",
+          metaDescription: category.metaDescription ?? "",
         }}
       />
     </main>

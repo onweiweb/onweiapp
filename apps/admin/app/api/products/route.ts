@@ -54,6 +54,8 @@ export async function POST(request: Request) {
     powerRating?: unknown;
     spinRating?: unknown;
     controlRating?: unknown;
+    metaTitle?: unknown;
+    metaDescription?: unknown;
   } | null;
 
   const name = typeof body?.name === "string" ? body.name.trim() : "";
@@ -97,6 +99,11 @@ export async function POST(request: Request) {
           typeof body?.spinRating === "number" ? body.spinRating : null,
         controlRating:
           typeof body?.controlRating === "number" ? body.controlRating : null,
+        metaTitle: typeof body?.metaTitle === "string" ? body.metaTitle : null,
+        metaDescription:
+          typeof body?.metaDescription === "string"
+            ? body.metaDescription
+            : null,
       },
       { staffUserId: session.context.staffUserId },
     );

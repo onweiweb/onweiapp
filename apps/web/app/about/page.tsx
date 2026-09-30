@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { getSiteSetting } from "@onwei/core";
 import { SiteHeader } from "@/_components/SiteHeader";
@@ -30,8 +31,16 @@ import { HoverLink } from "@/_components/HoverLink";
 // short of a redeploy.
 export const revalidate = 30;
 
+export const metadata: Metadata = {
+  title: "About",
+  description:
+    "Built to move, built with intent, built by an athlete — the story behind Onwei.",
+  alternates: { canonical: "/about" },
+};
+
 export default async function AboutPage() {
-  const { siteMode } = await getSiteSetting();
+  const { siteMode, instagramUrl, youtubeUrl, spotifyUrl } =
+    await getSiteSetting();
   const isWaitlistMode = siteMode === "WAITLIST";
 
   return (
@@ -496,7 +505,11 @@ export default async function AboutPage() {
               className="pointer-events-none absolute -right-20 -top-2 hidden lg:block"
             />
             <HoverLink
-              href={isWaitlistMode ? "/waitlist" : "/collection/pickleball"}
+              href={
+                isWaitlistMode
+                  ? "/waitlist#join-onwei-insiders"
+                  : "/collection/pickleball"
+              }
               className="rounded-[30px] bg-onwei-blue px-6 py-3 font-grotesk text-[14px] uppercase text-onwei-beige"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
@@ -507,7 +520,15 @@ export default async function AboutPage() {
         </div>
       </ScrollReveal>
 
-      {isWaitlistMode ? <WaitlistFooter /> : <SiteFooter />}
+      {isWaitlistMode ? (
+        <WaitlistFooter
+          instagramUrl={instagramUrl}
+          youtubeUrl={youtubeUrl}
+          spotifyUrl={spotifyUrl}
+        />
+      ) : (
+        <SiteFooter />
+      )}
     </main>
   );
 }

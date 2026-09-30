@@ -3,6 +3,8 @@ export interface CategorySummary {
   name: string;
   slug: string;
   imageUrl: string | null;
+  metaTitle: string | null;
+  metaDescription: string | null;
 }
 
 export interface ProductImageDTO {
@@ -60,6 +62,8 @@ export interface ProductDetail {
   // simply never has this data, so the section it drives never renders.
   playCharacteristics: PlayCharacteristics | null;
   highlightTags: string[];
+  metaTitle: string | null;
+  metaDescription: string | null;
 }
 
 export interface ReviewListItem {
@@ -103,4 +107,19 @@ export interface ValuePropItem {
 export interface InstagramPhotoItem {
   url: string;
   altText: string | null;
+}
+
+/** Card-sized shape for the homepage's "From the Playbook" section — no
+ * bodyHtml, that's only needed once you're actually on the article. */
+export interface ArticleListItem {
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  coverImageUrl: string | null;
+  publishedAt: Date | null;
+}
+
+export interface ArticleDetail extends ArticleListItem {
+  bodyHtml: string;
+  updatedAt: Date;
 }

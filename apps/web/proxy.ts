@@ -7,8 +7,31 @@ const ALWAYS_ALLOWED_PREFIXES = [
   "/waitlist",
   "/about",
   "/api/waitlist",
+  // Admin's server-to-server ping (triggerCatalogRevalidate) — gated by its
+  // own REVALIDATE_SECRET bearer-token check inside the route handler
+  // itself, so allowing it past this site-mode gate doesn't weaken that.
+  // Without this, every admin catalog edit's revalidate call silently 307s
+  // instead of running, undetected because that call is fire-and-forget
+  // and only checks for network errors, not response status — it was
+  // masked by cachedCatalog.ts's 60s fallback window, not actually broken
+  // in a user-visible way, but doing nothing.
+  "/api/revalidate",
   "/images",
   "/favicon.ico",
+  // app/robots.ts and app/sitemap.ts — without these, this same gate
+  // 307s a crawler's request for robots.txt itself to /waitlist, which
+  // defeats robots.ts's own WAITLIST-mode "disallow everything" response.
+  "/robots.txt",
+  "/sitemap.xml",
+  // app/icon.svg and app/apple-icon.png (favicon/apple-touch-icon file
+  // conventions) — favicon.ico is skipped by this proxy's own matcher
+  // below, but these two aren't, so every browser tab/bookmark/home-screen
+  // icon request was silently getting the waitlist page's HTML instead of
+  // image bytes while gated. Exact matches, not prefixes — these are single
+  // files, not directories, so the startsWith(`${prefix}/`) branch below
+  // never applies to them.
+  "/icon.svg",
+  "/apple-icon.png",
 ];
 
 /**

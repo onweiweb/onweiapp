@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getSiteSetting } from "@onwei/core";
 import { NewsletterForm } from "./NewsletterForm";
 
 const FOOTER_COLUMNS = [
@@ -83,7 +84,9 @@ function FacebookIcon() {
   );
 }
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const { instagramUrl, linkedinUrl, facebookUrl } = await getSiteSetting();
+
   return (
     <footer>
       <div className="flex flex-col items-center overflow-hidden bg-onwei-purple px-3 py-12 sm:px-6 lg:px-14">
@@ -228,15 +231,36 @@ export function SiteFooter() {
                     Connect
                   </p>
                   <div className="flex items-center gap-4">
-                    <a href="#" aria-label="Onwei on Instagram">
-                      <InstagramIcon />
-                    </a>
-                    <a href="#" aria-label="Onwei on LinkedIn">
-                      <LinkedInIcon />
-                    </a>
-                    <a href="#" aria-label="Onwei on Facebook">
-                      <FacebookIcon />
-                    </a>
+                    {instagramUrl ? (
+                      <a
+                        href={instagramUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Onwei on Instagram"
+                      >
+                        <InstagramIcon />
+                      </a>
+                    ) : null}
+                    {linkedinUrl ? (
+                      <a
+                        href={linkedinUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Onwei on LinkedIn"
+                      >
+                        <LinkedInIcon />
+                      </a>
+                    ) : null}
+                    {facebookUrl ? (
+                      <a
+                        href={facebookUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="Onwei on Facebook"
+                      >
+                        <FacebookIcon />
+                      </a>
+                    ) : null}
                   </div>
                 </div>
               </div>

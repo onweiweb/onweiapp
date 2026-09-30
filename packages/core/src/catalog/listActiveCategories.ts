@@ -12,5 +12,7 @@ export async function listActiveCategories(): Promise<CategorySummary[]> {
     name: category.name,
     slug: category.slug,
     imageUrl: category.imageUrl,
+    metaTitle: category.metaTitle,
+    metaDescription: category.metaDescription,
   }));
 }

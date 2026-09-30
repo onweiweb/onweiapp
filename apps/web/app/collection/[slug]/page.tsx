@@ -1,11 +1,19 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
+import { findRedirect } from "@onwei/core";
 import {
   cachedListActiveProductsByCategorySlug as listActiveProductsByCategorySlug,
   cachedListInstagramPhotos as listInstagramPhotos,
   cachedListSurfaceReviews as listSurfaceReviews,
 } from "../../../lib/cachedCatalog";
+import {
+  buildCategoryMetadata,
+  SHOP_ALL_METADATA,
+} from "../../../lib/seo/metadata";
+import { JsonLd } from "../../../lib/seo/jsonLd";
+import { buildBreadcrumbJsonLd } from "../../../lib/seo/structuredData";
 import type {
   CategorySummary,
   ProductListItem,
@@ -97,9 +105,9 @@ function CategorySection({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <p className="font-display text-[48px] font-bold uppercase leading-[1.1] text-onwei-blue lg:text-[64px]">
+      <h2 className="font-display text-[48px] font-bold uppercase leading-[1.1] text-onwei-blue lg:text-[64px]">
         {category.name}
-      </p>
+      </h2>
       {needsScroll ? (
         // Only the product cards scroll — the promo tile is a sibling
         // outside ScrollCarousel's own overflow-x-auto box, not a child
@@ -158,6 +166,19 @@ function FindYourWeiSection() {
   );
 }
 
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  if (slug === "all") return SHOP_ALL_METADATA;
+
+  const result = await listActiveProductsByCategorySlug(slug);
+  if (!result) return {};
+  return buildCategoryMetadata(result.category);
+}
+
 export default async function CollectionPage({
   params,
   searchParams,
@@ -185,7 +206,11 @@ export default async function CollectionPage({
         )
       : await (async () => {
           const result = await listActiveProductsByCategorySlug(slug, sort);
-          if (!result) notFound();
+          if (!result) {
+            const toPath = await findRedirect(`/collection/${slug}`);
+            if (toPath) permanentRedirect(toPath);
+            notFound();
+          }
           return [result];
         })();
 
@@ -198,8 +223,17 @@ export default async function CollectionPage({
     listInstagramPhotos(),
   ]);
 
+  const breadcrumbName =
+    slug === "all" ? "Shop All" : (categorySections[0]?.category.name ?? slug);
+
   return (
     <main>
+      <JsonLd
+        data={buildBreadcrumbJsonLd([
+          { name: "Home", path: "/" },
+          { name: breadcrumbName, path: `/collection/${slug}` },
+        ])}
+      />
       <SiteHeader />
 
       <section className="relative flex flex-col items-center bg-onwei-green px-6 pb-14 pt-8 sm:px-14">
@@ -223,7 +257,7 @@ export default async function CollectionPage({
           className="pointer-events-none absolute left-[71%] top-40 hidden lg:block"
         />
         <div className="relative flex w-full max-w-[1440px] flex-col items-center gap-6 text-center">
-          <p className="relative inline-block font-display text-[48px] font-bold uppercase leading-[1.1] text-onwei-blue lg:text-[64px]">
+          <h1 className="relative inline-block font-display text-[48px] font-bold uppercase leading-[1.1] text-onwei-blue lg:text-[64px]">
             <Image
               src="/images/collection/squiggle-shop.svg"
               alt=""
@@ -252,7 +286,7 @@ export default async function CollectionPage({
               aria-hidden
               className="pointer-events-none absolute -right-24 top-2 hidden lg:block"
             />
-          </p>
+          </h1>
           <p className="max-w-[484px] font-grotesk text-[14px] text-onwei-blue">
             Shop our range of goods for pickleball or pilates and be a part of
             our community!

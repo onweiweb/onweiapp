@@ -25,6 +25,8 @@ export async function POST(request: Request) {
     imageUrl?: unknown;
     isActive?: unknown;
     sortOrder?: unknown;
+    metaTitle?: unknown;
+    metaDescription?: unknown;
   } | null;
 
   const name = typeof body?.name === "string" ? body.name.trim() : "";
@@ -44,6 +46,9 @@ export async function POST(request: Request) {
       imageUrl: typeof body?.imageUrl === "string" ? body.imageUrl : null,
       isActive: typeof body?.isActive === "boolean" ? body.isActive : true,
       sortOrder: typeof body?.sortOrder === "number" ? body.sortOrder : 0,
+      metaTitle: typeof body?.metaTitle === "string" ? body.metaTitle : null,
+      metaDescription:
+        typeof body?.metaDescription === "string" ? body.metaDescription : null,
     },
     { staffUserId: session.context.staffUserId },
   );

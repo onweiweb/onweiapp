@@ -56,6 +56,8 @@ export async function PATCH(
     powerRating?: unknown;
     spinRating?: unknown;
     controlRating?: unknown;
+    metaTitle?: unknown;
+    metaDescription?: unknown;
   } | null;
 
   if (!body) {
@@ -104,6 +106,15 @@ export async function PATCH(
         controlRating:
           typeof body.controlRating === "number" || body.controlRating === null
             ? body.controlRating
+            : undefined,
+        metaTitle:
+          typeof body.metaTitle === "string" || body.metaTitle === null
+            ? body.metaTitle
+            : undefined,
+        metaDescription:
+          typeof body.metaDescription === "string" ||
+          body.metaDescription === null
+            ? body.metaDescription
             : undefined,
       },
       { staffUserId: session.context.staffUserId },
