@@ -10,6 +10,11 @@ const nextConfig: NextConfig = {
     "@onwei/database",
     "@onwei/emails",
   ],
+  // The pre-launch page moved from /waitlist to /ontheway. Keep old links,
+  // bookmarks and anything already indexed working with a permanent redirect.
+  async redirects() {
+    return [{ source: "/waitlist", destination: "/ontheway", permanent: true }];
+  },
   images: {
     // Admin's product-image upload writes real Vercel Blob URLs
     // (apps/admin/app/api/products/[id]/images/route.ts) into

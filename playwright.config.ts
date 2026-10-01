@@ -17,7 +17,7 @@ export default defineConfig({
   },
   webServer: {
     command: "npm run dev --workspace=@onwei/web",
-    url: "http://localhost:3000/waitlist",
+    url: "http://localhost:3000/ontheway",
     reuseExistingServer: true,
     timeout: 120_000,
   },

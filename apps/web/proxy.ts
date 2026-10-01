@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 // Reachable regardless of site mode, the waitlist page itself, the page it
 // links to, the submit endpoint, and static assets.
 const ALWAYS_ALLOWED_PREFIXES = [
-  "/waitlist",
+  "/ontheway",
   "/about",
   "/api/waitlist",
   // Admin's server-to-server ping (triggerCatalogRevalidate), gated by its
@@ -19,7 +19,7 @@ const ALWAYS_ALLOWED_PREFIXES = [
   "/images",
   "/favicon.ico",
   // app/robots.ts and app/sitemap.ts, without these, this same gate
-  // 307s a crawler's request for robots.txt itself to /waitlist, which
+  // 307s a crawler's request for robots.txt itself to /ontheway, which
   // defeats robots.ts's own WAITLIST-mode "disallow everything" response.
   "/robots.txt",
   "/sitemap.xml",
@@ -35,7 +35,7 @@ const ALWAYS_ALLOWED_PREFIXES = [
 ];
 
 /**
- * Gates the whole storefront behind /waitlist while SiteSetting.siteMode is
+ * Gates the whole storefront behind /ontheway while SiteSetting.siteMode is
  * WAITLIST, see docs/OPEN_DECISIONS.md. Next 16 Proxy runs on the Node.js
  * runtime by default, so a direct @onwei/core call is fine here; no need to
  * self-fetch an API route. getSiteSetting() already caches in-process for
@@ -65,7 +65,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (siteMode === "WAITLIST") {
-    return NextResponse.redirect(new URL("/waitlist", request.url));
+    return NextResponse.redirect(new URL("/ontheway", request.url));
   }
 
   return NextResponse.next();

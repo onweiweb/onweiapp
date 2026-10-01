@@ -39,7 +39,7 @@ export function WaitlistHeader({
     >
       <div className="flex h-[5.75rem] w-full items-center justify-between px-5 py-3 desk:h-auto desk:px-14 desk:py-6">
         <Link
-          href="/waitlist"
+          href="/ontheway"
           aria-label="Onwei home"
           className="flex shrink-0 items-center"
         >

@@ -25,7 +25,7 @@ import { HoverLink } from "@/_components/HoverLink";
 // gates routing, /about is the one normal page still reachable while
 // siteMode === "WAITLIST" (see proxy.ts's allow-list), so its chrome needs
 // to match the waitlist page's, not the full storefront's. Same revalidate
-// reasoning as apps/web/app/waitlist/page.tsx: getSiteSetting() isn't a
+// reasoning as apps/web/app/ontheway/page.tsx: getSiteSetting() isn't a
 // `fetch` call, so without this Next has no signal that the page depends on
 // data that changes, and an admin flipping siteMode wouldn't show up here
 // short of a redeploy.
@@ -46,7 +46,7 @@ export default async function AboutPage() {
   return (
     <main className="bg-onwei-green">
       {isWaitlistMode ? (
-        <WaitlistHeader navHref="/waitlist" navLabel="Join the Movement" />
+        <WaitlistHeader navHref="/ontheway" navLabel="Join the Movement" />
       ) : (
         <SiteHeader />
       )}
@@ -507,7 +507,7 @@ export default async function AboutPage() {
             <HoverLink
               href={
                 isWaitlistMode
-                  ? "/waitlist#join-onwei-insiders"
+                  ? "/ontheway#join-onwei-insiders"
                   : "/collection/pickleball"
               }
               className="rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-beige"

@@ -5,7 +5,7 @@ const WIDTHS = [
   320, 360, 390, 430, 600, 768, 960, 1024, 1280, 1440, 1920, 2560,
 ];
 const PAGES = [
-  "/waitlist",
+  "/ontheway",
   "/about",
   "/",
   "/collection/pickleball",
@@ -20,7 +20,7 @@ for (const width of WIDTHS) {
       await page.goto(path, { waitUntil: "networkidle" });
       // Redirected by the WAITLIST gate: nothing to measure for this page.
       test.skip(
-        path !== "/waitlist" && page.url().endsWith("/waitlist"),
+        path !== "/ontheway" && page.url().endsWith("/ontheway"),
         "gated by site mode",
       );
       // Lazy images below the fold only load once scrolled near, so walk the page first.

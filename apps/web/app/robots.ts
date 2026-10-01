@@ -12,7 +12,7 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
 
   if (siteMode === "WAITLIST") {
     // Nothing indexable exists yet behind proxy.ts's gate, tell crawlers
-    // not to bother collecting 307s to /waitlist for every product/category
+    // not to bother collecting 307s to /ontheway for every product/category
     // URL they've discovered or guessed at, rather than staying silent
     // about it.
     return {

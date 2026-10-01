@@ -23,7 +23,7 @@ import {
 // requests within REVALIDATE_SECONDS are served from Next's data cache
 // (no DB round trip), and edits appear within that window rather than
 // never. Not real-time, same tradeoff already made for /waitlist's own
-// 30s window (apps/web/app/waitlist/page.tsx).
+// 30s window (apps/web/app/ontheway/page.tsx).
 const REVALIDATE_SECONDS = 60;
 const TAGS = ["catalog"];
 
