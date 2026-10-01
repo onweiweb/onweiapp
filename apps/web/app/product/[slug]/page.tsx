@@ -134,15 +134,15 @@ export default async function ProductPage({
       {faqs.length > 0 ? <JsonLd data={buildFaqJsonLd(faqs)} /> : null}
       <SiteHeader />
 
-      <section className="flex flex-col items-center bg-onwei-green px-6 py-14 sm:px-14">
-        <div className="flex w-full max-w-[1440px] flex-col gap-8 lg:flex-row lg:items-start">
+      <section className="flex flex-col items-center bg-onwei-green px-6 py-14 desk:px-14">
+        <div className="flex w-full max-w-[90rem] flex-col gap-8 desk:flex-row desk:items-start">
           <ProductGallery images={product.images} productName={product.name} />
 
           <ProductVariantProvider
             variants={product.variants}
             formattedPrices={formattedPrices}
           >
-            <div className="flex w-full flex-col items-start gap-3 rounded-[30px] bg-onwei-white px-6 py-8 sm:px-8 sm:py-12 lg:flex-1">
+            <div className="flex w-full flex-col items-start gap-3 rounded-[1.875rem] bg-onwei-white px-6 py-8 desk:px-8 desk:py-12 desk:flex-1">
               {reviewSummary.count > 0 ? (
                 <div className="flex items-center gap-2">
                   <StarRow
@@ -150,21 +150,21 @@ export default async function ProductPage({
                     size={14}
                     tone="dark"
                   />
-                  <span className="font-grotesk text-[12px] text-onwei-blue">
+                  <span className="font-grotesk text-[length:max(0.75rem,11px)] text-onwei-blue">
                     ({reviewSummary.count})
                   </span>
                 </div>
               ) : null}
 
               <div className="flex w-full items-center justify-between gap-4">
-                <h1 className="font-display text-[32px] font-bold uppercase leading-none text-onwei-blue sm:text-[40px]">
+                <h1 className="font-display text-[2rem] font-bold uppercase leading-none text-onwei-blue desk:text-[2.5rem]">
                   {product.name}
                 </h1>
                 <VariantPrice />
               </div>
 
               {product.highlightTags.length > 0 ? (
-                <p className="font-grotesk text-[12px] uppercase text-onwei-blue">
+                <p className="font-grotesk text-[length:max(0.75rem,11px)] uppercase text-onwei-blue">
                   {product.highlightTags.join(" ⬥ ")}
                 </p>
               ) : null}
@@ -227,13 +227,13 @@ export default async function ProductPage({
           </ProductVariantProvider>
         </div>
 
-        <div className="mt-14 w-full max-w-[1440px]">
+        <div className="mt-14 w-full max-w-[90rem]">
           <MarqueeBar items={marqueeItems} />
         </div>
       </section>
 
-      <section className="flex flex-col items-center bg-onwei-green px-3 pb-24 sm:px-6 lg:px-14">
-        <div className="flex w-full max-w-[1440px] flex-col gap-6 sm:flex-row">
+      <section className="flex flex-col items-center bg-onwei-green px-3 pb-24 desk:px-14">
+        <div className="flex w-full max-w-[90rem] flex-col gap-6 desk:flex-row">
           <ValueProps items={valueProps} />
         </div>
       </section>

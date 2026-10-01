@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import type { ProductImageDTO } from "@onwei/core";
 
 // Figma (frame "PDP_draft 2", node 759:3026 "Img") only specs the static
@@ -22,16 +22,16 @@ export function ProductGallery({
     .filter(({ index }) => index !== selectedIndex);
 
   return (
-    <div className="flex w-full gap-4 lg:w-auto">
+    <div className="flex w-full gap-4 desk:w-auto">
       {thumbnails.length > 0 ? (
-        <div className="hidden w-[202px] flex-col gap-4 sm:flex">
+        <div className="hidden w-[12.625rem] flex-col gap-4 desk:flex">
           {thumbnails.map(({ image, index }) => (
             <button
               key={index}
               type="button"
               onClick={() => setSelectedIndex(index)}
               aria-label={`Show image ${index + 1} of ${images.length}`}
-              className="relative aspect-square w-full overflow-hidden rounded-[20px]"
+              className="relative aspect-square w-full overflow-hidden rounded-[1.25rem]"
             >
               <Image
                 src={image.url}
@@ -44,13 +44,13 @@ export function ProductGallery({
           ))}
         </div>
       ) : null}
-      <div className="relative aspect-square w-full overflow-hidden rounded-[30px] border border-onwei-blue bg-onwei-green lg:h-[707px] lg:w-[636px]">
+      <div className="relative aspect-square w-full overflow-hidden rounded-[1.875rem] border border-onwei-blue bg-onwei-green desk:h-[44.1875rem] desk:w-[39.75rem]">
         {selected ? (
           <Image
             src={selected.url}
             alt={selected.altText ?? productName}
             fill
-            sizes="(min-width: 1024px) 636px, 100vw"
+            sizes="((min-width: 768px)) 636px, 100vw"
             className="object-contain p-10"
           />
         ) : null}

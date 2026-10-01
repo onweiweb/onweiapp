@@ -11,3 +11,5 @@ build/
 .DS_Store
 .vercel
 *.tsbuildinfo
+e2e/.results
+e2e/shots

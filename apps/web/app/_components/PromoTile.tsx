@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 
 // Figma's Collection frame mixes a lifestyle photo tile into each category's
 // product grid, 375px wide (wider than a 282px ProductCard) with a hand-
@@ -24,8 +24,8 @@ export function PromoTile({
   illustrationClassName: string;
 }) {
   return (
-    <div className="relative w-[375px] shrink-0 max-w-[375px]">
-      <div className="relative aspect-[375/454] w-full overflow-hidden rounded-[30px]">
+    <div className="relative w-full max-w-[23.4375rem] shrink-0 desk:w-[23.4375rem]">
+      <div className="relative aspect-[375/454] w-full overflow-hidden rounded-[1.875rem]">
         {/* Sits inside a horizontally-scrolling row, often past the
             initial viewport width. next/image's default lazy loading uses
             an IntersectionObserver against the browser viewport, which
@@ -48,7 +48,7 @@ export function PromoTile({
         height={illustrationHeight}
         aria-hidden
         loading="eager"
-        className={`pointer-events-none absolute hidden lg:block ${illustrationClassName}`}
+        className={`pointer-events-none absolute hidden desk:block ${illustrationClassName}`}
       />
     </div>
   );

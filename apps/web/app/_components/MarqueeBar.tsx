@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 
 // Extracted from the Homepage (was page-local), the PDP has its own
 // marquee bar too (Figma node 759:3115), same component, different copy.
@@ -35,7 +35,7 @@ function MarqueeGroup({ items }: { items: readonly string[] }) {
 export function MarqueeBar({ items }: { items: readonly string[] }) {
   return (
     <div
-      className="w-full overflow-hidden rounded-[20px] bg-onwei-blue py-3"
+      className="w-full overflow-hidden rounded-[1.25rem] bg-onwei-blue py-3"
       aria-hidden
     >
       <div className="flex w-max animate-[onwei-marquee_60s_linear_infinite]">

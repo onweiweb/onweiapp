@@ -59,7 +59,7 @@ export function ScrollCarousel({
         {children}
       </div>
       <div
-        className={`h-0.5 w-full max-w-[1344px] rounded-full bg-onwei-blue/20 ${trackClassName}`}
+        className={`h-0.5 w-full max-w-[84rem] rounded-full bg-onwei-blue/20 ${trackClassName}`}
       >
         <div
           className="h-0.5 rounded-full bg-onwei-blue"

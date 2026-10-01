@@ -9,7 +9,7 @@ function Bar({ label, value }: { label: string; value: number }) {
   const clamped = Math.max(0, Math.min(100, value));
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="font-display text-[14px] font-medium uppercase text-onwei-blue">
+      <p className="font-display text-[length:max(0.875rem,11px)] font-medium uppercase text-onwei-blue">
         {label}
       </p>
       <div className="relative h-1 w-full rounded-full bg-onwei-blue/30">

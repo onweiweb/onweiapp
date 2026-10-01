@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import { useEffect } from "react";
 import {
   animate,
@@ -184,7 +184,7 @@ function AllAccessCard({ timing }: { timing: CardTiming }) {
     [0.2, 0.2, 1.3, 1, 1, 1.1, 1, 1, 4],
   );
   return (
-    <div className="relative flex size-full items-center justify-center overflow-hidden rounded-[30px] bg-onwei-green">
+    <div className="relative flex size-full items-center justify-center overflow-hidden rounded-[1.875rem] bg-onwei-green">
       <Image
         src="/images/waitlist/hero/card-blob.svg"
         alt=""
@@ -196,7 +196,7 @@ function AllAccessCard({ timing }: { timing: CardTiming }) {
       />
       <motion.p
         style={{ opacity: text.opacity, color: emphasis.color, scale }}
-        className="relative px-8 text-center font-display text-[32px] font-bold uppercase leading-[0.9] sm:text-[48px]"
+        className="relative px-8 text-center font-display text-[2rem] font-bold uppercase leading-[0.9] desk:text-[3rem]"
       >
         All Access: Onwei Insiders Card
       </motion.p>
@@ -218,7 +218,7 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
   const plank = useSweepIn(timing, [0.55, 0.75, 0.9], "x", 140, -16, 0);
   const circle = useSweepIn(timing, [0.65, 0.85, 1], "x", 140, -16, 0);
   return (
-    <div className="relative size-full overflow-hidden rounded-[30px] bg-onwei-purple">
+    <div className="relative size-full overflow-hidden rounded-[1.875rem] bg-onwei-purple">
       {/* absolute inset-0 on each wrapper (not just a bare div), motion
           applying a transform (scale/x here) makes a div a new CSS
           containing block the instant it mounts, which would otherwise
@@ -234,7 +234,7 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
           height={134}
           loading="eager"
           aria-hidden
-          className="absolute left-[21.2%] top-[11.65%] h-auto w-[12.3%] sm:min-w-16"
+          className="absolute left-[21.2%] top-[11.65%] h-auto w-[12.3%] desk:min-w-16"
         />
       </motion.div>
       <motion.div style={plank} className="absolute inset-0">
@@ -245,7 +245,7 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
           height={60}
           loading="eager"
           aria-hidden
-          className="absolute left-[66.9%] top-[52.2%] h-auto w-[25.3%] sm:min-w-24 rotate-[6.34deg]"
+          className="absolute left-[66.9%] top-[52.2%] h-auto w-[25.3%] desk:min-w-24 rotate-[6.34deg]"
         />
       </motion.div>
       {/* Yellow wiggle blob (Figma node 945:4521, bottom-left decoration,
@@ -265,14 +265,14 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
       {/* Figma sets this text whitespace-nowrap rather than wrapping to a
           fixed box, "Next for Onwei" has to stay one line, or the wrap
           point would land wherever this browser's font metrics happen to
-          break it, not where Figma's did. Only enforced from sm: up though,
+          break it, not where Figma's did. Only enforced from desk: up though,
           at the mobile text size this line is wider than the card itself,
           so forcing nowrap there pushed "Onwei" straight past the card's
           right edge (clipped by overflow-hidden) instead of just wrapping
           to its own line. */}
       <motion.p
         style={{ ...text, color: emphasis.color, scale: emphasis.scale }}
-        className="absolute left-[19.1%] top-[35.1%] font-display text-[28px] font-bold uppercase leading-[0.9] sm:whitespace-nowrap sm:text-[48px]"
+        className="absolute left-[19.1%] top-[35.1%] font-display text-[1.75rem] font-bold uppercase leading-[0.9] desk:whitespace-nowrap desk:text-[3rem]"
       >
         Shape What&apos;s
         <br />
@@ -296,7 +296,7 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
             height={62}
             loading="eager"
             aria-hidden
-            className="pointer-events-none absolute -left-[10px] top-1/2 w-[calc(100%+20px)] max-w-none -translate-y-1/2 rotate-[6.34deg]"
+            className="pointer-events-none absolute -left-[0.625rem] top-1/2 w-[calc(100%+1.25rem)] max-w-none -translate-y-1/2 rotate-[6.34deg]"
           />
           <span className="relative">Onwei</span>
         </motion.span>
@@ -320,10 +320,10 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
     // positioning them that way here instead of the old flex-row/items-end
     // approach is what actually keeps their sizes and positions in the same
     // proportion to each other and to the card that Figma has them in.
-    <div className="relative size-full overflow-hidden rounded-[30px] bg-onwei-green">
+    <div className="relative size-full overflow-hidden rounded-[1.875rem] bg-onwei-green">
       <motion.div
         style={founder}
-        className="absolute left-[16.7%] top-[38.7%] h-[28%] w-[17%] sm:h-[49.3%] sm:w-[28.9%]"
+        className="absolute left-[16.7%] top-[38.7%] h-[28%] w-[17%] desk:h-[49.3%] desk:w-[28.9%]"
       >
         <Image
           src="/images/waitlist/cards/card3-illustration-founder.svg"
@@ -341,7 +341,7 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
           ringed photo badge pinned to the illustration's corner. */}
       <motion.div
         style={bubble}
-        className="absolute left-[5.9%] top-[22.2%] h-[13%] w-[16%] sm:h-[17.6%] sm:w-[21.7%]"
+        className="absolute left-[5.9%] top-[22.2%] h-[13%] w-[16%] desk:h-[17.6%] desk:w-[21.7%]"
       >
         <Image
           src="/images/waitlist/cards/card3-photo.png"
@@ -354,7 +354,7 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
       </motion.div>
       <motion.p
         style={{ ...text, color: emphasis.color, scale: emphasis.scale }}
-        className="absolute left-[53.5%] top-[18.4%] w-[34.6%] text-center font-display text-[22px] font-bold uppercase leading-[0.9] sm:text-[48px]"
+        className="absolute left-[53.5%] top-[18.4%] w-[34.6%] text-center font-display text-[1.375rem] font-bold uppercase leading-[0.9] desk:text-[3rem]"
       >
         Surprises
         <br />
@@ -386,22 +386,22 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
   const stickyNote = useSweepIn(timing, [0.62, 0.79, 0.92], "x", -80, 10, 0);
   const squiggle = useSweepIn(timing, [0.69, 0.86, 1], "x", 80, -10, 0);
   return (
-    <div className="relative flex size-full flex-col items-center justify-center gap-8 overflow-hidden rounded-[30px] bg-onwei-purple px-8 py-12 sm:gap-14 sm:px-14 sm:py-24">
+    <div className="relative flex size-full flex-col items-center justify-center gap-8 overflow-hidden rounded-[1.875rem] bg-onwei-purple px-8 py-12 desk:gap-14 desk:px-14 desk:py-24">
       <motion.p
         style={{ ...line1, color: emphasis.color, scale: emphasis.scale }}
-        className="font-display text-[32px] font-bold uppercase leading-[0.9] sm:text-[48px]"
+        className="font-display text-[2rem] font-bold uppercase leading-[0.9] desk:text-[3rem]"
       >
         first dibs
       </motion.p>
       <motion.p
         style={line2}
-        className="font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
+        className="font-display text-[2rem] font-bold uppercase leading-[0.9] text-onwei-green desk:text-[3rem]"
       >
         Exclusive Offers
       </motion.p>
       <motion.p
         style={line3}
-        className="font-display text-[32px] font-bold uppercase leading-[0.9] text-onwei-green sm:text-[48px]"
+        className="font-display text-[2rem] font-bold uppercase leading-[0.9] text-onwei-green desk:text-[3rem]"
       >
         Event{" "}
         {/* Anchored off "Invites" specifically (left-0 of its own box,
@@ -419,7 +419,7 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
           Invites
           <motion.span
             style={squiggle}
-            className="pointer-events-none absolute left-0 top-full block h-[24px] w-[104px] sm:h-[38px] sm:w-[165px]"
+            className="pointer-events-none absolute left-0 top-full block h-[1.5rem] w-[6.5rem] desk:h-[2.375rem] desk:w-[10.3125rem]"
           >
             <Image
               src="/images/waitlist/cards/card4-squiggle.png"
@@ -437,7 +437,7 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
           into the source asset itself, so a rotate here would double it. */}
       <motion.div
         style={dumbbell}
-        className="absolute right-[9%] top-[17%] h-[60px] w-[110px] sm:right-[8.7%] sm:top-[17.3%] sm:h-[87px] sm:w-[189px]"
+        className="absolute right-[9%] top-[17%] h-[3.75rem] w-[6.875rem] desk:right-[8.7%] desk:top-[17.3%] desk:h-[5.4375rem] desk:w-[11.8125rem]"
       >
         <Image
           src="/images/waitlist/cards/card4-dumbbell-badge.png"
@@ -456,9 +456,9 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
           rotated box would. */}
       <motion.div
         style={stickyNote}
-        className="absolute bottom-[22%] left-[8.3%] flex h-[68px] w-[67px] items-center justify-center sm:bottom-[22.1%] sm:h-[109px] sm:w-[108px]"
+        className="absolute bottom-[22%] left-[8.3%] flex h-[4.25rem] w-[4.1875rem] items-center justify-center desk:bottom-[22.1%] desk:h-[6.8125rem] desk:w-[6.75rem]"
       >
-        <div className="relative h-[60px] w-[60px] rotate-[-7.59deg] sm:h-[97px] sm:w-[96px]">
+        <div className="relative h-[3.75rem] w-[3.75rem] rotate-[-7.59deg] desk:h-[6.0625rem] desk:w-[6rem]">
           <Image
             src="/images/waitlist/cards/card4-sticky-note.png"
             alt=""
@@ -598,10 +598,10 @@ export function WaitlistCardScroll({
 
   return (
     <>
-      <div className="flex w-full flex-col items-center justify-center gap-4 px-3 py-4 sm:gap-10 sm:px-11 sm:py-6">
-        <div className="flex w-full max-w-[1440px] flex-col items-center gap-4 sm:flex-row sm:justify-between sm:gap-8">
+      <div className="flex w-full flex-col items-center justify-center gap-4 px-3 py-4 desk:gap-10 desk:px-11 desk:py-6">
+        <div className="flex w-full max-w-[90rem] flex-col items-center gap-4 desk:flex-row desk:justify-between desk:gap-8">
           {children}
-          <div className="relative h-[300px] w-full sm:h-[635px] sm:flex-1">
+          <div className="relative h-[18.75rem] w-full desk:h-[39.6875rem] desk:flex-1">
             {CARDS.map((Content, index) => (
               <ScrollCard
                 key={index}
@@ -612,7 +612,7 @@ export function WaitlistCardScroll({
             ))}
           </div>
         </div>
-        <div className="hidden w-full max-w-[1440px] sm:block">
+        <div className="hidden w-full max-w-[90rem] desk:block">
           <WaitlistMarquee />
         </div>
       </div>
@@ -624,7 +624,7 @@ export function WaitlistCardScroll({
           that 24px via its own top padding (page.tsx's `py-6` on the
           `#join-onwei-insiders` section); adding a matching bottom pad here
           too doubled it to 48px. */}
-      <div className="w-full px-3 pt-6 sm:hidden">
+      <div className="w-full px-3 pt-6 desk:hidden">
         <WaitlistMarquee />
       </div>
     </>

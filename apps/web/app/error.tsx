@@ -15,11 +15,11 @@ export default function Error({
   reset: () => void;
 }) {
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-6 text-center">
-      <p className="font-display text-[28px] font-bold uppercase text-onwei-blue">
+    <div className="flex min-h-[60dvh] flex-col items-center justify-center gap-4 px-6 text-center">
+      <p className="font-display text-[1.75rem] font-bold uppercase text-onwei-blue">
         Something went wrong
       </p>
-      <p className="max-w-md font-grotesk text-[14px] text-onwei-blue/70">
+      <p className="max-w-md font-grotesk text-[length:max(0.875rem,11px)] text-onwei-blue/70">
         That page hit an unexpected error. Try again, or head back to the
         homepage.
       </p>
@@ -27,13 +27,13 @@ export default function Error({
         <button
           type="button"
           onClick={reset}
-          className="rounded-[30px] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase text-onwei-beige"
+          className="rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase text-onwei-beige"
         >
           Try again
         </button>
         <Link
           href="/"
-          className="rounded-[30px] border border-onwei-blue px-6 py-3 font-grotesk text-label uppercase text-onwei-blue"
+          className="rounded-[1.875rem] border border-onwei-blue px-6 py-3 font-grotesk text-label uppercase text-onwei-blue"
         >
           Go home
         </Link>

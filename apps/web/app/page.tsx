@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import Link from "next/link";
 import {
   cachedListActiveCategories as listActiveCategories,
@@ -35,21 +35,27 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
     // the section previously had no background at all (rendered white).
     // Figma's API is rate-limited right now; re-verify the exact fill once
     // access resets.
-    <section className="flex flex-col items-center gap-3 bg-onwei-green pb-14 sm:gap-6">
-      <div className="flex w-full max-w-[1440px] flex-col gap-3 px-3 sm:gap-6 sm:px-6 lg:px-11 lg:flex-row">
-        <div className="relative flex h-[500px] w-full flex-col justify-end gap-8 overflow-hidden rounded-[30px] px-8 py-12 lg:h-[635px] lg:px-14 lg:py-24">
+    <section className="flex flex-col items-center gap-3 bg-onwei-green pb-14 desk:gap-6">
+      <div className="flex w-full max-w-[90rem] flex-col gap-3 px-3 desk:gap-6 desk:px-11 desk:flex-row">
+        {/* Mobile frame (node 761:4804): 366x475 tile. The script line, arrow
+            and underline are absolutely placed from that frame's own
+            coordinates (left as % of tile width, top in rem, so they track the
+            fluid root unit); from desk up they flow inline as in the desktop
+            frame. */}
+        <div className="relative flex h-[29.6875rem] w-full flex-col justify-end gap-[1.125rem] overflow-hidden rounded-[1.25rem] px-6 py-24 desk:h-[39.6875rem] desk:gap-8 desk:rounded-[1.875rem] desk:px-14">
           <Image
             src="/images/hero/pickleball-bg.png"
             alt="Woman sitting on a pickleball court holding a paddle"
             fill
             priority
-            sizes="(min-width: 1024px) 45vw, 100vw"
+            sizes="((min-width: 768px)) 45vw, 100vw"
             className="object-cover"
           />
           <div className="absolute inset-0 bg-black/30" />
-          <div className="relative flex flex-col gap-8">
-            <h1 className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
-              Made for everyday play
+          <div className="relative flex flex-col gap-[1.125rem] desk:gap-8">
+            <h1 className="font-display text-[2.75rem] font-bold uppercase leading-[0.9] text-onwei-beige desk:text-display-xl">
+              Made for <br className="desk:hidden" />
+              everyday play
             </h1>
             <CtaLink
               href="/collection/pickleball"
@@ -57,7 +63,7 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
             >
               shop pickleball
             </CtaLink>
-            <span className="flex items-center gap-2">
+            <span className="hidden items-center gap-2 desk:flex">
               <p className="font-script text-script-md uppercase text-onwei-beige">
                 Serve. Rally. Repeat.
               </p>
@@ -67,18 +73,42 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
                 width={22}
                 height={48}
                 aria-hidden
-                className="hidden -rotate-[75deg] sm:block"
+                className="-rotate-[75deg]"
               />
             </span>
           </div>
+          <p
+            aria-hidden
+            className="absolute left-[55.5%] top-[13.279rem] whitespace-nowrap font-script text-[1rem] uppercase leading-none text-onwei-beige desk:hidden"
+          >
+            Serve. Rally. Repeat.
+          </p>
+          <Image
+            src="/images/hero/arrow-1.svg"
+            alt=""
+            width={20}
+            height={43}
+            aria-hidden
+            className="absolute left-[70.3%] top-[14.956rem] h-[2.7119rem] w-[1.2429rem] -rotate-[165deg] desk:hidden"
+          />
+          <Image
+            src="/images/hero/underline-1.svg"
+            alt=""
+            width={109}
+            height={5}
+            aria-hidden
+            className="absolute left-[65%] top-[20.841rem] h-[0.3125rem] w-[6.8125rem] desk:hidden"
+          />
         </div>
 
-        <div className="relative flex h-[500px] w-full flex-col justify-end gap-8 overflow-hidden rounded-[30px] px-8 py-12 lg:h-[635px] lg:px-14 lg:py-24">
+        {/* Mobile frame (node 761:4814), same treatment: badge stamp top
+            right, underline under "own way", arrow and script bottom right. */}
+        <div className="relative flex h-[29.6875rem] w-full flex-col justify-end gap-6 overflow-hidden rounded-[1.25rem] px-6 py-24 desk:h-[39.6875rem] desk:gap-8 desk:rounded-[1.875rem] desk:px-14">
           <Image
             src="/images/hero/pilates-bg.png"
             alt="Rolled yoga mat with an Onwei stamp"
             fill
-            sizes="(min-width: 1024px) 45vw, 100vw"
+            sizes="((min-width: 768px)) 45vw, 100vw"
             className="object-cover"
           />
           <div className="absolute inset-0 bg-black/30" />
@@ -88,13 +118,14 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
             width={70}
             height={70}
             aria-hidden
-            className="absolute right-6 top-6 hidden sm:block"
+            className="absolute right-[8.06%] top-[5.78%] h-[3.4125rem] w-[3.6563rem] desk:right-6 desk:top-6 desk:h-[4.375rem] desk:w-[4.375rem]"
           />
-          <div className="relative flex flex-col gap-8">
-            <h2 className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-beige lg:text-display-xl">
+          <div className="relative flex flex-col gap-6 desk:gap-8">
+            <h2 className="font-display text-[2.75rem] font-bold uppercase leading-[0.9] text-onwei-beige desk:text-display-xl">
               Movement,
               <br />
-              your own way
+              your <br className="desk:hidden" />
+              own way
             </h2>
             <CtaLink
               href="/collection/pilates"
@@ -102,7 +133,7 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
             >
               shop pilates
             </CtaLink>
-            <div className="flex flex-col items-start gap-1">
+            <div className="hidden flex-col items-start gap-1 desk:flex">
               <span className="flex items-center gap-2">
                 <p className="font-script text-script-md uppercase text-onwei-beige">
                   Not perfect, just consistent
@@ -113,7 +144,7 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
                   width={22}
                   height={48}
                   aria-hidden
-                  className="hidden -rotate-[38deg] sm:block"
+                  className="-rotate-[38deg]"
                 />
               </span>
               <Image
@@ -122,14 +153,36 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
                 width={344}
                 height={5}
                 aria-hidden
-                className="hidden max-w-[280px] sm:block"
+                className="max-w-[17.5rem]"
               />
             </div>
           </div>
+          <p
+            aria-hidden
+            className="absolute left-[53%] top-[23.716rem] whitespace-pre font-script text-[1.25rem] uppercase leading-none text-onwei-beige desk:hidden"
+          >
+            {"Not perfect, \njust consistent"}
+          </p>
+          <Image
+            src="/images/hero/arrow-2.svg"
+            alt=""
+            width={20}
+            height={43}
+            aria-hidden
+            className="absolute left-[60.3%] top-[20.299rem] h-[2.7119rem] w-[1.2429rem] -rotate-[57.52deg] desk:hidden"
+          />
+          <Image
+            src="/images/hero/underline-1.svg"
+            alt=""
+            width={201}
+            height={5}
+            aria-hidden
+            className="absolute left-[1.6875rem] top-[20.404rem] h-[0.3125rem] w-[12.5625rem] desk:hidden"
+          />
         </div>
       </div>
 
-      <div className="w-full max-w-[1360px] px-3 sm:px-6 lg:px-11">
+      <div className="w-full max-w-[85rem] px-3 desk:px-11">
         <MarqueeBar items={marqueeItems} />
       </div>
     </section>
@@ -144,8 +197,8 @@ function ShowcaseSection({
   valueProps: ValuePropItem[];
 }) {
   return (
-    <section className="flex flex-col items-center bg-onwei-green px-3 py-14 sm:px-6 lg:px-14">
-      <div className="flex w-full max-w-[1440px] flex-col gap-12">
+    <section className="flex flex-col items-center bg-onwei-green px-3 py-14 desk:px-14">
+      <div className="flex w-full max-w-[90rem] flex-col gap-12">
         <div className="flex flex-wrap items-center gap-3">
           <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
             Designed to Move.
@@ -157,19 +210,19 @@ function ShowcaseSection({
               width={22}
               height={48}
               aria-hidden
-              className="h-[22px] w-[10px] -rotate-90"
+              className="h-[1.375rem] w-[0.625rem] -rotate-90"
             />
             at your pace
           </span>
         </div>
 
-        <div className="flex flex-col gap-6 lg:flex-row">
-          <div className="relative h-[420px] w-full overflow-hidden rounded-[30px] lg:h-[646px] lg:w-[824px]">
+        <div className="flex flex-col gap-6 desk:flex-row">
+          <div className="relative h-[26.25rem] w-full overflow-hidden rounded-[1.875rem] desk:h-[40.375rem] desk:w-[51.5rem]">
             <Image
               src="/images/showcase/video-poster.png"
               alt="Rolled yoga mat, paused video preview"
               fill
-              sizes="(min-width: 1024px) 58vw, 100vw"
+              sizes="((min-width: 768px)) 58vw, 100vw"
               className="object-cover"
             />
             <div className="absolute inset-0 flex items-center justify-center">
@@ -201,13 +254,18 @@ function ShopSection({
   pilatesHref: string;
 }) {
   return (
-    <section className="flex items-end justify-center bg-onwei-white px-3 pb-12 pt-16 sm:px-6 lg:px-14">
-      <div className="flex w-full max-w-[1440px] flex-wrap items-end justify-between gap-8">
-        <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
+    <section className="flex items-end justify-center bg-onwei-white px-3 pb-0 pt-12 desk:px-14 desk:pb-12 desk:pt-16">
+      <div className="flex w-full max-w-[90rem] flex-col items-center gap-3 desk:flex-row desk:flex-wrap desk:items-end desk:justify-between desk:gap-8">
+        <p className="font-display text-[2.5rem] font-bold uppercase leading-[0.9] text-onwei-blue desk:text-display-md">
           shop our gear
         </p>
         <div className="flex items-start gap-8">
-          <CategoryTile label="pickle ball" href={pickleballHref} circled />
+          <CategoryTile
+            label="pickle ball"
+            mobileLabel="pickleball"
+            href={pickleballHref}
+            circled
+          />
           <CategoryTile label="pilates" href={pilatesHref} />
         </div>
       </div>
@@ -218,7 +276,7 @@ function ShopSection({
 function TestimonialTile({ review }: { review: ReviewListItem | undefined }) {
   if (!review) return null;
   return (
-    <div className="relative flex h-[420px] w-full max-w-[375px] shrink-0 flex-col items-center justify-center gap-8 overflow-hidden rounded-[30px] p-8">
+    <div className="relative flex h-[26.25rem] w-full max-w-[23.4375rem] shrink-0 flex-col items-center justify-center gap-8 overflow-hidden rounded-[1.875rem] p-8 max-desk:hidden">
       <Image
         src="/images/product-grid/testimonial-bg.png"
         alt=""
@@ -231,9 +289,13 @@ function TestimonialTile({ review }: { review: ReviewListItem | undefined }) {
       <div className="relative flex flex-col items-center gap-8 text-center text-onwei-beige">
         <StarRow count={review.rating} />
         {review.title ? (
-          <p className="font-grotesk text-[14px] font-bold">{review.title}</p>
+          <p className="font-grotesk text-[length:max(0.875rem,11px)] font-bold">
+            {review.title}
+          </p>
         ) : null}
-        <p className="font-grotesk text-[14px]">{review.body}</p>
+        <p className="font-grotesk text-[length:max(0.875rem,11px)]">
+          {review.body}
+        </p>
       </div>
       <Image
         src="/images/product-grid/carousel-dots.svg"
@@ -255,15 +317,15 @@ function ProductGridSection({
   testimonial: ReviewListItem | undefined;
 }) {
   return (
-    <section className="flex flex-col items-center bg-onwei-white px-3 pb-24 sm:px-6 lg:px-14">
+    <section className="flex flex-col items-center bg-onwei-white px-3 pb-24 desk:px-14">
       {/* Mobile (node 761:4877 "Shop"): a horizontal-scroll carousel, not a
           wrapping grid, matches the same pattern as Reviews/Instagram. At
-          lg:+ it reverts to the desktop row, which already fits everything
+          desk:+ it reverts to the desktop row, which already fits everything
           on one line at 1440px so the scroll track is hidden there. */}
       <ScrollCarousel
         gap="gap-8"
-        className="max-w-[1440px] items-start lg:flex-wrap lg:justify-center"
-        trackClassName="lg:hidden"
+        className="max-w-[90rem] items-start desk:flex-wrap desk:justify-center"
+        trackClassName="desk:hidden"
       >
         <TestimonialTile review={testimonial} />
         {products.map((product) => (
@@ -276,10 +338,10 @@ function ProductGridSection({
 
 function AboutSection() {
   return (
-    <section className="flex flex-col items-center bg-onwei-purple px-6 py-14 sm:px-14">
-      <div className="flex w-full max-w-[1440px] flex-col items-start gap-8 lg:flex-row lg:items-end lg:justify-between">
-        <div className="flex w-full max-w-[639px] flex-col gap-8">
-          <p className="font-display text-[36px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[48px] lg:text-[64px]">
+    <section className="flex flex-col items-center bg-onwei-purple px-3 py-14 desk:px-14">
+      <div className="flex w-full max-w-[90rem] flex-col items-center gap-8 desk:flex-row desk:items-end desk:justify-between">
+        <div className="flex w-full max-w-[39.9375rem] flex-col items-center gap-7 text-center desk:items-stretch desk:gap-8 desk:text-left">
+          <p className="font-display text-[2.25rem] font-bold uppercase leading-[1.1] text-onwei-white desk:text-[4rem]">
             Built to{" "}
             <span className="relative inline-block">
               <Image
@@ -288,7 +350,17 @@ function AboutSection() {
                 width={199}
                 height={74}
                 aria-hidden
-                className="pointer-events-none absolute -left-[15%] -top-[45%] -z-0 w-[130%] max-w-none"
+                className="pointer-events-none absolute -left-[15%] -top-[45%] -z-0 hidden w-[130%] max-w-none desk:block"
+              />
+              {/* Mobile frame (node 761:4858) underlines "move" instead of
+                  circling it. */}
+              <Image
+                src="/images/about/underline-move-mobile.svg"
+                alt=""
+                width={89}
+                height={3}
+                aria-hidden
+                className="pointer-events-none absolute -bottom-1 left-0 h-[3%] w-full desk:hidden"
               />
               <span className="relative">move</span>
             </span>
@@ -322,8 +394,8 @@ function AboutSection() {
             </span>
             .
           </p>
-          <div className="flex flex-col gap-6">
-            <p className="max-w-[484px] font-grotesk text-[14px] text-onwei-white">
+          <div className="flex w-full max-w-[20.3125rem] flex-col gap-6 desk:max-w-none">
+            <p className="max-w-[30.25rem] font-grotesk text-[length:max(0.875rem,11px)] text-onwei-white">
               Serious doesn&apos;t just mean intense. It means you show up,
               three times a week, every week, whether or not anyone&apos;s
               watching.
@@ -343,19 +415,29 @@ function AboutSection() {
             </p>
             <CtaLink
               href="/about"
-              className="w-fit bg-onwei-beige text-onwei-blue"
+              className="w-full bg-onwei-beige text-onwei-blue desk:w-fit"
             >
               our story
             </CtaLink>
           </div>
         </div>
-        <div className="relative h-[320px] w-full max-w-[600px] overflow-hidden rounded-[30px] lg:h-[518px]">
+        <div className="relative h-[25rem] w-full max-w-[37.5rem] desk:h-[32.375rem]">
           <Image
             src="/images/about/photo.png"
             alt="Blurred motion shot of an athlete moving on court"
             fill
-            sizes="(min-width: 1024px) 42vw, 100vw"
-            className="object-cover"
+            sizes="((min-width: 768px)) 42vw, 100vw"
+            className="rounded-[1.25rem] object-cover desk:rounded-[1.875rem]"
+          />
+          {/* Mobile frame (node 761:4864): runner overlapping the photo's
+              top right corner. */}
+          <Image
+            src="/images/about/runner-mobile.svg"
+            alt=""
+            width={113}
+            height={203}
+            aria-hidden
+            className="pointer-events-none absolute -top-3 right-0 h-[12.6875rem] w-[7.0625rem] desk:hidden"
           />
         </div>
       </div>
@@ -376,8 +458,8 @@ function JournalSection({ articles }: { articles: ArticleListItem[] }) {
   if (!mostRecent) return null;
 
   return (
-    <section className="flex flex-col items-center bg-onwei-white px-3 py-24 sm:px-6 lg:px-14">
-      <div className="flex w-full max-w-[1440px] flex-col gap-12">
+    <section className="flex flex-col items-center bg-onwei-white px-3 py-24 desk:px-14">
+      <div className="flex w-full max-w-[90rem] flex-col gap-12">
         <div className="flex w-full flex-wrap items-end justify-between gap-6">
           <div className="flex flex-col gap-2">
             <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
@@ -401,25 +483,25 @@ function JournalSection({ articles }: { articles: ArticleListItem[] }) {
         </div>
 
         {/* Mobile (node 761:5154): horizontal-scroll carousel of fixed-
-            width cards, matching Shop/Reviews/Instagram. At lg:+ this
+            width cards, matching Shop/Reviews/Instagram. At desk:+ this
             reverts to an even 3-column row (flex-1, no fixed width). */}
         <ScrollCarousel
           gap="gap-6"
-          className="lg:overflow-visible"
-          trackClassName="lg:hidden"
+          className="desk:overflow-visible"
+          trackClassName="desk:hidden"
         >
           {articles.map((post) => (
             <article
               key={post.slug}
-              className="flex w-[300px] shrink-0 flex-col gap-3 lg:w-auto lg:flex-1 lg:shrink"
+              className="flex w-[18.75rem] shrink-0 flex-col gap-3 desk:w-auto desk:flex-1 desk:shrink"
             >
-              <div className="relative aspect-[416/280] w-full overflow-hidden rounded-[20px] bg-[#d4d4d4]">
+              <div className="relative aspect-[416/280] w-full overflow-hidden rounded-[1.25rem] bg-[#d4d4d4]">
                 {post.coverImageUrl ? (
                   <Image
                     src={post.coverImageUrl}
                     alt=""
                     fill
-                    sizes="(min-width: 1024px) 33vw, 100vw"
+                    sizes="((min-width: 768px)) 33vw, 100vw"
                     className="object-cover"
                   />
                 ) : null}
@@ -427,20 +509,22 @@ function JournalSection({ articles }: { articles: ArticleListItem[] }) {
               <div className="flex flex-col items-start gap-6 text-onwei-blue">
                 <div className="flex flex-col gap-2">
                   {post.publishedAt ? (
-                    <p className="font-grotesk text-[11px] font-light">
+                    <p className="font-grotesk text-[length:max(0.6875rem,11px)] font-light">
                       {post.publishedAt.toLocaleDateString()}
                     </p>
                   ) : null}
-                  <p className="font-display text-[18px] font-medium uppercase tracking-[0.216px]">
+                  <p className="font-display text-[length:max(1.125rem,11px)] font-medium uppercase tracking-[0.0135rem]">
                     {post.title}
                   </p>
                   {post.excerpt ? (
-                    <p className="font-grotesk text-[14px]">{post.excerpt}</p>
+                    <p className="font-grotesk text-[length:max(0.875rem,11px)]">
+                      {post.excerpt}
+                    </p>
                   ) : null}
                 </div>
                 <Link
                   href={`/journal/${post.slug}`}
-                  className="text-[16px] underline capitalize"
+                  className="text-[length:max(1rem,11px)] underline capitalize"
                 >
                   Read More
                 </Link>

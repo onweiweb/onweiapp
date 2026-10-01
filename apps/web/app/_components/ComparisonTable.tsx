@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import { formatCurrency } from "@onwei/core";
 import type { ComparisonProduct } from "@onwei/core";
 import { CtaLink } from "./CtaLink";
@@ -26,7 +26,7 @@ export function ComparisonTable({
   if (rowLabels.length === 0) return null;
 
   return (
-    <section className="flex flex-col items-center gap-8 bg-onwei-green px-3 py-14 sm:px-6 lg:px-14">
+    <section className="flex flex-col items-center gap-8 bg-onwei-green px-3 py-14 desk:px-14">
       {/* Figma (Frame 2085661702) only shares this row's width with the
           heading, the spec-label rows below live in a separate sibling
           frame and get the full row width to themselves. Splitting into two
@@ -35,19 +35,19 @@ export function ComparisonTable({
           for the heading made every row wider than its available space,
           forcing horizontal scroll and clipping the third column even on
           desktop. */}
-      <div className="flex w-full max-w-[1440px] flex-col gap-10 lg:flex-row">
-        <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue lg:max-w-[299px]">
+      <div className="flex w-full max-w-[90rem] flex-col gap-10 desk:flex-row">
+        <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue desk:max-w-[18.6875rem]">
           pick what fits you
         </p>
 
         <div className="w-full overflow-x-auto">
-          <div className="flex min-w-[720px] gap-6">
+          <div className="flex min-w-[45rem] gap-6">
             {products.map((product) => (
               <div
                 key={product.slug}
-                className="flex w-[307px] shrink-0 flex-col items-center gap-4"
+                className="flex w-[19.1875rem] shrink-0 flex-col items-center gap-4"
               >
-                <div className="relative aspect-square w-full overflow-hidden rounded-[20px] bg-onwei-white">
+                <div className="relative aspect-square w-full overflow-hidden rounded-[1.25rem] bg-onwei-white">
                   {product.imageUrl ? (
                     <Image
                       src={product.imageUrl}
@@ -59,10 +59,10 @@ export function ComparisonTable({
                   ) : null}
                 </div>
                 <div className="flex w-full items-center justify-between">
-                  <p className="font-display text-[16px] font-semibold uppercase text-onwei-blue">
+                  <p className="font-display text-[length:max(1rem,11px)] font-semibold uppercase text-onwei-blue">
                     {product.name}
                   </p>
-                  <p className="font-grotesk text-[14px] text-onwei-blue">
+                  <p className="font-grotesk text-[length:max(0.875rem,11px)] text-onwei-blue">
                     {formatCurrency(product.priceMinorUnits, "INR")}
                   </p>
                 </div>
@@ -72,11 +72,11 @@ export function ComparisonTable({
         </div>
       </div>
 
-      <div className="w-full max-w-[1440px] overflow-x-auto">
-        <div className="flex min-w-[1049px] flex-col divide-y divide-onwei-blue/20">
+      <div className="w-full max-w-[90rem] overflow-x-auto">
+        <div className="flex min-w-[65.5625rem] flex-col divide-y divide-onwei-blue/20">
           {rowLabels.map((label) => (
             <div key={label} className="flex items-center gap-6 py-4">
-              <p className="w-[359px] shrink-0 font-display text-[14px] font-semibold uppercase text-onwei-blue">
+              <p className="w-[22.4375rem] shrink-0 font-display text-[length:max(0.875rem,11px)] font-semibold uppercase text-onwei-blue">
                 {label}
               </p>
               {products.map((product) => {
@@ -86,7 +86,7 @@ export function ComparisonTable({
                 return (
                   <p
                     key={product.slug}
-                    className="w-[307px] shrink-0 font-grotesk text-[14px] text-onwei-blue"
+                    className="w-[19.1875rem] shrink-0 font-grotesk text-[length:max(0.875rem,11px)] text-onwei-blue"
                   >
                     {value ?? "-"}
                   </p>
@@ -96,13 +96,13 @@ export function ComparisonTable({
           ))}
         </div>
 
-        <div className="mt-8 flex min-w-[1049px] gap-6">
-          <div className="w-[359px] shrink-0" aria-hidden />
+        <div className="mt-8 flex min-w-[65.5625rem] gap-6">
+          <div className="w-[22.4375rem] shrink-0" aria-hidden />
           {products.map((product) => (
             <CtaLink
               key={product.slug}
               href={`/product/${product.slug}`}
-              className="w-[307px] bg-onwei-blue text-onwei-beige"
+              className="w-[19.1875rem] bg-onwei-blue text-onwei-beige"
             >
               Add to cart
             </CtaLink>

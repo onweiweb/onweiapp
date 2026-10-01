@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import { notFound } from "next/navigation";
 import { cachedGetPublishedArticleBySlug as getPublishedArticleBySlug } from "../../../lib/cachedCatalog";
 import { buildArticleMetadata } from "../../../lib/seo/metadata";
@@ -47,10 +47,10 @@ export default async function JournalArticlePage({
       />
       <SiteHeader />
 
-      <article className="flex flex-col items-center bg-onwei-white px-6 py-14 sm:px-14">
-        <div className="flex w-full max-w-[760px] flex-col gap-8">
+      <article className="flex flex-col items-center bg-onwei-white px-6 py-14 desk:px-14">
+        <div className="flex w-full max-w-[47.5rem] flex-col gap-8">
           {article.coverImageUrl ? (
-            <div className="relative aspect-[416/280] w-full overflow-hidden rounded-[20px] bg-[#d4d4d4]">
+            <div className="relative aspect-[416/280] w-full overflow-hidden rounded-[1.25rem] bg-[#d4d4d4]">
               <Image
                 src={article.coverImageUrl}
                 alt=""
@@ -63,17 +63,17 @@ export default async function JournalArticlePage({
 
           <div className="flex flex-col gap-2">
             {article.publishedAt ? (
-              <p className="font-grotesk text-[11px] font-light text-onwei-blue/70">
+              <p className="font-grotesk text-[length:max(0.6875rem,11px)] font-light text-onwei-blue/70">
                 {article.publishedAt.toLocaleDateString()}
               </p>
             ) : null}
-            <h1 className="font-display text-[36px] font-bold uppercase leading-[0.95] text-onwei-blue sm:text-[48px]">
+            <h1 className="font-display text-[2.25rem] font-bold uppercase leading-[0.95] text-onwei-blue desk:text-[3rem]">
               {article.title}
             </h1>
           </div>
 
           <div
-            className="flex flex-col gap-4 font-grotesk text-[16px] text-onwei-blue [&_a]:underline [&_h2]:font-display [&_h2]:text-[24px] [&_h2]:uppercase [&_ul]:list-disc [&_ul]:pl-5"
+            className="flex flex-col gap-4 font-grotesk text-[length:max(1rem,11px)] text-onwei-blue [&_a]:underline [&_h2]:font-display [&_h2]:text-[1.5rem] [&_h2]:uppercase [&_ul]:list-disc [&_ul]:pl-5"
             // Staff-authored via apps/admin's content:manage-gated editor,
             // same trust boundary as everything else in that CMS, not
             // user-submitted content.

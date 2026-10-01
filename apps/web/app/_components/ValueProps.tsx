@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 
 export interface ValueProp {
   illustration: string;
@@ -18,7 +18,7 @@ export function ValueProps({ items }: { items: readonly ValueProp[] }) {
       {items.map((prop) => (
         <div
           key={prop.title}
-          className="flex flex-1 flex-col items-center justify-center gap-8 rounded-[30px] bg-onwei-purple px-6 py-8 text-center"
+          className="flex flex-1 flex-col items-center justify-center gap-8 rounded-[1.875rem] bg-onwei-purple px-6 py-8 text-center"
         >
           <Image
             src={prop.illustration}
@@ -28,10 +28,12 @@ export function ValueProps({ items }: { items: readonly ValueProp[] }) {
             aria-hidden
           />
           <div className="flex flex-col items-start gap-3 text-left text-onwei-white">
-            <p className="font-display text-[18px] font-medium uppercase tracking-[0.216px]">
+            <p className="font-display text-[length:max(1.125rem,11px)] font-medium uppercase tracking-[0.0135rem]">
               {prop.title}
             </p>
-            <p className="font-grotesk text-[14px]">{prop.body}</p>
+            <p className="font-grotesk text-[length:max(0.875rem,11px)]">
+              {prop.body}
+            </p>
           </div>
         </div>
       ))}

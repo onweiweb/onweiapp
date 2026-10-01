@@ -49,12 +49,12 @@ export function AccordionItem({
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-4 text-left"
       >
-        <span className="font-display text-[16px] font-medium text-onwei-blue">
+        <span className="font-display text-[length:max(1rem,11px)] font-medium text-onwei-blue">
           {title}
         </span>
         <span
           aria-hidden
-          className="relative h-[14px] w-[14px] shrink-0 text-onwei-blue"
+          className="relative h-[0.875rem] w-[0.875rem] shrink-0 text-onwei-blue"
         >
           <span className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-current" />
           <span
@@ -63,7 +63,7 @@ export function AccordionItem({
         </span>
       </button>
       {open ? (
-        <div className="pt-4 font-grotesk text-[14px] leading-normal text-onwei-blue">
+        <div className="pt-4 font-grotesk text-[length:max(0.875rem,11px)] leading-normal text-onwei-blue">
           {children}
         </div>
       ) : null}

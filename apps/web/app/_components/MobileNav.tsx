@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import Link from "next/link";
 
 // Figma's mobile header (node 761:4767) has no menu affordance at all, no
@@ -84,16 +84,16 @@ export function MobileNav() {
           ref={panelRef}
           role="menu"
           aria-label="Main menu"
-          className="absolute top-[calc(100%+12px)] z-20 flex w-[240px] flex-col items-center gap-4 rounded-[20px] bg-onwei-blue px-6 py-6 shadow-lg"
+          className="absolute top-[calc(100%+0.75rem)] z-20 flex w-[15rem] flex-col items-center gap-4 rounded-[1.25rem] bg-onwei-blue px-6 py-6 shadow-lg"
         >
-          <ul className="flex flex-col items-center gap-4">
+          <ul className="flex flex-col items-center gap-1">
             {NAV_LINKS.map((link) => (
               <li key={link.label} role="none">
                 <Link
                   role="menuitem"
                   href={link.href}
                   onClick={close}
-                  className="whitespace-nowrap font-grotesk text-label uppercase text-onwei-beige"
+                  className="block whitespace-nowrap py-2 font-grotesk text-label uppercase text-onwei-beige"
                 >
                   {link.label}
                 </Link>

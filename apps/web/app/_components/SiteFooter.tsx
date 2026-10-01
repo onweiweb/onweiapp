@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import Link from "next/link";
 import { getSiteSetting } from "@onwei/core";
 import { NewsletterForm } from "./NewsletterForm";
@@ -89,19 +89,22 @@ export async function SiteFooter() {
 
   return (
     <footer>
-      <div className="flex flex-col items-center overflow-hidden bg-onwei-purple px-3 py-12 sm:px-6 lg:px-14">
-        <div className="relative flex w-full max-w-[1440px] flex-col items-end gap-[87px] lg:flex-row lg:items-end">
+      <div className="flex flex-col items-center overflow-hidden bg-onwei-purple px-3 py-14 desk:px-14 desk:py-12">
+        <div className="relative flex w-full max-w-[90rem] flex-col items-end gap-[5.4375rem] desk:flex-row desk:items-end">
           <Image
             src="/images/footer/illustration-runner.svg"
             alt=""
             width={210}
             height={342}
             aria-hidden
-            className="pointer-events-none absolute top-4 right-16 hidden lg:block"
+            className="pointer-events-none absolute top-4 right-16 hidden desk:block"
           />
-          <div className="flex flex-1 flex-col gap-16 lg:flex-row lg:gap-[136px]">
-            <div className="flex w-full max-w-[401px] flex-col gap-8">
-              <div className="flex w-full max-w-[371px] flex-col items-start gap-5">
+          <div className="flex flex-1 flex-col gap-16 desk:flex-row desk:gap-[8.5rem]">
+            {/* Figma's mobile footer (node 761:5205) has no brand column
+                (wordmark, definition copy, runner), only the newsletter, the
+                stamp and the link grid, so it is desktop-only here. */}
+            <div className="hidden w-full max-w-[25.0625rem] flex-col gap-8 desk:flex">
+              <div className="flex w-full max-w-[23.1875rem] flex-col items-start gap-5">
                 <Image
                   src="/images/footer/logo-circle.svg"
                   alt=""
@@ -109,10 +112,10 @@ export async function SiteFooter() {
                   height={113}
                   aria-hidden
                 />
-                <p className="font-display text-[64px] font-bold uppercase leading-[0.9] text-onwei-beige">
+                <p className="font-display text-[4rem] font-bold uppercase leading-[0.9] text-onwei-beige">
                   on&middot;wei
                 </p>
-                <p className="font-display text-[16px] font-semibold uppercase text-onwei-beige">
+                <p className="font-display text-[length:max(1rem,11px)] font-semibold uppercase text-onwei-beige">
                   \ on-way \
                 </p>
               </div>
@@ -130,18 +133,18 @@ export async function SiteFooter() {
                       className="object-contain"
                     />
                   </span>
-                  <p className="relative z-10 font-display text-[16px] font-semibold uppercase text-onwei-blue">
+                  <p className="relative z-10 font-display text-[length:max(1rem,11px)] font-semibold uppercase text-onwei-blue">
                     rhymes with &quot;on the way.&quot; because you already are.
                   </p>
                 </div>
-                <p className="font-grotesk text-[14px] leading-[1.3]">
+                <p className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3]">
                   ONWEI (n.)
                 </p>
-                <ul className="flex flex-col gap-4 font-grotesk text-[14px] leading-[1.3]">
+                <ul className="flex flex-col gap-4 font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3]">
                   <li className="flex gap-2">
                     <span
                       aria-hidden
-                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                      className="mt-[0.4375rem] h-1 w-1 shrink-0 rounded-full bg-current"
                     />
                     <span>
                       The weight of your own effort. The only thing that&apos;s
@@ -151,7 +154,7 @@ export async function SiteFooter() {
                   <li className="flex gap-2">
                     <span
                       aria-hidden
-                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                      className="mt-[0.4375rem] h-1 w-1 shrink-0 rounded-full bg-current"
                     />
                     <span>
                       On - present, engaged, showing up.
@@ -164,7 +167,7 @@ export async function SiteFooter() {
                   <li className="flex gap-2">
                     <span
                       aria-hidden
-                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                      className="mt-[0.4375rem] h-1 w-1 shrink-0 rounded-full bg-current"
                     />
                     <span>
                       The feeling when you stop waiting to feel ready and just
@@ -174,7 +177,7 @@ export async function SiteFooter() {
                   <li className="flex gap-2">
                     <span
                       aria-hidden
-                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                      className="mt-[0.4375rem] h-1 w-1 shrink-0 rounded-full bg-current"
                     />
                     <span>
                       Because progress belongs to those who show up. Stay on.
@@ -184,23 +187,23 @@ export async function SiteFooter() {
               </div>
             </div>
 
-            <div className="relative flex flex-1 flex-col gap-[87px]">
+            <div className="relative flex flex-1 flex-col items-center gap-14 desk:items-stretch desk:gap-[5.4375rem]">
               <Image
                 src="/images/footer/brand-asset-2.png"
                 alt=""
                 width={96}
                 height={124}
                 aria-hidden
-                className="pointer-events-none absolute right-8 top-0 hidden rotate-12 md:block"
+                className="pointer-events-none absolute right-8 top-0 hidden rotate-12 desk:block"
               />
-              <div className="flex flex-col items-start gap-6">
-                <div className="flex w-full max-w-[380px] flex-col gap-4 text-onwei-beige">
-                  <p className="font-display text-[70px] font-bold uppercase leading-[0.9]">
+              <div className="flex w-full flex-col items-center gap-6 desk:items-start">
+                <div className="flex w-full max-w-[23.75rem] flex-col gap-4 text-center text-onwei-beige desk:text-left">
+                  <p className="font-display text-[2.5rem] font-bold uppercase leading-[0.9] desk:text-[4.375rem]">
                     Stay in
                     <br />
                     the loop
                   </p>
-                  <p className="font-grotesk text-[14px]">
+                  <p className="font-grotesk text-[length:max(0.875rem,11px)]">
                     New releases, movement stories, and what&apos;s moving at
                     Onwei (no unnecessary pings!)
                   </p>
@@ -208,59 +211,72 @@ export async function SiteFooter() {
                 <NewsletterForm />
               </div>
 
-              <div className="flex flex-wrap gap-8">
-                {FOOTER_COLUMNS.map((column) => (
-                  <div
-                    key={column.heading}
-                    className="flex w-[180px] flex-col gap-6 text-onwei-beige"
-                  >
-                    <p className="font-display text-[16px] font-semibold uppercase tracking-[-0.16px]">
-                      {column.heading}
+              {/* Mobile: stamp, then a 2x2 link grid (Shop/About, Policies/
+                  Connect). `desk:contents` hands the children back to the
+                  desktop flex column. */}
+              <div className="flex flex-col items-center gap-6 desk:contents">
+                <Image
+                  src="/images/footer/stamp-mobile.svg"
+                  alt=""
+                  width={154}
+                  height={154}
+                  aria-hidden
+                  className="h-[9.6rem] w-[9.6rem] desk:hidden"
+                />
+                <div className="grid grid-cols-[11.5rem_7.125rem] gap-x-6 gap-y-12 desk:flex desk:flex-wrap desk:gap-8">
+                  {FOOTER_COLUMNS.map((column) => (
+                    <div
+                      key={column.heading}
+                      className="flex w-auto flex-col gap-[1.125rem] text-onwei-beige desk:w-[11.25rem] desk:gap-6"
+                    >
+                      <p className="font-display text-[length:max(1rem,11px)] font-semibold uppercase tracking-[-0.01rem]">
+                        {column.heading}
+                      </p>
+                      <ul className="flex flex-col gap-4 font-grotesk font-medium text-[length:max(1rem,11px)]">
+                        {column.links.map((link) => (
+                          <li key={link.label}>
+                            <Link href={link.href}>{link.label}</Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                  <div className="flex flex-1 flex-col gap-[1.125rem] text-onwei-beige desk:gap-6">
+                    <p className="font-display text-[length:max(1rem,11px)] font-semibold uppercase tracking-[-0.01rem]">
+                      Connect
                     </p>
-                    <ul className="flex flex-col gap-4 font-grotesk font-medium text-[16px]">
-                      {column.links.map((link) => (
-                        <li key={link.label}>
-                          <Link href={link.href}>{link.label}</Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-                <div className="flex flex-1 flex-col gap-6 text-onwei-beige">
-                  <p className="font-display text-[16px] font-semibold uppercase tracking-[-0.16px]">
-                    Connect
-                  </p>
-                  <div className="flex items-center gap-4">
-                    {instagramUrl ? (
-                      <a
-                        href={instagramUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Onwei on Instagram"
-                      >
-                        <InstagramIcon />
-                      </a>
-                    ) : null}
-                    {linkedinUrl ? (
-                      <a
-                        href={linkedinUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Onwei on LinkedIn"
-                      >
-                        <LinkedInIcon />
-                      </a>
-                    ) : null}
-                    {facebookUrl ? (
-                      <a
-                        href={facebookUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label="Onwei on Facebook"
-                      >
-                        <FacebookIcon />
-                      </a>
-                    ) : null}
+                    <div className="flex items-center gap-4">
+                      {instagramUrl ? (
+                        <a
+                          href={instagramUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Onwei on Instagram"
+                        >
+                          <InstagramIcon />
+                        </a>
+                      ) : null}
+                      {linkedinUrl ? (
+                        <a
+                          href={linkedinUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Onwei on LinkedIn"
+                        >
+                          <LinkedInIcon />
+                        </a>
+                      ) : null}
+                      {facebookUrl ? (
+                        <a
+                          href={facebookUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Onwei on Facebook"
+                        >
+                          <FacebookIcon />
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -268,7 +284,7 @@ export async function SiteFooter() {
           </div>
         </div>
       </div>
-      <div className="flex items-start justify-center bg-onwei-blue px-3 py-2 sm:px-6 lg:px-14">
+      <div className="flex items-start justify-center bg-onwei-blue px-3 py-2 desk:px-14">
         <p className="font-grotesk text-label uppercase text-onwei-white">
           &copy;2026 ONWEI
         </p>

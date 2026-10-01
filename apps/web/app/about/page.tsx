@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import { getSiteSetting } from "@onwei/core";
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
@@ -53,13 +53,13 @@ export default async function AboutPage() {
 
       <ScrollReveal
         as="section"
-        className="mx-auto flex w-full max-w-[1440px] flex-col items-center gap-6 px-6 pb-6 pt-8 text-center sm:px-14"
+        className="mx-auto flex w-full max-w-[90rem] flex-col items-center gap-6 px-6 pb-6 pt-8 text-center desk:px-14"
       >
-        <h1 className="relative font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-blue sm:text-[64px]">
+        <h1 className="relative font-display text-[2.5rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[4rem]">
           About us
         </h1>
         <div className="relative inline-block">
-          <p className="font-display text-[16px] font-medium uppercase text-onwei-blue">
+          <p className="font-display text-[length:max(1rem,11px)] font-medium uppercase text-onwei-blue">
             ( on&middot;wei, \ &#712;&auml;n-w&#257; / &ldquo;on-way&rdquo; )
           </p>
           {/* Mobile (Figma node 969:4038): tucked under the tail end of the
@@ -77,7 +77,7 @@ export default async function AboutPage() {
             width={64}
             height={15}
             aria-hidden
-            className="pointer-events-none absolute -right-2 top-full -mt-1 sm:hidden"
+            className="pointer-events-none absolute -right-2 top-full -mt-1 desk:hidden"
           />
           <Image
             src="/images/about-us/underline-about-pronunciation.png"
@@ -85,10 +85,10 @@ export default async function AboutPage() {
             width={94}
             height={22}
             aria-hidden
-            className="pointer-events-none absolute left-full top-1 ml-3 hidden sm:block"
+            className="pointer-events-none absolute left-full top-1 ml-3 hidden desk:block"
           />
         </div>
-        <div className="flex max-w-[773px] flex-col gap-4 font-grotesk text-[14px] leading-relaxed text-onwei-blue">
+        <div className="flex max-w-[48.3125rem] flex-col gap-4 font-grotesk text-[length:max(0.875rem,11px)] leading-relaxed text-onwei-blue">
           <p>
             Not a gear company. Not a wellness brand. Not another startup that
             discovered sport after reading a trend report.
@@ -141,12 +141,12 @@ export default async function AboutPage() {
         </div>
       </ScrollReveal>
 
-      <section className="mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-6 px-6 pb-6 sm:px-11 lg:grid-cols-2">
+      <section className="mx-auto grid w-full max-w-[90rem] grid-cols-1 gap-6 px-6 pb-6 desk:px-11 desk:grid-cols-2">
         <ScrollReveal
           as="div"
-          className="order-2 flex flex-col items-center justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 text-center sm:px-14 sm:py-12 lg:order-1 lg:items-start lg:text-left"
+          className="order-2 flex flex-col items-center justify-end gap-6 rounded-[1.875rem] bg-onwei-purple px-6 py-8 text-center desk:px-14 desk:py-12 desk:order-1 desk:items-start desk:text-left"
         >
-          <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
+          <p className="relative inline-block w-fit font-display text-[2.5rem] font-bold uppercase leading-[1.1] text-onwei-white desk:text-[4rem]">
             {/* Figma: an oval outline wraps the whole name (node 969:4048
                 mobile, 760:4566 desktop), not the small corner squiggle
                 this used before, which was the wrong decoration entirely. */}
@@ -156,7 +156,7 @@ export default async function AboutPage() {
               width={196}
               height={62}
               aria-hidden
-              className="pointer-events-none absolute -left-[18px] -top-[10px] h-auto w-[calc(100%+36px)] max-w-none sm:hidden"
+              className="pointer-events-none absolute -left-[1.125rem] -top-[0.625rem] h-auto w-[calc(100%+2.25rem)] max-w-none desk:hidden"
             />
             <Image
               src="/images/about-us/circle-sabhya-desktop.svg"
@@ -164,11 +164,11 @@ export default async function AboutPage() {
               width={273}
               height={87}
               aria-hidden
-              className="pointer-events-none absolute -left-[22px] -top-[12px] hidden h-auto w-[calc(100%+44px)] max-w-none sm:block"
+              className="pointer-events-none absolute -left-[1.375rem] -top-[0.75rem] hidden h-auto w-[calc(100%+2.75rem)] max-w-none desk:block"
             />
             <span className="relative">Sabhya</span>
           </p>
-          <div className="font-grotesk text-[14px] leading-[1.3] text-onwei-white">
+          <div className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-white">
             <p>
               He grew up playing table tennis professionally, the kind of
               professional where weekends were tournaments, not plans. He
@@ -201,7 +201,7 @@ export default async function AboutPage() {
             </p>
           </div>
           {!isWaitlistMode && (
-            <span className="w-fit rounded-[30px] bg-onwei-beige px-6 py-3 font-grotesk text-[14px] uppercase text-onwei-blue">
+            <span className="w-fit rounded-[1.875rem] bg-onwei-beige px-6 py-3 font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-blue">
               Read Sabhya&apos;s substack
             </span>
           )}
@@ -209,7 +209,7 @@ export default async function AboutPage() {
         {/* Wrapper (not the photo div itself, which clips via
             overflow-hidden) so the pickleball-swing illustration (Figma
             node 760:4746) can hang below the photo's bottom edge like it
-            does in Figma, instead of getting clipped. order-1/lg:order-2:
+            does in Figma, instead of getting clipped. order-1/desk:order-2:
             Figma's mobile frame (969:3987) stacks the photo above the text
             card for this section, but desktop (760:4533) puts text on the
             left, this section is the only one of the two where the two
@@ -217,14 +217,14 @@ export default async function AboutPage() {
         <ScrollReveal
           as="div"
           delay={0.1}
-          className="relative order-1 lg:order-2"
+          className="relative order-1 desk:order-2"
         >
-          <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
+          <div className="relative min-h-[25rem] overflow-hidden rounded-[1.875rem] desk:min-h-full">
             <Image
               src="/images/about-us/sabhya.png"
               alt="Sabhya, Onwei co-founder, playing table tennis in a tournament"
               fill
-              sizes="(min-width: 1024px) 50vw, 100vw"
+              sizes="((min-width: 768px)) 50vw, 100vw"
               className="object-cover"
             />
             <Image
@@ -233,7 +233,7 @@ export default async function AboutPage() {
               width={90}
               height={90}
               aria-hidden
-              className="pointer-events-none absolute right-6 top-6 hidden opacity-90 sm:block"
+              className="pointer-events-none absolute right-6 top-6 hidden opacity-90 desk:block"
             />
           </div>
           {/* Figma's mobile frame has this on the RIGHT of the photo (not
@@ -246,7 +246,7 @@ export default async function AboutPage() {
             width={80}
             height={145}
             aria-hidden
-            className="pointer-events-none absolute -bottom-10 right-[4%] z-10 lg:hidden"
+            className="pointer-events-none absolute -bottom-10 right-[4%] z-10 desk:hidden"
           />
           <Image
             src="/images/about-us/illustration-pickleball-swing.svg"
@@ -254,12 +254,12 @@ export default async function AboutPage() {
             width={145}
             height={262}
             aria-hidden
-            className="pointer-events-none absolute -bottom-16 left-[4%] z-10 hidden lg:block"
+            className="pointer-events-none absolute -bottom-16 left-[4%] z-10 hidden desk:block"
           />
         </ScrollReveal>
       </section>
 
-      <section className="relative mx-auto grid w-full max-w-[1440px] grid-cols-1 gap-6 px-6 pb-6 sm:px-11 lg:grid-cols-2">
+      <section className="relative mx-auto grid w-full max-w-[90rem] grid-cols-1 gap-6 px-6 pb-6 desk:px-11 desk:grid-cols-2">
         {/* Outer wrapper (not the photo div itself, which clips via
             overflow-hidden) so the mobile plank illustration can hang below
             the photo's bottom edge, same reasoning as the Sabhya photo
@@ -271,12 +271,12 @@ export default async function AboutPage() {
             bottom of the second (text) column instead of at the photo/card
             seam, the plank needs its own anchor here instead. */}
         <ScrollReveal as="div" className="relative">
-          <div className="relative min-h-[400px] overflow-hidden rounded-[30px] lg:min-h-full">
+          <div className="relative min-h-[25rem] overflow-hidden rounded-[1.875rem] desk:min-h-full">
             <Image
               src="/images/about-us/sakshi.jpg"
               alt="Sakshi, Onwei co-founder, holding an Onwei yoga mat"
               fill
-              sizes="(min-width: 1024px) 50vw, 100vw"
+              sizes="((min-width: 768px)) 50vw, 100vw"
               className="object-cover object-top"
             />
             <Image
@@ -285,7 +285,7 @@ export default async function AboutPage() {
               width={90}
               height={90}
               aria-hidden
-              className="pointer-events-none absolute right-6 top-6 hidden opacity-90 sm:block"
+              className="pointer-events-none absolute right-6 top-6 hidden opacity-90 desk:block"
             />
           </div>
           <Image
@@ -294,7 +294,7 @@ export default async function AboutPage() {
             width={134}
             height={48}
             aria-hidden
-            className="pointer-events-none absolute -bottom-6 left-1/2 z-10 -translate-x-1/2 lg:hidden"
+            className="pointer-events-none absolute -bottom-6 left-1/2 z-10 -translate-x-1/2 desk:hidden"
           />
         </ScrollReveal>
         <Image
@@ -303,14 +303,14 @@ export default async function AboutPage() {
           width={243}
           height={87}
           aria-hidden
-          className="pointer-events-none absolute bottom-0 left-1/2 z-10 hidden -translate-x-1/2 lg:block"
+          className="pointer-events-none absolute bottom-0 left-1/2 z-10 hidden -translate-x-1/2 desk:block"
         />
         <ScrollReveal
           as="div"
           delay={0.1}
-          className="flex flex-col items-center justify-end gap-6 rounded-[30px] bg-onwei-purple px-6 py-8 text-center sm:px-14 sm:py-12 lg:items-start lg:text-left"
+          className="flex flex-col items-center justify-end gap-6 rounded-[1.875rem] bg-onwei-purple px-6 py-8 text-center desk:px-14 desk:py-12 desk:items-start desk:text-left"
         >
-          <p className="relative inline-block w-fit font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-white sm:text-[64px]">
+          <p className="relative inline-block w-fit font-display text-[2.5rem] font-bold uppercase leading-[1.1] text-onwei-white desk:text-[4rem]">
             {/* Figma gives Sakshi's name the oval-outline treatment on
                 mobile only (node 969:4059), confirmed no such decoration
                 on desktop (760:4568's Sakshi section has none), unlike
@@ -324,11 +324,11 @@ export default async function AboutPage() {
               width={196}
               height={62}
               aria-hidden
-              className="pointer-events-none absolute -left-[18px] -top-[10px] h-auto w-[calc(100%+36px)] max-w-none sm:hidden"
+              className="pointer-events-none absolute -left-[1.125rem] -top-[0.625rem] h-auto w-[calc(100%+2.25rem)] max-w-none desk:hidden"
             />
             <span className="relative">Sakshi</span>
           </p>
-          <div className="font-grotesk text-[14px] leading-[1.3] text-onwei-white">
+          <div className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-white">
             <p>
               Even at 22, she couldn&apos;t buy something ugly. Life was too
               short. She spent years at LVMH understanding why people pay a
@@ -360,7 +360,7 @@ export default async function AboutPage() {
 
       <ScrollReveal
         as="section"
-        className="relative mx-auto flex w-full max-w-[1440px] flex-col items-center gap-6 px-6 pb-6 pt-12 text-center sm:px-14"
+        className="relative mx-auto flex w-full max-w-[90rem] flex-col items-center gap-6 px-6 pb-6 pt-12 text-center desk:px-14"
       >
         {/* Mobile only (Figma node 969:4237), a small double-stroke
             underline beneath "THEN THEY GOT" (first line of the heading),
@@ -376,7 +376,7 @@ export default async function AboutPage() {
           width={89}
           height={16}
           aria-hidden
-          className="pointer-events-none absolute left-6 top-24 lg:hidden"
+          className="pointer-events-none absolute left-6 top-24 desk:hidden"
         />
         <Image
           src="/images/about-us/squiggle-arrow-married.svg"
@@ -384,13 +384,13 @@ export default async function AboutPage() {
           width={113}
           height={58}
           aria-hidden
-          className="pointer-events-none absolute right-[8%] top-6 hidden lg:block"
+          className="pointer-events-none absolute right-[8%] top-6 hidden desk:block"
         />
-        <h2 className="font-display text-[32px] font-bold uppercase leading-[1.1] text-onwei-blue sm:text-[64px]">
+        <h2 className="font-display text-[2rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[4rem]">
           Then they got married.
         </h2>
         <div className="relative inline-block">
-          <p className="font-display text-[16px] font-medium uppercase text-onwei-blue">
+          <p className="font-display text-[length:max(1rem,11px)] font-medium uppercase text-onwei-blue">
             (The mental notes became a brand.)
           </p>
           <Image
@@ -399,10 +399,10 @@ export default async function AboutPage() {
             width={119}
             height={16}
             aria-hidden
-            className="pointer-events-none absolute -bottom-2 left-1/2 hidden -translate-x-1/2 sm:block"
+            className="pointer-events-none absolute -bottom-2 left-1/2 hidden -translate-x-1/2 desk:block"
           />
         </div>
-        <div className="flex max-w-[773px] flex-col gap-1 font-grotesk text-[14px] leading-relaxed text-onwei-blue">
+        <div className="flex max-w-[48.3125rem] flex-col gap-1 font-grotesk text-[length:max(0.875rem,11px)] leading-relaxed text-onwei-blue">
           <p>
             Two SRCC and ISB alumni who couldn&apos;t stop talking about fitness
             and gear.
@@ -427,9 +427,9 @@ export default async function AboutPage() {
 
       <ScrollReveal
         as="section"
-        className="mx-auto w-full max-w-[1440px] px-6 pb-14 sm:px-11"
+        className="mx-auto w-full max-w-[90rem] px-6 pb-14 desk:px-11"
       >
-        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[30px] sm:aspect-[16/9]">
+        <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[1.875rem] desk:aspect-[16/9]">
           <Image
             src="/images/about-us/married.jpg"
             alt="Sabhya and Sakshi at a theatre together"
@@ -442,7 +442,7 @@ export default async function AboutPage() {
 
       <ScrollReveal
         as="section"
-        className="relative flex w-full flex-col items-center bg-onwei-white px-6 py-12 text-center sm:px-14"
+        className="relative flex w-full flex-col items-center bg-onwei-white px-6 py-12 text-center desk:px-14"
       >
         <Image
           src="/images/about-us/ribbon-show-up-consistency.png"
@@ -450,10 +450,10 @@ export default async function AboutPage() {
           width={227}
           height={121}
           aria-hidden
-          className="pointer-events-none absolute left-[6%] top-1/2 hidden -translate-y-1/2 xl:block"
+          className="pointer-events-none absolute left-[6%] top-1/2 hidden -translate-y-1/2 desk:block"
         />
-        <div className="flex w-full max-w-[1440px] flex-col items-center gap-6">
-          <h2 className="font-display text-[40px] font-bold uppercase leading-[1.1] text-onwei-blue sm:text-[64px]">
+        <div className="flex w-full max-w-[90rem] flex-col items-center gap-6">
+          <h2 className="font-display text-[2.5rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[4rem]">
             Why{" "}
             <span className="relative inline-block">
               <Image
@@ -462,7 +462,7 @@ export default async function AboutPage() {
                 width={136}
                 height={76}
                 aria-hidden
-                className="pointer-events-none absolute -left-[10px] -top-[18px] sm:hidden"
+                className="pointer-events-none absolute -left-[0.625rem] -top-[1.125rem] desk:hidden"
               />
               <Image
                 src="/images/about-us/squiggle-onwei-circle.svg"
@@ -470,12 +470,12 @@ export default async function AboutPage() {
                 width={217}
                 height={121}
                 aria-hidden
-                className="pointer-events-none absolute -left-4 -top-7 hidden sm:block"
+                className="pointer-events-none absolute -left-4 -top-7 hidden desk:block"
               />
               <span className="relative">Onwei</span>
             </span>
           </h2>
-          <div className="flex max-w-[773px] flex-col gap-4 font-grotesk text-[14px] leading-relaxed text-onwei-blue">
+          <div className="flex max-w-[48.3125rem] flex-col gap-4 font-grotesk text-[length:max(0.875rem,11px)] leading-relaxed text-onwei-blue">
             <p>
               Because the person who shows up at 7am when no one&apos;s watching
               deserves better than gear that gave up before they did.
@@ -492,7 +492,7 @@ export default async function AboutPage() {
             </p>
             <p>That&apos;s the only kind of progress that actually sticks.</p>
           </div>
-          <p className="font-display text-[16px] font-bold uppercase text-onwei-blue">
+          <p className="font-display text-[length:max(1rem,11px)] font-bold uppercase text-onwei-blue">
             Show up. Stay on. That&apos;s Onwei.
           </p>
           <div className="relative">
@@ -502,7 +502,7 @@ export default async function AboutPage() {
               width={86}
               height={76}
               aria-hidden
-              className="pointer-events-none absolute -right-20 -top-2 hidden lg:block"
+              className="pointer-events-none absolute -right-20 -top-2 hidden desk:block"
             />
             <HoverLink
               href={
@@ -510,7 +510,7 @@ export default async function AboutPage() {
                   ? "/waitlist#join-onwei-insiders"
                   : "/collection/pickleball"
               }
-              className="rounded-[30px] bg-onwei-blue px-6 py-3 font-grotesk text-[14px] uppercase text-onwei-beige"
+              className="rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-beige"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
             >

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 
 // Extracted from the Homepage (was page-local), reused anywhere a review
 // card renders a rating (Homepage, ReviewWall on PDP/Collection).

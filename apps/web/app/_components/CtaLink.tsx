@@ -14,7 +14,7 @@ export function CtaLink({
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center whitespace-nowrap rounded-[30px] px-6 py-3 font-grotesk text-label uppercase ${className}`}
+      className={`inline-flex items-center justify-center whitespace-nowrap rounded-[1.875rem] px-3 py-2 font-grotesk text-[length:max(0.75rem,11px)] uppercase desk:px-6 desk:py-3 desk:text-label ${className}`}
     >
       {children}
     </Link>

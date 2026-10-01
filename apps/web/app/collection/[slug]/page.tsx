@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import Link from "next/link";
 import { notFound, permanentRedirect } from "next/navigation";
 import { findRedirect } from "@onwei/core";
@@ -105,7 +105,7 @@ function CategorySection({
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <h2 className="font-display text-[48px] font-bold uppercase leading-[1.1] text-onwei-blue lg:text-[64px]">
+      <h2 className="font-display text-[3rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[4rem]">
         {category.name}
       </h2>
       {needsScroll ? (
@@ -115,19 +115,23 @@ function CategorySection({
         // products (and its illustration overlay, which intentionally
         // hangs outside the tile's own box, never risks getting clipped
         // by the scroll container's overflow).
-        <div className="flex w-full items-start gap-8">
+        <div className="flex w-full flex-col items-start gap-8 desk:flex-row">
           {promo?.side === "start" ? promo.tile : null}
           <ScrollCarousel
             gap="gap-8"
             className="items-start"
-            wrapperClassName="min-w-0 flex-1"
+            wrapperClassName="w-full min-w-0 desk:w-auto desk:flex-1"
           >
             {productCards}
           </ScrollCarousel>
           {promo?.side === "end" ? promo.tile : null}
         </div>
       ) : (
-        <div className="flex w-full items-start gap-8">
+        // Below desk the row (3 cards + promo) is wider than the screen, so it
+        // scrolls sideways. The padding/negative margin pair gives the promo
+        // illustration room to hang outside its tile without being clipped by
+        // the scroll box, and cancels itself out in layout.
+        <div className="no-scrollbar -mb-12 -mt-6 flex w-full items-start gap-8 overflow-x-auto pb-12 pr-6 pt-6 desk:m-0 desk:overflow-visible desk:p-0">
           {promo?.side === "start" ? promo.tile : null}
           {productCards}
           {promo?.side === "end" ? promo.tile : null}
@@ -141,12 +145,12 @@ function CategorySection({
 // heading, no illustration), unique to the Collection page.
 function FindYourWeiSection() {
   return (
-    <section className="flex flex-col items-start gap-6 bg-onwei-green px-6 py-14 sm:flex-row sm:items-center sm:justify-between sm:px-14">
-      <p className="font-display text-[48px] font-bold uppercase leading-[1.1] text-onwei-blue lg:text-[64px]">
+    <section className="flex flex-col items-start gap-6 bg-onwei-green px-6 py-14 desk:flex-row desk:items-center desk:justify-between desk:px-14">
+      <p className="font-display text-[3rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[4rem]">
         Find Your Wei
       </p>
       <div className="relative flex flex-col items-start gap-6">
-        <p className="max-w-[484px] font-grotesk text-[14px] text-onwei-blue">
+        <p className="max-w-[30.25rem] font-grotesk text-[length:max(0.875rem,11px)] text-onwei-blue">
           Movement events, community sessions, early access, product testing,
           and exclusive rewards - and a say in what we build next!
         </p>
@@ -159,7 +163,7 @@ function FindYourWeiSection() {
           width={285}
           height={2}
           aria-hidden
-          className="pointer-events-none absolute -left-1 top-[52px] w-[285px] max-w-none"
+          className="pointer-events-none absolute -left-1 top-[3.25rem] w-[17.8125rem] max-w-none"
         />
       </div>
     </section>
@@ -236,14 +240,14 @@ export default async function CollectionPage({
       />
       <SiteHeader />
 
-      <section className="relative flex flex-col items-center bg-onwei-green px-6 pb-14 pt-8 sm:px-14">
+      <section className="relative flex flex-col items-center bg-onwei-green px-6 pb-14 pt-[5.5rem] desk:px-14 desk:pt-8">
         <Image
           src="/images/collection/illustration-weightlifter.svg"
           alt=""
           width={99}
           height={98}
           aria-hidden
-          className="pointer-events-none absolute left-[21%] top-8 hidden lg:block"
+          className="pointer-events-none absolute left-6 top-6 origin-top-left scale-75 desk:left-[21%] desk:top-8 desk:scale-100"
         />
         {/* Figma node 760:4191, straddles the boundary with the category
             nav below it, same overlap pattern as JoinMovementSection's
@@ -254,17 +258,17 @@ export default async function CollectionPage({
           width={167}
           height={65}
           aria-hidden
-          className="pointer-events-none absolute left-[71%] top-40 hidden lg:block"
+          className="pointer-events-none absolute bottom-[-1.5rem] right-4 origin-bottom-right scale-75 desk:bottom-auto desk:left-[71%] desk:right-auto desk:top-40 desk:origin-center desk:scale-100"
         />
-        <div className="relative flex w-full max-w-[1440px] flex-col items-center gap-6 text-center">
-          <h1 className="relative inline-block font-display text-[48px] font-bold uppercase leading-[1.1] text-onwei-blue lg:text-[64px]">
+        <div className="relative flex w-full max-w-[90rem] flex-col items-center gap-6 text-center">
+          <h1 className="relative inline-block font-display text-[3rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[4rem]">
             <Image
               src="/images/collection/squiggle-shop.svg"
               alt=""
               width={46}
               height={36}
               aria-hidden
-              className="pointer-events-none absolute -left-12 top-0 hidden lg:block"
+              className="pointer-events-none absolute -left-12 top-0 origin-top-left scale-75 desk:scale-100"
             />
             Shop{" "}
             <span className="relative inline-block">
@@ -274,7 +278,7 @@ export default async function CollectionPage({
                 width={141}
                 height={61}
                 aria-hidden
-                className="pointer-events-none absolute -left-3 -top-2 hidden lg:block"
+                className="pointer-events-none absolute -left-2 -top-1.5 desk:-left-3 desk:-top-2"
               />
               <span className="relative">all</span>
             </span>
@@ -284,10 +288,10 @@ export default async function CollectionPage({
               width={86}
               height={55}
               aria-hidden
-              className="pointer-events-none absolute -right-24 top-2 hidden lg:block"
+              className="pointer-events-none absolute -right-[4.5rem] top-2 origin-top-left scale-75 desk:-right-24 desk:scale-100"
             />
           </h1>
-          <p className="max-w-[484px] font-grotesk text-[14px] text-onwei-blue">
+          <p className="max-w-[30.25rem] font-grotesk text-[length:max(0.875rem,11px)] text-onwei-blue">
             Shop our range of goods for pickleball or pilates and be a part of
             our community!
           </p>
@@ -296,17 +300,17 @@ export default async function CollectionPage({
 
       <nav
         aria-label="Category"
-        className="flex w-full flex-wrap items-center justify-between gap-4 border-b border-onwei-blue/10 bg-onwei-white px-6 py-6 sm:gap-8 sm:px-14"
+        className="flex w-full flex-wrap items-center justify-between gap-4 border-b border-onwei-blue/10 bg-onwei-white px-6 py-6 desk:gap-8 desk:px-14"
       >
-        <div className="flex flex-wrap items-center gap-4 sm:gap-8">
-          <p className="whitespace-nowrap font-grotesk text-[14px] uppercase text-onwei-blue">
+        <div className="flex flex-wrap items-center gap-4 desk:gap-8">
+          <p className="whitespace-nowrap font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-blue">
             Categories:
           </p>
           {CATEGORY_TABS.map((tab) => (
             <Link
               key={tab.slug}
               href={`/collection/${tab.slug}`}
-              className={`relative whitespace-nowrap font-display text-[20px] uppercase text-onwei-blue ${
+              className={`relative whitespace-nowrap font-display text-[1.25rem] uppercase text-onwei-blue ${
                 tab.slug === slug ? "font-medium" : "font-normal"
               }`}
             >
@@ -321,7 +325,7 @@ export default async function CollectionPage({
                   width={122}
                   height={45}
                   aria-hidden
-                  className="pointer-events-none absolute -left-4 -top-3 hidden lg:block"
+                  className="pointer-events-none absolute -left-4 -top-3"
                 />
               ) : null}
               <span className="relative">{tab.label}</span>
@@ -331,10 +335,10 @@ export default async function CollectionPage({
         <SortDropdown value={sort} />
       </nav>
 
-      <section className="flex flex-col items-center gap-16 bg-onwei-white px-6 pb-24 pt-12 sm:px-14">
-        <div className="flex w-full max-w-[1440px] flex-col gap-16">
+      <section className="flex flex-col items-center gap-16 bg-onwei-white px-6 pb-24 pt-12 desk:px-14">
+        <div className="flex w-full max-w-[90rem] flex-col gap-16">
           {!hasProducts ? (
-            <p className="font-grotesk text-[14px] text-onwei-blue">
+            <p className="font-grotesk text-[length:max(0.875rem,11px)] text-onwei-blue">
               No products yet, check back soon.
             </p>
           ) : (
@@ -349,8 +353,8 @@ export default async function CollectionPage({
         </div>
       </section>
 
-      <section className="flex flex-col items-center bg-onwei-white px-6 pb-24 sm:px-14">
-        <div className="relative aspect-[1328/645] w-full max-w-[1328px] overflow-hidden rounded-[30px]">
+      <section className="flex flex-col items-center bg-onwei-white px-6 pb-24 desk:px-14">
+        <div className="relative aspect-[1328/645] w-full max-w-[83rem] overflow-hidden rounded-[1.875rem]">
           <Image
             src="/images/collection/video-poster.png"
             alt="Athlete in motion on court"

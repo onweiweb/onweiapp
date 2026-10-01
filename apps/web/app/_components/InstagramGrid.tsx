@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import { ScrollCarousel } from "./ScrollCarousel";
 
 export interface InstagramGridPhoto {
@@ -20,10 +20,27 @@ export function InstagramGrid({
   heading?: string;
 }) {
   return (
-    <section className="flex flex-col items-center bg-onwei-green px-3 py-24 sm:px-6 lg:px-14">
-      <div className="flex w-full max-w-[1440px] flex-col items-start gap-12">
+    <section className="relative flex flex-col items-center bg-onwei-green px-3 pb-24 pt-[4.5rem] desk:px-14 desk:py-24">
+      {/* Mobile frame (node 761:5192): the script note and its curly arrow
+          are absolutely placed beside the heading; from desk up they flow
+          inline above it as in the desktop frame. */}
+      <span
+        aria-hidden
+        className="absolute left-[10.26%] top-[2.9725rem] whitespace-nowrap font-script text-[1rem] uppercase leading-none text-onwei-blue desk:hidden"
+      >
+        follow us on instagram
+      </span>
+      <Image
+        src="/images/instagram/arrow-mobile.svg"
+        alt=""
+        width={35}
+        height={38}
+        aria-hidden
+        className="absolute right-[4.581rem] top-[4.864rem] h-[2.4034rem] w-[2.2073rem] -rotate-[26.52deg] desk:hidden"
+      />
+      <div className="flex w-full max-w-[90rem] flex-col items-start gap-6 desk:gap-12">
         <div className="relative flex w-full flex-col items-center gap-3">
-          <span className="relative flex items-center gap-2 font-script text-script-md uppercase text-onwei-blue">
+          <span className="relative hidden items-center gap-2 font-script text-script-md uppercase text-onwei-blue desk:flex">
             follow us on instagram
             <Image
               src="/images/instagram/arrow.svg"
@@ -34,7 +51,7 @@ export function InstagramGrid({
               className="-rotate-[27deg]"
             />
           </span>
-          <p className="font-display text-[48px] font-bold uppercase leading-[0.9] text-onwei-blue lg:text-[70px]">
+          <p className="font-display text-[2.5rem] font-bold uppercase leading-[0.9] text-onwei-blue desk:text-[4.375rem]">
             {heading}
           </p>
         </div>
@@ -42,7 +59,7 @@ export function InstagramGrid({
           {photos.map((photo, index) => (
             <div
               key={photo.url}
-              className="relative h-[420px] w-[340px] shrink-0 overflow-hidden rounded-[30px]"
+              className="relative h-[18.4375rem] w-[13.75rem] shrink-0 overflow-hidden rounded-[1.875rem] desk:h-[26.25rem] desk:w-[21.25rem]"
             >
               <Image
                 src={photo.url}

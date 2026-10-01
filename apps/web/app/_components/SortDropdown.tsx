@@ -29,12 +29,12 @@ export function SortDropdown({ value }: { value: ProductSort }) {
   }
 
   return (
-    <label className="flex items-center gap-2 border-b border-onwei-blue px-1 pb-1 font-grotesk text-[14px] uppercase text-onwei-blue">
+    <label className="flex items-center gap-2 border-b border-onwei-blue px-1 pb-1 font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-blue">
       Sort by:
       <select
         value={value}
         onChange={(event) => handleChange(event.target.value as ProductSort)}
-        className="bg-transparent font-grotesk text-[14px] uppercase text-onwei-blue outline-none"
+        className="bg-transparent font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-blue outline-none"
       >
         {(Object.keys(SORT_LABELS) as ProductSort[]).map((sort) => (
           <option key={sort} value={sort}>

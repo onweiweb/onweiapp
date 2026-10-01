@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import Link from "next/link";
 import { motion, useReducedMotion } from "motion/react";
 import { HoverLink } from "./HoverLink";
@@ -37,7 +37,7 @@ export function WaitlistHeader({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <div className="flex h-[92px] w-full items-center justify-between px-5 py-3 sm:h-auto sm:px-14 sm:py-6">
+      <div className="flex h-[5.75rem] w-full items-center justify-between px-5 py-3 desk:h-auto desk:px-14 desk:py-6">
         <Link
           href="/waitlist"
           aria-label="Onwei home"
@@ -52,7 +52,7 @@ export function WaitlistHeader({
           />
         </Link>
 
-        <p className="hidden font-script text-script-md uppercase leading-[1.2] text-onwei-blue sm:block">
+        <p className="hidden font-script text-script-md uppercase leading-[1.2] text-onwei-blue desk:block">
           on-the-way, cause you already are
         </p>
 

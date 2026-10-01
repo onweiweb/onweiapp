@@ -98,7 +98,7 @@ export function WaitlistForm() {
           tabIndex={-1}
           autoComplete="off"
           aria-hidden
-          className="absolute left-[-9999px] h-0 w-0 opacity-0"
+          className="absolute left-[-624.9375rem] h-0 w-0 opacity-0"
         />
 
         <label htmlFor={nameId} className="sr-only">
@@ -111,7 +111,7 @@ export function WaitlistForm() {
           value={fullName}
           onChange={(event) => setFullName(event.target.value)}
           placeholder="FULL NAME"
-          className="h-12 w-full rounded-[500px] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
+          className="h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
         />
 
         <label htmlFor={emailId} className="sr-only">
@@ -124,7 +124,7 @@ export function WaitlistForm() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="EMAIL ADDRESS"
-          className="h-12 w-full rounded-[500px] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase tracking-[0.5px] text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
+          className="h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase tracking-[0.0312rem] text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
         />
 
         <label htmlFor={phoneId} className="sr-only">
@@ -137,13 +137,13 @@ export function WaitlistForm() {
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
           placeholder="PHONE NUMBER"
-          className="h-12 w-full rounded-[500px] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
+          className="h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
         />
 
-        <div className="flex flex-col gap-3 rounded-[20px] bg-onwei-purple p-4 sm:p-[27px]">
+        <div className="flex flex-col gap-3 rounded-[1.25rem] bg-onwei-purple p-4 desk:p-[1.6875rem]">
           <label
             htmlFor={sliderId}
-            className="font-cta text-[14px] font-medium leading-[1.3] tracking-[-0.14px] text-onwei-beige"
+            className="font-cta text-[length:max(0.875rem,11px)] font-medium leading-[1.3] tracking-[-0.0088rem] text-onwei-beige"
           >
             On a scale of &ldquo;walked to the fridge and back&rdquo; to
             &ldquo;ran an actual marathon&rdquo; - what&apos;s today&apos;s
@@ -155,10 +155,10 @@ export function WaitlistForm() {
               paint that split on its own, so its own track is made fully
               transparent and two sibling divs (faint full-width, solid
               width-by-movementFlex%) paint it underneath. */}
-          <div className="relative flex h-[6px] w-full items-center">
-            <div className="pointer-events-none absolute inset-x-0 h-[6px] rounded-full bg-onwei-beige/30" />
+          <div className="relative flex h-[0.375rem] w-full items-center">
+            <div className="pointer-events-none absolute inset-x-0 h-[0.375rem] rounded-full bg-onwei-beige/30" />
             <div
-              className="pointer-events-none absolute left-0 h-[6px] rounded-full bg-onwei-beige"
+              className="pointer-events-none absolute left-0 h-[0.375rem] rounded-full bg-onwei-beige"
               style={{ width: `${movementFlex}%` }}
             />
             <input
@@ -168,10 +168,10 @@ export function WaitlistForm() {
               max={100}
               value={movementFlex}
               onChange={(event) => setMovementFlex(Number(event.target.value))}
-              className="relative z-10 h-[6px] w-full cursor-pointer appearance-none bg-transparent accent-onwei-beige [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:bg-transparent"
+              className="relative z-10 h-[0.375rem] w-full cursor-pointer appearance-none bg-transparent accent-onwei-beige [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:bg-transparent"
             />
           </div>
-          <div className="flex items-center justify-between font-display text-[12px] font-medium uppercase text-onwei-beige">
+          <div className="flex items-center justify-between font-display text-[length:max(0.75rem,11px)] font-medium uppercase text-onwei-beige">
             <span>fridge run</span>
             <span>full marathon</span>
           </div>
@@ -182,12 +182,15 @@ export function WaitlistForm() {
           disabled={status === "submitting"}
           whileHover={status === "submitting" ? undefined : { scale: 1.02 }}
           whileTap={status === "submitting" ? undefined : { scale: 0.98 }}
-          className="flex w-full items-center justify-center rounded-[30px] bg-onwei-blue px-6 py-3 font-grotesk text-[20px] uppercase text-onwei-green disabled:opacity-70 sm:text-[24px]"
+          className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-[1.25rem] uppercase text-onwei-green disabled:opacity-70 desk:text-[1.5rem]"
         >
           {status === "submitting" ? "submitting..." : "start my warm up"}
         </MotionButton>
 
-        <p role="status" className="font-grotesk text-[12px] text-onwei-blue">
+        <p
+          role="status"
+          className="font-grotesk text-[length:max(0.75rem,11px)] text-onwei-blue"
+        >
           {status === "success" &&
             "You're on the list, welcome to the warm up."}
           {status === "already" && "You're already on the list."}

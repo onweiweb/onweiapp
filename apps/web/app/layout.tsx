@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import { Raleway } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
@@ -81,6 +81,14 @@ const summerMood = localFont({
 // an absolute URL by hand. The title template means a route's own
 // `metadata.title` (or generateMetadata's) composes as "X | Onwei" instead
 // of silently overriding this default outright.
+// viewport-fit=cover lets content reach the notch/home-bar area; globals.css
+// pads the body with env(safe-area-inset-*) so nothing sits under them.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: "Onwei", template: "%s | Onwei" },

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import Link from "next/link";
 import { motion } from "motion/react";
 import { ScrollReveal } from "./ScrollReveal";
@@ -100,7 +100,7 @@ export function WaitlistFooter({
     // spanning full width. This is why the inner bg/flex wrapper alone
     // wasn't enough.
     <footer className="w-full">
-      <div className="flex flex-col items-center bg-onwei-purple px-3 py-12 sm:px-6 lg:px-14">
+      <div className="flex flex-col items-center bg-onwei-purple px-3 py-12 desk:px-14">
         <ScrollReveal className="flex w-full flex-col items-center">
           {/* Figma is three independent columns (brand / "let's be friends" /
             illustration), not two flex children spread with justify-between,
@@ -109,11 +109,11 @@ export function WaitlistFooter({
             illustration, instead of leaving it at its own fixed position
             with a clear 96px gap after the brand column (Figma: brand ends
             at x:457, friends starts at x:553, in a 1441px frame, that's the
-            lg:gap-24 below). items-start (not items-end): Figma has the
+            desk:gap-24 below). items-start (not items-end): Figma has the
             brand block hanging from the row's TOP, not its bottom, it's
             shorter than the friends column (170 vs 233 tall) and starts at
             the same y, not bottom-aligned with it. */}
-          <div className="relative flex w-full max-w-[1440px] flex-col gap-14 lg:flex-row lg:items-start lg:gap-24">
+          <div className="relative flex w-full max-w-[90rem] flex-col gap-14 desk:flex-row desk:items-start desk:gap-24">
             {/* Figma (node 945:4375): left:1149, top:-85, w:210 inside the
               1441px SECTION (945:4350), not inside this row div, which is
               that section's own content box, itself inset by the section's
@@ -134,7 +134,7 @@ export function WaitlistFooter({
               width={210}
               height={342}
               aria-hidden
-              className="pointer-events-none absolute -top-[160px] right-[82px] hidden lg:block"
+              className="pointer-events-none absolute -top-[10rem] right-[5.125rem] hidden desk:block"
             />
             {/* Mobile equivalent (Figma node 945:4504, inside the mobile
               Newsletter frame 945:4477): much smaller (125x203, vs 210x342
@@ -148,20 +148,20 @@ export function WaitlistFooter({
               width={125}
               height={203}
               aria-hidden
-              className="pointer-events-none absolute top-[360px] right-[25px] block lg:hidden"
+              className="pointer-events-none absolute top-[22.5rem] right-[1.5625rem] block desk:hidden"
             />
 
-            <div className="flex w-full max-w-[401px] flex-col gap-8">
+            <div className="flex w-full max-w-[25.0625rem] flex-col gap-8">
               <div className="relative flex flex-col items-start gap-5">
                 <div className="flex items-center gap-5 uppercase text-onwei-beige">
-                  <p className="font-display text-[48px] font-bold leading-[0.9] sm:text-[64px]">
+                  <p className="font-display text-[3rem] font-bold leading-[0.9] desk:text-[4rem]">
                     on&middot;wei
                   </p>
-                  <p className="font-display text-[14px] font-semibold sm:text-[16px]">
+                  <p className="font-display text-[length:max(0.875rem,11px)] font-semibold desk:text-[length:max(1rem,11px)]">
                     \ on-way \
                   </p>
                 </div>
-                <p className="font-grotesk text-[14px] leading-[1.3] text-onwei-beige">
+                <p className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-beige">
                   On - present, engaged, showing up.
                   <br />
                   Wei (way) - intentional action. Not hustle, not noise.
@@ -182,7 +182,7 @@ export function WaitlistFooter({
                     className="object-contain"
                   />
                 </span>
-                <p className="relative z-10 font-display text-[14px] font-semibold uppercase text-onwei-blue sm:text-[16px]">
+                <p className="relative z-10 font-display text-[length:max(0.875rem,11px)] font-semibold uppercase text-onwei-blue desk:text-[length:max(1rem,11px)]">
                   rhymes with &quot;on the way.&quot; because you already are.
                 </p>
               </div>
@@ -191,10 +191,10 @@ export function WaitlistFooter({
             {/* max-w matches Figma's actual column width (two roughly-equal
               flex-1 halves at ~616px each in the 1441px frame), without a
               cap here, the heading (the widest thing in this column, wider
-              than the paragraph's own max-w-[510px] below it) grows past
+              than the paragraph's own max-w-[31.875rem] below it) grows past
               where the illustration is positioned and runs into it. */}
-            <div className="flex max-w-[600px] flex-col gap-3">
-              <p className="font-display text-[36px] font-bold uppercase leading-[0.9] text-onwei-beige sm:text-[48px]">
+            <div className="flex max-w-[37.5rem] flex-col gap-3">
+              <p className="font-display text-[2.25rem] font-bold uppercase leading-[0.9] text-onwei-beige desk:text-[3rem]">
                 Let&apos;s be friends
               </p>
               <div className="flex items-center gap-5 text-onwei-beige">
@@ -235,19 +235,19 @@ export function WaitlistFooter({
                   </MotionLink>
                 ) : null}
               </div>
-              {/* max-w-[219px] below lg: Figma's mobile paragraph wraps
+              {/* max-w-[13.6875rem] below desk: Figma's mobile paragraph wraps
                 narrower than its 351px column, leaving the right side clear
                 for the mobile illustration above to overlap without
                 covering text, matches its own Figma text-box width. */}
-              <div className="flex max-w-[219px] flex-col gap-2 lg:max-w-[510px]">
-                <p className="font-grotesk text-[14px] font-semibold uppercase leading-[1.3] text-onwei-beige">
+              <div className="flex max-w-[13.6875rem] flex-col gap-2 desk:max-w-[31.875rem]">
+                <p className="font-grotesk text-[length:max(0.875rem,11px)] font-semibold uppercase leading-[1.3] text-onwei-beige">
                   ONWEI (n.)
                 </p>
-                <ul className="flex flex-col gap-4 font-grotesk text-[14px] leading-[1.3] text-onwei-beige">
+                <ul className="flex flex-col gap-4 font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-beige">
                   <li className="flex gap-2">
                     <span
                       aria-hidden
-                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                      className="mt-[0.4375rem] h-1 w-1 shrink-0 rounded-full bg-current"
                     />
                     <span>
                       The weight of your own effort. The only thing that&apos;s
@@ -257,7 +257,7 @@ export function WaitlistFooter({
                   <li className="flex gap-2">
                     <span
                       aria-hidden
-                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                      className="mt-[0.4375rem] h-1 w-1 shrink-0 rounded-full bg-current"
                     />
                     <span>
                       The feeling when you stop waiting to feel ready and just
@@ -267,7 +267,7 @@ export function WaitlistFooter({
                   <li className="flex gap-2">
                     <span
                       aria-hidden
-                      className="mt-[7px] h-1 w-1 shrink-0 rounded-full bg-current"
+                      className="mt-[0.4375rem] h-1 w-1 shrink-0 rounded-full bg-current"
                     />
                     <span>
                       Because progress belongs to those who show up. Stay on.
@@ -288,7 +288,7 @@ export function WaitlistFooter({
            , so it needs its own w-full/max-w to reach that edge and
             justify-end to sit at it, instead of inheriting the mobile
             centering. */}
-          <div className="mt-10 flex gap-6 font-grotesk text-[12px] text-onwei-beige lg:hidden">
+          <div className="mt-10 flex gap-6 font-grotesk text-[length:max(0.75rem,11px)] text-onwei-beige desk:hidden">
             <Link href="#" className="underline">
               Terms &amp; Conditions
             </Link>
@@ -296,7 +296,7 @@ export function WaitlistFooter({
               Privacy Policy
             </Link>
           </div>
-          <div className="mt-10 hidden w-full max-w-[1440px] gap-6 font-grotesk text-[12px] text-onwei-beige lg:flex lg:justify-end">
+          <div className="mt-10 hidden w-full max-w-[90rem] gap-6 font-grotesk text-[length:max(0.75rem,11px)] text-onwei-beige desk:flex desk:justify-end">
             <Link href="#" className="underline">
               Privacy Policy
             </Link>

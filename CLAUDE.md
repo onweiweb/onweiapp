@@ -112,6 +112,23 @@ read before assuming something that looks broken is a missing asset.
 - Root `prebuild` was removed: `turbo build` already depends on `test` and
   `typecheck`, so it ran everything twice.
 
+## Responsive system (added 2026-10-01)
+
+- `1rem` is fluid (see `apps/web/app/globals.css`). Desktop (>= 768): 1440px frame = 16px, scales
+  with viewport width up to 1920, then content is capped and centered. Mobile (< 768): 390px frame
+  = 16px, bounded 13 to 18px. So every size in `apps/web` is rem, never raw px (1px hairlines only).
+- One mobile/desktop switch: the `desk:` breakpoint (768). `sm/md/lg/xl/2xl` are removed on purpose.
+  Use `max-desk:` for "below desk" overrides on elements whose base class sets `display`.
+- Use `@/_components/ScaledImage` instead of `next/image` directly. It sizes `width={N}` in rem so
+  logos and decorations scale with the layout.
+- Decorations (arrows, underlines, stamps) must show at every width. Where a mobile Figma frame exists
+  (Homepage 761:4763, About, Waitlist) copy its absolute offsets (left as %, top in rem). Collection has
+  no mobile frame, its hero decorations are a scaled adaptation of the desktop frame.
+- Text floors: `text-[length:max(Nrem,11px)]` keeps small copy readable when the desktop layout is
+  scaled down (tablet and 150% zoom).
+- Check with `npm run test:e2e` (`e2e/responsive.spec.ts`): 12 widths, overflow assertions, screenshots in
+  `e2e/shots/` (gitignored). Dev DB must be in LIVE site mode for non-waitlist pages.
+
 ## Tech stack (proposed, see docs/OPEN_DECISIONS.md for what's still open)
 
 - Next.js, App Router, TypeScript (strict)

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 import type { FaqItem } from "@onwei/core";
 import { OPEN_ACCORDION_ITEM_EVENT } from "./Accordion";
 import { ScrollCarousel } from "./ScrollCarousel";
@@ -18,9 +18,9 @@ export function AskMeWidget({ faqs }: { faqs: FaqItem[] }) {
   const suggested = faqs.slice(0, 2);
 
   return (
-    <div className="flex w-full flex-col gap-6 rounded-[30px] bg-onwei-purple px-6 py-6 sm:px-8">
-      <div className="flex w-full items-center justify-between gap-4 rounded-[30px] bg-onwei-beige px-6 py-4">
-        <p className="font-grotesk text-[14px] uppercase text-onwei-blue">
+    <div className="flex w-full flex-col gap-6 rounded-[1.875rem] bg-onwei-purple px-6 py-6 desk:px-8">
+      <div className="flex w-full items-center justify-between gap-4 rounded-[1.875rem] bg-onwei-beige px-6 py-4">
+        <p className="font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-blue">
           Have questions? Ask me!
         </p>
         <Image
@@ -44,7 +44,7 @@ export function AskMeWidget({ faqs }: { faqs: FaqItem[] }) {
                 }),
               )
             }
-            className="shrink-0 whitespace-nowrap rounded-[30px] bg-onwei-beige px-6 py-3 text-left font-grotesk text-[14px] text-onwei-blue"
+            className="shrink-0 whitespace-nowrap rounded-[1.875rem] bg-onwei-beige px-6 py-3 text-left font-grotesk text-[length:max(0.875rem,11px)] text-onwei-blue"
           >
             {faq.question}
           </button>

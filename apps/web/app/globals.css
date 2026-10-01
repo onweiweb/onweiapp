@@ -13,12 +13,57 @@
 }
 
 /*
+ * Fluid root unit: 1rem tracks viewport width so the whole UI scales
+ * proportionally instead of snapping between two fixed layouts. All sizes in
+ * this app are rem (never raw px, except 1px hairlines).
+ *   Desktop (>= 768): 1440px frame = 16px root, so 1440 matches Figma exactly.
+ *     Scales down to 768 and up to 1920, then holds (content is capped by
+ *     max-w-[90rem] and centered beyond that).
+ *   Mobile (< 768): 390px frame = 16px root, bounded so big phones and
+ *     landscape do not balloon and 320 phones do not overflow.
+ * The `desk` breakpoint is the single mobile/desktop switch. Tailwind's
+ * breakpoint media queries are rem-based but resolved against the browser
+ * default font size, so they are not affected by this html font-size.
+ */
+html {
+  font-size: clamp(13px, 4.1vw, 18px);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+@media (min-width: 48rem) {
+  html {
+    font-size: min(calc(100vw / 90), calc(1920px / 90));
+  }
+}
+body {
+  overflow-x: clip;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* iOS Safari zooms the page when a focused field's text is under 16px, and
+   rem shrinks below 16px on small phones, so pin form controls to 16px. */
+@media (max-width: 47.99rem) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/*
  * Figma design tokens pulled from file 3HCgSRca91P6WCpW28RA9o (Homepage,
  * node 758:2218) via mcp__figma__get_variable_defs and per-section
  * get_design_context calls. Ground rule 8 in CLAUDE.md: no improvised
  * design, so every color/type value below traces back to a Figma value.
  */
 @theme {
+  /* One mobile/desktop switch. sm/md/lg/xl/2xl are intentionally removed so
+     a stray default breakpoint cannot reintroduce a 640 or 1024 jump. */
+  --breakpoint-*: initial;
+  --breakpoint-desk: 48rem;
+
   --color-onwei-blue: #161845;
   --color-onwei-beige: #eae8d6;
   --color-onwei-green: #eded86;
@@ -42,20 +87,20 @@
 
   /* CTA 1 variable from Figma: Raleway SemiBold, 16px, line-height 1,
      letter-spacing -1px. */
-  --text-cta: 16px;
+  --text-cta: 1rem;
   --text-cta--line-height: 1;
-  --text-cta--letter-spacing: -1px;
+  --text-cta--letter-spacing: -0.0625rem;
   --text-cta--font-weight: 600;
 
-  --text-display-xl: 82px;
+  --text-display-xl: 5.125rem;
   --text-display-xl--line-height: 0.9;
-  --text-display-lg: 70px;
+  --text-display-lg: 4.375rem;
   --text-display-lg--line-height: 0.9;
-  --text-display-md: 64px;
+  --text-display-md: 4rem;
   --text-display-md--line-height: 0.9;
-  --text-script-md: 20px;
+  --text-script-md: 1.25rem;
   --text-script-md--line-height: 1.2;
-  --text-label: 14px;
+  --text-label: max(0.875rem, 11px);
   --text-label--line-height: normal;
 }
 

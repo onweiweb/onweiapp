@@ -1,4 +1,4 @@
-import Image from "next/image";
+import Image from "@/_components/ScaledImage";
 
 // Figma node 945:4283 (web) / 945:4434 (mobile), NOT the shared MarqueeBar:
 // this page's marquee runs much larger text on web (40px) than
@@ -18,7 +18,7 @@ export function WaitlistMarquee() {
   const doubled = [...ITEMS, ...ITEMS];
   return (
     <div
-      className="w-full overflow-hidden rounded-full bg-onwei-blue px-6 py-3 sm:px-14"
+      className="w-full overflow-hidden rounded-full bg-onwei-blue px-6 py-3 desk:px-14"
       aria-hidden
     >
       {/* 18.7s = 28s / 1.5, 1.5x the original speed, per feedback. */}
@@ -28,7 +28,7 @@ export function WaitlistMarquee() {
           return (
             <div key={index} className="flex shrink-0 items-center gap-6">
               <p
-                className={`whitespace-nowrap font-grotesk text-[18px] font-bold uppercase sm:text-[40px] ${
+                className={`whitespace-nowrap font-grotesk text-[length:max(1.125rem,11px)] font-bold uppercase desk:text-[2.5rem] ${
                   isOutline
                     ? "text-transparent [-webkit-text-stroke:1px_var(--color-onwei-white)]"
                     : "text-onwei-white"

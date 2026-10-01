@@ -3,7 +3,7 @@
 import { useProductVariant } from "./ProductVariantContext";
 
 function chipClassName(active: boolean) {
-  return `flex h-[30px] items-center justify-center rounded-[30px] border border-onwei-blue px-6 font-display text-[14px] font-semibold uppercase text-onwei-blue ${
+  return `flex h-[1.875rem] items-center justify-center rounded-[1.875rem] border border-onwei-blue px-6 font-display text-[length:max(0.875rem,11px)] font-semibold uppercase text-onwei-blue ${
     active ? "bg-onwei-green" : "bg-transparent"
   }`;
 }
@@ -23,7 +23,7 @@ export function ProductVariantPicker() {
     <div className="flex w-full flex-col items-start gap-3">
       {colors.length > 0 ? (
         <div className="flex w-full flex-col items-start gap-1.5">
-          <p className="font-display text-[14px] font-medium capitalize text-onwei-blue">
+          <p className="font-display text-[length:max(0.875rem,11px)] font-medium capitalize text-onwei-blue">
             Color:
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -43,7 +43,7 @@ export function ProductVariantPicker() {
 
       {sizes.length > 0 ? (
         <div className="flex w-full flex-col items-start gap-1.5">
-          <p className="font-display text-[14px] font-medium capitalize text-onwei-blue">
+          <p className="font-display text-[length:max(0.875rem,11px)] font-medium capitalize text-onwei-blue">
             Size:
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -68,11 +68,11 @@ export function ProductVariantPicker() {
         <button
           type="button"
           disabled
-          className="flex w-full items-center justify-center rounded-[30px] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase text-onwei-beige disabled:opacity-70"
+          className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase text-onwei-beige disabled:opacity-70"
         >
           add to cart
         </button>
-        <p className="font-display text-[12px] text-onwei-blue">
+        <p className="font-display text-[length:max(0.75rem,11px)] text-onwei-blue">
           {selectedVariant.inStock
             ? "Free shipping on orders over ₹1500"
             : "Out of stock in this size/color"}
