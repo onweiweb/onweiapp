@@ -96,6 +96,22 @@ read before assuming something that looks broken is a missing asset.
 - Orders/checkout, GST invoicing, delivery partner and CRM are deliberately not built yet and have no
   answers. Do not start them or add schema for them without an approved plan.
 
+## Databases and migrations (added 2026-10-01)
+
+- Local and production use DIFFERENT databases. Never infer they match from
+  `.env` files: every local env file points at the dev DB, and prod values live
+  only in Vercel project env vars. Do not claim "shared DB" without seeing both.
+- The Prisma CLI reads `DIRECT_URL` (see `packages/database/prisma.config.ts`),
+  not `DATABASE_URL`. A plain `prisma migrate deploy` only migrates the dev DB.
+- After any schema change, the prod DB must be migrated before or with the
+  push, or the deployed code fails on the missing column. Ask the user for the
+  prod `DIRECT_URL` (never paste or print it) and have them run
+  `DIRECT_URL="<prod>" npx prisma migrate deploy` from `packages/database`.
+- Vercel builds skip DB integration tests (`packages/config/vitest/base.ts`
+  clears `DATABASE_URL` when `VERCEL` is set). Run `npm test` locally for those.
+- Root `prebuild` was removed: `turbo build` already depends on `test` and
+  `typecheck`, so it ran everything twice.
+
 ## Tech stack (proposed, see docs/OPEN_DECISIONS.md for what's still open)
 
 - Next.js, App Router, TypeScript (strict)
