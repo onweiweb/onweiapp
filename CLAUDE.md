@@ -115,7 +115,7 @@ read before assuming something that looks broken is a missing asset.
 ## Responsive system (added 2026-10-01)
 
 - `1rem` is fluid (see `apps/web/app/globals.css`). Desktop (>= 768): 1440px frame = 16px, scales
-  with viewport width up to 1920, then content is capped and centered. Mobile (< 768): 390px frame
+  with viewport width up to 1440, then holds at 16px and content is capped (90rem) and centered. Mobile (< 768): 390px frame
   = 16px, bounded 13 to 18px. So every size in `apps/web` is rem, never raw px (1px hairlines only).
 - One mobile/desktop switch: the `desk:` breakpoint (768). `sm/md/lg/xl/2xl` are removed on purpose.
   Use `max-desk:` for "below desk" overrides on elements whose base class sets `display`.

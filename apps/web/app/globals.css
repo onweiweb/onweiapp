@@ -17,8 +17,9 @@
  * proportionally instead of snapping between two fixed layouts. All sizes in
  * this app are rem (never raw px, except 1px hairlines).
  *   Desktop (>= 768): 1440px frame = 16px root, so 1440 matches Figma exactly.
- *     Scales down to 768 and up to 1920, then holds (content is capped by
- *     max-w-[90rem] and centered beyond that).
+ *     Scales down to 768, holds at 16px from 1440 up (content is capped by
+ *     max-w-[90rem] and centered beyond that, section backgrounds stay
+ *     full width). Raise the 16px cap to scale up on very large screens.
  *   Mobile (< 768): 390px frame = 16px root, bounded so big phones and
  *     landscape do not balloon and 320 phones do not overflow.
  * The `desk` breakpoint is the single mobile/desktop switch. Tailwind's
@@ -32,7 +33,7 @@ html {
 }
 @media (min-width: 48rem) {
   html {
-    font-size: min(calc(100vw / 90), calc(1920px / 90));
+    font-size: min(calc(100vw / 90), 16px);
   }
 }
 body {
