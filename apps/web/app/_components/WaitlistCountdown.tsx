@@ -99,7 +99,15 @@ function ComingSoon() {
         <motion.div
           aria-hidden
           className="absolute inset-0"
-          initial={false}
+          // Explicit start state, not initial={false}: that makes motion treat
+          // the final keyframe as already reached on first paint, so in a
+          // production build (no Strict Mode remount to restart it) the fill
+          // never ran and the text just sat solid.
+          initial={{
+            clipPath: reduceMotion
+              ? "inset(0% 0% 0% 0%)"
+              : "inset(100% 0% 0% 0%)",
+          }}
           animate={
             reduceMotion
               ? { clipPath: "inset(0% 0% 0% 0%)" }
