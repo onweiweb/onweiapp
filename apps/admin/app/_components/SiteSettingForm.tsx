@@ -41,6 +41,7 @@ function toDatetimeLocalValue(iso: string): string {
 export function SiteSettingForm({
   initialSiteMode,
   initialLaunchAt,
+  initialShowCountdown,
   initialAllowInternationalPhone,
   initialInstagramUrl,
   initialLinkedinUrl,
@@ -50,6 +51,7 @@ export function SiteSettingForm({
 }: {
   initialSiteMode: SiteMode;
   initialLaunchAt: string;
+  initialShowCountdown: boolean;
   initialAllowInternationalPhone: boolean;
   initialInstagramUrl: string;
   initialLinkedinUrl: string;
@@ -62,6 +64,7 @@ export function SiteSettingForm({
   const [launchAt, setLaunchAt] = useState(
     toDatetimeLocalValue(initialLaunchAt),
   );
+  const [showCountdown, setShowCountdown] = useState(initialShowCountdown);
   const [allowInternationalPhone, setAllowInternationalPhone] = useState(
     initialAllowInternationalPhone,
   );
@@ -90,6 +93,7 @@ export function SiteSettingForm({
         body: JSON.stringify({
           siteMode,
           launchAt: new Date(launchAt).toISOString(),
+          showCountdown,
           allowInternationalPhone,
           instagramUrl: instagramUrl.trim() || null,
           linkedinUrl: linkedinUrl.trim() || null,
@@ -149,6 +153,21 @@ export function SiteSettingForm({
         </div>
 
         <div className="flex flex-col gap-1.5">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={showCountdown}
+              onChange={(event) => setShowCountdown(event.target.checked)}
+            />
+            Show the countdown clock on the waitlist page
+          </label>
+          <p className="text-xs text-onwei-blue/70">
+            Turn this off to show a &quot;Coming soon&quot; message with a
+            moving loader instead of the clock.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
           <label htmlFor="launchAt" className="text-sm font-medium">
             Countdown target on the waitlist page
           </label>
@@ -156,8 +175,9 @@ export function SiteSettingForm({
             id="launchAt"
             type="datetime-local"
             value={launchAt}
+            disabled={!showCountdown}
             onChange={(event) => setLaunchAt(event.target.value)}
-            className="w-full max-w-xs"
+            className="w-full max-w-xs disabled:opacity-50"
           />
           <p className="text-xs text-onwei-blue/70">
             The clock on the waitlist page counts down to this date and time

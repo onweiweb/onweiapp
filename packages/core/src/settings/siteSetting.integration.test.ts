@@ -28,6 +28,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
         {
           siteMode: original.siteMode,
           launchAt: original.launchAt,
+          showCountdown: original.showCountdown,
           allowInternationalPhone: original.allowInternationalPhone,
         },
         { staffUserId },
@@ -38,6 +39,15 @@ describe.skipIf(!process.env.DATABASE_URL)(
       const setting = await getSiteSetting();
       expect(setting.siteMode).toBeDefined();
       expect(setting.launchAt).toBeInstanceOf(Date);
+    });
+
+    it("saves the countdown on/off switch", async () => {
+      const off = await updateSiteSetting(
+        { showCountdown: false },
+        { staffUserId },
+      );
+      expect(off.showCountdown).toBe(false);
+      expect((await getSiteSetting()).showCountdown).toBe(false);
     });
 
     it("updates fields and writes an audit log entry", async () => {

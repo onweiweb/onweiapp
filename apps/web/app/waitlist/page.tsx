@@ -22,7 +22,7 @@ export const revalidate = 30;
 // card-scroll section, and the form are client islands (see each
 // component's own file); everything else here ships with zero client JS.
 export default async function WaitlistPage() {
-  const { launchAt, instagramUrl, youtubeUrl, spotifyUrl } =
+  const { launchAt, showCountdown, instagramUrl, youtubeUrl, spotifyUrl } =
     await getSiteSetting();
 
   return (
@@ -74,7 +74,10 @@ export default async function WaitlistPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <WaitlistCountdown launchAt={launchAt.toISOString()} />
+              <WaitlistCountdown
+                launchAt={launchAt.toISOString()}
+                showCountdown={showCountdown}
+              />
               {/* SmoothScrollLink (not a plain anchor, not HoverLink) so
                   the click reliably scrolls smoothly to the form, Next's
                   Link doesn't do this on its own for a same-page hash, see

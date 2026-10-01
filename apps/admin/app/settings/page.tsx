@@ -14,6 +14,7 @@ export default async function SettingsPage() {
       <SiteSettingForm
         initialSiteMode={setting.siteMode}
         initialLaunchAt={setting.launchAt.toISOString()}
+        initialShowCountdown={setting.showCountdown}
         initialAllowInternationalPhone={setting.allowInternationalPhone}
         initialInstagramUrl={setting.instagramUrl ?? ""}
         initialLinkedinUrl={setting.linkedinUrl ?? ""}

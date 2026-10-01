@@ -688,6 +688,8 @@ model SiteSetting {
   // Countdown target on /waitlist and the gate the PREORDERS mode switch
   // gets flipped by hand around, not derived, an admin sets it directly.
   launchAt                DateTime
+  // false swaps the /waitlist countdown for a "Coming soon" message.
+  showCountdown           Boolean  @default(true)
   // Whether WaitlistEntry.phone accepts any valid international number or
   // only Indian mobile numbers, see packages/core/src/validation/phone.ts.
   allowInternationalPhone Boolean  @default(true)

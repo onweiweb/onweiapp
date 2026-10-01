@@ -14,6 +14,7 @@ const CACHE_TTL_MS = 15_000;
 export interface SiteSettingSummary {
   siteMode: SiteMode;
   launchAt: Date;
+  showCountdown: boolean;
   allowInternationalPhone: boolean;
   // Shown in apps/web's SiteFooter/WaitlistFooter, null means "don't show
   // this icon" rather than the dead "#" link every one of these used to be.
@@ -29,6 +30,7 @@ let cached: { value: SiteSettingSummary; expiresAt: number } | null = null;
 function toSummary(row: {
   siteMode: SiteMode;
   launchAt: Date;
+  showCountdown: boolean;
   allowInternationalPhone: boolean;
   instagramUrl: string | null;
   linkedinUrl: string | null;
@@ -39,6 +41,7 @@ function toSummary(row: {
   return {
     siteMode: row.siteMode,
     launchAt: row.launchAt,
+    showCountdown: row.showCountdown,
     allowInternationalPhone: row.allowInternationalPhone,
     instagramUrl: row.instagramUrl,
     linkedinUrl: row.linkedinUrl,
@@ -69,6 +72,7 @@ export async function getSiteSetting(): Promise<SiteSettingSummary> {
 export interface UpdateSiteSettingInput {
   siteMode?: SiteMode;
   launchAt?: Date;
+  showCountdown?: boolean;
   allowInternationalPhone?: boolean;
   instagramUrl?: string | null;
   linkedinUrl?: string | null;
@@ -90,6 +94,7 @@ export async function updateSiteSetting(
     data: {
       siteMode: input.siteMode,
       launchAt: input.launchAt,
+      showCountdown: input.showCountdown,
       allowInternationalPhone: input.allowInternationalPhone,
       instagramUrl: input.instagramUrl,
       linkedinUrl: input.linkedinUrl,

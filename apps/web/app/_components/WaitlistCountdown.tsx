@@ -1,7 +1,7 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { motion } from "motion/react";
+import { MotionConfig, motion } from "motion/react";
 
 interface TimeLeft {
   days: number;
@@ -50,7 +50,51 @@ function getClockSnapshot(): number {
 // Figma node 945:4263 (web) / 945:4412 (mobile), the "43 / 11 / 42 / 06"
 // figures there are a stale design-time mock, not a literal countdown; the
 // real target comes from SiteSetting.launchAt, admin-editable.
-export function WaitlistCountdown({ launchAt }: { launchAt: string }) {
+export function WaitlistCountdown({
+  launchAt,
+  showCountdown,
+}: {
+  launchAt: string;
+  showCountdown: boolean;
+}) {
+  return showCountdown ? <LiveCountdown launchAt={launchAt} /> : <ComingSoon />;
+}
+
+// Same box size as the clock so the card layout does not jump. Dots wiggle
+// in a staggered wave; motion's reduced-motion setting is honoured via
+// MotionConfig so the dots just sit still for those visitors.
+function ComingSoon() {
+  return (
+    <MotionConfig reducedMotion="user">
+      <div className="flex min-h-[116px] w-full flex-col items-center justify-center gap-3 rounded-[20px] bg-onwei-green p-3 text-onwei-blue sm:min-h-[189px] sm:gap-[18px] sm:p-6">
+        <p className="text-center font-display text-[28px] font-bold uppercase leading-[0.9] sm:text-[70px]">
+          Coming soon
+        </p>
+        <div
+          className="flex items-end gap-2"
+          role="status"
+          aria-label="Loading"
+        >
+          {[0, 1, 2].map((i) => (
+            <motion.span
+              key={i}
+              className="block h-2.5 w-2.5 rounded-full bg-onwei-blue sm:h-3.5 sm:w-3.5"
+              animate={{ y: [0, -10, 0], rotate: [0, 12, -12, 0] }}
+              transition={{
+                duration: 0.9,
+                ease: "easeInOut",
+                repeat: Infinity,
+                delay: i * 0.15,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </MotionConfig>
+  );
+}
+
+function LiveCountdown({ launchAt }: { launchAt: string }) {
   const target = new Date(launchAt).getTime();
   // useSyncExternalStore, not useEffect+setState, is React's sanctioned way
   // to read a value that changes outside of React (the clock): it renders

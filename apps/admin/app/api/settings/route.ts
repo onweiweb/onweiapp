@@ -35,6 +35,7 @@ const bodySchema = z.object({
         ? new Date(value)
         : undefined,
     ),
+  showCountdown: z.boolean().optional(),
   allowInternationalPhone: z.boolean().optional(),
   instagramUrl: linkField,
   linkedinUrl: linkField,
