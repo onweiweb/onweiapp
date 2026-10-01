@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@onwei/ui";
+import { FieldError, INVALID_BORDER } from "./FieldError";
 import { WaitlistSuccessModal } from "./WaitlistSuccessModal";
 
 const MotionButton = motion.create(Button);
@@ -14,11 +15,24 @@ const ERROR_MESSAGES: Record<string, string> = {
   INVALID_EMAIL: "Enter a valid email address.",
   INVALID_PHONE: "Enter a valid phone number.",
   DUPLICATE_EMAIL:
-    "That email is already on the list with a different phone number.",
+    "This email is already on the list with a different phone number. Use the phone number you signed up with.",
   DUPLICATE_PHONE:
-    "That phone number is already on the list with a different email.",
+    "This phone number is already on the list with a different email. Use the email you signed up with.",
   RATE_LIMITED: "Too many attempts, try again in a few minutes.",
 };
+
+type Field = "name" | "email" | "phone";
+type FieldErrors = Partial<Record<Field, string>>;
+
+const REASON_FIELD: Record<string, Field> = {
+  INVALID_NAME: "name",
+  INVALID_EMAIL: "email",
+  DUPLICATE_EMAIL: "email",
+  INVALID_PHONE: "phone",
+  DUPLICATE_PHONE: "phone",
+};
+
+const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Figma node 945:4323 (web) / 945:4451 (mobile), "join onwei insiders".
 // The movement-flex slider is decorative/fun, not required to submit.
@@ -29,6 +43,7 @@ export function WaitlistForm() {
   const [movementFlex, setMovementFlex] = useState(50);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const nameId = useId();
   const emailId = useId();
@@ -36,10 +51,28 @@ export function WaitlistForm() {
   const sliderId = useId();
   const honeypotId = useId();
 
+  function setFieldError(field: Field, message?: string) {
+    setFieldErrors((current) => {
+      if (current[field] === message) return current;
+      const next = { ...current };
+      if (message) next[field] = message;
+      else delete next[field];
+      return next;
+    });
+  }
+
+  function focusField(field: Field) {
+    const id = { name: nameId, email: emailId, phone: phoneId }[field];
+    const el = document.getElementById(id);
+    el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    el?.focus({ preventScroll: true });
+  }
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setStatus("submitting");
     setError(null);
+    setFieldErrors({});
 
     const form = event.currentTarget;
     const company = (form.elements.namedItem("company") as HTMLInputElement)
@@ -64,10 +97,16 @@ export function WaitlistForm() {
       };
 
       if (!data.ok) {
-        setError(
+        const message =
           (data.reason && ERROR_MESSAGES[data.reason]) ??
-            "Something went wrong. Please try again.",
-        );
+          "Something went wrong. Please try again.";
+        const field = data.reason ? REASON_FIELD[data.reason] : undefined;
+        if (field) {
+          setFieldErrors({ [field]: message });
+          focusField(field);
+        } else {
+          setError(message);
+        }
         setStatus("error");
         return;
       }
@@ -109,10 +148,16 @@ export function WaitlistForm() {
           type="text"
           required
           value={fullName}
-          onChange={(event) => setFullName(event.target.value)}
+          onChange={(event) => {
+            setFullName(event.target.value);
+            setFieldError("name");
+          }}
+          aria-invalid={Boolean(fieldErrors.name)}
+          aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
           placeholder="FULL NAME"
-          className="h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
+          className={`${fieldErrors.name ? INVALID_BORDER : ""} h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none`}
         />
+        <FieldError id={`${nameId}-error`} message={fieldErrors.name} />
 
         <label htmlFor={emailId} className="sr-only">
           Email address
@@ -122,10 +167,20 @@ export function WaitlistForm() {
           type="email"
           required
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            setFieldError("email");
+          }}
+          onBlur={() => {
+            if (email.trim() && !EMAIL_SHAPE.test(email.trim()))
+              setFieldError("email", ERROR_MESSAGES.INVALID_EMAIL);
+          }}
+          aria-invalid={Boolean(fieldErrors.email)}
+          aria-describedby={fieldErrors.email ? `${emailId}-error` : undefined}
           placeholder="EMAIL ADDRESS"
-          className="h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase tracking-[0.0312rem] text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
+          className={`${fieldErrors.email ? INVALID_BORDER : ""} h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase tracking-[0.0312rem] text-onwei-blue placeholder:text-onwei-blue focus:outline-none`}
         />
+        <FieldError id={`${emailId}-error`} message={fieldErrors.email} />
 
         <label htmlFor={phoneId} className="sr-only">
           Phone number
@@ -135,10 +190,16 @@ export function WaitlistForm() {
           type="tel"
           required
           value={phone}
-          onChange={(event) => setPhone(event.target.value)}
+          onChange={(event) => {
+            setPhone(event.target.value);
+            setFieldError("phone");
+          }}
+          aria-invalid={Boolean(fieldErrors.phone)}
+          aria-describedby={fieldErrors.phone ? `${phoneId}-error` : undefined}
           placeholder="PHONE NUMBER"
-          className="h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none"
+          className={`${fieldErrors.phone ? INVALID_BORDER : ""} h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none`}
         />
+        <FieldError id={`${phoneId}-error`} message={fieldErrors.phone} />
 
         <div className="flex flex-col gap-3 rounded-[1.25rem] bg-onwei-purple p-4 desk:p-[1.6875rem]">
           <label

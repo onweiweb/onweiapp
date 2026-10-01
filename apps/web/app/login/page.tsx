@@ -2,7 +2,8 @@
 
 import { Button } from "@onwei/ui";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
+import { FieldError } from "../_components/FieldError";
 
 type Step = "identifier" | "code";
 
@@ -17,6 +18,8 @@ export default function LoginPage() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const identifierErrorId = useId();
+  const codeErrorId = useId();
 
   async function handleRequestCode(event: React.FormEvent) {
     event.preventDefault();
@@ -88,13 +91,23 @@ export default function LoginPage() {
             <input
               type="text"
               value={identifier}
-              onChange={(event) => setIdentifier(event.target.value)}
+              onChange={(event) => {
+                setIdentifier(event.target.value);
+                setError(null);
+              }}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? identifierErrorId : undefined}
               autoComplete="username"
-              className="rounded-md border border-[var(--color-onwei-blue)] bg-[var(--color-onwei-white)] px-3 py-2 text-[var(--color-onwei-black)] outline-none focus:ring-2 focus:ring-[var(--color-onwei-purple)]"
+              autoFocus={Boolean(error)}
+              className={`${error ? "!border-[#b91c1c] ring-1 ring-[#b91c1c]" : "border-[var(--color-onwei-blue)]"} rounded-md border bg-[var(--color-onwei-white)] px-3 py-2 text-[var(--color-onwei-black)] outline-none focus:ring-2 focus:ring-[var(--color-onwei-purple)]`}
               placeholder="you@example.com or +91..."
             />
+            <FieldError
+              inset={false}
+              id={identifierErrorId}
+              message={error ?? undefined}
+            />
           </label>
-          {error && <p className="text-sm text-red-600">{error}</p>}
           <Button
             type="submit"
             disabled={isSubmitting}
@@ -116,13 +129,22 @@ export default function LoginPage() {
               type="text"
               inputMode="numeric"
               value={code}
-              onChange={(event) => setCode(event.target.value)}
+              onChange={(event) => {
+                setCode(event.target.value);
+                setError(null);
+              }}
+              aria-invalid={Boolean(error)}
+              aria-describedby={error ? codeErrorId : undefined}
               autoComplete="one-time-code"
-              className="rounded-md border border-[var(--color-onwei-blue)] bg-[var(--color-onwei-white)] px-3 py-2 tracking-widest text-[var(--color-onwei-black)] outline-none focus:ring-2 focus:ring-[var(--color-onwei-purple)]"
+              className={`${error ? "!border-[#b91c1c] ring-1 ring-[#b91c1c]" : "border-[var(--color-onwei-blue)]"} rounded-md border bg-[var(--color-onwei-white)] px-3 py-2 tracking-widest text-[var(--color-onwei-black)] outline-none focus:ring-2 focus:ring-[var(--color-onwei-purple)]`}
               placeholder="123456"
             />
+            <FieldError
+              inset={false}
+              id={codeErrorId}
+              message={error ?? undefined}
+            />
           </label>
-          {error && <p className="text-sm text-red-600">{error}</p>}
           <Button
             type="submit"
             disabled={isSubmitting}
@@ -132,7 +154,10 @@ export default function LoginPage() {
           </Button>
           <button
             type="button"
-            onClick={() => setStep("identifier")}
+            onClick={() => {
+              setStep("identifier");
+              setError(null);
+            }}
             className="text-sm text-[var(--color-onwei-purple)] underline"
           >
             Use a different email or phone
