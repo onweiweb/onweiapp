@@ -17,7 +17,10 @@ export type SubscribeToWaitlistFailureReason =
   | "DUPLICATE_PHONE";
 
 export type SubscribeToWaitlistResult =
-  | { ok: true; alreadyJoined: boolean }
+  | { ok: true; alreadyJoined: true }
+  // Normalized values of the new row, so callers (welcome email) need no
+  // second lookup.
+  | { ok: true; alreadyJoined: false; fullName: string; email: string }
   | { ok: false; reason: SubscribeToWaitlistFailureReason };
 
 export interface WaitlistEntrySummary {

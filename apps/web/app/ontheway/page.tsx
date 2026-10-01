@@ -114,7 +114,7 @@ export default async function WaitlistPage() {
             />
           </div>
           <div className="absolute inset-0 bg-black/20" />
-          <div className="absolute inset-[6.94%_6.92%_81.59%_81.35%] max-desk:hidden">
+          <div className="absolute right-[6.92%] top-[6.94%] aspect-square w-[11.73%] max-desk:hidden">
             <Image
               src="/images/waitlist/photo/photo-badge.svg"
               alt=""

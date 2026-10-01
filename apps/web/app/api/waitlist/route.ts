@@ -1,5 +1,6 @@
 import {
   checkWaitlistRateLimit,
+  getSiteSetting,
   getClientIp,
   parseJsonBody,
   subscribeToWaitlist,
@@ -7,6 +8,8 @@ import {
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { invalidInput } from "../_lib/invalidInput";
+import { sendWelcomeEmailInBackground } from "../_lib/sendWelcomeEmail";
+import { renderWaitlistWelcomeEmail } from "@onwei/emails";
 
 const CONSENT_VERSION = "2026-09-01";
 
@@ -56,6 +59,18 @@ export async function POST(request: Request) {
       { ok: false, reason: result.reason },
       { status: 400 },
     );
+  }
+
+  if (!result.alreadyJoined) {
+    const { fullName, email } = result;
+    sendWelcomeEmailInBackground(email, async () => {
+      const settings = await getSiteSetting().catch(() => null);
+      return renderWaitlistWelcomeEmail({
+        fullName,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+        instagramUrl: settings?.instagramUrl ?? null,
+      });
+    });
   }
 
   return NextResponse.json({ ok: true, alreadyJoined: result.alreadyJoined });

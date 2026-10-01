@@ -105,6 +105,11 @@ export async function verifyOtpChallenge(
 
 export type VerifyAndAuthenticateResult = VerifyOtpResult & {
   customerId?: string;
+  // True only when this verification created the Customer row (first
+  // signup), so callers can send a one-time welcome email.
+  isNewCustomer?: boolean;
+  email?: string | null;
+  name?: string | null;
 };
 
 /**
@@ -126,6 +131,10 @@ export async function verifyOtpAndAuthenticate(
   if (!result.ok) return result;
 
   const isEmail = input.channel === "EMAIL";
+  const existing = await prisma.customer.findUnique({
+    where: isEmail ? { email: input.identifier } : { phone: input.identifier },
+    select: { id: true },
+  });
   const customer = await prisma.customer.upsert({
     where: isEmail ? { email: input.identifier } : { phone: input.identifier },
     update: isEmail
@@ -136,5 +145,11 @@ export async function verifyOtpAndAuthenticate(
       : { phone: input.identifier, phoneVerifiedAt: new Date() },
   });
 
-  return { ok: true, customerId: customer.id };
+  return {
+    ok: true,
+    customerId: customer.id,
+    isNewCustomer: !existing,
+    email: customer.email,
+    name: customer.name,
+  };
 }

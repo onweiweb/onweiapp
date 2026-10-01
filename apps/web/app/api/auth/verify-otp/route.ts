@@ -2,7 +2,9 @@ import { createSessionToken, SESSION_COOKIE_NAME } from "@onwei/auth";
 import { parseJsonBody, verifyOtpAndAuthenticate } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { renderCustomerWelcomeEmail } from "@onwei/emails";
 import { invalidInput } from "../../_lib/invalidInput";
+import { sendWelcomeEmailInBackground } from "../../_lib/sendWelcomeEmail";
 
 const bodySchema = z.object({
   identifier: z.string().trim().min(1),
@@ -31,6 +33,16 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { ok: false, reason: result.reason },
       { status: 400 },
+    );
+  }
+
+  if (result.isNewCustomer && result.email) {
+    const { email, name } = result;
+    sendWelcomeEmailInBackground(email, () =>
+      renderCustomerWelcomeEmail({
+        name,
+        siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+      }),
     );
   }
 

@@ -56,5 +56,5 @@ export async function subscribeToWaitlist(
     },
   });
 
-  return { ok: true, alreadyJoined: false };
+  return { ok: true, alreadyJoined: false, fullName, email };
 }
