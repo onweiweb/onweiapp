@@ -36,7 +36,11 @@ const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Figma node 945:4323 (web) / 945:4451 (mobile), "join onwei insiders".
 // The movement-flex slider is decorative/fun, not required to submit.
-export function WaitlistForm() {
+export function WaitlistForm({
+  instagramUrl = null,
+}: {
+  instagramUrl?: string | null;
+}) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -128,6 +132,7 @@ export function WaitlistForm() {
       <WaitlistSuccessModal
         open={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
+        instagramUrl={instagramUrl}
       />
       <form onSubmit={handleSubmit} className="flex w-full flex-col gap-4">
         <input
@@ -250,7 +255,11 @@ export function WaitlistForm() {
 
         <p
           role="status"
-          className="font-grotesk text-[length:max(0.75rem,11px)] text-onwei-blue"
+          className={
+            status === "already"
+              ? "font-grotesk text-[length:max(0.9375rem,11px)] font-bold text-[#b91c1c]"
+              : "font-grotesk text-[length:max(0.75rem,11px)] text-onwei-blue"
+          }
         >
           {status === "success" &&
             "You're on the list, welcome to the warm up."}

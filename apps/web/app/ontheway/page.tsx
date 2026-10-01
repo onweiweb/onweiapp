@@ -102,17 +102,19 @@ export default async function WaitlistPage() {
       >
         <ScrollReveal
           as="div"
-          className="relative order-2 h-[25rem] w-full overflow-hidden rounded-[1.875rem] desk:order-1 desk:h-[39.6875rem] desk:w-[41.5625rem]"
+          className="relative order-1 aspect-square w-full overflow-hidden rounded-[1.875rem] desk:order-1 desk:aspect-auto desk:h-[39.6875rem] desk:w-[41.5625rem]"
         >
-          <Image
-            src="/images/waitlist/photo/hero-photo.png"
-            alt=""
-            fill
-            sizes="((min-width: 768px)) 665px, 100vw"
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-black/30" />
-          <div className="absolute bottom-[7%] right-[7%] h-[4.5rem] w-[4.875rem]">
+          <div className="absolute left-[0.01%] top-[-8.37%] h-[150%] w-full desk:left-[-0.13%] desk:top-[-9.76%] desk:h-[157.09%]">
+            <Image
+              src="/images/waitlist/photo/photo.jpg"
+              alt=""
+              fill
+              sizes="(min-width: 768px) 665px, 100vw"
+              className="object-cover"
+            />
+          </div>
+          <div className="absolute inset-0 bg-black/20" />
+          <div className="absolute inset-[6.94%_6.92%_81.59%_81.35%] max-desk:hidden">
             <Image
               src="/images/waitlist/photo/photo-badge.svg"
               alt=""
@@ -125,7 +127,7 @@ export default async function WaitlistPage() {
         <ScrollReveal
           as="div"
           delay={0.1}
-          className="order-1 flex w-full flex-col gap-6 rounded-[1.875rem] px-0 py-6 desk:order-2 desk:w-[41.5625rem] desk:px-14 desk:py-12"
+          className="order-2 flex w-full flex-col gap-6 rounded-[1.875rem] px-0 py-6 desk:order-2 desk:w-[41.5625rem] desk:px-14 desk:py-12"
         >
           <div className="flex flex-col gap-3">
             <p className="font-display text-[2.25rem] font-bold uppercase leading-[0.9] text-onwei-blue desk:text-[3rem]">
@@ -135,7 +137,7 @@ export default async function WaitlistPage() {
               Takes under a minute. You&apos;ll get your card right after.
             </p>
           </div>
-          <WaitlistForm />
+          <WaitlistForm instagramUrl={instagramUrl} />
         </ScrollReveal>
       </section>
 

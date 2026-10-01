@@ -49,3 +49,34 @@ describe("WaitlistForm field errors", () => {
     expect(screen.queryByRole("alert")).toBeNull();
   });
 });
+
+describe("WaitlistForm repeat sign-up", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("shows the already-on-the-list message in bold red", async () => {
+    mockReply({ ok: true, alreadyJoined: true });
+    render(<WaitlistForm />);
+    fillAndSubmit();
+    const status = await screen.findByText(/already on the list/i);
+    expect(status).toHaveClass("font-bold", "text-[#b91c1c]");
+  });
+});
+
+describe("WaitlistForm success popup", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("shows the welcome copy and an Instagram link", async () => {
+    mockReply({ ok: true, alreadyJoined: false });
+    render(<WaitlistForm instagramUrl="https://instagram.com/onwei" />);
+    fillAndSubmit();
+    await screen.findByText(/officially part of the movement/i);
+    expect(screen.getByText(/watch your inbox/i)).toBeTruthy();
+    expect(
+      screen.getByRole("link", { name: /let's be friends/i }),
+    ).toHaveAttribute("href", "https://instagram.com/onwei");
+    fireEvent.keyDown(window, { key: "Escape" });
+    await waitFor(() =>
+      expect(screen.queryByText(/officially part of the movement/i)).toBeNull(),
+    );
+  });
+});

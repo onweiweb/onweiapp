@@ -12,7 +12,7 @@ const MotionLink = motion.create("a");
 // instead, for the three platforms this page actually links (Instagram,
 // YouTube, Spotify, different from SiteFooter's Instagram/LinkedIn/
 // Facebook set).
-function InstagramIcon() {
+export function InstagramIcon() {
   return (
     <svg
       viewBox="0 0 24 24"
