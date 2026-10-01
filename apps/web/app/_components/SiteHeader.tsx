@@ -12,26 +12,39 @@ const NAV_LINKS = [
   { label: "find your wei", href: "#" },
 ] as const;
 
-export function SiteHeader() {
+// inverted swaps blue and green throughout (used by the About page): blue
+// header zone, green announcement bar, green text and icons, with the
+// recolored copies of the header SVGs from images/header/inverted.
+export function SiteHeader({ inverted = false }: { inverted?: boolean }) {
+  const dir = inverted ? "/images/header/inverted" : "/images/header";
+  const accent = inverted ? "text-onwei-green" : "text-onwei-blue";
   return (
     // bg-onwei-green: matches HeroSection's fix below it, so the top of the
     // page reads as one continuous colored zone instead of a white nav
     // strip butting into a yellow hero. Same caveat: best-effort, not yet
     // re-verified against Figma (API rate-limited).
-    <header className="flex flex-col items-center bg-onwei-green">
-      <div className="mx-4 mt-3 flex w-full max-w-[85rem] items-center justify-center gap-6 overflow-hidden rounded-[1.25rem] bg-onwei-blue px-6 py-2.5 desk:mx-14 desk:px-14">
-        <p className="truncate font-grotesk text-label uppercase text-onwei-white desk:whitespace-nowrap">
+    <header
+      className={`flex flex-col items-center ${inverted ? "bg-onwei-blue" : "bg-onwei-green"}`}
+    >
+      <div
+        className={`mx-4 mt-3 flex w-full max-w-[85rem] items-center justify-center gap-6 overflow-hidden rounded-[1.25rem] px-6 py-2.5 desk:mx-14 desk:px-14 ${inverted ? "bg-onwei-green" : "bg-onwei-blue"}`}
+      >
+        <p
+          className={`truncate font-grotesk text-label uppercase ${inverted ? "text-onwei-blue" : "text-onwei-white"} desk:whitespace-nowrap`}
+        >
           Free shipping on orders over &#8377;1500
         </p>
         <Image
-          src="/images/header/vector-divider.svg"
+          src={`${dir}/vector-divider.svg`}
           alt=""
           width={20}
           height={15}
           aria-hidden
           className="hidden shrink-0 desk:block"
         />
-        <p className="hidden whitespace-nowrap font-grotesk text-label uppercase text-onwei-white desk:block">
+        <p
+          className={`hidden whitespace-nowrap font-grotesk text-label uppercase desk:block ${inverted ? "text-onwei-blue" : "text-onwei-white"}`}
+        >
           /on-way/ When you stop waiting to feel ready and just show up
         </p>
       </div>
@@ -40,13 +53,13 @@ export function SiteHeader() {
           (see MobileNav.tsx), account/cart icons, no visible link list. */}
       <div className="flex w-full items-center justify-between px-[1.125rem] py-[1.125rem] desk:hidden">
         <Image
-          src="/images/header/icon-mobile-squiggle.svg"
+          src={`${dir}/icon-mobile-squiggle.svg`}
           alt=""
           width={22}
           height={17}
           aria-hidden
         />
-        <MobileNav />
+        <MobileNav inverted={inverted} />
         <div className="flex items-center gap-2.5">
           <Link
             href="/login"
@@ -54,7 +67,7 @@ export function SiteHeader() {
             className="relative block h-[0.875rem] w-[0.875rem] after:absolute after:-inset-3.5 after:content-['']"
           >
             <Image
-              src="/images/header/icon-user-1.svg"
+              src={`${dir}/icon-user-1.svg`}
               alt=""
               width={8}
               height={8}
@@ -62,7 +75,7 @@ export function SiteHeader() {
               className="absolute left-[0.1875rem] top-0"
             />
             <Image
-              src="/images/header/icon-user-2.svg"
+              src={`${dir}/icon-user-2.svg`}
               alt=""
               width={14}
               height={5.5}
@@ -76,7 +89,7 @@ export function SiteHeader() {
             className="relative block h-[0.8125rem] w-[0.875rem] after:absolute after:-inset-3.5 after:content-['']"
           >
             <Image
-              src="/images/header/icon-cart.svg"
+              src={`${dir}/icon-cart.svg`}
               alt=""
               fill
               sizes="14px"
@@ -92,7 +105,7 @@ export function SiteHeader() {
       >
         <Link href="/" aria-label="Onwei home" className="shrink-0">
           <Image
-            src="/images/header/logo.svg"
+            src={`${dir}/logo.svg`}
             alt="Onwei"
             width={118}
             height={56}
@@ -105,7 +118,7 @@ export function SiteHeader() {
             <li key={link.label}>
               <Link
                 href={link.href}
-                className="whitespace-nowrap font-grotesk text-label uppercase text-onwei-blue"
+                className={`whitespace-nowrap font-grotesk text-label uppercase ${accent}`}
               >
                 {link.label}
               </Link>
@@ -116,7 +129,7 @@ export function SiteHeader() {
         <div className="flex shrink-0 items-center gap-6">
           <Link
             href="#"
-            className="font-script text-script-md uppercase leading-none text-onwei-blue"
+            className={`font-script text-script-md uppercase leading-none ${accent}`}
           >
             insiders
           </Link>
@@ -127,7 +140,7 @@ export function SiteHeader() {
               className="relative block h-[1.125rem] w-[1.125rem]"
             >
               <Image
-                src="/images/header/icon-user-1.svg"
+                src={`${dir}/icon-user-1.svg`}
                 alt=""
                 width={10}
                 height={10}
@@ -135,7 +148,7 @@ export function SiteHeader() {
                 className="absolute left-[0.25rem] top-0"
               />
               <Image
-                src="/images/header/icon-user-2.svg"
+                src={`${dir}/icon-user-2.svg`}
                 alt=""
                 width={18}
                 height={7}
@@ -149,7 +162,7 @@ export function SiteHeader() {
               className="relative block h-[1.0625rem] w-[1.125rem]"
             >
               <Image
-                src="/images/header/icon-cart.svg"
+                src={`${dir}/icon-cart.svg`}
                 alt=""
                 fill
                 sizes="18px"

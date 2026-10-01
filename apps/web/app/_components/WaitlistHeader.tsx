@@ -24,15 +24,18 @@ import { HoverLink } from "./HoverLink";
 export function WaitlistHeader({
   navHref = "/about",
   navLabel = "About Us",
+  inverted = false,
 }: {
   navHref?: string;
   navLabel?: string;
+  // Swaps blue and green (blue strip, green logo and text). Used by /about.
+  inverted?: boolean;
 } = {}) {
   const reduceMotion = useReducedMotion();
 
   return (
     <motion.header
-      className="flex w-full flex-col items-center bg-onwei-green"
+      className={`flex w-full flex-col items-center ${inverted ? "bg-onwei-blue" : "bg-onwei-green"}`}
       initial={reduceMotion ? false : { opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
@@ -44,7 +47,7 @@ export function WaitlistHeader({
           className="flex shrink-0 items-center"
         >
           <Image
-            src="/images/waitlist/header/logo-lockup.svg"
+            src={`/images/waitlist/header/logo-lockup${inverted ? "-inverted" : ""}.svg`}
             alt="Onwei"
             width={150}
             height={27}
@@ -52,13 +55,15 @@ export function WaitlistHeader({
           />
         </Link>
 
-        <p className="hidden font-script text-script-md uppercase leading-[1.2] text-onwei-blue desk:block">
+        <p
+          className={`hidden font-script text-script-md uppercase leading-[1.2] desk:block ${inverted ? "text-onwei-green" : "text-onwei-blue"}`}
+        >
           on-the-way, cause you already are
         </p>
 
         <HoverLink
           href={navHref}
-          className="font-grotesk text-label uppercase text-onwei-blue"
+          className={`font-grotesk text-label uppercase ${inverted ? "text-onwei-green" : "text-onwei-blue"}`}
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.97 }}
         >

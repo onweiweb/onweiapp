@@ -46,9 +46,13 @@ export default async function AboutPage() {
   return (
     <main className="bg-onwei-green">
       {isWaitlistMode ? (
-        <WaitlistHeader navHref="/ontheway" navLabel="Join the Movement" />
+        <WaitlistHeader
+          navHref="/ontheway"
+          navLabel="Join the Movement"
+          inverted
+        />
       ) : (
-        <SiteHeader />
+        <SiteHeader inverted />
       )}
 
       <ScrollReveal

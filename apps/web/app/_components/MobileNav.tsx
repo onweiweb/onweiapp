@@ -18,7 +18,7 @@ const NAV_LINKS = [
   { label: "find your wei", href: "#" },
 ] as const;
 
-export function MobileNav() {
+export function MobileNav({ inverted = false }: { inverted?: boolean }) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -71,7 +71,7 @@ export function MobileNav() {
         className="block"
       >
         <Image
-          src="/images/header/logo.svg"
+          src={`/images/header${inverted ? "/inverted" : ""}/logo.svg`}
           alt="Onwei"
           width={72}
           height={34}
@@ -84,7 +84,7 @@ export function MobileNav() {
           ref={panelRef}
           role="menu"
           aria-label="Main menu"
-          className="absolute top-[calc(100%+0.75rem)] z-20 flex w-[15rem] flex-col items-center gap-4 rounded-[1.25rem] bg-onwei-blue px-6 py-6 shadow-lg"
+          className={`absolute top-[calc(100%+0.75rem)] z-20 flex w-[15rem] flex-col items-center gap-4 rounded-[1.25rem] px-6 py-6 shadow-lg ${inverted ? "bg-onwei-green" : "bg-onwei-blue"}`}
         >
           <ul className="flex flex-col items-center gap-1">
             {NAV_LINKS.map((link) => (
@@ -93,7 +93,7 @@ export function MobileNav() {
                   role="menuitem"
                   href={link.href}
                   onClick={close}
-                  className="block whitespace-nowrap py-2 font-grotesk text-label uppercase text-onwei-beige"
+                  className={`block whitespace-nowrap py-2 font-grotesk text-label uppercase ${inverted ? "text-onwei-blue" : "text-onwei-beige"}`}
                 >
                   {link.label}
                 </Link>
@@ -104,7 +104,7 @@ export function MobileNav() {
             role="menuitem"
             href="#"
             onClick={close}
-            className="font-script text-script-md uppercase leading-none text-onwei-green"
+            className={`font-script text-script-md uppercase leading-none ${inverted ? "text-onwei-blue" : "text-onwei-green"}`}
           >
             insiders
           </Link>
