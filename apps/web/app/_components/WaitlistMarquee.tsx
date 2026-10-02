@@ -14,37 +14,53 @@ import Image from "@/_components/ScaledImage";
 // deviation from Figma for this reason, not a mistake.
 const ITEMS = ["We're On our Wei", "Join the fun"] as const;
 
+// Seamless loop (same approach as MarqueeBar): two identical groups, the
+// track slides exactly -50%. Each group repeats the phrases so it is always
+// wider than the pill, otherwise wide desktop screens show an empty tail.
+// REPEATS is even so the solid/outline alternation matches across groups.
+const REPEATS = 4;
+
+function MarqueeGroup() {
+  const items = Array.from({ length: REPEATS }, () => ITEMS).flat();
+  return (
+    <div className="flex shrink-0 items-center gap-6 pr-6">
+      {items.map((item, index) => {
+        const isOutline = index % 2 === 1;
+        return (
+          <div key={index} className="flex shrink-0 items-center gap-6">
+            <p
+              className={`whitespace-nowrap font-grotesk text-[length:max(1.125rem,11px)] font-bold uppercase desk:text-[2.5rem] ${
+                isOutline
+                  ? "text-transparent [-webkit-text-stroke:1px_var(--color-onwei-white)]"
+                  : "text-onwei-white"
+              }`}
+            >
+              {item}
+            </p>
+            <Image
+              src="/images/hero/marquee-divider.svg"
+              alt=""
+              width={20}
+              height={15}
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function WaitlistMarquee() {
-  const doubled = [...ITEMS, ...ITEMS];
   return (
     <div
       className="w-full overflow-hidden rounded-full bg-onwei-blue px-6 py-3 desk:px-14"
       aria-hidden
     >
-      {/* 18.7s = 28s / 1.5, 1.5x the original speed, per feedback. */}
-      <div className="flex w-max animate-[onwei-marquee_18.7s_linear_infinite] items-center gap-6">
-        {doubled.map((item, index) => {
-          const isOutline = index % 2 === 1;
-          return (
-            <div key={index} className="flex shrink-0 items-center gap-6">
-              <p
-                className={`whitespace-nowrap font-grotesk text-[length:max(1.125rem,11px)] font-bold uppercase desk:text-[2.5rem] ${
-                  isOutline
-                    ? "text-transparent [-webkit-text-stroke:1px_var(--color-onwei-white)]"
-                    : "text-onwei-white"
-                }`}
-              >
-                {item}
-              </p>
-              <Image
-                src="/images/hero/marquee-divider.svg"
-                alt=""
-                width={20}
-                height={15}
-              />
-            </div>
-          );
-        })}
+      {/* Duration scales with the doubled content so the speed stays the
+          same as the original 18.7s (1.5x the first version, per feedback). */}
+      <div className="flex w-max animate-[onwei-marquee_75s_linear_infinite] items-center">
+        <MarqueeGroup />
+        <MarqueeGroup />
       </div>
     </div>
   );

@@ -21,7 +21,7 @@ export function renderCustomerWelcomeEmail(
 
   const lines = [
     "Your Onwei account is ready.",
-    "Sportswear built for everyday movers, from pickleball to pilates. Have a look around and find your next favourite fit.",
+    "Sports and fitness accessories built for everyday movers, from pickleball to pilates. Have a look around and find your next favourite.",
   ];
 
   const subject = "Welcome to Onwei";

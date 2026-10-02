@@ -131,8 +131,17 @@ export default async function AboutPage() {
             completely unaffordable. The design was an afterthought. The brands
             behind it were either intimidating or embarrassing. And the person
             this all hurt most was the one showing up every single day, not
-            training for a podium, not a complete beginner, just someone who
-            takes their movement seriously and deserves gear that does the same.
+            training for a podium, not a complete beginner,{" "}
+            <span
+              className="px-1 text-onwei-white [background-size:100%_100%] [box-decoration-break:clone]"
+              style={{
+                backgroundImage:
+                  "url(/images/about-us/highlight-looked-at.png)",
+              }}
+            >
+              just someone who takes their movement seriously and deserves gear
+              that does the same.
+            </span>
           </p>
           <p
             className="w-fit self-center px-1 text-onwei-white [background-size:100%_100%] [box-decoration-break:clone]"
@@ -315,13 +324,10 @@ export default async function AboutPage() {
           className="flex flex-col items-center justify-end gap-6 rounded-[1.875rem] bg-onwei-purple px-6 py-8 text-center desk:px-14 desk:py-12 desk:items-start desk:text-left"
         >
           <p className="relative inline-block w-fit font-display text-[2.5rem] font-bold uppercase leading-[1.1] text-onwei-white desk:text-[4rem]">
-            {/* Figma gives Sakshi's name the oval-outline treatment on
-                mobile only (node 969:4059), confirmed no such decoration
-                on desktop (760:4568's Sakshi section has none), unlike
-                Sabhya who keeps it at both breakpoints. Previously used the
-                same corner squiggle at both sizes for both names, which was
-                wrong on two counts (wrong shape, and present on a
-                breakpoint Figma doesn't have it on). */}
+            {/* Sakshi gets the same oval outline as Sabhya at both
+                breakpoints (client feedback: desktop was missing it, the
+                Figma desktop frame had none). Desktop reuses Sabhya's
+                oval asset, sized off the name's own width. */}
             <Image
               src="/images/about-us/circle-sakshi-mobile.svg"
               alt=""
@@ -329,6 +335,14 @@ export default async function AboutPage() {
               height={62}
               aria-hidden
               className="pointer-events-none absolute -left-[1.125rem] -top-[0.625rem] h-auto w-[calc(100%+2.25rem)] max-w-none desk:hidden"
+            />
+            <Image
+              src="/images/about-us/circle-sabhya-desktop.svg"
+              alt=""
+              width={273}
+              height={87}
+              aria-hidden
+              className="pointer-events-none absolute -left-[1.375rem] -top-[0.75rem] hidden h-auto w-[calc(100%+2.75rem)] max-w-none desk:block"
             />
             <span className="relative">Sakshi</span>
           </p>

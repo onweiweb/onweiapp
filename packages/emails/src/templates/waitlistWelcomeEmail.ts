@@ -20,17 +20,17 @@ export function renderWaitlistWelcomeEmail(
   const greeting = first ? `Hey ${first},` : "Hey,";
 
   const lines = [
-    "One of the firsts: first to know, first dibs, first through the door when things open up.",
-    "We're on the Wei.",
+    "You've unlocked INSIDER STATUS: First to know what we're building. Access that others don't get. An actual say in what we make. Fun surprises! And a direct line to the founders.",
+    "We're on the Wei. Glad you're on it with us.",
   ];
 
-  const subject = "You're in. Welcome to the Onwei warm up";
-  const subline = "You're officially part of the Movement.";
+  const subject = "Warm-up complete! You're in.";
+  const subline = "Life's busy! Yet you showed up. Respect.";
 
   const html = renderWelcomeLayout({
     siteUrl,
     preheader: subline,
-    headline: "You're officially part of the Movement.",
+    headline: "Life's busy! Yet you showed up. Respect.",
     subline,
     paragraphsHtml: lines.map(escapeHtml),
     popup: {
@@ -44,7 +44,7 @@ export function renderWaitlistWelcomeEmail(
   const text = [
     greeting,
     "",
-    "You're officially part of the Movement.",
+    "Life's busy! Yet you showed up. Respect.",
     "",
     ...lines.flatMap((line) => [line, ""]),
     input.instagramUrl ? `Let's be friends: ${input.instagramUrl}` : "",

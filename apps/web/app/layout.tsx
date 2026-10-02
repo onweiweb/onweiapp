@@ -92,7 +92,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: "Onwei", template: "%s | Onwei" },
-  description: "Pickleball and Pilates apparel.",
+  description: "Sports and Fitness accessories.",
 };
 
 export default function RootLayout({

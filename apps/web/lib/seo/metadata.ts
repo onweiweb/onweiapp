@@ -48,7 +48,7 @@ export function buildCategoryMetadata(category: CategorySummary): Metadata {
   const title = category.metaTitle ?? category.name;
   const description =
     category.metaDescription ??
-    `Shop ${category.name} gear for pickleball and Pilates athletes, from Onwei.`;
+    `Shop ${category.name} sports and fitness accessories, from Onwei.`;
 
   return {
     title,
@@ -82,12 +82,12 @@ export function buildArticleMetadata(article: ArticleDetail): Metadata {
 export const SHOP_ALL_METADATA: Metadata = {
   title: "Shop All",
   description:
-    "Shop our full range of pickleball and Pilates gear, from Onwei.",
+    "Shop our full range of sports and fitness accessories, from Onwei.",
   alternates: { canonical: "/collection/all" },
   openGraph: {
     title: "Shop All",
     description:
-      "Shop our full range of pickleball and Pilates gear, from Onwei.",
+      "Shop our full range of sports and fitness accessories, from Onwei.",
     type: "website",
   },
 };

@@ -116,7 +116,7 @@ ${cta}
 ${body}
 <tr><td style="padding:24px 8px 0;border-top:1px solid ${PURPLE};">
 <p style="margin:16px 0 0;font-family:${BODY_FONT};font-size:12px;line-height:1.5;color:${BLUE};">${escapeHtml(input.footerNote)}</p>
-<p style="margin:8px 0 0;font-family:${BODY_FONT};font-size:12px;line-height:1.5;color:${BLUE};">Onwei, sportswear for everyday movers. <a href="${escapeHtml(siteUrl)}" style="color:${BLUE};">onwei.in</a></p>
+<p style="margin:8px 0 0;font-family:${BODY_FONT};font-size:12px;line-height:1.5;color:${BLUE};">Onwei, seriously good gear for everyday movers. <a href="${escapeHtml(siteUrl)}" style="color:${BLUE};">onwei.in</a></p>
 </td></tr>
 </table>
 </td></tr>

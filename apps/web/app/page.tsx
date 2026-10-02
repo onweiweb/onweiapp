@@ -539,7 +539,8 @@ function JournalSection({ articles }: { articles: ArticleListItem[] }) {
 
 export const metadata: Metadata = {
   title: "Home",
-  description: "Pickleball and Pilates gear for everyday movers, from Onwei.",
+  description:
+    "Sports and Fitness accessories for everyday movers, from Onwei.",
   alternates: { canonical: "/" },
 };
 
