@@ -9,7 +9,7 @@ export function buildOrganizationJsonLd() {
     "@type": "Organization",
     name: "Onwei",
     url: SITE_URL,
-    logo: `${SITE_URL}/icon.svg`,
+    logo: `${SITE_URL}/icon.png`,
   };
 }
 
