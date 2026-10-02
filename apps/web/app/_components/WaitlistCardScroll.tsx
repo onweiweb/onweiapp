@@ -192,7 +192,7 @@ function AllAccessCard({ timing }: { timing: CardTiming }) {
         height={678}
         loading="eager"
         aria-hidden
-        className="absolute left-1/2 top-1/2 h-[110%] w-auto max-w-none -translate-x-1/2 -translate-y-1/2"
+        className="absolute left-1/2 top-1/2 h-[150%] w-auto max-w-none desk:h-[110%] -translate-x-1/2 -translate-y-1/2"
       />
       <motion.p
         style={{ opacity: text.opacity, color: emphasis.color, scale }}
@@ -234,7 +234,7 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
           height={134}
           loading="eager"
           aria-hidden
-          className="absolute left-[21.2%] top-[11.65%] h-auto w-[12.3%] desk:min-w-16"
+          className="absolute left-[4%] top-[4%] h-auto w-[20%] desk:left-[21.2%] desk:top-[11.65%] desk:w-[12.3%] desk:min-w-16"
         />
       </motion.div>
       <motion.div style={plank} className="absolute inset-0">
@@ -245,7 +245,7 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
           height={60}
           loading="eager"
           aria-hidden
-          className="absolute left-[66.9%] top-[52.2%] h-auto w-[25.3%] desk:min-w-24 rotate-[6.34deg]"
+          className="absolute right-[4%] top-[62%] h-auto w-[40%] rotate-[6.34deg] desk:left-[66.9%] desk:right-auto desk:top-[52.2%] desk:w-[25.3%] desk:min-w-24"
         />
       </motion.div>
       {/* Yellow wiggle blob (Figma node 945:4521, bottom-left decoration,
@@ -272,7 +272,7 @@ function ShapeWhatsNextCard({ timing }: { timing: CardTiming }) {
           to its own line. */}
       <motion.p
         style={{ ...text, color: emphasis.color, scale: emphasis.scale }}
-        className="absolute left-[19.1%] top-[35.1%] font-display text-[1.75rem] font-bold uppercase leading-[0.9] desk:whitespace-nowrap desk:text-[3rem]"
+        className="absolute left-[19.1%] top-[40%] font-display text-[1.75rem] desk:top-[35.1%] font-bold uppercase leading-[0.9] desk:whitespace-nowrap desk:text-[3rem]"
       >
         Shape What&apos;s
         <br />
@@ -323,7 +323,7 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
     <div className="relative size-full overflow-hidden rounded-[1.875rem] bg-onwei-green">
       <motion.div
         style={founder}
-        className="absolute left-[16.7%] top-[38.7%] h-[28%] w-[17%] desk:h-[49.3%] desk:w-[28.9%]"
+        className="absolute bottom-[4%] left-[6%] h-[52%] w-[40%] desk:bottom-auto desk:left-[16.7%] desk:top-[38.7%] desk:h-[49.3%] desk:w-[28.9%]"
       >
         <Image
           src="/images/waitlist/cards/card3-illustration-founder.svg"
@@ -341,7 +341,7 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
           ringed photo badge pinned to the illustration's corner. */}
       <motion.div
         style={bubble}
-        className="absolute left-[5.9%] top-[22.2%] h-[13%] w-[16%] desk:h-[17.6%] desk:w-[21.7%]"
+        className="absolute left-[5%] top-[6%] h-[24%] w-[36%] desk:left-[5.9%] desk:top-[22.2%] desk:h-[17.6%] desk:w-[21.7%]"
       >
         <Image
           src="/images/waitlist/cards/card3-photo.png"
@@ -354,7 +354,7 @@ function SurprisesFromFoundersCard({ timing }: { timing: CardTiming }) {
       </motion.div>
       <motion.p
         style={{ ...text, color: emphasis.color, scale: emphasis.scale }}
-        className="absolute left-[53.5%] top-[18.4%] w-[34.6%] text-center font-display text-[1.375rem] font-bold uppercase leading-[0.9] desk:text-[3rem]"
+        className="absolute left-[46%] top-[24%] w-[50%] text-center font-display text-[1.875rem] font-bold uppercase leading-[0.9] desk:left-[53.5%] desk:top-[18.4%] desk:w-[34.6%] desk:text-[3rem]"
       >
         Surprises
         <br />
@@ -386,7 +386,7 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
   const stickyNote = useSweepIn(timing, [0.62, 0.79, 0.92], "x", -80, 10, 0);
   const squiggle = useSweepIn(timing, [0.69, 0.86, 1], "x", 80, -10, 0);
   return (
-    <div className="relative flex size-full flex-col items-center justify-center gap-8 overflow-hidden rounded-[1.875rem] bg-onwei-purple px-8 py-12 desk:gap-14 desk:px-14 desk:py-24">
+    <div className="relative flex size-full flex-col items-center justify-center gap-8 overflow-hidden rounded-[1.875rem] bg-onwei-purple px-8 pb-28 pt-12 desk:gap-14 desk:px-14 desk:py-24">
       <motion.p
         style={{ ...line1, color: emphasis.color, scale: emphasis.scale }}
         className="font-display text-[2rem] font-bold uppercase leading-[0.9] desk:text-[3rem]"
@@ -437,7 +437,7 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
           into the source asset itself, so a rotate here would double it. */}
       <motion.div
         style={dumbbell}
-        className="absolute right-[9%] top-[17%] h-[3.75rem] w-[6.875rem] desk:right-[8.7%] desk:top-[17.3%] desk:h-[5.4375rem] desk:w-[11.8125rem]"
+        className="absolute right-[4%] top-[4%] h-[4.5rem] w-[8.3rem] desk:right-[8.7%] desk:top-[17.3%] desk:h-[5.4375rem] desk:w-[11.8125rem]"
       >
         <Image
           src="/images/waitlist/cards/card4-dumbbell-badge.png"
@@ -456,9 +456,9 @@ function FirstDibsCard({ timing }: { timing: CardTiming }) {
           rotated box would. */}
       <motion.div
         style={stickyNote}
-        className="absolute bottom-[22%] left-[8.3%] flex h-[4.25rem] w-[4.1875rem] items-center justify-center desk:bottom-[22.1%] desk:h-[6.8125rem] desk:w-[6.75rem]"
+        className="absolute bottom-[4%] left-[4%] flex h-[5.85rem] w-[5.75rem] items-center justify-center desk:left-[8.3%] desk:bottom-[22.1%] desk:h-[6.8125rem] desk:w-[6.75rem]"
       >
-        <div className="relative h-[3.75rem] w-[3.75rem] rotate-[-7.59deg] desk:h-[6.0625rem] desk:w-[6rem]">
+        <div className="relative h-[5.2rem] w-[5.2rem] rotate-[-7.59deg] desk:h-[6.0625rem] desk:w-[6rem]">
           <Image
             src="/images/waitlist/cards/card4-sticky-note.png"
             alt=""
@@ -601,7 +601,7 @@ export function WaitlistCardScroll({
       <div className="flex w-full flex-col items-center justify-center gap-4 px-3 py-4 desk:gap-10 desk:px-11 desk:py-6">
         <div className="flex w-full max-w-[90rem] flex-col items-center gap-4 desk:flex-row desk:justify-between desk:gap-8">
           {children}
-          <div className="relative h-[18.75rem] w-full desk:h-[39.6875rem] desk:flex-1">
+          <div className="relative aspect-square w-full desk:aspect-auto desk:h-[39.6875rem] desk:flex-1">
             {CARDS.map((Content, index) => (
               <ScrollCard
                 key={index}
