@@ -6,6 +6,8 @@ import { NextResponse, type NextRequest } from "next/server";
 const ALWAYS_ALLOWED_PREFIXES = [
   "/ontheway",
   "/about",
+  "/privacy",
+  "/terms",
   "/api/waitlist",
   // Admin's server-to-server ping (triggerCatalogRevalidate), gated by its
   // own REVALIDATE_SECRET bearer-token check inside the route handler

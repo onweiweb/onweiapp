@@ -16,6 +16,19 @@ export {
   updateMarqueeItem,
 } from "./admin/marqueeItem";
 export { createArticle, deleteArticle, updateArticle } from "./admin/article";
+export {
+  createLegalSection,
+  deleteLegalSection,
+  moveLegalSection,
+  updateLegalPage,
+  updateLegalSection,
+} from "./admin/legalPage";
+export { ensureLegalPages, getLegalPage } from "./legal/legalPage";
+export type { LegalPageView } from "./legal/legalPage";
+export { formatLegalBody } from "./legal/formatLegalBody";
+export type { LegalBlock } from "./legal/formatLegalBody";
+export { LEGAL_SLUGS } from "./legal/defaultLegalContent";
+export type { LegalSlug } from "./legal/defaultLegalContent";
 export { updateDsrStatus } from "./compliance/updateDsrStatus";
 export { createCoupon, updateCoupon } from "./discounts/coupon";
 export { addDiscountRule, updateDiscountRule } from "./discounts/discountRule";

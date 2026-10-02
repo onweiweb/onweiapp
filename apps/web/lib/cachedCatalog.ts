@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import {
   getActiveProductBySlug,
+  getLegalPage,
   getPublishedArticleBySlug,
   listActiveCategories,
   listActiveProductsByCategorySlug,
@@ -104,5 +105,11 @@ export const cachedListPublishedArticles = unstable_cache(
 export const cachedGetPublishedArticleBySlug = unstable_cache(
   getPublishedArticleBySlug,
   ["catalog:getPublishedArticleBySlug"],
+  { revalidate: REVALIDATE_SECONDS, tags: TAGS },
+);
+
+export const cachedGetLegalPage = unstable_cache(
+  getLegalPage,
+  ["catalog:getLegalPage"],
   { revalidate: REVALIDATE_SECONDS, tags: TAGS },
 );

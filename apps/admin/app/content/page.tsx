@@ -1,15 +1,20 @@
+import { ensureLegalPages } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { requirePageSession } from "../_lib/requirePageSession";
 import { ValuePropsEditor } from "../_components/ValuePropsEditor";
 import { InstagramPhotosEditor } from "../_components/InstagramPhotosEditor";
 import { MarqueeItemsEditor } from "../_components/MarqueeItemsEditor";
 import { ArticlesEditor } from "../_components/ArticlesEditor";
+import { LegalPagesEditor } from "../_components/LegalPagesEditor";
 import { AdminTabs } from "../_components/ui";
 
 export default async function ContentPage() {
   await requirePageSession("content:manage");
+  // Creates the starting Privacy and Terms text the first time, a no-op
+  // after that, so the production database needs no separate seed step.
+  await ensureLegalPages();
 
-  const [valueProps, instagramPhotos, marqueeItems, articles] =
+  const [valueProps, instagramPhotos, marqueeItems, articles, legalPages] =
     await Promise.all([
       prisma.valueProp.findMany({
         where: { isActive: true },
@@ -34,6 +39,19 @@ export default async function ContentPage() {
           title: true,
           excerpt: true,
           isPublished: true,
+        },
+      }),
+      prisma.legalPage.findMany({
+        orderBy: { slug: "asc" },
+        select: {
+          id: true,
+          slug: true,
+          title: true,
+          intro: true,
+          sections: {
+            orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+            select: { id: true, heading: true, body: true, isActive: true },
+          },
         },
       }),
     ]);
@@ -130,6 +148,19 @@ export default async function ContentPage() {
                   storefront until published.
                 </p>
                 <ArticlesEditor items={articles} />
+              </div>
+            ),
+          },
+          {
+            id: "legal",
+            label: "Legal pages",
+            content: (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-onwei-blue/70">
+                  The Privacy Policy and Terms and Conditions pages linked from
+                  the footer. Edit, hide, reorder or add any point.
+                </p>
+                <LegalPagesEditor pages={legalPages} />
               </div>
             ),
           },

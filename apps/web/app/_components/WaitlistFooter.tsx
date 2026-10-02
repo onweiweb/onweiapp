@@ -289,18 +289,18 @@ export function WaitlistFooter({
             justify-end to sit at it, instead of inheriting the mobile
             centering. */}
           <div className="mt-10 flex gap-6 font-grotesk text-[length:max(0.75rem,11px)] text-onwei-beige desk:hidden">
-            <Link href="#" className="underline">
+            <Link href="/terms" className="underline">
               Terms &amp; Conditions
             </Link>
-            <Link href="#" className="underline">
+            <Link href="/privacy" className="underline">
               Privacy Policy
             </Link>
           </div>
           <div className="mt-10 hidden w-full max-w-[90rem] gap-6 font-grotesk text-[length:max(0.75rem,11px)] text-onwei-beige desk:flex desk:justify-end">
-            <Link href="#" className="underline">
+            <Link href="/privacy" className="underline">
               Privacy Policy
             </Link>
-            <Link href="#" className="underline">
+            <Link href="/terms" className="underline">
               Terms &amp; Conditions
             </Link>
           </div>

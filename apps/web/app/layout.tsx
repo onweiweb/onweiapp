@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { Raleway } from "next/font/google";
+import { Raleway, Space_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { SITE_URL } from "../lib/seo/siteUrl";
 import { JsonLd } from "../lib/seo/jsonLd";
@@ -11,12 +11,10 @@ import {
 import "./globals.css";
 
 // Figma specs "Author Variable" (display headlines, weights Medium/Semibold/
-// Bold), "ABC Monument Grotesk Mono Unlicensed Trial" (nav/body/labels,
-// weights Regular/Medium/Bold, a MONOSPACE grotesk, not a proportional one)
-// and "Summer Mood" (handwritten annotations). All three are now self-hosted
-// from the real font files (Author via Fontshare's ITF Free Font License;
-// Grotesk Mono and Summer Mood are still the client's unpurchased trial
-// files, fine for dev/preview, but flag before this ships to production).
+// Bold) and "Summer Mood" (handwritten annotations), both self-hosted
+// (Author via Fontshare's ITF Free Font License; Summer Mood is still the
+// client's unpurchased trial file, fine for dev/preview, but flag before
+// this ships to production). Body/nav/labels use Space Mono (see below).
 // Raleway is a real match for the existing --text-cta token (confirmed
 // against Figma's "CTA 1" style) and stays on Google Fonts.
 const raleway = Raleway({
@@ -39,28 +37,12 @@ const author = localFont({
   display: "swap",
 });
 
-// Self-hosted trial files from the client (Fonts/ABC Monument Grotesk/),
-// unlicensed for production use, see file header comment above. Converted
-// from the client's original .otf to .woff2 (fonttools ttLib.woff2
-// compress), same glyphs, ~40% smaller, and this is the nav/body font so
-// it loads on every route. Never edit the .woff2 by hand; the original
-// .otf lives in the untracked root Fonts/ABC Monument Grotesk/ folder,
-// regenerate from there if the source ever changes.
-const groteskMono = localFont({
-  src: [
-    {
-      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Regular-Trial.woff2",
-      weight: "400",
-    },
-    {
-      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Medium-Trial.woff2",
-      weight: "500",
-    },
-    {
-      path: "../public/fonts/grotesk-mono/ABCMonumentGroteskMono-Bold-Trial.woff2",
-      weight: "700",
-    },
-  ],
+// Nav/body/labels font. The designer approved Space Mono (SIL OFL, free
+// for production) in place of ABC Monument Grotesk Mono. It only ships
+// Regular and Bold, so any Medium (500) text renders as Regular.
+const groteskMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
   variable: "--font-mono",
   display: "swap",
 });

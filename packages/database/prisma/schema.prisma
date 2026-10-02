@@ -804,6 +804,38 @@ model Article {
   @@index([isPublished, publishedAt])
 }
 
+// Privacy Policy and Terms pages. One row per page (slug "privacy" or
+// "terms"), its points live in LegalSection rows so staff can add, reword,
+// hide and reorder each one from apps/admin's Content > Legal pages tab.
+// Backs apps/web's /privacy and /terms. Marketing-style content, so sections
+// can be hidden (isActive) or really deleted, same as Faq/ValueProp.
+model LegalPage {
+  id               String         @id @default(cuid())
+  slug             String         @unique
+  title            String
+  intro            String?
+  sections         LegalSection[]
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  updatedByStaffId String?
+}
+
+model LegalSection {
+  id        String    @id @default(cuid())
+  pageId    String
+  page      LegalPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  heading   String
+  // Plain text. A blank line starts a new paragraph, lines starting with
+  // "- " are bullet points. See formatLegalBody in packages/core.
+  body      String
+  sortOrder Int       @default(0)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([pageId, sortOrder])
+}
+
 // ---------------------------------------------------------------------------
 // Audit & analytics
 // ---------------------------------------------------------------------------

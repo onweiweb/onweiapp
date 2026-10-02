@@ -126,6 +126,21 @@ export default async function AboutPage() {
               this isn&apos;t it.
             </span>
           </p>
+          {/* Mobile only photo break between the two halves of the story,
+              same photo and crop as the waitlist form section
+              (ontheway/page.tsx). Desktop keeps its existing layout. */}
+          <div className="relative aspect-square w-full overflow-hidden rounded-[1.875rem] desk:hidden">
+            <div className="absolute left-[0.01%] top-[-8.37%] h-[150%] w-full">
+              <Image
+                src="/images/waitlist/photo/photo.jpg"
+                alt="Two people holding a plank on Onwei yoga mats"
+                fill
+                sizes="100vw"
+                className="object-cover"
+              />
+            </div>
+            <div className="absolute inset-0 bg-black/20" />
+          </div>
           <p>
             The equipment was either cheap and forgettable, or excellent and
             completely unaffordable. The design was an afterthought. The brands
