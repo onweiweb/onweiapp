@@ -221,11 +221,18 @@ export function WaitlistForm({
               paint that split on its own, so its own track is made fully
               transparent and two sibling divs (faint full-width, solid
               width-by-movementFlex%) paint it underneath. */}
-          <div className="relative flex h-[0.375rem] w-full items-center">
+          {/* Thumb is styled explicitly (1.5rem x 1rem beige pill) so every
+              browser draws the same handle iPhone Safari does,
+              instead of each browser's own accent-color thumb. The fill
+              ends at the thumb's centre: half a thumb plus the share of the
+              remaining track. */}
+          <div className="relative flex h-6 w-full items-center">
             <div className="pointer-events-none absolute inset-x-0 h-[0.375rem] rounded-full bg-onwei-beige/30" />
             <div
               className="pointer-events-none absolute left-0 h-[0.375rem] rounded-full bg-onwei-beige"
-              style={{ width: `${movementFlex}%` }}
+              style={{
+                width: `calc(0.75rem + (100% - 1.5rem) * ${movementFlex / 100})`,
+              }}
             />
             <input
               id={sliderId}
@@ -234,7 +241,7 @@ export function WaitlistForm({
               max={100}
               value={movementFlex}
               onChange={(event) => setMovementFlex(Number(event.target.value))}
-              className="relative z-10 h-[0.375rem] w-full cursor-pointer appearance-none bg-transparent accent-onwei-beige [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:bg-transparent"
+              className="relative z-10 h-6 w-full cursor-pointer appearance-none bg-transparent [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:w-6 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-onwei-beige [&::-moz-range-track]:bg-transparent [&::-webkit-slider-runnable-track]:h-[0.375rem] [&::-webkit-slider-runnable-track]:bg-transparent [&::-webkit-slider-thumb]:-mt-[0.3125rem] [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-6 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:border-0 [&::-webkit-slider-thumb]:bg-onwei-beige"
             />
           </div>
           <div className="flex items-center justify-between font-display text-[length:max(0.75rem,11px)] font-medium uppercase text-onwei-beige">

@@ -1,6 +1,18 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  configure,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WaitlistForm } from "./WaitlistForm";
+
+// The 1s default for waitFor/findBy is too tight when turbo runs every
+// package's tests in parallel (and on Vercel's build machines): the success
+// popup's exit animation alone can eat most of it. Only the failure case is
+// slower; passing runs still resolve as soon as the condition is met.
+configure({ asyncUtilTimeout: 5000 });
 
 function mockReply(body: unknown) {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ json: async () => body }));
