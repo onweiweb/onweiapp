@@ -129,7 +129,7 @@ export default async function WaitlistPage() {
           delay={0.1}
           className="order-1 flex w-full flex-col gap-6 rounded-[1.875rem] px-0 py-6 desk:order-2 desk:w-[41.5625rem] desk:px-14 desk:py-12"
         >
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 max-desk:px-2">
             <p className="font-display text-[2.25rem] font-bold uppercase leading-[0.9] text-onwei-blue desk:text-[3rem]">
               join onwei insiders
             </p>
