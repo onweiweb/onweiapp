@@ -130,17 +130,16 @@ Not done, needs you: 2. Neon region and scale-to-zero: DB env vars are hidden, a
 
 Nothing is committed or pushed yet.
 
-## Fonts (licensing, audited 2026-09-30)
+## Fonts (licensing, re-audited 2026-10-02)
 
-| Font                                           | Used for                              | Usage in apps/web  | Licence status                          | Commercial use                                                                                                      |
-| ---------------------------------------------- | ------------------------------------- | ------------------ | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Author (Fontshare)                             | Headlines (`--font-display`)          | ~67 uses, 27 files | ITF Free Font License                   | Yes, free incl. commercial and web. Cannot resell or redistribute the files. Read the licence text once to confirm. |
-| ABC Monument Grotesk Mono (Dinamo)             | Nav, body, labels (`--font-grotesk`)  | ~67 uses, 29 files | **Trial files** (names end in `-Trial`) | **No.** Trial is for testing and mockups. Needs a paid web licence (priced by traffic).                             |
-| Summer Mood (Dmitry Mashkin / Artcoast Design) | Handwritten accents (`--font-script`) | ~11 uses, 8 files  | Client's unpurchased trial              | **Unconfirmed, treat as no.** Get a commercial licence or swap.                                                     |
-| Raleway (Google Fonts)                         | CTA buttons (`--font-cta`)            | ~6 uses            | SIL Open Font License                   | Yes, free.                                                                                                          |
+Live on onwei.in (verified from the served CSS): Author, Space Mono, Raleway, Summer Mood.
 
-Risk: the two trial fonts are live on onwei.in. Foundries do send takedown and back-fee notices.
-Fix, pick one per font: buy the web licence (client cost), or swap to an open font (for example
-IBM Plex Mono or JetBrains Mono for the mono, Caveat for the script, both OFL). Swapping touches
-only `apps/web/app/layout.tsx` and the `--font-*` tokens in `globals.css`, but changes the look,
-so it needs Figma/design sign-off first.
+| Font                         | Used for                              | Licence                                                   | Commercial use                                                                                                                        |
+| ---------------------------- | ------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Author (Fontshare, ITF)      | Headlines (`--font-display`)          | ITF Free Font License                                     | Yes, incl. web. Cannot resell or redistribute the files. Font metadata asks for an ITF credit line in design credits (not added yet). |
+| Space Mono (Google Fonts)    | Nav, body, labels (`--font-grotesk`)  | SIL OFL                                                   | Yes, free. Designer-approved replacement for ABC Monument Grotesk Mono. Only Regular and Bold exist, so Medium renders as Regular.    |
+| Summer Mood (Dmitry Mashkin) | Handwritten accents (`--font-script`) | Licensed by the client (confirmed by the user 2026-10-02) | Yes. Keep the licence receipt with the client.                                                                                        |
+| Raleway (Google Fonts)       | CTA buttons (`--font-cta`)            | SIL OFL                                                   | Yes, free.                                                                                                                            |
+
+ABC Monument Grotesk Mono trial files sit untracked in the root `Fonts/` folder. They are not used
+in code and must never be committed or shipped.

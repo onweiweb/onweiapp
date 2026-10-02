@@ -12,9 +12,8 @@ import "./globals.css";
 
 // Figma specs "Author Variable" (display headlines, weights Medium/Semibold/
 // Bold) and "Summer Mood" (handwritten annotations), both self-hosted
-// (Author via Fontshare's ITF Free Font License; Summer Mood is still the
-// client's unpurchased trial file, fine for dev/preview, but flag before
-// this ships to production). Body/nav/labels use Space Mono (see below).
+// (Author via Fontshare's ITF Free Font License; Summer Mood is licensed
+// by the client for production use). Body/nav/labels use Space Mono (see below).
 // Raleway is a real match for the existing --text-cta token (confirmed
 // against Figma's "CTA 1" style) and stays on Google Fonts.
 const raleway = Raleway({
@@ -47,8 +46,7 @@ const groteskMono = Space_Mono({
   display: "swap",
 });
 
-// Self-hosted trial file from the client (Fonts/SummerMood.otf), unlicensed
-// for production use, see file header comment above. Same .otf-to-.woff2
+// Self-hosted from the client's licensed copy (Fonts/SummerMood.otf). Same .otf-to-.woff2
 // conversion as groteskMono, for the same payload-size reason; regenerate
 // from the untracked root Fonts/SummerMood.otf if the source ever changes.
 const summerMood = localFont({

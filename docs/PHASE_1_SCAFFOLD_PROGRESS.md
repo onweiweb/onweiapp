@@ -383,6 +383,20 @@ are live queries, storefront catalog list queries are unbounded (cached 30s to 5
   introduces state that's expensive to verify by hand (checkout, payment callbacks).
 - `npm audit`'s 4 high-severity findings (see Corrections #13), accepted risk, unreachable code path.
 
+## Production readiness audit (2026-10-02)
+
+- Typecheck, lint, unit tests and full build pass. No TODOs, stray logs or committed secrets.
+- Added `not-found.tsx` to web (minimal, no Figma design yet) and admin. Added security headers
+  (nosniff, X-Frame-Options DENY, Referrer-Policy, HSTS, Permissions-Policy) to both
+  `next.config.ts`. No CSP yet.
+- Typecheck once failed on Finder-style duplicate files (`* 2.ts`) inside `.next`. Deleting `.next`
+  fixes it.
+- Fonts re-audited, see `docs/SCALABILITY_AND_HOSTING_NOTES.md`. All four live fonts are cleared.
+  Still to do: add an ITF credit line for Author.
+- Open blockers: customer OTP login only logs codes via `ConsoleOtpSender` (no real SMS/email
+  vendor), so login does not work in production. Next 16.3.5 carries a critical `next/og` advisory
+  (code does not use `next/og`), upgrade needs a plan.
+
 ## Update discipline
 
 Whenever new work changes any of the above (new dependency version constraints, new gotchas, new

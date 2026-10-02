@@ -76,10 +76,8 @@ body {
      vary per instance: Medium/Semibold/Bold, never left at default),
      self-hosted from Fontshare (free, ITF Free Font License), see
      layout.tsx. --font-grotesk is Space Mono (designer-approved
-     replacement for ABC Monument Grotesk Mono), and --font-script still
-     approximates "Summer Mood" with Caveat, a paid font the client hasn't
-     purchased yet; swap in the real file once provided (see layout.tsx's
-     font registrations). */
+     replacement for ABC Monument Grotesk Mono), and --font-script is the
+     licensed "Summer Mood" file (see layout.tsx's font registrations). */
   --font-display: var(--font-author), sans-serif;
   --font-grotesk: var(--font-mono), monospace;
   --font-script: var(--font-caveat), cursive;
