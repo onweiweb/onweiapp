@@ -102,7 +102,7 @@ export default async function WaitlistPage() {
       >
         <ScrollReveal
           as="div"
-          className="relative order-1 aspect-square w-full overflow-hidden rounded-[1.875rem] desk:order-1 desk:aspect-auto desk:h-[39.6875rem] desk:w-[41.5625rem]"
+          className="relative order-2 aspect-square w-full overflow-hidden rounded-[1.875rem] desk:order-1 desk:aspect-auto desk:h-[39.6875rem] desk:w-[41.5625rem]"
         >
           <div className="absolute left-[0.01%] top-[-8.37%] h-[150%] w-full desk:left-[-0.13%] desk:top-[-9.76%] desk:h-[157.09%]">
             <Image
@@ -127,7 +127,7 @@ export default async function WaitlistPage() {
         <ScrollReveal
           as="div"
           delay={0.1}
-          className="order-2 flex w-full flex-col gap-6 rounded-[1.875rem] px-0 py-6 desk:order-2 desk:w-[41.5625rem] desk:px-14 desk:py-12"
+          className="order-1 flex w-full flex-col gap-6 rounded-[1.875rem] px-0 py-6 desk:order-2 desk:w-[41.5625rem] desk:px-14 desk:py-12"
         >
           <div className="flex flex-col gap-3">
             <p className="font-display text-[2.25rem] font-bold uppercase leading-[0.9] text-onwei-blue desk:text-[3rem]">
