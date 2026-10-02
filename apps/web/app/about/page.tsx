@@ -255,14 +255,15 @@ export default async function AboutPage() {
               sizes="((min-width: 768px)) 50vw, 100vw"
               className="object-cover"
             />
-            <Image
-              src="/images/footer/logo-circle.svg"
-              alt=""
-              width={90}
-              height={90}
-              aria-hidden
-              className="pointer-events-none absolute right-6 top-6 hidden opacity-90 desk:block"
-            />
+            <div className="absolute inset-0 bg-black/20" />
+            <div className="pointer-events-none absolute right-[6.92%] top-[6.94%] aspect-square w-[11.73%] max-desk:hidden">
+              <Image
+                src="/images/waitlist/photo/photo-badge.svg"
+                alt=""
+                fill
+                aria-hidden
+              />
+            </div>
           </div>
           {/* Figma's mobile frame has this on the RIGHT of the photo (not
               left, like desktop), the two breakpoints mirror each other
@@ -307,14 +308,15 @@ export default async function AboutPage() {
               sizes="((min-width: 768px)) 50vw, 100vw"
               className="object-cover object-top"
             />
-            <Image
-              src="/images/footer/logo-circle.svg"
-              alt=""
-              width={90}
-              height={90}
-              aria-hidden
-              className="pointer-events-none absolute right-6 top-6 hidden opacity-90 desk:block"
-            />
+            <div className="absolute inset-0 bg-black/20" />
+            <div className="pointer-events-none absolute right-[6.92%] top-[6.94%] aspect-square w-[11.73%] max-desk:hidden">
+              <Image
+                src="/images/waitlist/photo/photo-badge.svg"
+                alt=""
+                fill
+                aria-hidden
+              />
+            </div>
           </div>
           <Image
             src="/images/about-us/illustration-plank.svg"
