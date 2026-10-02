@@ -173,7 +173,7 @@ export function WaitlistSuccessModal({
                 door when things open up.
               </p>
               <p className="font-grotesk text-[length:max(0.875rem,11px)] font-bold leading-[1.4]">
-                Watch your inbox. We&apos;re on the Way.
+                Watch your inbox. We&apos;re on the Wei.
               </p>
             </motion.div>
 

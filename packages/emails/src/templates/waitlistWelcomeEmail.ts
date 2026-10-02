@@ -21,7 +21,7 @@ export function renderWaitlistWelcomeEmail(
 
   const lines = [
     "One of the firsts: first to know, first dibs, first through the door when things open up.",
-    "We're on the Way.",
+    "We're on the Wei.",
   ];
 
   const subject = "You're in. Welcome to the Onwei warm up";
