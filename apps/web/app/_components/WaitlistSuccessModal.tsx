@@ -164,7 +164,7 @@ export function WaitlistSuccessModal({
             >
               <p
                 id={headingId}
-                className="font-display text-[1.25rem] font-bold uppercase leading-[1.1] desk:text-[1.75rem]"
+                className="font-display text-[1.25rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[1.75rem]"
               >
                 You&apos;re officially part of the Movement.
               </p>
@@ -184,12 +184,12 @@ export function WaitlistSuccessModal({
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="Let's be friends, Onwei on Instagram"
-                  className="flex items-center gap-3 text-onwei-beige"
+                  className="flex items-center gap-3 text-onwei-blue"
                 >
                   {friends}
                 </a>
               ) : (
-                <div className="flex items-center gap-3 text-onwei-beige">
+                <div className="flex items-center gap-3 text-onwei-blue">
                   {friends}
                 </div>
               )}
