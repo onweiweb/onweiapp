@@ -25,22 +25,45 @@ export function ConsentCheckbox({
 }) {
   const id = useId();
   const color = tone === "beige" ? "text-onwei-beige" : "text-onwei-blue";
-  const border = tone === "beige" ? "border-onwei-beige" : "border-onwei-blue";
-  const accent = tone === "beige" ? "accent-onwei-beige" : "accent-onwei-blue";
+  const box =
+    tone === "beige"
+      ? "border-onwei-beige checked:bg-onwei-beige focus-visible:outline-onwei-beige"
+      : "border-onwei-blue checked:bg-onwei-blue focus-visible:outline-onwei-blue";
+  const tick = tone === "beige" ? "text-onwei-purple" : "text-onwei-green";
   const linkClass = "underline underline-offset-2";
 
   return (
     <div
-      className={`flex items-start gap-3 font-grotesk text-[length:max(0.75rem,11px)] leading-[1.4] ${color}`}
+      className={`flex items-start gap-3 font-grotesk text-[length:max(0.8125rem,11px)] leading-[1.4] ${color}`}
     >
-      <input
-        id={id}
-        type="checkbox"
-        required
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className={`mt-[0.15rem] size-4 shrink-0 cursor-pointer rounded-sm border ${border} ${accent}`}
-      />
+      {/* Custom box: the native one cannot be restyled to match the pill
+          inputs. The input stays a real checkbox (keyboard, screen readers,
+          native required validation), the tick is a sibling svg shown by
+          the peer-checked state. */}
+      <span className="relative mt-[0.0625rem] size-[1.25rem] shrink-0">
+        <input
+          id={id}
+          type="checkbox"
+          required
+          checked={checked}
+          onChange={(event) => onChange(event.target.checked)}
+          className={`peer size-full cursor-pointer appearance-none rounded-[0.375rem] border-[1.5px] bg-transparent transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 ${box}`}
+        />
+        <svg
+          aria-hidden
+          viewBox="0 0 16 16"
+          className={`pointer-events-none absolute inset-0 m-auto size-[0.75rem] scale-50 opacity-0 transition-all peer-checked:scale-100 peer-checked:opacity-100 ${tick}`}
+        >
+          <path
+            d="M3 8.5l3.2 3.2L13 4.8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </span>
       <label htmlFor={id} className="cursor-pointer">
         {lead}{" "}
         {links.includes("privacy") && (
