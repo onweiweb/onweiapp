@@ -159,7 +159,7 @@ export function WaitlistSuccessModal({
             </div>
 
             <motion.div
-              className="flex flex-col gap-3 text-onwei-blue"
+              className="flex flex-col gap-3 text-onwei-beige"
               {...fadeUp(2)}
             >
               <p
