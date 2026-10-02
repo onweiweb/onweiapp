@@ -51,6 +51,7 @@ export function WaitlistHeader({
             alt="Onwei"
             width={150}
             height={27}
+            className="max-desk:h-auto max-desk:w-[6.12rem]"
             priority
           />
         </Link>
