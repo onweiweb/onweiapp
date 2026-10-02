@@ -16,7 +16,13 @@ export default async function robots(): Promise<MetadataRoute.Robots> {
     // URL they've discovered or guessed at, rather than staying silent
     // about it.
     return {
-      rules: { userAgent: "*", disallow: "/" },
+      // Icons stay crawlable so Google can show the Onwei logo next to the
+      // search result, with everything else blocked.
+      rules: {
+        userAgent: "*",
+        allow: ["/favicon.ico", "/icon.png", "/apple-icon.png"],
+        disallow: "/",
+      },
     };
   }
 

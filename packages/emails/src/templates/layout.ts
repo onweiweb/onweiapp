@@ -11,7 +11,7 @@ const HEADING_FONT = "'Helvetica Neue',Helvetica,Arial,sans-serif";
 // clients that block web fonts.
 const BODY_FONT = "'IBM Plex Mono','Courier New',Courier,monospace";
 
-export const DEFAULT_SITE_URL = "https://onwei.in";
+export const DEFAULT_SITE_URL = "https://www.onwei.in";
 
 export function escapeHtml(value: string): string {
   return value

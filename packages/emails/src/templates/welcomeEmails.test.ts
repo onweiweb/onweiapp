@@ -35,7 +35,9 @@ describe("renderWaitlistWelcomeEmail", () => {
 
   it("uses absolute image urls and has no em dash", () => {
     const email = renderWaitlistWelcomeEmail({ fullName: "Asha" });
-    expect(email.html).toContain("https://onwei.in/images/email/envelope.png");
+    expect(email.html).toContain(
+      "https://www.onwei.in/images/email/envelope.png",
+    );
     expect(email.html + email.text + email.subject).not.toContain(EM_DASH);
   });
 });
@@ -44,7 +46,7 @@ describe("renderCustomerWelcomeEmail", () => {
   it("works without a name and links to the collection", () => {
     const email = renderCustomerWelcomeEmail();
     expect(email.text).toContain("Hey,");
-    expect(email.html).toContain("https://onwei.in/collection/all");
+    expect(email.html).toContain("https://www.onwei.in/collection/all");
     expect(email.html + email.text + email.subject).not.toContain(EM_DASH);
   });
 });

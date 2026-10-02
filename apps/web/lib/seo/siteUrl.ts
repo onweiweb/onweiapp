@@ -6,5 +6,5 @@
 // var in a preview deploy doesn't silently point crawlers at the wrong
 // origin.
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://onwei.in"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.onwei.in"
 ).replace(/\/$/, "");
