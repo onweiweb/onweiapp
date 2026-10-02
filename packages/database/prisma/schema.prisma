@@ -715,6 +715,12 @@ model NewsletterSubscriber {
   source         String? // e.g. "homepage_footer", provenance, not required
   subscribedAt   DateTime  @default(now())
   unsubscribedAt DateTime?
+  // Proof of consent (DPDP / GDPR): the Privacy Policy version the person
+  // ticked the box against, when, and from where. Null on rows that predate
+  // the checkbox, those have no proof of consent.
+  consentVersion String?
+  consentedAt    DateTime?
+  ipAddress      String?
 }
 
 // Pre-launch signups from the /waitlist page, distinct from

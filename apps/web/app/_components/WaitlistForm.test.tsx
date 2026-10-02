@@ -28,8 +28,45 @@ function fillAndSubmit() {
   type("FULL NAME", "Asha");
   type("EMAIL ADDRESS", "a@b.co");
   type("PHONE NUMBER", "9876543210");
+  fireEvent.click(screen.getByRole("checkbox"));
   fireEvent.click(screen.getByRole("button", { name: /start my warm up/i }));
 }
+
+describe("WaitlistForm consent", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("starts unticked and does not submit until the box is ticked", () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<WaitlistForm />);
+    const box = screen.getByRole("checkbox") as HTMLInputElement;
+    expect(box.checked).toBe(false);
+    expect(box.required).toBe(true);
+
+    type("FULL NAME", "Asha");
+    type("EMAIL ADDRESS", "a@b.co");
+    type("PHONE NUMBER", "9876543210");
+    fireEvent.click(screen.getByRole("button", { name: /start my warm up/i }));
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("sends consent: true once ticked", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ json: async () => ({ ok: true }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<WaitlistForm />);
+
+    fillAndSubmit();
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const sent = JSON.parse(
+      (fetchMock.mock.calls[0]?.[1] as { body: string }).body,
+    );
+    expect(sent.consent).toBe(true);
+  });
+});
 
 describe("WaitlistForm field errors", () => {
   afterEach(() => vi.unstubAllGlobals());

@@ -393,6 +393,11 @@ are live queries, storefront catalog list queries are unbounded (cached 30s to 5
   fixes it.
 - Fonts re-audited, see `docs/SCALABILITY_AND_HOSTING_NOTES.md`. All four live fonts are cleared.
   Still to do: add an ITF credit line for Author.
+- Consent capture shipped (2026-10-02): required unticked checkbox on waitlist, newsletter and
+  login, enforced server-side, stored per `docs/SECURITY_AND_DPDP.md`. Migration
+  `add_newsletter_consent_proof` (additive). The checkbox is a minimal control, not Figma-matched,
+  pending design sign-off. The waitlist route used to hardcode a consent version with no
+  consent asked, that is gone.
 - Open blockers: customer OTP login only logs codes via `ConsoleOtpSender` (no real SMS/email
   vendor), so login does not work in production. Next 16.3.5 carries a critical `next/og` advisory
   (code does not use `next/og`), upgrade needs a plan.

@@ -36,6 +36,51 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(row?.unsubscribedAt).toBeNull();
     });
 
+    it("stores proof of consent on a new opt-in and keeps it on a repeat", async () => {
+      const email = fixtureEmail();
+      await subscribeToNewsletter(email, "homepage_footer", {
+        version: "v1",
+        ipAddress: "203.0.113.5",
+      });
+      await subscribeToNewsletter(email, "homepage_footer", {
+        version: "v2",
+        ipAddress: "203.0.113.6",
+      });
+
+      const row = await prisma.newsletterSubscriber.findUnique({
+        where: { email },
+      });
+      expect(row?.consentVersion).toBe("v1");
+      expect(row?.ipAddress).toBe("203.0.113.5");
+      expect(row?.consentedAt).not.toBeNull();
+    });
+
+    it("records fresh consent when an unsubscribed email opts back in", async () => {
+      const email = fixtureEmail();
+      await subscribeToNewsletter(email, undefined, { version: "v1" });
+      await prisma.newsletterSubscriber.update({
+        where: { email },
+        data: { unsubscribedAt: new Date() },
+      });
+
+      await subscribeToNewsletter(email, undefined, { version: "v2" });
+
+      const row = await prisma.newsletterSubscriber.findUnique({
+        where: { email },
+      });
+      expect(row?.consentVersion).toBe("v2");
+    });
+
+    it("leaves consent empty when staff add a subscriber by hand", async () => {
+      const email = fixtureEmail();
+      await subscribeToNewsletter(email, "admin");
+
+      const row = await prisma.newsletterSubscriber.findUnique({
+        where: { email },
+      });
+      expect(row?.consentVersion).toBeNull();
+    });
+
     it("does not duplicate a row when re-subscribing an already-active email", async () => {
       const email = fixtureEmail();
       await subscribeToNewsletter(email);

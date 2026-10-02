@@ -25,6 +25,7 @@ export {
 } from "./admin/legalPage";
 export { ensureLegalPages, getLegalPage } from "./legal/legalPage";
 export type { LegalPageView } from "./legal/legalPage";
+export { getCurrentConsentVersion } from "./legal/consentVersion";
 export { formatLegalBody } from "./legal/formatLegalBody";
 export type { LegalBlock } from "./legal/formatLegalBody";
 export { LEGAL_SLUGS } from "./legal/defaultLegalContent";

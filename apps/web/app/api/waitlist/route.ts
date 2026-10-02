@@ -2,6 +2,7 @@ import {
   checkWaitlistRateLimit,
   getSiteSetting,
   getClientIp,
+  getCurrentConsentVersion,
   parseJsonBody,
   subscribeToWaitlist,
 } from "@onwei/core";
@@ -10,8 +11,6 @@ import { z } from "zod";
 import { invalidInput } from "../_lib/invalidInput";
 import { sendWelcomeEmailInBackground } from "../_lib/sendWelcomeEmail";
 import { renderWaitlistWelcomeEmail } from "@onwei/emails";
-
-const CONSENT_VERSION = "2026-09-01";
 
 // Shape only. Whether a name/email/phone is acceptable is decided by
 // subscribeToWaitlist, which answers with the INVALID_* reasons the form
@@ -24,6 +23,8 @@ const bodySchema = z.object({
   // Honeypot, a real visitor never fills this hidden field. Present and
   // non-empty means a bot; pretend success without creating a row.
   company: z.string().optional(),
+  // Ticked consent checkbox. Required, enforced below.
+  consent: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -33,6 +34,13 @@ export async function POST(request: Request) {
 
   if (body.company?.trim()) {
     return NextResponse.json({ ok: true, alreadyJoined: false });
+  }
+
+  if (body.consent !== true) {
+    return NextResponse.json(
+      { ok: false, reason: "CONSENT_REQUIRED" },
+      { status: 400 },
+    );
   }
 
   const ip = getClientIp(request) ?? undefined;
@@ -50,7 +58,7 @@ export async function POST(request: Request) {
     phone: body.phone,
     movementFlex: body.movementFlex,
     source: "coming_soon_page",
-    consentVersion: CONSENT_VERSION,
+    consentVersion: await getCurrentConsentVersion(["privacy"]),
     ipAddress: ip,
   });
 

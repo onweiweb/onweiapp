@@ -2,11 +2,13 @@
 
 import { useId, useState } from "react";
 import { Button } from "@onwei/ui";
+import { ConsentCheckbox } from "./ConsentCheckbox";
 
 type Status = "idle" | "submitting" | "success" | "already" | "error";
 
 export function NewsletterForm() {
   const [email, setEmail] = useState("");
+  const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const inputId = useId();
 
@@ -18,7 +20,7 @@ export function NewsletterForm() {
       const response = await fetch("/api/newsletter/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, consent }),
       });
       const data = (await response.json()) as {
         ok: boolean;
@@ -33,6 +35,7 @@ export function NewsletterForm() {
 
       setStatus(data.alreadySubscribed ? "already" : "success");
       setEmail("");
+      setConsent(false);
     } catch {
       setStatus("error");
     }
@@ -54,6 +57,13 @@ export function NewsletterForm() {
         onChange={(event) => setEmail(event.target.value)}
         placeholder="EMAIL ADDRESS"
         className="h-12 w-full rounded-[31.25rem] border border-onwei-beige bg-transparent px-5 font-cta text-cta uppercase text-onwei-beige placeholder:text-onwei-beige placeholder:opacity-100 focus:outline-none"
+      />
+      <ConsentCheckbox
+        checked={consent}
+        onChange={setConsent}
+        tone="beige"
+        lead="I agree to receive Onwei emails and accept the"
+        links={["privacy"]}
       />
       <Button
         type="submit"

@@ -1,5 +1,10 @@
 import { createSessionToken, SESSION_COOKIE_NAME } from "@onwei/auth";
-import { parseJsonBody, verifyOtpAndAuthenticate } from "@onwei/core";
+import {
+  getClientIp,
+  getCurrentConsentVersion,
+  parseJsonBody,
+  verifyOtpAndAuthenticate,
+} from "@onwei/core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { renderCustomerWelcomeEmail } from "@onwei/emails";
@@ -10,12 +15,20 @@ const bodySchema = z.object({
   identifier: z.string().trim().min(1),
   channel: z.enum(["EMAIL", "SMS"]),
   code: z.string().trim().min(1),
+  // Ticked "I accept the Terms and Privacy Policy" box. Required.
+  consent: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
   const parsed = await parseJsonBody(request, bodySchema);
   if (!parsed.ok) return invalidInput();
-  const { identifier, channel, code } = parsed.data;
+  const { identifier, channel, code, consent } = parsed.data;
+  if (consent !== true) {
+    return NextResponse.json(
+      { ok: false, reason: "CONSENT_REQUIRED" },
+      { status: 400 },
+    );
+  }
 
   const otpSecret = process.env.OTP_HASH_SECRET;
   const sessionSecret = process.env.SESSION_JWT_SECRET;
@@ -26,6 +39,10 @@ export async function POST(request: Request) {
   const result = await verifyOtpAndAuthenticate(
     { identifier, purpose: "LOGIN", code, channel },
     otpSecret,
+    {
+      version: await getCurrentConsentVersion(["privacy", "terms"]),
+      ipAddress: getClientIp(request) ?? undefined,
+    },
   );
 
   if (!result.ok) {

@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { motion } from "motion/react";
 import { Button } from "@onwei/ui";
+import { ConsentCheckbox } from "./ConsentCheckbox";
 import { FieldError, INVALID_BORDER } from "./FieldError";
 import { WaitlistSuccessModal } from "./WaitlistSuccessModal";
 
@@ -18,6 +19,7 @@ const ERROR_MESSAGES: Record<string, string> = {
     "This email is already on the list with a different phone number. Use the phone number you signed up with.",
   DUPLICATE_PHONE:
     "This phone number is already on the list with a different email. Use the email you signed up with.",
+  CONSENT_REQUIRED: "Tick the box to agree before joining.",
   RATE_LIMITED: "Too many attempts, try again in a few minutes.",
 };
 
@@ -45,6 +47,7 @@ export function WaitlistForm({
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [movementFlex, setMovementFlex] = useState(50);
+  const [consent, setConsent] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -91,6 +94,7 @@ export function WaitlistForm({
           email,
           phone,
           movementFlex,
+          consent,
           company,
         }),
       });
@@ -121,6 +125,7 @@ export function WaitlistForm({
       setEmail("");
       setPhone("");
       setMovementFlex(50);
+      setConsent(false);
     } catch {
       setError("Something went wrong. Please try again.");
       setStatus("error");
@@ -249,6 +254,13 @@ export function WaitlistForm({
             <span>full marathon</span>
           </div>
         </div>
+
+        <ConsentCheckbox
+          checked={consent}
+          onChange={setConsent}
+          lead="I agree to Onwei contacting me about the launch and accept the"
+          links={["privacy"]}
+        />
 
         <MotionButton
           type="submit"

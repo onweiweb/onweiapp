@@ -126,6 +126,7 @@ export async function verifyOtpAndAuthenticate(
     channel: OtpChannel;
   },
   secret: string,
+  consent?: { version: string; ipAddress?: string },
 ): Promise<VerifyAndAuthenticateResult> {
   const result = await verifyOtpChallenge(input, secret);
   if (!result.ok) return result;
@@ -140,9 +141,26 @@ export async function verifyOtpAndAuthenticate(
     update: isEmail
       ? { emailVerifiedAt: new Date() }
       : { phoneVerifiedAt: new Date() },
-    create: isEmail
-      ? { email: input.identifier, emailVerifiedAt: new Date() }
-      : { phone: input.identifier, phoneVerifiedAt: new Date() },
+    create: {
+      ...(isEmail
+        ? { email: input.identifier, emailVerifiedAt: new Date() }
+        : { phone: input.identifier, phoneVerifiedAt: new Date() }),
+      // Written in the same statement as the new Customer, so an account
+      // never exists without its consent record.
+      ...(consent
+        ? {
+            consentLogs: {
+              create: (["TERMS_OF_SERVICE", "PRIVACY_POLICY"] as const).map(
+                (consentType) => ({
+                  consentType,
+                  version: consent.version,
+                  ipAddress: consent.ipAddress ?? null,
+                }),
+              ),
+            },
+          }
+        : {}),
+    },
   });
 
   return {

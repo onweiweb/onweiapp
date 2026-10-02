@@ -23,9 +23,29 @@ describe.skipIf(!process.env.DATABASE_URL)(
         fullName: "Test User",
         email,
         phone: `9${suffix}`,
+        consent: true,
         ...overrides,
       };
     }
+
+    it("returns 400 CONSENT_REQUIRED and stores nothing without consent", async () => {
+      const { POST } = await import("./route");
+      const body = fixtureBody({ consent: undefined });
+
+      const response = await POST(
+        new Request("http://localhost/api/waitlist", {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      );
+      const json = (await response.json()) as { reason: string };
+
+      expect(response.status).toBe(400);
+      expect(json.reason).toBe("CONSENT_REQUIRED");
+      expect(
+        await prisma.waitlistEntry.findUnique({ where: { email: body.email } }),
+      ).toBeNull();
+    });
 
     it("returns 200 and creates a row on the happy path", async () => {
       const { POST } = await import("./route");

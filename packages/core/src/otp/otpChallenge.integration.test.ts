@@ -19,6 +19,9 @@ describe.skipIf(!process.env.DATABASE_URL)(
       await prisma.otpChallenge.deleteMany({
         where: { identifier: { in: createdIdentifiers } },
       });
+      await prisma.consentLog.deleteMany({
+        where: { customer: { email: { in: createdIdentifiers } } },
+      });
       await prisma.customer.deleteMany({
         where: { email: { in: createdIdentifiers } },
       });
@@ -194,6 +197,32 @@ describe.skipIf(!process.env.DATABASE_URL)(
         where: { email: identifier },
       });
       expect(customer?.emailVerifiedAt).not.toBeNull();
+    });
+
+    it("logs Terms and Privacy consent when a new customer is created", async () => {
+      const identifier = fixtureEmail();
+      const { code } = await requestOtpChallenge(
+        { identifier, channel: "EMAIL", purpose: "LOGIN" },
+        SECRET,
+      );
+
+      const auth = await verifyOtpAndAuthenticate(
+        { identifier, purpose: "LOGIN", code, channel: "EMAIL" },
+        SECRET,
+        { version: "2026-10-02T00:00:00.000Z", ipAddress: "203.0.113.5" },
+      );
+
+      expect(auth.ok).toBe(true);
+      const logs = await prisma.consentLog.findMany({
+        where: { customer: { email: identifier } },
+      });
+      expect(logs.map((log) => log.consentType).sort()).toEqual([
+        "PRIVACY_POLICY",
+        "TERMS_OF_SERVICE",
+      ]);
+      expect(
+        logs.every((log) => log.version === "2026-10-02T00:00:00.000Z"),
+      ).toBe(true);
     });
   },
 );

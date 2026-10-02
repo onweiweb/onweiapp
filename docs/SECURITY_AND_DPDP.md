@@ -42,6 +42,18 @@ so this plan treats them as Phase 1 requirements, not a later add-on.
 - `ConsentLog` records what policy version a customer accepted and when, at
   signup and whenever the policy changes materially, this is the
   demonstrable-consent record DPDP requires.
+- Public forms use an unticked, required checkbox (`apps/web/app/_components/ConsentCheckbox.tsx`).
+  A "by submitting you agree" line is not valid consent under DPDP or GDPR. The API routes
+  reject a missing flag with `CONSENT_REQUIRED`, so the checkbox cannot be bypassed.
+  - Waitlist: stores `WaitlistEntry.consentVersion` and `ipAddress`.
+  - Newsletter: stores `NewsletterSubscriber.consentVersion`, `consentedAt`, `ipAddress`. Rows
+    from before 2026-10-02 and staff-added rows have no proof of consent.
+  - Login: writes `ConsentLog` rows (`TERMS_OF_SERVICE`, `PRIVACY_POLICY`) when the customer
+    is created.
+  - The version string is the latest `LegalPage.updatedAt` (ISO) of the pages shown
+    (`getCurrentConsentVersion` in `packages/core/src/legal/consentVersion.ts`).
+- Open: no unsubscribe link or withdrawal flow exists yet in any email or page. Needed before
+  the first marketing email is sent (the welcome emails are transactional).
 - Marketing communications get their own consent type (`MARKETING`),
   separate from the Terms/Privacy acceptance needed to use the site at all.
   Opting out of marketing must not block checkout.

@@ -22,6 +22,9 @@ describe.skipIf(!process.env.DATABASE_URL)(
       await prisma.otpChallenge.deleteMany({
         where: { identifier: { in: createdIdentifiers } },
       });
+      await prisma.consentLog.deleteMany({
+        where: { customer: { email: { in: createdIdentifiers } } },
+      });
       await prisma.customer.deleteMany({
         where: { email: { in: createdIdentifiers } },
       });
@@ -45,7 +48,12 @@ describe.skipIf(!process.env.DATABASE_URL)(
       const response = await POST(
         new Request("http://localhost/api/auth/verify-otp", {
           method: "POST",
-          body: JSON.stringify({ identifier, channel: "EMAIL", code }),
+          body: JSON.stringify({
+            identifier,
+            channel: "EMAIL",
+            code,
+            consent: true,
+          }),
         }),
       );
       const body = (await response.json()) as { ok: boolean };
@@ -53,6 +61,33 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(response.status).toBe(200);
       expect(body.ok).toBe(true);
       expect(response.headers.get("set-cookie")).toMatch(/onwei_session=/);
+      const logs = await prisma.consentLog.findMany({
+        where: { customer: { email: identifier } },
+      });
+      expect(logs).toHaveLength(2);
+    });
+
+    it("returns 400 CONSENT_REQUIRED and creates no account without consent", async () => {
+      const { POST } = await import("./route");
+      const identifier = fixtureEmail();
+      const { code } = await requestOtpChallenge(
+        { identifier, channel: "EMAIL", purpose: "LOGIN" },
+        process.env.OTP_HASH_SECRET!,
+      );
+
+      const response = await POST(
+        new Request("http://localhost/api/auth/verify-otp", {
+          method: "POST",
+          body: JSON.stringify({ identifier, channel: "EMAIL", code }),
+        }),
+      );
+      const body = (await response.json()) as { reason: string };
+
+      expect(response.status).toBe(400);
+      expect(body.reason).toBe("CONSENT_REQUIRED");
+      expect(
+        await prisma.customer.findUnique({ where: { email: identifier } }),
+      ).toBeNull();
     });
 
     it("returns 400 without leaking attempts/hash details on an incorrect code", async () => {
@@ -70,6 +105,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
             identifier,
             channel: "EMAIL",
             code: "000000",
+            consent: true,
           }),
         }),
       );

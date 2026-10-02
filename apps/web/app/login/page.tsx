@@ -3,6 +3,7 @@
 import { Button } from "@onwei/ui";
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
+import { ConsentCheckbox } from "../_components/ConsentCheckbox";
 import { FieldError } from "../_components/FieldError";
 
 type Step = "identifier" | "code";
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const [step, setStep] = useState<Step>("identifier");
   const [identifier, setIdentifier] = useState("");
   const [code, setCode] = useState("");
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const identifierErrorId = useId();
@@ -58,6 +60,7 @@ export default function LoginPage() {
           identifier: identifier.trim(),
           channel: detectChannel(identifier),
           code: code.trim(),
+          consent,
         }),
       });
       const data = (await response.json()) as { ok: boolean; reason?: string };
@@ -108,6 +111,12 @@ export default function LoginPage() {
               message={error ?? undefined}
             />
           </label>
+          <ConsentCheckbox
+            checked={consent}
+            onChange={setConsent}
+            lead="I accept the"
+            links={["terms", "privacy"]}
+          />
           <Button
             type="submit"
             disabled={isSubmitting}

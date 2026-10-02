@@ -1,6 +1,7 @@
 import {
   checkNewsletterRateLimit,
   getClientIp,
+  getCurrentConsentVersion,
   isValidEmail,
   parseJsonBody,
   subscribeToNewsletter,
@@ -15,6 +16,7 @@ const bodySchema = z.object({
     .trim()
     .toLowerCase()
     .refine(isValidEmail, { error: "INVALID_EMAIL" }),
+  consent: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -38,9 +40,20 @@ export async function POST(request: Request) {
       : invalidInput();
   }
 
+  if (parsed.data.consent !== true) {
+    return NextResponse.json(
+      { ok: false, reason: "CONSENT_REQUIRED" },
+      { status: 400 },
+    );
+  }
+
   const result = await subscribeToNewsletter(
     parsed.data.email,
     "homepage_footer",
+    {
+      version: await getCurrentConsentVersion(["privacy"]),
+      ipAddress: getClientIp(request) ?? undefined,
+    },
   );
   return NextResponse.json({
     ok: true,

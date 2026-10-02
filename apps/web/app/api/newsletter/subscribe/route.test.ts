@@ -23,7 +23,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       const response = await POST(
         new Request("http://localhost/api/newsletter/subscribe", {
           method: "POST",
-          body: JSON.stringify({ email }),
+          body: JSON.stringify({ email, consent: true }),
         }),
       );
       const body = (await response.json()) as { ok: boolean };
@@ -32,13 +32,33 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(body.ok).toBe(true);
     });
 
+    it("returns 400 CONSENT_REQUIRED and stores nothing without consent", async () => {
+      const { POST } = await import("./route");
+      const email = `test-route-${crypto.randomUUID()}@example.com`;
+      createdEmails.push(email);
+
+      const response = await POST(
+        new Request("http://localhost/api/newsletter/subscribe", {
+          method: "POST",
+          body: JSON.stringify({ email }),
+        }),
+      );
+      const body = (await response.json()) as { reason: string };
+
+      expect(response.status).toBe(400);
+      expect(body.reason).toBe("CONSENT_REQUIRED");
+      expect(
+        await prisma.newsletterSubscriber.findUnique({ where: { email } }),
+      ).toBeNull();
+    });
+
     it("returns 400 for a malformed email", async () => {
       const { POST } = await import("./route");
 
       const response = await POST(
         new Request("http://localhost/api/newsletter/subscribe", {
           method: "POST",
-          body: JSON.stringify({ email: "not-an-email" }),
+          body: JSON.stringify({ email: "not-an-email", consent: true }),
         }),
       );
 
