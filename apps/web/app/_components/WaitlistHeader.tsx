@@ -35,7 +35,7 @@ export function WaitlistHeader({
 
   return (
     <motion.header
-      className={`flex w-full flex-col items-center ${inverted ? "bg-onwei-blue" : "bg-onwei-green"}`}
+      className={`sticky top-0 z-40 flex w-full flex-col items-center ${inverted ? "bg-onwei-blue" : "bg-onwei-green"}`}
       initial={reduceMotion ? false : { opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
