@@ -20,10 +20,12 @@ export default async function WaitlistPage({
   await requirePageSession("waitlist:view");
   const { cursor, q } = await searchParams;
 
-  const { entries, nextCursor } = await listWaitlistEntries({
-    cursor,
-    search: q,
-  });
+  const { entries, nextCursor, firstSerial, total } = await listWaitlistEntries(
+    {
+      cursor,
+      search: q,
+    },
+  );
 
   return (
     <main className="flex flex-col gap-6">
@@ -31,6 +33,9 @@ export default async function WaitlistPage({
         <h1 className="font-display text-2xl font-semibold uppercase">
           Waitlist
         </h1>
+        <p className="text-sm text-onwei-blue/70">
+          {q ? `${total} matching` : `${total} in total`}
+        </p>
         <a href="/api/waitlist/export">
           <AdminButton type="button" variant="secondary">
             Export as CSV
@@ -64,6 +69,7 @@ export default async function WaitlistPage({
         <>
           <AdminTable>
             <AdminTableHead>
+              <AdminTableHeaderCell>No.</AdminTableHeaderCell>
               <AdminTableHeaderCell>Name</AdminTableHeaderCell>
               <AdminTableHeaderCell>Email</AdminTableHeaderCell>
               <AdminTableHeaderCell>Phone</AdminTableHeaderCell>
@@ -72,8 +78,9 @@ export default async function WaitlistPage({
               <AdminTableHeaderCell>Joined</AdminTableHeaderCell>
             </AdminTableHead>
             <tbody>
-              {entries.map((entry) => (
+              {entries.map((entry, index) => (
                 <AdminTableRow key={entry.id}>
+                  <AdminTableCell>{firstSerial - index}</AdminTableCell>
                   <AdminTableCell>{entry.fullName}</AdminTableCell>
                   <AdminTableCell>{entry.email}</AdminTableCell>
                   <AdminTableCell>{entry.phone}</AdminTableCell>

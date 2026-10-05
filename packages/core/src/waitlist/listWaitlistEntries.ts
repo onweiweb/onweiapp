@@ -1,7 +1,9 @@
 import { prisma } from "@onwei/database";
+import type { Prisma } from "@onwei/database";
 import type {
   ListWaitlistEntriesInput,
   ListWaitlistEntriesResult,
+  WaitlistStats,
 } from "./types";
 
 const DEFAULT_TAKE = 50;
@@ -13,20 +15,40 @@ export async function listWaitlistEntries(
   const take = Math.min(input.take ?? DEFAULT_TAKE, MAX_TAKE);
   const search = input.search?.trim();
 
-  const entries = await prisma.waitlistEntry.findMany({
-    take: take + 1,
-    ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
-    where: search
-      ? {
-          OR: [
-            { fullName: { contains: search, mode: "insensitive" } },
-            { email: { contains: search, mode: "insensitive" } },
-            { phone: { contains: search } },
-          ],
-        }
-      : undefined,
-    orderBy: { submittedAt: "desc" },
-  });
+  const where: Prisma.WaitlistEntryWhereInput | undefined = search
+    ? {
+        OR: [
+          { fullName: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+          { phone: { contains: search } },
+        ],
+      }
+    : undefined;
+
+  const [entries, total, cursorEntry] = await Promise.all([
+    prisma.waitlistEntry.findMany({
+      take: take + 1,
+      ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
+      where,
+      orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
+    }),
+    prisma.waitlistEntry.count({ where }),
+    input.cursor
+      ? prisma.waitlistEntry.findUnique({
+          where: { id: input.cursor },
+          select: { submittedAt: true },
+        })
+      : null,
+  ]);
+
+  // Rows newer than the cursor row, plus the cursor row itself, were already shown.
+  const alreadyShown = cursorEntry
+    ? await prisma.waitlistEntry.count({
+        where: {
+          AND: [where ?? {}, { submittedAt: { gte: cursorEntry.submittedAt } }],
+        },
+      })
+    : 0;
 
   const hasMore = entries.length > take;
   const page = hasMore ? entries.slice(0, take) : entries;
@@ -34,7 +56,19 @@ export async function listWaitlistEntries(
   return {
     entries: page,
     nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
+    firstSerial: total - alreadyShown,
+    total,
   };
+}
+
+export async function getWaitlistStats(): Promise<WaitlistStats> {
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const [total, unsubscribed, joinedLast7Days] = await Promise.all([
+    prisma.waitlistEntry.count(),
+    prisma.waitlistEntry.count({ where: { unsubscribedAt: { not: null } } }),
+    prisma.waitlistEntry.count({ where: { submittedAt: { gte: weekAgo } } }),
+  ]);
+  return { total, active: total - unsubscribed, unsubscribed, joinedLast7Days };
 }
 
 function csvEscape(value: string): string {

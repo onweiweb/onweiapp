@@ -1,22 +1,28 @@
 import Link from "next/link";
-import { listInventory } from "@onwei/core";
+import { getWaitlistStats, listInventory } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { AdminCard } from "./_components/ui";
 
 async function getDashboardCounts() {
-  const [activeProducts, categories, lowStock] = await Promise.all([
+  const [activeProducts, categories, lowStock, waitlist] = await Promise.all([
     prisma.product.count({ where: { status: "ACTIVE", deletedAt: null } }),
     prisma.category.count({ where: { isActive: true } }),
     listInventory({ lowStockOnly: true }),
+    getWaitlistStats(),
   ]);
-  return { activeProducts, categories, lowStockCount: lowStock.length };
+  return {
+    activeProducts,
+    categories,
+    lowStockCount: lowStock.length,
+    waitlist,
+  };
 }
 
 export default async function DashboardPage() {
-  const { activeProducts, categories, lowStockCount } =
+  const { activeProducts, categories, lowStockCount, waitlist } =
     await getDashboardCounts();
 
-  const hasAnyData = activeProducts > 0 || categories > 0;
+  const hasAnyData = activeProducts > 0 || categories > 0 || waitlist.total > 0;
 
   return (
     <main className="flex flex-col gap-6">
@@ -43,6 +49,16 @@ export default async function DashboardPage() {
             <AdminCard className="transition-colors hover:border-onwei-purple">
               <p className="text-sm text-onwei-blue/70">Running low on stock</p>
               <p className="text-3xl font-semibold">{lowStockCount}</p>
+            </AdminCard>
+          </Link>
+          <Link href="/waitlist">
+            <AdminCard className="transition-colors hover:border-onwei-purple">
+              <p className="text-sm text-onwei-blue/70">On the waitlist</p>
+              <p className="text-3xl font-semibold">{waitlist.active}</p>
+              <p className="mt-1 text-xs text-onwei-blue/70">
+                {waitlist.joinedLast7Days} joined in the last 7 days,{" "}
+                {waitlist.unsubscribed} unsubscribed
+              </p>
             </AdminCard>
           </Link>
         </div>

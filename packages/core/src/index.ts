@@ -189,6 +189,7 @@ export { validatePhone } from "./validation/phone";
 export type { PhoneValidationResult } from "./validation/phone";
 export {
   exportWaitlistEntriesToCsv,
+  getWaitlistStats,
   listWaitlistEntries,
 } from "./waitlist/listWaitlistEntries";
 export { subscribeToWaitlist } from "./waitlist/subscribeToWaitlist";
@@ -200,4 +201,5 @@ export type {
   SubscribeToWaitlistInput,
   SubscribeToWaitlistResult,
   WaitlistEntrySummary,
+  WaitlistStats,
 } from "./waitlist/types";

@@ -43,4 +43,15 @@ export interface ListWaitlistEntriesInput {
 export interface ListWaitlistEntriesResult {
   entries: WaitlistEntrySummary[];
   nextCursor: string | null;
+  /** Serial number of the first entry in `entries`. Counts down by one per row (newest = highest). */
+  firstSerial: number;
+  /** Everyone matching the search, across all pages. */
+  total: number;
+}
+
+export interface WaitlistStats {
+  total: number;
+  active: number;
+  unsubscribed: number;
+  joinedLast7Days: number;
 }
