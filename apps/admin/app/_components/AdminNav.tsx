@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { PendingSpinner } from "./PendingSpinner";
 import { useSyncExternalStore } from "react";
 import {
   LayoutDashboard,
@@ -162,6 +163,7 @@ function NavSection({ group }: { group: AdminNavGroup }) {
                 >
                   <ItemIcon size={14} aria-hidden className="shrink-0" />
                   {item.label}
+                  <PendingSpinner />
                 </Link>
               </li>
             );

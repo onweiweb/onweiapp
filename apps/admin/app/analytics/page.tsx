@@ -5,6 +5,7 @@ import {
   type AnalyticsRangeDays,
   type PageFilter,
 } from "@onwei/core";
+import { PendingSpinner } from "../_components/PendingSpinner";
 import { requirePageSession } from "../_lib/requirePageSession";
 import { hrefFor } from "./_links";
 import {
@@ -58,6 +59,7 @@ export default async function AnalyticsPage({
     }
   })();
   const scope = { days, page, ownHost };
+  const scopeKey = JSON.stringify([days, page]);
 
   const activeType = page.kind === "pageType" ? page.value : undefined;
 
@@ -69,9 +71,10 @@ export default async function AnalyticsPage({
         </h1>
         <Link
           href="/analytics/links"
-          className="rounded-[30px] border border-onwei-blue px-5 py-2 font-cta text-sm uppercase tracking-wide"
+          className="flex items-center gap-2 rounded-[30px] border border-onwei-blue px-5 py-2 font-cta text-sm uppercase tracking-wide"
         >
           Make a tracked link
+          <PendingSpinner />
         </Link>
       </div>
 
@@ -82,9 +85,10 @@ export default async function AnalyticsPage({
               key={r.days}
               href={hrefFor(r.days, activeType)}
               aria-current={r.days === days ? "page" : undefined}
-              className={`rounded-[30px] px-4 py-1.5 text-sm ${r.days === days ? "bg-onwei-blue text-onwei-beige" : "border border-onwei-blue/25"}`}
+              className={`flex items-center gap-2 rounded-[30px] px-4 py-1.5 text-sm ${r.days === days ? "bg-onwei-blue text-onwei-beige" : "border border-onwei-blue/25"}`}
             >
               {r.label}
+              <PendingSpinner />
             </Link>
           ))}
         </nav>
@@ -99,9 +103,10 @@ export default async function AnalyticsPage({
                     ? "page"
                     : undefined
                 }
-                className={`rounded-[30px] px-4 py-1.5 text-sm ${page.kind !== "path" && p.value === activeType ? "bg-onwei-purple text-onwei-white" : "border border-onwei-blue/25"}`}
+                className={`flex items-center gap-2 rounded-[30px] px-4 py-1.5 text-sm ${page.kind !== "path" && p.value === activeType ? "bg-onwei-purple text-onwei-white" : "border border-onwei-blue/25"}`}
               >
                 {p.label}
+                <PendingSpinner />
               </Link>
             ),
           )}
@@ -113,25 +118,40 @@ export default async function AnalyticsPage({
         </nav>
       </div>
 
-      <Suspense fallback={<SectionSkeleton title="Visitors" />}>
+      <Suspense key={scopeKey} fallback={<SectionSkeleton title="Visitors" />}>
         <VisitorsSection scope={scope} />
       </Suspense>
-      <Suspense fallback={<SectionSkeleton title="Where visitors came from" />}>
+      <Suspense
+        key={scopeKey}
+        fallback={<SectionSkeleton title="Where visitors came from" />}
+      >
         <SourcesSection scope={scope} />
       </Suspense>
-      <Suspense fallback={<SectionSkeleton title="Phone or computer" />}>
+      <Suspense
+        key={scopeKey}
+        fallback={<SectionSkeleton title="Phone or computer" />}
+      >
         <DevicesSection scope={scope} />
       </Suspense>
-      <Suspense fallback={<SectionSkeleton title="How people use the site" />}>
+      <Suspense
+        key={scopeKey}
+        fallback={<SectionSkeleton title="How people use the site" />}
+      >
         <EngagementSection scope={scope} />
       </Suspense>
-      <Suspense fallback={<SectionSkeleton title="Most visited pages" />}>
+      <Suspense
+        key={scopeKey}
+        fallback={<SectionSkeleton title="Most visited pages" />}
+      >
         <TopPagesSection scope={scope} />
       </Suspense>
-      <Suspense fallback={<SectionSkeleton title="Forms" />}>
+      <Suspense key={scopeKey} fallback={<SectionSkeleton title="Forms" />}>
         <FormsSection scope={scope} />
       </Suspense>
-      <Suspense fallback={<SectionSkeleton title="Where people are" />}>
+      <Suspense
+        key={scopeKey}
+        fallback={<SectionSkeleton title="Where people are" />}
+      >
         <LocationsSection scope={scope} />
       </Suspense>
     </main>
