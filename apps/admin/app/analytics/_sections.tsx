@@ -181,14 +181,16 @@ export async function SourcesSection({ scope }: { scope: ReportScope }) {
         <AdminTable>
           <AdminTableHead>
             <AdminTableHeaderCell>Source</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Campaign</AdminTableHeaderCell>
             <AdminTableHeaderCell>Visits</AdminTableHeaderCell>
             <AdminTableHeaderCell>Signups</AdminTableHeaderCell>
             <AdminTableHeaderCell>Signup rate</AdminTableHeaderCell>
           </AdminTableHead>
           <tbody>
             {data.sources.map((s) => (
-              <AdminTableRow key={s.label}>
+              <AdminTableRow key={`${s.label}|${s.campaign ?? ""}`}>
                 <AdminTableCell>{s.label}</AdminTableCell>
+                <AdminTableCell>{s.campaign ?? "-"}</AdminTableCell>
                 <AdminTableCell>{formatNumber(s.visits)}</AdminTableCell>
                 <AdminTableCell>{formatNumber(s.signups)}</AdminTableCell>
                 <AdminTableCell>

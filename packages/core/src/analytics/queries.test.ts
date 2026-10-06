@@ -77,25 +77,39 @@ describe("posthog queries", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 
-  it("merges visits and signups by friendly source and computes the rate", async () => {
+  it("merges visits and signups by friendly source and campaign and computes the rate", async () => {
     groupBy.mockResolvedValue([
       {
         utmSource: "instagram",
         utmMedium: "bio",
+        utmCampaign: "launch",
         referrerHost: null,
         _count: { _all: 2 },
       },
     ]);
     const fetchImpl = mockFetch([
-      ["instagram", "bio", "", 10],
-      [null, null, "l.instagram.com", 5],
-      [null, null, "", 20],
+      ["instagram", "bio", "launch", "", 10],
+      ["instagram", "bio", "teaser", "", 4],
+      [null, null, null, "l.instagram.com", 5],
+      [null, null, null, "", 20],
     ]);
     const rows = await getSourceBreakdown({ days: 7, config, fetchImpl });
-    const bio = rows.find((r) => r.label === "Instagram bio link");
-    expect(bio).toMatchObject({ visits: 10, signups: 2 });
-    expect(bio!.signupRate).toBeCloseTo(0.2);
-    expect(rows.find((r) => r.label === "Instagram")!.visits).toBe(5);
+    const launch = rows.find((r) => r.campaign === "launch");
+    expect(launch).toMatchObject({
+      label: "Instagram bio link",
+      visits: 10,
+      signups: 2,
+    });
+    expect(launch!.signupRate).toBeCloseTo(0.2);
+    expect(rows.find((r) => r.campaign === "teaser")).toMatchObject({
+      label: "Instagram bio link",
+      visits: 4,
+      signups: 0,
+    });
+    expect(rows.find((r) => r.label === "Instagram")).toMatchObject({
+      campaign: null,
+      visits: 5,
+    });
     expect(rows[0]!.label).toBe("Direct or unknown");
   });
 

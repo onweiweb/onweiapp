@@ -131,6 +131,8 @@ export function getTrafficSummary(
 
 export interface SourceRow {
   label: string;
+  /** The campaign name from the tracked link, or null when there is none. */
+  campaign: string | null;
   visits: number;
   signups: number;
   /** Signups divided by visits, 0 to 1. */
@@ -140,10 +142,15 @@ export interface SourceRow {
 interface RawSource {
   utmSource: string | null;
   utmMedium: string | null;
+  utmCampaign: string | null;
   referrerHost: string | null;
   count: number;
 }
 
+const KEY_SEPARATOR = "\u0000";
+
+// Counts per (source label, campaign). A campaign only means something on a
+// tracked link, so visits that arrived without a UTM source have none.
 function mergeSources(
   raws: RawSource[],
   ownHost: string | null | undefined,
@@ -151,7 +158,9 @@ function mergeSources(
   const out = new Map<string, number>();
   for (const r of raws) {
     const label = describeSource({ ...r, ownHost });
-    out.set(label, (out.get(label) ?? 0) + r.count);
+    const campaign = r.utmSource ? (r.utmCampaign ?? "") : "";
+    const key = `${label}${KEY_SEPARATOR}${campaign}`;
+    out.set(key, (out.get(key) ?? 0) + r.count);
   }
   return out;
 }
@@ -164,13 +173,13 @@ export function getSourceBreakdown(
     const since = new Date(Date.now() - opts.days * 24 * 60 * 60 * 1000);
     const [visitRows, signupGroups] = await Promise.all([
       s.run(
-        `SELECT properties.ft_utm_source, properties.ft_utm_medium, properties.ft_referrer_host,
-                uniq(properties.visit_id) AS visits
+        `SELECT properties.ft_utm_source, properties.ft_utm_medium, properties.ft_utm_campaign,
+                properties.ft_referrer_host, uniq(properties.visit_id) AS visits
          FROM events WHERE event = '$pageview' AND ${s.where}
-         GROUP BY 1, 2, 3`,
+         GROUP BY 1, 2, 3, 4`,
       ),
       prisma.waitlistEntry.groupBy({
-        by: ["utmSource", "utmMedium", "referrerHost"],
+        by: ["utmSource", "utmMedium", "utmCampaign", "referrerHost"],
         where: { submittedAt: { gte: since } },
         _count: { _all: true },
       }),
@@ -180,8 +189,9 @@ export function getSourceBreakdown(
       visitRows.map((r) => ({
         utmSource: str(r[0]),
         utmMedium: str(r[1]),
-        referrerHost: str(r[2]),
-        count: num(r[3]),
+        utmCampaign: str(r[2]),
+        referrerHost: str(r[3]),
+        count: num(r[4]),
       })),
       opts.ownHost,
     );
@@ -189,19 +199,22 @@ export function getSourceBreakdown(
       signupGroups.map((g) => ({
         utmSource: g.utmSource,
         utmMedium: g.utmMedium,
+        utmCampaign: g.utmCampaign,
         referrerHost: g.referrerHost,
         count: g._count._all,
       })),
       opts.ownHost,
     );
 
-    const labels = new Set([...visits.keys(), ...signups.keys()]);
-    return [...labels]
-      .map((label) => {
-        const v = visits.get(label) ?? 0;
-        const su = signups.get(label) ?? 0;
+    const keys = new Set([...visits.keys(), ...signups.keys()]);
+    return [...keys]
+      .map((key) => {
+        const [label = "", campaign = ""] = key.split(KEY_SEPARATOR);
+        const v = visits.get(key) ?? 0;
+        const su = signups.get(key) ?? 0;
         return {
           label,
+          campaign: campaign || null,
           visits: v,
           signups: su,
           signupRate: v > 0 ? Math.min(su / v, 1) : 0,
