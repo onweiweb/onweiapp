@@ -35,7 +35,9 @@ export const PAGE_TYPES: readonly { value: string; label: string }[] = [
   { value: "journal", label: "Journal" },
 ];
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
+// Short on purpose: numbers more than a minute old confuse people who are
+// watching them change. No caching at all while developing locally.
+const CACHE_TTL_MS = process.env.NODE_ENV === "development" ? 0 : 60 * 1000;
 const cache = new Map<string, { at: number; value: unknown }>();
 
 /** Test helper. */

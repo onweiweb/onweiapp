@@ -1,4 +1,4 @@
-import { SectionSkeleton } from "./_sections";
+import { SECTION_TITLES, SectionSkeleton } from "./_skeleton";
 
 // Shown the moment someone clicks through to this page, while the server
 // checks their sign-in, so the click is acknowledged straight away.
@@ -12,9 +12,9 @@ export default function AnalyticsLoading() {
         <div className="h-8 w-80 animate-pulse rounded-[30px] bg-onwei-blue/10" />
         <div className="h-8 w-[28rem] max-w-full animate-pulse rounded-[30px] bg-onwei-blue/10" />
       </div>
-      <SectionSkeleton title="Visitors" />
-      <SectionSkeleton title="Where visitors came from" />
-      <SectionSkeleton title="How people use the site" />
+      {SECTION_TITLES.map((title) => (
+        <SectionSkeleton key={title} title={title} />
+      ))}
     </main>
   );
 }

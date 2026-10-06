@@ -12,11 +12,13 @@ import {
   type PageFilter,
 } from "@onwei/core";
 
-// PostHog answers each report in 1 to 3 seconds, so every report is cached
-// for five minutes in Next's shared cache. Unlike core's in-memory cache,
-// this one survives across requests and across serverless instances, so only
-// the first person to open the page in a window waits.
-const FIVE_MINUTES = 300;
+// PostHog answers each report in 1 to 3 seconds, so in production every
+// report is cached for a minute in Next's shared cache. Unlike core's
+// in-memory cache, this one survives across requests and across serverless
+// instances, so only the first person to open the page in a window waits.
+// Local development skips caching so numbers are always current.
+const CACHE_SECONDS = 60;
+const USE_CACHE = process.env.NODE_ENV !== "development";
 
 export interface ReportScope {
   days: AnalyticsRangeDays;
@@ -28,16 +30,31 @@ function cachedReport<T>(
   name: string,
   load: (opts: AnalyticsQueryOptions) => Promise<T>,
 ) {
+  const run = (days: number, pageJson: string, ownHost: string | null) =>
+    load({
+      days: days as AnalyticsRangeDays,
+      page: JSON.parse(pageJson) as PageFilter,
+      ownHost,
+    });
+  if (!USE_CACHE) {
+    return async (scope: ReportScope) => {
+      const started = Date.now();
+      const result = await run(
+        scope.days,
+        JSON.stringify(scope.page),
+        scope.ownHost,
+      );
+      console.log(
+        `[analytics] ${name} days=${scope.days} page=${JSON.stringify(scope.page)} ${Date.now() - started}ms`,
+      );
+      return result;
+    };
+  }
   const cached = unstable_cache(
     // Arguments must be plain values to form the cache key.
-    (days: number, pageJson: string, ownHost: string | null) =>
-      load({
-        days: days as AnalyticsRangeDays,
-        page: JSON.parse(pageJson) as PageFilter,
-        ownHost,
-      }),
+    run,
     ["analytics-report", name],
-    { revalidate: FIVE_MINUTES, tags: ["analytics"] },
+    { revalidate: CACHE_SECONDS, tags: ["analytics"] },
   );
   return (scope: ReportScope) =>
     cached(scope.days, JSON.stringify(scope.page), scope.ownHost);

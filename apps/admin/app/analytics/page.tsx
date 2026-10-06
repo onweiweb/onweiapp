@@ -6,6 +6,13 @@ import {
   type PageFilter,
 } from "@onwei/core";
 import { PendingSpinner } from "../_components/PendingSpinner";
+import {
+  AnalyticsShell,
+  FilterLink,
+  RefreshButton,
+  ReportArea,
+} from "./_shell";
+import { SectionSkeleton } from "./_skeleton";
 import { requirePageSession } from "../_lib/requirePageSession";
 import { hrefFor } from "./_links";
 import {
@@ -13,7 +20,6 @@ import {
   EngagementSection,
   FormsSection,
   LocationsSection,
-  SectionSkeleton,
   SourcesSection,
   TopPagesSection,
   VisitorsSection,
@@ -37,6 +43,15 @@ function parsePage(
   if (type && PAGE_TYPES.some((p) => p.value === type))
     return { kind: "pageType", value: type };
   return { kind: "all" };
+}
+
+function timeNow() {
+  return new Date().toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 export default async function AnalyticsPage({
@@ -64,96 +79,103 @@ export default async function AnalyticsPage({
   const activeType = page.kind === "pageType" ? page.value : undefined;
 
   return (
-    <main className="flex flex-col gap-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-semibold uppercase">
-          Visitors and engagement
-        </h1>
-        <Link
-          href="/analytics/links"
-          className="flex items-center gap-2 rounded-[30px] border border-onwei-blue px-5 py-2 font-cta text-sm uppercase tracking-wide"
-        >
-          Make a tracked link
-          <PendingSpinner />
-        </Link>
-      </div>
+    <AnalyticsShell>
+      <main className="flex flex-col gap-8">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h1 className="font-display text-2xl font-semibold uppercase">
+            Visitors and engagement
+          </h1>
+          <Link
+            href="/analytics/links"
+            className="flex items-center gap-2 rounded-[30px] border border-onwei-blue px-5 py-2 font-cta text-sm uppercase tracking-wide"
+          >
+            Make a tracked link
+            <PendingSpinner />
+          </Link>
+        </div>
 
-      <div className="flex flex-col gap-3">
-        <nav aria-label="Time range" className="flex flex-wrap gap-2">
-          {RANGES.map((r) => (
-            <Link
-              key={r.days}
-              href={hrefFor(r.days, activeType)}
-              aria-current={r.days === days ? "page" : undefined}
-              className={`flex items-center gap-2 rounded-[30px] px-4 py-1.5 text-sm ${r.days === days ? "bg-onwei-blue text-onwei-beige" : "border border-onwei-blue/25"}`}
-            >
-              {r.label}
-              <PendingSpinner />
-            </Link>
-          ))}
-        </nav>
-        <nav aria-label="Which pages" className="flex flex-wrap gap-2">
-          {[{ value: undefined, label: "All pages" }, ...PAGE_TYPES].map(
-            (p) => (
-              <Link
-                key={p.value ?? "all"}
-                href={hrefFor(days, p.value)}
-                aria-current={
-                  page.kind !== "path" && p.value === activeType
-                    ? "page"
-                    : undefined
-                }
-                className={`flex items-center gap-2 rounded-[30px] px-4 py-1.5 text-sm ${page.kind !== "path" && p.value === activeType ? "bg-onwei-purple text-onwei-white" : "border border-onwei-blue/25"}`}
+        <div className="flex flex-col gap-3">
+          <nav aria-label="Time range" className="flex flex-wrap gap-2">
+            {RANGES.map((r) => (
+              <FilterLink
+                key={r.days}
+                href={hrefFor(r.days, activeType)}
+                current={r.days === days}
+                className={`flex items-center gap-2 rounded-[30px] px-4 py-1.5 text-sm ${r.days === days ? "bg-onwei-blue text-onwei-beige" : "border border-onwei-blue/25"}`}
               >
-                {p.label}
-                <PendingSpinner />
-              </Link>
-            ),
-          )}
-          {page.kind === "path" ? (
-            <span className="rounded-[30px] bg-onwei-purple px-4 py-1.5 text-sm text-onwei-white">
-              Only {page.value}
-            </span>
-          ) : null}
-        </nav>
-      </div>
+                {r.label}
+              </FilterLink>
+            ))}
+          </nav>
+          <nav aria-label="Which pages" className="flex flex-wrap gap-2">
+            {[{ value: undefined, label: "All pages" }, ...PAGE_TYPES].map(
+              (p) => {
+                const active = page.kind !== "path" && p.value === activeType;
+                return (
+                  <FilterLink
+                    key={p.value ?? "all"}
+                    href={hrefFor(days, p.value)}
+                    current={active}
+                    className={`flex items-center gap-2 rounded-[30px] px-4 py-1.5 text-sm ${active ? "bg-onwei-purple text-onwei-white" : "border border-onwei-blue/25"}`}
+                  >
+                    {p.label}
+                  </FilterLink>
+                );
+              },
+            )}
+            <RefreshButton />
+            {page.kind === "path" ? (
+              <span className="rounded-[30px] bg-onwei-purple px-4 py-1.5 text-sm text-onwei-white">
+                Only {page.value}
+              </span>
+            ) : null}
+          </nav>
+        </div>
 
-      <Suspense key={scopeKey} fallback={<SectionSkeleton title="Visitors" />}>
-        <VisitorsSection scope={scope} />
-      </Suspense>
-      <Suspense
-        key={scopeKey}
-        fallback={<SectionSkeleton title="Where visitors came from" />}
-      >
-        <SourcesSection scope={scope} />
-      </Suspense>
-      <Suspense
-        key={scopeKey}
-        fallback={<SectionSkeleton title="Phone or computer" />}
-      >
-        <DevicesSection scope={scope} />
-      </Suspense>
-      <Suspense
-        key={scopeKey}
-        fallback={<SectionSkeleton title="How people use the site" />}
-      >
-        <EngagementSection scope={scope} />
-      </Suspense>
-      <Suspense
-        key={scopeKey}
-        fallback={<SectionSkeleton title="Most visited pages" />}
-      >
-        <TopPagesSection scope={scope} />
-      </Suspense>
-      <Suspense key={scopeKey} fallback={<SectionSkeleton title="Forms" />}>
-        <FormsSection scope={scope} />
-      </Suspense>
-      <Suspense
-        key={scopeKey}
-        fallback={<SectionSkeleton title="Where people are" />}
-      >
-        <LocationsSection scope={scope} />
-      </Suspense>
-    </main>
+        <p
+          className="text-sm text-onwei-blue/70"
+          data-testid="analytics-showing"
+        >
+          Showing{" "}
+          {page.kind === "path"
+            ? page.value
+            : (PAGE_TYPES.find((p) => p.value === activeType)?.label ??
+              "all pages")}
+          , last {days} days. Page loaded at {timeNow()}.
+        </p>
+
+        <ReportArea>
+          {/* The key is on this wrapper, not on each Suspense: keyed boundaries
+              left the previous filter's sections on screen next to the new ones. */}
+          <div key={scopeKey} className="flex flex-col gap-8">
+            <Suspense fallback={<SectionSkeleton title="Visitors" />}>
+              <VisitorsSection scope={scope} />
+            </Suspense>
+            <Suspense
+              fallback={<SectionSkeleton title="Where visitors came from" />}
+            >
+              <SourcesSection scope={scope} />
+            </Suspense>
+            <Suspense fallback={<SectionSkeleton title="Phone or computer" />}>
+              <DevicesSection scope={scope} />
+            </Suspense>
+            <Suspense
+              fallback={<SectionSkeleton title="How people use the site" />}
+            >
+              <EngagementSection scope={scope} />
+            </Suspense>
+            <Suspense fallback={<SectionSkeleton title="Most visited pages" />}>
+              <TopPagesSection scope={scope} />
+            </Suspense>
+            <Suspense fallback={<SectionSkeleton title="Forms" />}>
+              <FormsSection scope={scope} />
+            </Suspense>
+            <Suspense fallback={<SectionSkeleton title="Where people are" />}>
+              <LocationsSection scope={scope} />
+            </Suspense>
+          </div>
+        </ReportArea>
+      </main>
+    </AnalyticsShell>
   );
 }

@@ -231,6 +231,7 @@ export {
   getTopPages,
   getFormFunnels,
   getLocations,
+  clearAnalyticsCache,
   type AnalyticsRangeDays,
   type PageFilter,
   type AnalyticsQueryOptions,

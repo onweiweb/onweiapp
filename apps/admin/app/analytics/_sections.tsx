@@ -53,19 +53,6 @@ export function Section({
   );
 }
 
-/** Shown while a report loads, so the page appears at once. */
-export function SectionSkeleton({ title }: { title: string }) {
-  return (
-    <Section title={title}>
-      <div
-        aria-busy="true"
-        aria-label={`Loading ${title}`}
-        className="h-28 animate-pulse rounded-[30px] bg-onwei-blue/10"
-      />
-    </Section>
-  );
-}
-
 function Bar({ fraction }: { fraction: number }) {
   return (
     <div className="h-2 w-full rounded-full bg-onwei-beige">
@@ -96,6 +83,15 @@ function SectionError({ title, error }: { title: string; error: unknown }) {
   );
 }
 
+function fetchedAt() {
+  return new Date().toLocaleTimeString("en-IN", {
+    timeZone: "Asia/Kolkata",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+}
+
 export async function VisitorsSection({ scope }: { scope: ReportScope }) {
   let data;
   try {
@@ -109,7 +105,7 @@ export async function VisitorsSection({ scope }: { scope: ReportScope }) {
   }
 
   return (
-    <Section title="Visitors">
+    <Section title="Visitors" help={`Numbers fetched at ${fetchedAt()}.`}>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Stat
           label="Page views"
