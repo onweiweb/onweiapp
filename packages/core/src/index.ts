@@ -203,3 +203,42 @@ export type {
   WaitlistEntrySummary,
   WaitlistStats,
 } from "./waitlist/types";
+
+export {
+  sanitizeAttribution,
+  slugifyUtmValue,
+  readGeoHeaders,
+  type Attribution,
+  type GeoLocation,
+} from "./analytics/attribution";
+export {
+  buildUtmLink,
+  UTM_CHANNELS,
+  type UtmChannel,
+  type BuildUtmLinkResult,
+} from "./analytics/utmBuilder";
+export { describeSource } from "./analytics/sourceLabels";
+export {
+  AnalyticsUnavailableError,
+  readPosthogConfig,
+} from "./analytics/posthogClient";
+export {
+  PAGE_TYPES,
+  getTrafficSummary,
+  getSourceBreakdown,
+  getDeviceSplit,
+  getEngagement,
+  getTopPages,
+  getFormFunnels,
+  getLocations,
+  type AnalyticsRangeDays,
+  type PageFilter,
+  type AnalyticsQueryOptions,
+  type TrafficSummary,
+  type SourceRow,
+  type DeviceSplit,
+  type EngagementSummary,
+  type TopPageRow,
+  type FormFunnel,
+  type LocationSummary,
+} from "./analytics/queries";

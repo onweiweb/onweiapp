@@ -1,3 +1,4 @@
+import { TrackView } from "@/_components/TrackView";
 import type { Metadata } from "next";
 import Image from "@/_components/ScaledImage";
 import Link from "next/link";
@@ -232,6 +233,16 @@ export default async function CollectionPage({
 
   return (
     <main>
+      <TrackView
+        event="collection_viewed"
+        props={{
+          category_slug: slug,
+          product_count: categorySections.reduce(
+            (total, section) => total + section.products.length,
+            0,
+          ),
+        }}
+      />
       <JsonLd
         data={buildBreadcrumbJsonLd([
           { name: "Home", path: "/" },

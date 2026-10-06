@@ -1,25 +1,34 @@
 import Link from "next/link";
-import { getWaitlistStats, listInventory } from "@onwei/core";
+import {
+  getTrafficSummary,
+  getWaitlistStats,
+  listInventory,
+} from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { AdminCard } from "./_components/ui";
 
 async function getDashboardCounts() {
-  const [activeProducts, categories, lowStock, waitlist] = await Promise.all([
-    prisma.product.count({ where: { status: "ACTIVE", deletedAt: null } }),
-    prisma.category.count({ where: { isActive: true } }),
-    listInventory({ lowStockOnly: true }),
-    getWaitlistStats(),
-  ]);
+  const [activeProducts, categories, lowStock, waitlist, visitors] =
+    await Promise.all([
+      prisma.product.count({ where: { status: "ACTIVE", deletedAt: null } }),
+      prisma.category.count({ where: { isActive: true } }),
+      listInventory({ lowStockOnly: true }),
+      getWaitlistStats(),
+      // Visitor numbers are a nice-to-have here, so a tracking outage must not
+      // break the dashboard.
+      getTrafficSummary({ days: 7 }).catch(() => null),
+    ]);
   return {
     activeProducts,
     categories,
     lowStockCount: lowStock.length,
     waitlist,
+    visitors,
   };
 }
 
 export default async function DashboardPage() {
-  const { activeProducts, categories, lowStockCount, waitlist } =
+  const { activeProducts, categories, lowStockCount, waitlist, visitors } =
     await getDashboardCounts();
 
   const hasAnyData = activeProducts > 0 || categories > 0 || waitlist.total > 0;
@@ -49,6 +58,19 @@ export default async function DashboardPage() {
             <AdminCard className="transition-colors hover:border-onwei-purple">
               <p className="text-sm text-onwei-blue/70">Running low on stock</p>
               <p className="text-3xl font-semibold">{lowStockCount}</p>
+            </AdminCard>
+          </Link>
+          <Link href="/analytics">
+            <AdminCard className="transition-colors hover:border-onwei-purple">
+              <p className="text-sm text-onwei-blue/70">Visitors this week</p>
+              <p className="text-3xl font-semibold">
+                {visitors ? visitors.uniqueVisitors : "-"}
+              </p>
+              <p className="mt-1 text-xs text-onwei-blue/70">
+                {visitors
+                  ? `${visitors.totalViews} page views. See where they came from.`
+                  : "Not connected yet. Open to see how to set it up."}
+              </p>
             </AdminCard>
           </Link>
           <Link href="/waitlist">

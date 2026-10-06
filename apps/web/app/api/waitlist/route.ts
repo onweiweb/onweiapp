@@ -2,6 +2,8 @@ import {
   checkWaitlistRateLimit,
   getSiteSetting,
   getClientIp,
+  readGeoHeaders,
+  sanitizeAttribution,
   getCurrentConsentVersion,
   parseJsonBody,
   subscribeToWaitlist,
@@ -25,6 +27,8 @@ const bodySchema = z.object({
   company: z.string().optional(),
   // Ticked consent checkbox. Required, enforced below.
   consent: z.boolean().optional(),
+  // Where they came from (UTM values, referrer). Untrusted, cleaned below.
+  attribution: z.unknown().optional(),
 });
 
 export async function POST(request: Request) {
@@ -60,6 +64,8 @@ export async function POST(request: Request) {
     source: "coming_soon_page",
     consentVersion: await getCurrentConsentVersion(["privacy"]),
     ipAddress: ip,
+    attribution: sanitizeAttribution(body.attribution),
+    geo: readGeoHeaders(request.headers),
   });
 
   if (!result.ok) {

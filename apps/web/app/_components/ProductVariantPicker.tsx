@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
+import { track } from "../../lib/analytics/track";
 import { useProductVariant } from "./ProductVariantContext";
 
 function chipClassName(active: boolean) {
@@ -18,6 +21,18 @@ export function ProductVariantPicker() {
     setSelectedSize,
     selectedVariant,
   } = useProductVariant();
+
+  // Report a pick, not the default shown on load.
+  const pathname = usePathname();
+  const lastVariantId = useRef(selectedVariant.id);
+  useEffect(() => {
+    if (lastVariantId.current === selectedVariant.id) return;
+    lastVariantId.current = selectedVariant.id;
+    track("variant_selected", {
+      product_slug: pathname.split("/").pop() ?? "",
+      variant_id: selectedVariant.id,
+    });
+  }, [selectedVariant.id, pathname]);
 
   return (
     <div className="flex w-full flex-col items-start gap-3">

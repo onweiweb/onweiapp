@@ -53,6 +53,14 @@ export async function subscribeToWaitlist(
       source: input.source ?? null,
       consentVersion: input.consentVersion,
       ipAddress: input.ipAddress ?? null,
+      country: input.geo?.country ?? null,
+      region: input.geo?.region ?? null,
+      city: input.geo?.city ?? null,
+      referrerHost: input.attribution?.referrerHost ?? null,
+      utmSource: input.attribution?.utmSource ?? null,
+      utmMedium: input.attribution?.utmMedium ?? null,
+      utmCampaign: input.attribution?.utmCampaign ?? null,
+      utmContent: input.attribution?.utmContent ?? null,
     },
   });
 

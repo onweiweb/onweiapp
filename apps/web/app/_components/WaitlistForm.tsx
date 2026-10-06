@@ -6,6 +6,8 @@ import { Button } from "@onwei/ui";
 import { ConsentCheckbox } from "./ConsentCheckbox";
 import { FieldError, INVALID_BORDER } from "./FieldError";
 import { WaitlistSuccessModal } from "./WaitlistSuccessModal";
+import { getFirstTouch } from "../../lib/analytics/attribution";
+import { useFormTracking } from "../../lib/analytics/useFormTracking";
 
 const MotionButton = motion.create(Button);
 
@@ -34,6 +36,8 @@ const REASON_FIELD: Record<string, Field> = {
   DUPLICATE_PHONE: "phone",
 };
 
+const TRACKED_FIELDS = ["name", "email", "phone"] as const;
+
 const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Figma node 945:4323 (web) / 945:4451 (mobile), "join onwei insiders".
@@ -52,6 +56,7 @@ export function WaitlistForm({
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const tracking = useFormTracking("waitlist", TRACKED_FIELDS);
   const nameId = useId();
   const emailId = useId();
   const phoneId = useId();
@@ -77,6 +82,7 @@ export function WaitlistForm({
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    tracking.submitAttempt();
     setStatus("submitting");
     setError(null);
     setFieldErrors({});
@@ -96,6 +102,7 @@ export function WaitlistForm({
           movementFlex,
           consent,
           company,
+          attribution: getFirstTouch(),
         }),
       });
       const data = (await response.json()) as {
@@ -109,7 +116,9 @@ export function WaitlistForm({
           (data.reason && ERROR_MESSAGES[data.reason]) ??
           "Something went wrong. Please try again.";
         const field = data.reason ? REASON_FIELD[data.reason] : undefined;
+        tracking.submitFailed(data.reason ?? "UNKNOWN");
         if (field) {
+          tracking.fieldError(field, data.reason ?? "UNKNOWN");
           setFieldErrors({ [field]: message });
           focusField(field);
         } else {
@@ -119,6 +128,7 @@ export function WaitlistForm({
         return;
       }
 
+      tracking.submitSuccess();
       setStatus(data.alreadyJoined ? "already" : "success");
       if (!data.alreadyJoined) setShowSuccessModal(true);
       setFullName("");
@@ -127,6 +137,7 @@ export function WaitlistForm({
       setMovementFlex(50);
       setConsent(false);
     } catch {
+      tracking.submitFailed("NETWORK");
       setError("Something went wrong. Please try again.");
       setStatus("error");
     }
@@ -162,6 +173,8 @@ export function WaitlistForm({
             setFullName(event.target.value);
             setFieldError("name");
           }}
+          onFocus={() => tracking.focus("name")}
+          onBlur={() => tracking.blur("name", fullName.trim().length > 0)}
           aria-invalid={Boolean(fieldErrors.name)}
           aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
           placeholder="FULL NAME"
@@ -181,9 +194,14 @@ export function WaitlistForm({
             setEmail(event.target.value);
             setFieldError("email");
           }}
+          onFocus={() => tracking.focus("email")}
           onBlur={() => {
-            if (email.trim() && !EMAIL_SHAPE.test(email.trim()))
+            if (email.trim() && !EMAIL_SHAPE.test(email.trim())) {
               setFieldError("email", ERROR_MESSAGES.INVALID_EMAIL);
+              tracking.fieldError("email", "INVALID_EMAIL");
+            } else {
+              tracking.blur("email", email.trim().length > 0);
+            }
           }}
           aria-invalid={Boolean(fieldErrors.email)}
           aria-describedby={fieldErrors.email ? `${emailId}-error` : undefined}
@@ -204,6 +222,8 @@ export function WaitlistForm({
             setPhone(event.target.value);
             setFieldError("phone");
           }}
+          onFocus={() => tracking.focus("phone")}
+          onBlur={() => tracking.blur("phone", phone.trim().length > 0)}
           aria-invalid={Boolean(fieldErrors.phone)}
           aria-describedby={fieldErrors.phone ? `${phoneId}-error` : undefined}
           placeholder="PHONE NUMBER"

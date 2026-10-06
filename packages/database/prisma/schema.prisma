@@ -744,6 +744,19 @@ model WaitlistEntry {
   // since a waitlist signup isn't a Customer yet.
   consentVersion String
   ipAddress      String?
+  // Where the visitor was when they signed up, read from the host's
+  // IP-geolocation headers (city level, approximate). Null when the host
+  // sent none (local dev, privacy tools).
+  country        String?
+  region         String?
+  city           String?
+  // Host of the page that sent them here (e.g. "l.instagram.com"), and the
+  // first-touch UTM values from the link they arrived on. All optional.
+  referrerHost   String?
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  utmContent     String?
   submittedAt    DateTime  @default(now())
   unsubscribedAt DateTime?
 

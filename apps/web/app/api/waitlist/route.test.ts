@@ -108,5 +108,59 @@ describe.skipIf(!process.env.DATABASE_URL)(
       });
       expect(row).toBeNull();
     });
+
+    it("stores cleaned UTM values, referrer and geo headers", async () => {
+      const { POST } = await import("./route");
+      const body = fixtureBody({
+        attribution: {
+          utmSource: "Instagram",
+          utmMedium: "Story",
+          utmCampaign: "Launch Week",
+          referrerHost: "https://l.instagram.com/x",
+        },
+      });
+
+      const response = await POST(
+        new Request("http://localhost/api/waitlist", {
+          method: "POST",
+          headers: {
+            "x-vercel-ip-country": "IN",
+            "x-vercel-ip-city": "Hyderabad",
+          },
+          body: JSON.stringify(body),
+        }),
+      );
+      expect(response.status).toBe(200);
+
+      const row = await prisma.waitlistEntry.findUnique({
+        where: { email: body.email },
+      });
+      expect(row).toMatchObject({
+        utmSource: "instagram",
+        utmMedium: "story",
+        utmCampaign: "launch-week",
+        referrerHost: "l.instagram.com",
+        country: "IN",
+        city: "Hyderabad",
+      });
+    });
+
+    it("still signs up when attribution is junk or missing", async () => {
+      const { POST } = await import("./route");
+      const body = fixtureBody({ attribution: "not an object" });
+
+      const response = await POST(
+        new Request("http://localhost/api/waitlist", {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      );
+      expect(response.status).toBe(200);
+      const row = await prisma.waitlistEntry.findUnique({
+        where: { email: body.email },
+      });
+      expect(row?.utmSource).toBeNull();
+      expect(row?.country).toBeNull();
+    });
   },
 );

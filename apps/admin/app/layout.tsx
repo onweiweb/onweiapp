@@ -78,6 +78,7 @@ const NAV_GROUPS = [
       },
       { label: "Newsletter", href: "/newsletter", icon: "Mail" },
       { label: "Waitlist", href: "/waitlist", icon: "ListChecks" },
+      { label: "Visitors", href: "/analytics", icon: "BarChart3" },
     ],
   },
   {

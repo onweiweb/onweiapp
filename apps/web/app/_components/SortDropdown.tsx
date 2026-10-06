@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { track } from "../../lib/analytics/track";
 import type { ProductSort } from "@onwei/core";
 
 const SORT_LABELS: Record<ProductSort, string> = {
@@ -16,8 +17,13 @@ const SORT_LABELS: Record<ProductSort, string> = {
 export function SortDropdown({ value }: { value: ProductSort }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
 
   function handleChange(sort: ProductSort) {
+    track("collection_sorted", {
+      category_slug: pathname.split("/").pop() ?? "",
+      sort,
+    });
     const params = new URLSearchParams(searchParams.toString());
     if (sort === "featured") {
       params.delete("sort");

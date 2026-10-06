@@ -82,3 +82,27 @@ it, and, if it's a non-Indian provider, a look at where it processes and
 stores that data, since cross-border transfer rules are part of what the
 DPDP Rules define. This is one more reason the provider choice in
 `docs/OPEN_DECISIONS.md` isn't a purely technical decision.
+
+## Visitor analytics (PostHog)
+
+The storefront sends page and form events to PostHog Cloud (through our own
+`/ingest` path, see `apps/web/next.config.ts`).
+
+- **No cookie, no banner.** PostHog runs cookieless: visitors are counted with
+  a daily-rotating hash, and nothing is stored on the device except a random
+  per-tab visit id and the first-touch UTM values in `sessionStorage`, which
+  disappear when the tab closes. Revisit this with the client's DPDP advisor
+  before launch, and add a consent banner if they want one.
+- **What is sent:** page views, scroll depth, time to first interaction,
+  field names and error codes on forms, UTM values and the referrer host,
+  plus what PostHog itself derives (device type, approximate city and
+  country from the IP address). **Never** what someone typed (name, email,
+  phone).
+- **What we store ourselves:** on `WaitlistEntry`, the UTM values, referrer
+  host, and approximate country, region and city from the host's IP headers.
+  These are personal data tied to a signup, so they follow the same
+  retention and deletion as the rest of the row.
+- **Residency:** PostHog Cloud runs in the US or EU, not India. Pick the
+  region deliberately and confirm it is acceptable to the client.
+- **Keys:** the public project key is safe in the browser. The access key used
+  by the admin dashboard to read data is a secret (server-only env var).

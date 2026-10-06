@@ -24,6 +24,7 @@ import {
   ShieldAlert,
   ScrollText,
   FileSearch,
+  BarChart3,
   type LucideIcon,
 } from "lucide-react";
 
@@ -51,6 +52,7 @@ const ICONS = {
   ShieldAlert,
   ScrollText,
   FileSearch,
+  BarChart3,
 } satisfies Record<string, LucideIcon>;
 
 export type AdminNavIconName = keyof typeof ICONS;

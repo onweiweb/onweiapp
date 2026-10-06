@@ -1,4 +1,4 @@
-import { listWaitlistEntries } from "@onwei/core";
+import { describeSource, listWaitlistEntries } from "@onwei/core";
 import { requirePageSession } from "../_lib/requirePageSession";
 import { parsePage } from "../_lib/pagination";
 import {
@@ -74,6 +74,8 @@ export default async function WaitlistPage({
               <AdminTableHeaderCell>Email</AdminTableHeaderCell>
               <AdminTableHeaderCell>Phone</AdminTableHeaderCell>
               <AdminTableHeaderCell>Movement flex</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Came from</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Location</AdminTableHeaderCell>
               <AdminTableHeaderCell>Status</AdminTableHeaderCell>
               <AdminTableHeaderCell>Joined</AdminTableHeaderCell>
             </AdminTableHead>
@@ -85,6 +87,14 @@ export default async function WaitlistPage({
                   <AdminTableCell>{entry.email}</AdminTableCell>
                   <AdminTableCell>{entry.phone}</AdminTableCell>
                   <AdminTableCell>{entry.movementFlex ?? "-"}</AdminTableCell>
+                  <AdminTableCell>
+                    {describeSource(entry)}
+                    {entry.utmCampaign ? ` (${entry.utmCampaign})` : ""}
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    {[entry.city, entry.country].filter(Boolean).join(", ") ||
+                      "-"}
+                  </AdminTableCell>
                   <AdminTableCell>
                     <AdminBadge
                       tone={entry.unsubscribedAt ? "problem" : "success"}

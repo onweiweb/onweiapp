@@ -15,6 +15,21 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [{ source: "/waitlist", destination: "/ontheway", permanent: true }];
   },
+  // PostHog is sent through our own domain so ad blockers don't drop it.
+  // POSTHOG_INGEST_HOST is the ingest host for the project's region
+  // (us.i.posthog.com or eu.i.posthog.com) plus its assets host.
+  async rewrites() {
+    const ingest = process.env.POSTHOG_INGEST_HOST ?? "us.i.posthog.com";
+    const assets = ingest.replace(/^(\w+)\./, "$1-assets.");
+    return [
+      {
+        source: "/ingest/static/:path*",
+        destination: `https://${assets}/static/:path*`,
+      },
+      { source: "/ingest/:path*", destination: `https://${ingest}/:path*` },
+    ];
+  },
+  skipTrailingSlashRedirect: true,
   async headers() {
     return [
       {

@@ -9,6 +9,9 @@ const ALWAYS_ALLOWED_PREFIXES = [
   "/privacy",
   "/terms",
   "/api/waitlist",
+  // Analytics events (rewritten to PostHog in next.config.ts), must never
+  // be redirected to the waitlist page.
+  "/ingest",
   // Admin's server-to-server ping (triggerCatalogRevalidate), gated by its
   // own REVALIDATE_SECRET bearer-token check inside the route handler
   // itself, so allowing it past this site-mode gate doesn't weaken that.
@@ -67,7 +70,11 @@ export async function proxy(request: NextRequest) {
   }
 
   if (siteMode === "WAITLIST") {
-    return NextResponse.redirect(new URL("/ontheway", request.url));
+    // Keep the query string so a tagged link (utm_source=...) to any page
+    // still lands on the waitlist with its UTM values.
+    const target = new URL("/ontheway", request.url);
+    target.search = request.nextUrl.search;
+    return NextResponse.redirect(target);
   }
 
   return NextResponse.next();

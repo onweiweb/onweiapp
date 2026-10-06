@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TrackView } from "@/_components/TrackView";
 import { notFound, permanentRedirect } from "next/navigation";
 import { findRedirect, formatCurrency, summarizeReviews } from "@onwei/core";
 import {
@@ -120,6 +121,14 @@ export default async function ProductPage({
 
   return (
     <main>
+      <TrackView
+        event="product_viewed"
+        props={{
+          product_id: product.id,
+          product_slug: product.slug,
+          category_slug: product.category.slug,
+        }}
+      />
       <JsonLd data={buildProductJsonLd(product)} />
       <JsonLd
         data={buildBreadcrumbJsonLd([

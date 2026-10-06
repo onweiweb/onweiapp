@@ -8,6 +8,7 @@ import {
   buildOrganizationJsonLd,
   buildWebSiteJsonLd,
 } from "../lib/seo/structuredData";
+import { AnalyticsProvider } from "./_components/AnalyticsProvider";
 import "./globals.css";
 
 // Figma specs "Author Variable" (display headlines, weights Medium/Semibold/
@@ -89,6 +90,7 @@ export default function RootLayout({
         <JsonLd data={buildOrganizationJsonLd()} />
         <JsonLd data={buildWebSiteJsonLd()} />
         {children}
+        <AnalyticsProvider />
         <SpeedInsights />
       </body>
     </html>

@@ -1,3 +1,5 @@
+import type { Attribution, GeoLocation } from "../analytics/attribution";
+
 export interface SubscribeToWaitlistInput {
   fullName: string;
   email: string;
@@ -7,6 +9,9 @@ export interface SubscribeToWaitlistInput {
   source?: string;
   consentVersion: string;
   ipAddress?: string;
+  // Where they came from and roughly where they are, all optional.
+  attribution?: Partial<Attribution>;
+  geo?: Partial<GeoLocation>;
 }
 
 export type SubscribeToWaitlistFailureReason =
@@ -30,6 +35,14 @@ export interface WaitlistEntrySummary {
   phone: string;
   movementFlex: number | null;
   source: string | null;
+  country: string | null;
+  region: string | null;
+  city: string | null;
+  referrerHost: string | null;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmContent: string | null;
   submittedAt: Date;
   unsubscribedAt: Date | null;
 }

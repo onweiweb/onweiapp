@@ -78,3 +78,9 @@ audience-segmentation, or scheduling model exists yet anywhere in the repo.
 Needs its own scoping conversation (which provider, what content, how
 consent/unsubscribe is enforced per `docs/SECURITY_AND_DPDP.md`) before any
 of that gets built.
+
+**Analytics region and consent.** Visitor analytics use PostHog Cloud
+(cookieless, so no consent banner). Still need the client to confirm the US
+or EU region is acceptable for DPDP, and whether they want a consent banner
+anyway (a banner is new storefront UI that is not in Figma, so it needs
+design approval first). See `docs/SECURITY_AND_DPDP.md`, "Visitor analytics".
