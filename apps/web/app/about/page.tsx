@@ -6,6 +6,7 @@ import { SiteFooter } from "@/_components/SiteFooter";
 import { WaitlistHeader } from "@/_components/WaitlistHeader";
 import { WaitlistFooter } from "@/_components/WaitlistFooter";
 import { ScrollReveal } from "@/_components/ScrollReveal";
+import { ExpandableBio } from "@/_components/ExpandableBio";
 import { HoverLink } from "@/_components/HoverLink";
 
 // Built from Figma (file dQvPgsv3kEAYb4ca5mu08U, frame 760:4492 "About Us" /
@@ -30,6 +31,19 @@ import { HoverLink } from "@/_components/HoverLink";
 // data that changes, and an admin flipping siteMode wouldn't show up here
 // short of a redeploy.
 export const revalidate = 30;
+
+const SABHYA_BIO = [
+  "He grew up playing table tennis professionally, the kind of professional where weekends were tournaments, not plans. He represented India internationally and was ranked among the top 4 in the country. Sport wasn't something he did on the side. It was just how he was wired.",
+  "Playing at that level meant access, to training, to facilities, to gear that actually matched how hard he was working. He didn't think much of it then. That's just how it worked when you were in those circles.",
+  "He eventually stepped back from professional table tennis. Picked up tennis, running, pickleball, padel, got deep into all of them. And somewhere in that shift from professional athlete to regular person at a sports store, the gap became impossible to ignore: the gear he'd taken for granted as a pro simply wasn't available to everyone else. Not at a fair price. Not with any real thought behind how it looked. Not from an Indian brand worth being proud of.",
+  "That gap stopped being an observation and started being an itch he couldn't ignore.",
+];
+
+const SAKSHI_BIO = [
+  "Even at 22, she couldn't buy something ugly. Life was too short. She spent years at LVMH understanding why people pay a premium for things that make them feel something, and years at Marico and Diageo understanding how to make that feeling accessible to more people. She got very good at the gap between the two. She found Pilates. Then functional movement. Then a deeply unhealthy amount of time following global fitness creators whose lives looked like a beautiful, sweaty Pinterest board. She was in. Completely.",
+  "Her mat looked clinical. Her resistance band came in a zip-lock bag, like a snack. Her gym bag had given up on life. Meanwhile everything she was watching online, the studios, the creators, the aesthetic, looked aspirational and effortless.",
+  "The gear available to her in India? Distinctly not. She didn't want to pay Lululemon prices. She didn't want Decathlon aesthetics. She wanted the thing in the middle. It didn't exist. She made a note.",
+];
 
 export const metadata: Metadata = {
   title: "About",
@@ -196,38 +210,10 @@ export default async function AboutPage() {
             />
             <span className="relative">Sabhya</span>
           </p>
-          <div className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-white">
-            <p>
-              He grew up playing table tennis professionally, the kind of
-              professional where weekends were tournaments, not plans. He
-              represented India internationally and was ranked among the top 4
-              in the country. Sport wasn&apos;t something he did on the side. It
-              was just how he was wired.
-            </p>
-            <br />
-            <p>
-              Playing at that level meant access, to training, to facilities, to
-              gear that actually matched how hard he was working. He didn&apos;t
-              think much of it then. That&apos;s just how it worked when you
-              were in those circles.
-            </p>
-            <br />
-            <p>
-              He eventually stepped back from professional table tennis. Picked
-              up tennis, running, pickleball, padel, got deep into all of them.
-              And somewhere in that shift from professional athlete to regular
-              person at a sports store, the gap became impossible to ignore: the
-              gear he&apos;d taken for granted as a pro simply wasn&apos;t
-              available to everyone else. Not at a fair price. Not with any real
-              thought behind how it looked. Not from an Indian brand worth being
-              proud of.
-            </p>
-            <br />
-            <p>
-              That gap stopped being an observation and started being an itch he
-              couldn&apos;t ignore.
-            </p>
-          </div>
+          <ExpandableBio
+            className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-white"
+            paragraphs={SABHYA_BIO}
+          />
           {!isWaitlistMode && (
             <span className="w-fit rounded-[1.875rem] bg-onwei-beige px-6 py-3 font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-blue">
               Read Sabhya&apos;s substack
@@ -363,33 +349,10 @@ export default async function AboutPage() {
             />
             <span className="relative">Sakshi</span>
           </p>
-          <div className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-white">
-            <p>
-              Even at 22, she couldn&apos;t buy something ugly. Life was too
-              short. She spent years at LVMH understanding why people pay a
-              premium for things that make them feel something, and years at
-              Marico and Diageo understanding how to make that feeling
-              accessible to more people. She got very good at the gap between
-              the two. She found Pilates. Then functional movement. Then a
-              deeply unhealthy amount of time following global fitness creators
-              whose lives looked like a beautiful, sweaty Pinterest board. She
-              was in. Completely.
-            </p>
-            <br />
-            <p>
-              Her mat looked clinical. Her resistance band came in a zip-lock
-              bag, like a snack. Her gym bag had given up on life. Meanwhile
-              everything she was watching online, the studios, the creators, the
-              aesthetic, looked aspirational and effortless.
-            </p>
-            <br />
-            <p>
-              The gear available to her in India? Distinctly not. She
-              didn&apos;t want to pay Lululemon prices. She didn&apos;t want
-              Decathlon aesthetics. She wanted the thing in the middle. It
-              didn&apos;t exist. She made a note.
-            </p>
-          </div>
+          <ExpandableBio
+            className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-white"
+            paragraphs={SAKSHI_BIO}
+          />
         </ScrollReveal>
       </section>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "@/_components/ScaledImage";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   animate,
   motion,
@@ -11,6 +11,7 @@ import {
   type MotionValue,
 } from "motion/react";
 import { WaitlistMarquee } from "./WaitlistMarquee";
+import { ScrollReveal } from "./ScrollReveal";
 
 // Full loop duration (card 1 through card 4, then straight back to card 1).
 // Split evenly, this is ~2.5s per card, per feedback, 18s (4.5s/card) read
@@ -556,6 +557,37 @@ function ScrollCard({
   );
 }
 
+// Tracks how much of the card strip is on screen. `revealed` latches true
+// once the strip is mostly visible (>= 60% of it, or, when the strip is
+// taller than the viewport, when it fills over half of the viewport), so a
+// strip that is only peeking in at the bottom of a short phone screen does
+// not start. `visible` is live and drives pause/resume.
+function useStripVisibility(ref: React.RefObject<HTMLElement | null>) {
+  const [revealed, setRevealed] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        const viewportHeight = entry.rootBounds?.height ?? window.innerHeight;
+        const mostlyVisible =
+          entry.intersectionRatio >= 0.6 ||
+          entry.intersectionRect.height >= viewportHeight * 0.5;
+        if (mostlyVisible) setRevealed(true);
+        setVisible(entry.isIntersecting);
+      },
+      { threshold: Array.from({ length: 21 }, (_, i) => i / 20) },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [ref]);
+
+  return { revealed, visible };
+}
+
 /**
  * Per client feedback, this no longer scrubs with scroll position, it
  * autoplays on load and loops forever, like a background video: card 1 → 2
@@ -571,37 +603,67 @@ function ScrollCard({
  * instant progress resets to 0, matching how a looping video cuts back to
  * its first frame rather than fading through black.
  */
+/*
+ * The strip is always visible, parked on card 1's settled frame, so there is
+ * never an empty gap. Once it is mostly on screen the loop starts from that
+ * frame (no jump), runs to the end of the cycle, then loops from the start.
+ * The loop pauses while the strip is off screen and resumes where it left
+ * off.
+ */
 export function WaitlistCardScroll({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const progress = useMotionValue(0);
+  const restFrame = 1 / CARD_COUNT / 2;
+  const progress = useMotionValue(restFrame);
   const reduceMotion = useReducedMotion();
+  const stripRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<ReturnType<typeof animate> | null>(null);
+  const { revealed, visible } = useStripVisibility(stripRef);
+  const settled = revealed && !reduceMotion;
 
   useEffect(() => {
-    if (reduceMotion) {
-      // Freeze on card 1's settled resting frame (past its own intro, well
-      // before its outro starts) instead of looping, same "skip straight
-      // to the final state" contract ScrollReveal/WaitlistHeader use for
-      // this preference elsewhere on the page.
-      progress.set(1 / CARD_COUNT / 2);
-      return;
-    }
-    const controls = animate(progress, 1, {
-      duration: CYCLE_SECONDS,
+    // Reduced motion: stay frozen on card 1's settled resting frame (past
+    // its own intro, well before its outro starts) instead of looping.
+    if (!settled) return;
+    let cancelled = false;
+    controlsRef.current = animate(progress, 1, {
+      duration: CYCLE_SECONDS * (1 - restFrame),
       ease: "linear",
-      repeat: Infinity,
+      onComplete: () => {
+        if (cancelled) return;
+        progress.set(0);
+        controlsRef.current = animate(progress, 1, {
+          duration: CYCLE_SECONDS,
+          ease: "linear",
+          repeat: Infinity,
+        });
+      },
     });
-    return () => controls.stop();
-  }, [progress, reduceMotion]);
+    return () => {
+      cancelled = true;
+      controlsRef.current?.stop();
+      controlsRef.current = null;
+    };
+  }, [progress, settled, restFrame]);
+
+  useEffect(() => {
+    if (!settled) return;
+    if (visible) controlsRef.current?.play();
+    else controlsRef.current?.pause();
+  }, [visible, settled]);
 
   return (
     <>
       <div className="flex w-full flex-col items-center justify-center gap-4 px-3 py-4 desk:gap-10 desk:px-11 desk:py-6">
         <div className="flex w-full max-w-[90rem] flex-col items-center gap-4 desk:flex-row desk:justify-between desk:gap-8">
           {children}
-          <div className="relative aspect-square w-full desk:aspect-auto desk:h-[39.6875rem] desk:flex-1">
+          <div
+            ref={stripRef}
+            className="relative aspect-square w-full desk:aspect-auto desk:h-[39.6875rem] desk:flex-1"
+          >
+            {" "}
             {CARDS.map((Content, index) => (
               <ScrollCard
                 key={index}
@@ -612,9 +674,12 @@ export function WaitlistCardScroll({
             ))}
           </div>
         </div>
-        <div className="hidden w-full max-w-[90rem] desk:block">
+        <ScrollReveal
+          variant="fade"
+          className="hidden w-full max-w-[90rem] desk:block"
+        >
           <WaitlistMarquee />
-        </div>
+        </ScrollReveal>
       </div>
       {/* Mobile counterpart to the desktop-only marquee above.
           pt-6 only (not py-6), Figma's mobile mock (node 945:4433/945:4442)
@@ -624,9 +689,9 @@ export function WaitlistCardScroll({
           that 24px via its own top padding (page.tsx's `py-6` on the
           `#join-onwei-insiders` section); adding a matching bottom pad here
           too doubled it to 48px. */}
-      <div className="w-full px-3 pt-6 desk:hidden">
+      <ScrollReveal variant="fade" className="w-full px-3 pt-6 desk:hidden">
         <WaitlistMarquee />
-      </div>
+      </ScrollReveal>
     </>
   );
 }
