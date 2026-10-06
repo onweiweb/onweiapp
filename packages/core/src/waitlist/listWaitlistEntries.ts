@@ -6,13 +6,14 @@ import type {
   WaitlistStats,
 } from "./types";
 
-const DEFAULT_TAKE = 50;
-const MAX_TAKE = 200;
+const DEFAULT_PAGE_SIZE = 50;
+const MAX_PAGE_SIZE = 200;
 
 export async function listWaitlistEntries(
   input: ListWaitlistEntriesInput = {},
 ): Promise<ListWaitlistEntriesResult> {
-  const take = Math.min(input.take ?? DEFAULT_TAKE, MAX_TAKE);
+  const pageSize = Math.min(input.pageSize ?? DEFAULT_PAGE_SIZE, MAX_PAGE_SIZE);
+  const page = Math.max(input.page ?? 1, 1);
   const search = input.search?.trim();
 
   const where: Prisma.WaitlistEntryWhereInput | undefined = search
@@ -25,38 +26,21 @@ export async function listWaitlistEntries(
       }
     : undefined;
 
-  const [entries, total, cursorEntry] = await Promise.all([
+  const skip = (page - 1) * pageSize;
+  const [fetched, total] = await Promise.all([
     prisma.waitlistEntry.findMany({
-      take: take + 1,
-      ...(input.cursor ? { cursor: { id: input.cursor }, skip: 1 } : {}),
+      skip,
+      take: pageSize + 1,
       where,
       orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
     }),
     prisma.waitlistEntry.count({ where }),
-    input.cursor
-      ? prisma.waitlistEntry.findUnique({
-          where: { id: input.cursor },
-          select: { submittedAt: true },
-        })
-      : null,
   ]);
 
-  // Rows newer than the cursor row, plus the cursor row itself, were already shown.
-  const alreadyShown = cursorEntry
-    ? await prisma.waitlistEntry.count({
-        where: {
-          AND: [where ?? {}, { submittedAt: { gte: cursorEntry.submittedAt } }],
-        },
-      })
-    : 0;
-
-  const hasMore = entries.length > take;
-  const page = hasMore ? entries.slice(0, take) : entries;
-
   return {
-    entries: page,
-    nextCursor: hasMore ? (page[page.length - 1]?.id ?? null) : null,
-    firstSerial: total - alreadyShown,
+    entries: fetched.slice(0, pageSize),
+    hasNext: fetched.length > pageSize,
+    firstSerial: total - skip,
     total,
   };
 }
@@ -68,7 +52,12 @@ export async function getWaitlistStats(): Promise<WaitlistStats> {
     prisma.waitlistEntry.count({ where: { unsubscribedAt: { not: null } } }),
     prisma.waitlistEntry.count({ where: { submittedAt: { gte: weekAgo } } }),
   ]);
-  return { total, active: total - unsubscribed, unsubscribed, joinedLast7Days };
+  return {
+    total,
+    active: total - unsubscribed,
+    unsubscribed,
+    joinedLast7Days,
+  };
 }
 
 function csvEscape(value: string): string {

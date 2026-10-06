@@ -1,10 +1,11 @@
-import Link from "next/link";
 import { listWaitlistEntries } from "@onwei/core";
 import { requirePageSession } from "../_lib/requirePageSession";
+import { parsePage } from "../_lib/pagination";
 import {
   AdminBadge,
   AdminButton,
   AdminInput,
+  AdminPager,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
@@ -15,17 +16,16 @@ import {
 export default async function WaitlistPage({
   searchParams,
 }: {
-  searchParams: Promise<{ cursor?: string; q?: string }>;
+  searchParams: Promise<{ page?: string; q?: string }>;
 }) {
   await requirePageSession("waitlist:view");
-  const { cursor, q } = await searchParams;
+  const { page: pageParam, q } = await searchParams;
+  const page = parsePage(pageParam);
 
-  const { entries, nextCursor, firstSerial, total } = await listWaitlistEntries(
-    {
-      cursor,
-      search: q,
-    },
-  );
+  const { entries, hasNext, firstSerial, total } = await listWaitlistEntries({
+    page,
+    search: q,
+  });
 
   return (
     <main className="flex flex-col gap-6">
@@ -99,21 +99,14 @@ export default async function WaitlistPage({
               ))}
             </tbody>
           </AdminTable>
-
-          {nextCursor ? (
-            <Link
-              href={{
-                pathname: "/waitlist",
-                query: { cursor: nextCursor, ...(q ? { q } : {}) },
-              }}
-            >
-              <AdminButton type="button" variant="secondary">
-                Load more
-              </AdminButton>
-            </Link>
-          ) : null}
         </>
       )}
+      <AdminPager
+        pathname="/waitlist"
+        page={page}
+        hasNext={hasNext}
+        params={q ? { q } : {}}
+      />
     </main>
   );
 }

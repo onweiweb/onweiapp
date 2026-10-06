@@ -35,14 +35,15 @@ export interface WaitlistEntrySummary {
 }
 
 export interface ListWaitlistEntriesInput {
-  cursor?: string;
-  take?: number;
+  /** 1-based page number. */
+  page?: number;
+  pageSize?: number;
   search?: string;
 }
 
 export interface ListWaitlistEntriesResult {
   entries: WaitlistEntrySummary[];
-  nextCursor: string | null;
+  hasNext: boolean;
   /** Serial number of the first entry in `entries`. Counts down by one per row (newest = highest). */
   firstSerial: number;
   /** Everyone matching the search, across all pages. */
