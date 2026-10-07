@@ -6,6 +6,7 @@ import {
   type HogqlValue,
   type PosthogConfig,
 } from "./posthogClient";
+import { slugifyUtmValue } from "./attribution";
 import { describeSource } from "./sourceLabels";
 
 export type AnalyticsRangeDays = 7 | 30 | 90;
@@ -35,33 +36,13 @@ export const PAGE_TYPES: readonly { value: string; label: string }[] = [
   { value: "journal", label: "Journal" },
 ];
 
-// Short on purpose: numbers more than a minute old confuse people who are
-// watching them change. No caching at all while developing locally.
-const CACHE_TTL_MS = process.env.NODE_ENV === "development" ? 0 : 60 * 1000;
-const cache = new Map<string, { at: number; value: unknown }>();
-
-/** Test helper. */
-export function clearAnalyticsCache() {
-  cache.clear();
-}
-
-async function cached<T>(key: string, load: () => Promise<T>): Promise<T> {
-  const hit = cache.get(key);
-  if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.value as T;
-  const value = await load();
-  cache.set(key, { at: Date.now(), value });
-  return value;
-}
-
 interface Scope {
   where: string;
   values: Record<string, HogqlValue>;
-  days: number;
   run: (q: string, v?: Record<string, HogqlValue>) => Promise<HogqlRow[]>;
-  cacheKey: string;
 }
 
-function scopeFor(opts: AnalyticsQueryOptions, name: string): Scope {
+function scopeFor(opts: AnalyticsQueryOptions): Scope {
   const config = opts.config === undefined ? readPosthogConfig() : opts.config;
   const days = opts.days;
   const values: Record<string, HogqlValue> = {
@@ -79,10 +60,8 @@ function scopeFor(opts: AnalyticsQueryOptions, name: string): Scope {
   return {
     where,
     values,
-    days,
     run: (q, v = {}) =>
       runHogql(q, { ...values, ...v }, { config, fetchImpl: opts.fetchImpl }),
-    cacheKey: `${name}:${days}:${JSON.stringify(page)}:${config?.projectId ?? "none"}`,
   };
 }
 
@@ -104,15 +83,15 @@ export interface TrafficSummary {
 export function getTrafficSummary(
   opts: AnalyticsQueryOptions,
 ): Promise<TrafficSummary> {
-  const s = scopeFor(opts, "traffic");
-  return cached(s.cacheKey, async () => {
+  const s = scopeFor(opts);
+  return (async () => {
     const [totals, perDay] = await Promise.all([
       s.run(
         `SELECT count() AS views, uniq(distinct_id) AS visitors
          FROM events WHERE event = '$pageview' AND ${s.where}`,
       ),
       s.run(
-        `SELECT toString(toDate(timestamp)) AS day, count() AS views, uniq(distinct_id) AS visitors
+        `SELECT toString(toDate(toTimeZone(timestamp, 'Asia/Kolkata'))) AS day, count() AS views, uniq(distinct_id) AS visitors
          FROM events WHERE event = '$pageview' AND ${s.where}
          GROUP BY day ORDER BY day`,
       ),
@@ -126,7 +105,7 @@ export function getTrafficSummary(
         visitors: num(r[2]),
       })),
     };
-  });
+  })();
 }
 
 // ---------------------------------------------------------------- sources
@@ -136,9 +115,10 @@ export interface SourceRow {
   /** The campaign name from the tracked link, or null when there is none. */
   campaign: string | null;
   visits: number;
-  signups: number;
-  /** Signups divided by visits, 0 to 1. */
-  signupRate: number;
+  /** Null when a page filter is on: signups are not tied to a page. */
+  signups: number | null;
+  /** Signups divided by visits, 0 to 1. Null when signups is null. */
+  signupRate: number | null;
 }
 
 interface RawSource {
@@ -159,8 +139,17 @@ function mergeSources(
 ): Map<string, number> {
   const out = new Map<string, number>();
   for (const r of raws) {
-    const label = describeSource({ ...r, ownHost });
-    const campaign = r.utmSource ? (r.utmCampaign ?? "") : "";
+    // Signups are stored as slugs. Visits carry whatever was in the link, so
+    // "Instagram" and "instagram" must land in the same row.
+    const slug = (v: string | null) => (v ? slugifyUtmValue(v) || null : null);
+    const utmSource = slug(r.utmSource);
+    const label = describeSource({
+      ...r,
+      utmSource,
+      utmMedium: slug(r.utmMedium),
+      ownHost,
+    });
+    const campaign = utmSource ? (slug(r.utmCampaign) ?? "") : "";
     const key = `${label}${KEY_SEPARATOR}${campaign}`;
     out.set(key, (out.get(key) ?? 0) + r.count);
   }
@@ -170,9 +159,12 @@ function mergeSources(
 export function getSourceBreakdown(
   opts: AnalyticsQueryOptions,
 ): Promise<SourceRow[]> {
-  const s = scopeFor(opts, "sources");
-  return cached(s.cacheKey, async () => {
+  const s = scopeFor(opts);
+  return (async () => {
     const since = new Date(Date.now() - opts.days * 24 * 60 * 60 * 1000);
+    // Signups are not tied to a page, so with a page filter on they would be
+    // compared against only part of the visits.
+    const signupsApply = (opts.page ?? { kind: "all" }).kind === "all";
     const [visitRows, signupGroups] = await Promise.all([
       s.run(
         `SELECT properties.ft_utm_source, properties.ft_utm_medium, properties.ft_utm_campaign,
@@ -180,11 +172,13 @@ export function getSourceBreakdown(
          FROM events WHERE event = '$pageview' AND ${s.where}
          GROUP BY 1, 2, 3, 4`,
       ),
-      prisma.waitlistEntry.groupBy({
-        by: ["utmSource", "utmMedium", "utmCampaign", "referrerHost"],
-        where: { submittedAt: { gte: since } },
-        _count: { _all: true },
-      }),
+      signupsApply
+        ? prisma.waitlistEntry.groupBy({
+            by: ["utmSource", "utmMedium", "utmCampaign", "referrerHost"],
+            where: { submittedAt: { gte: since } },
+            _count: { _all: true },
+          })
+        : Promise.resolve([]),
     ]);
 
     const visits = mergeSources(
@@ -213,17 +207,19 @@ export function getSourceBreakdown(
       .map((key) => {
         const [label = "", campaign = ""] = key.split(KEY_SEPARATOR);
         const v = visits.get(key) ?? 0;
-        const su = signups.get(key) ?? 0;
+        const su = signupsApply ? (signups.get(key) ?? 0) : null;
         return {
           label,
           campaign: campaign || null,
           visits: v,
           signups: su,
-          signupRate: v > 0 ? Math.min(su / v, 1) : 0,
+          signupRate: su === null ? null : v > 0 ? Math.min(su / v, 1) : 0,
         };
       })
-      .sort((a, b) => b.visits - a.visits || b.signups - a.signups);
-  });
+      .sort(
+        (a, b) => b.visits - a.visits || (b.signups ?? 0) - (a.signups ?? 0),
+      );
+  })();
 }
 
 // ----------------------------------------------------------------- device
@@ -238,8 +234,8 @@ export interface DeviceSplit {
 export function getDeviceSplit(
   opts: AnalyticsQueryOptions,
 ): Promise<DeviceSplit> {
-  const s = scopeFor(opts, "device");
-  return cached(s.cacheKey, async () => {
+  const s = scopeFor(opts);
+  return (async () => {
     const rows = await s.run(
       `SELECT properties.$device_type AS device, uniq(properties.visit_id) AS visits
        FROM events WHERE event = '$pageview' AND ${s.where}
@@ -255,7 +251,7 @@ export function getDeviceSplit(
       else split.other += n;
     }
     return split;
-  });
+  })();
 }
 
 // ------------------------------------------------------------- engagement
@@ -275,8 +271,8 @@ export interface EngagementSummary {
 export function getEngagement(
   opts: AnalyticsQueryOptions,
 ): Promise<EngagementSummary> {
-  const s = scopeFor(opts, "engagement");
-  return cached(s.cacheKey, async () => {
+  const s = scopeFor(opts);
+  return (async () => {
     const rows = await s.run(
       `SELECT count() AS visits,
               countIf(pv <= 1 AND interactions = 0) AS bounced,
@@ -307,7 +303,7 @@ export function getEngagement(
       typicalSecondsToFirstInteraction:
         Math.round((num(r[5]) / 1000) * 10) / 10,
     };
-  });
+  })();
 }
 
 // -------------------------------------------------------------- top pages
@@ -323,8 +319,8 @@ export interface TopPageRow {
 export function getTopPages(
   opts: AnalyticsQueryOptions,
 ): Promise<TopPageRow[]> {
-  const s = scopeFor(opts, "pages");
-  return cached(s.cacheKey, async () => {
+  const s = scopeFor(opts);
+  return (async () => {
     const rows = await s.run(
       `SELECT properties.$pathname AS path,
               countIf(event = '$pageview') AS views,
@@ -343,7 +339,7 @@ export function getTopPages(
         visitors: num(r[2]),
         reachedHalfway: num(r[4]) > 0 ? Math.min(num(r[3]) / num(r[4]), 1) : 0,
       }));
-  });
+  })();
 }
 
 // ------------------------------------------------------------------ forms
@@ -366,8 +362,8 @@ export interface FormFunnel {
 export function getFormFunnels(
   opts: AnalyticsQueryOptions,
 ): Promise<FormFunnel[]> {
-  const s = scopeFor(opts, "forms");
-  return cached(s.cacheKey, async () => {
+  const s = scopeFor(opts);
+  return (async () => {
     const rows = await s.run(
       `SELECT properties.form_name AS form,
               event,
@@ -430,7 +426,7 @@ export function getFormFunnels(
       ],
       leftAt: f.left.sort((a, b) => b.people - a.people),
     }));
-  });
+  })();
 }
 
 // -------------------------------------------------------------- locations
@@ -443,16 +439,19 @@ export interface LocationRow {
 export interface LocationSummary {
   /** Top places visitors browsed from, approximate (from their network). */
   visitors: LocationRow[];
-  /** Top places people signed up from, approximate. */
+  /** Top places people signed up from, approximate. Empty when a page filter is on. */
   signups: LocationRow[];
+  /** True when signups are left out because a page filter is on. */
+  signupsHidden: boolean;
 }
 
 export function getLocations(
   opts: AnalyticsQueryOptions,
 ): Promise<LocationSummary> {
-  const s = scopeFor(opts, "locations");
-  return cached(s.cacheKey, async () => {
+  const s = scopeFor(opts);
+  return (async () => {
     const since = new Date(Date.now() - opts.days * 24 * 60 * 60 * 1000);
+    const signupsHidden = (opts.page ?? { kind: "all" }).kind !== "all";
     const [visitorRows, signupGroups] = await Promise.all([
       s.run(
         `SELECT properties.$geoip_city_name AS city, properties.$geoip_country_name AS country,
@@ -460,13 +459,15 @@ export function getLocations(
          FROM events WHERE event = '$pageview' AND ${s.where}
          GROUP BY city, country ORDER BY people DESC LIMIT 10`,
       ),
-      prisma.waitlistEntry.groupBy({
-        by: ["city", "country"],
-        where: { submittedAt: { gte: since } },
-        _count: { _all: true },
-        orderBy: { _count: { id: "desc" } },
-        take: 10,
-      }),
+      signupsHidden
+        ? Promise.resolve([])
+        : prisma.waitlistEntry.groupBy({
+            by: ["city", "country"],
+            where: { submittedAt: { gte: since } },
+            _count: { _all: true },
+            orderBy: { _count: { id: "desc" } },
+            take: 10,
+          }),
     ]);
     const place = (city: string | null, country: string | null) =>
       [city, country].filter(Boolean).join(", ") || "Unknown";
@@ -479,6 +480,7 @@ export function getLocations(
         place: place(g.city, g.country),
         people: g._count._all,
       })),
+      signupsHidden,
     };
-  });
+  })();
 }

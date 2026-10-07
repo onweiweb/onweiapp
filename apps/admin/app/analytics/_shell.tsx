@@ -9,6 +9,7 @@ import { SECTION_TITLES, SectionSkeleton } from "./_skeleton";
 interface ShellState {
   pending: boolean;
   pendingHref: string | null;
+  refreshMessage: string | null;
   navigate: (href: string) => void;
   refresh: () => void;
 }
@@ -31,9 +32,11 @@ export function AnalyticsShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
 
   const navigate = (href: string) => {
     setPendingHref(href);
+    setRefreshMessage(null);
     startTransition(() => {
       router.push(href);
     });
@@ -42,7 +45,12 @@ export function AnalyticsShell({ children }: { children: React.ReactNode }) {
   const refresh = () => {
     setPendingHref(null);
     startTransition(async () => {
-      await refreshAnalytics();
+      const result = await refreshAnalytics();
+      if (!result.ok) {
+        setRefreshMessage(result.message);
+        return;
+      }
+      setRefreshMessage(null);
       router.refresh();
     });
   };
@@ -52,6 +60,7 @@ export function AnalyticsShell({ children }: { children: React.ReactNode }) {
       value={{
         pending,
         pendingHref: pending ? pendingHref : null,
+        refreshMessage,
         navigate,
         refresh,
       }}
@@ -120,15 +129,22 @@ export function ReportArea({ children }: { children: React.ReactNode }) {
 
 /** Fetches fresh numbers instead of waiting for the saved ones to expire. */
 export function RefreshButton() {
-  const { refresh, pending } = useShell();
+  const { refresh, pending, refreshMessage } = useShell();
   return (
-    <button
-      type="button"
-      onClick={refresh}
-      disabled={pending}
-      className="flex items-center gap-2 rounded-[30px] border border-onwei-blue/25 px-4 py-1.5 text-sm disabled:opacity-60"
-    >
-      {pending ? "Refreshing..." : "Refresh numbers"}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={refresh}
+        disabled={pending}
+        className="flex items-center gap-2 rounded-[30px] border border-onwei-blue/25 px-4 py-1.5 text-sm disabled:opacity-60"
+      >
+        {pending ? "Refreshing..." : "Refresh numbers"}
+      </button>
+      {refreshMessage ? (
+        <span role="alert" className="self-center text-sm text-red-700">
+          {refreshMessage}
+        </span>
+      ) : null}
+    </>
   );
 }

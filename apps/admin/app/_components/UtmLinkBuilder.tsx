@@ -12,9 +12,12 @@ const INITIAL: LinkBuilderState = { status: "idle" };
 export function UtmLinkBuilder({
   channels,
   pages,
+  campaigns = [],
 }: {
   channels: readonly { id: string; label: string }[];
   pages: readonly { value: string; label: string }[];
+  /** Campaign names already in use, offered as suggestions. */
+  campaigns?: readonly string[];
 }) {
   const [state, action, pending] = useActionState(buildLinkAction, INITIAL);
   const [copied, setCopied] = useState(false);
@@ -62,9 +65,18 @@ export function UtmLinkBuilder({
             required
             placeholder="e.g. launch week"
             maxLength={64}
+            list="known-campaigns"
           />
+          <datalist id="known-campaigns">
+            {campaigns.map((c) => (
+              <option key={c} value={c} />
+            ))}
+          </datalist>
           <span className="text-xs text-onwei-blue/70">
             A short name so you can tell this push apart from the next one.
+            {campaigns.length > 0
+              ? " Reuse a name you've used before to keep its numbers together."
+              : ""}
           </span>
         </label>
         <label className="flex flex-col gap-1.5 text-sm">

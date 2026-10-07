@@ -1,11 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { traffic } from "./analytics/_data";
-import {
-  getTrafficSummary,
-  getWaitlistStats,
-  listInventory,
-} from "@onwei/core";
+import { getWaitlistStats, listInventory } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { AdminCard } from "./_components/ui";
 
@@ -43,7 +39,9 @@ async function VisitorsThisWeek() {
     days: 7,
     page: { kind: "all" },
     ownHost: null,
-  }).catch(() => null);
+  })
+    .then((r) => r.data)
+    .catch(() => null);
   return <VisitorsCard visitors={visitors} />;
 }
 
@@ -53,9 +51,6 @@ async function getDashboardCounts() {
     prisma.category.count({ where: { isActive: true } }),
     listInventory({ lowStockOnly: true }),
     getWaitlistStats(),
-    // Visitor numbers are a nice-to-have here, so a tracking outage must not
-    // break the dashboard.
-    getTrafficSummary({ days: 7 }).catch(() => null),
   ]);
   return {
     activeProducts,

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { UTM_CHANNELS } from "@onwei/core";
+import { UTM_CHANNELS, listKnownCampaigns } from "@onwei/core";
+import { prisma } from "@onwei/database";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { UtmLinkBuilder } from "../../_components/UtmLinkBuilder";
 
@@ -8,10 +9,30 @@ const PAGES = [
   { value: "/", label: "Homepage" },
   { value: "/collection/all", label: "Shop all" },
   { value: "/about", label: "About page" },
-] as const;
+  { value: "/journal", label: "Journal" },
+];
+
+// Linking straight to one product is common for story and message shares.
+async function getProductPages() {
+  const products = await prisma.product.findMany({
+    where: { status: "ACTIVE", deletedAt: null },
+    select: { name: true, slug: true },
+    orderBy: { name: "asc" },
+    take: 100,
+  });
+  return products.map((p) => ({
+    value: `/product/${p.slug}`,
+    label: `Product: ${p.name}`,
+  }));
+}
 
 export default async function UtmLinksPage() {
   await requirePageSession("waitlist:view");
+  // Suggestions are a nicety, so a failure here must not break the page.
+  const [productPages, campaigns] = await Promise.all([
+    getProductPages().catch(() => []),
+    listKnownCampaigns().catch(() => []),
+  ]);
 
   return (
     <main className="flex flex-col gap-6">
@@ -30,7 +51,8 @@ export default async function UtmLinksPage() {
       </div>
       <UtmLinkBuilder
         channels={UTM_CHANNELS.map(({ id, label }) => ({ id, label }))}
-        pages={PAGES}
+        pages={[...PAGES, ...productPages]}
+        campaigns={campaigns}
       />
     </main>
   );

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { AnalyticsUnavailableError } from "@onwei/core";
 import {
   AdminCard,
@@ -9,7 +10,7 @@ import {
   AdminTableRow,
 } from "../_components/ui";
 import * as report from "./_data";
-import type { ReportScope } from "./_data";
+import type { ReportScope, Timed } from "./_data";
 import { formatDuration, formatNumber, formatPercent } from "./_format";
 import { hrefFor } from "./_links";
 
@@ -83,8 +84,8 @@ function SectionError({ title, error }: { title: string; error: unknown }) {
   );
 }
 
-function fetchedAt() {
-  return new Date().toLocaleTimeString("en-IN", {
+function fetchedAtLabel(at: number) {
+  return new Date(at).toLocaleTimeString("en-IN", {
     timeZone: "Asia/Kolkata",
     hour: "2-digit",
     minute: "2-digit",
@@ -92,128 +93,177 @@ function fetchedAt() {
   });
 }
 
-export async function VisitorsSection({ scope }: { scope: ReportScope }) {
-  let data;
+/**
+ * Loads one report and shows it, or a plain-language message if PostHog is
+ * down, so one failing report never takes the rest of the page with it.
+ */
+async function ReportSection<T>({
+  title,
+  help,
+  load,
+  children,
+}: {
+  title: string;
+  help?: string | ((fetchedAt: number) => string);
+  load: () => Promise<Timed<T>>;
+  children: (data: T) => ReactNode;
+}) {
+  let result: Timed<T>;
   try {
-    const [traffic, engagement] = await Promise.all([
-      report.traffic(scope),
-      report.engagement(scope),
-    ]);
-    data = { traffic, engagement };
+    result = await load();
   } catch (error) {
-    return <SectionError title="Visitors" error={error} />;
+    return <SectionError title={title} error={error} />;
   }
-
-  return (
-    <Section title="Visitors" help={`Numbers fetched at ${fetchedAt()}.`}>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Stat
-          label="Page views"
-          value={formatNumber(data.traffic.totalViews)}
-          hint="Every time a page was opened."
-        />
-        <Stat
-          label="Different people"
-          value={formatNumber(data.traffic.uniqueVisitors)}
-          hint="Counted per day without cookies, so someone who comes back on another day counts again."
-        />
-        <Stat
-          label="Visits"
-          value={formatNumber(data.engagement.visits)}
-          hint="One visit is one stay on the site."
-        />
-      </div>
-      {data.traffic.perDay.length > 0 ? (
-        <AdminCard>
-          <p className="mb-3 text-sm text-onwei-blue/70">Page views each day</p>
-          <div className="flex flex-col gap-1.5">
-            {data.traffic.perDay.map((d) => (
-              <div
-                key={d.day}
-                className="grid grid-cols-[6rem_1fr_4rem] items-center gap-3 text-sm"
-              >
-                <span>{d.day}</span>
-                <Bar
-                  fraction={
-                    d.views /
-                    Math.max(...data.traffic.perDay.map((x) => x.views))
-                  }
-                />
-                <span className="text-right">{formatNumber(d.views)}</span>
-              </div>
-            ))}
-          </div>
-        </AdminCard>
-      ) : (
-        <p className="text-onwei-blue/70">
-          No visits recorded in this time range yet. Numbers show up within a
-          few minutes of someone opening the site.
-        </p>
-      )}
-    </Section>
-  );
-}
-
-export async function SourcesSection({ scope }: { scope: ReportScope }) {
-  let data;
-  try {
-    const [sources] = await Promise.all([report.sources(scope)]);
-    data = { sources };
-  } catch (error) {
-    return <SectionError title="Where visitors came from" error={error} />;
-  }
-
   return (
     <Section
-      title="Where visitors came from"
-      help="Use a tracked link for each place you share the site so it shows up by name. Anything without one shows as Direct or unknown, which includes most WhatsApp shares. Signup rate is signups divided by visits."
+      title={title}
+      help={typeof help === "function" ? help(result.fetchedAt) : help}
     >
-      {data.sources.length === 0 ? (
-        <p className="text-onwei-blue/70">
-          Nothing yet. Once people arrive, you&apos;ll see where they came from
-          here.
-        </p>
-      ) : (
-        <AdminTable>
-          <AdminTableHead>
-            <AdminTableHeaderCell>Source</AdminTableHeaderCell>
-            <AdminTableHeaderCell>Campaign</AdminTableHeaderCell>
-            <AdminTableHeaderCell>Visits</AdminTableHeaderCell>
-            <AdminTableHeaderCell>Signups</AdminTableHeaderCell>
-            <AdminTableHeaderCell>Signup rate</AdminTableHeaderCell>
-          </AdminTableHead>
-          <tbody>
-            {data.sources.map((s) => (
-              <AdminTableRow key={`${s.label}|${s.campaign ?? ""}`}>
-                <AdminTableCell>{s.label}</AdminTableCell>
-                <AdminTableCell>{s.campaign ?? "-"}</AdminTableCell>
-                <AdminTableCell>{formatNumber(s.visits)}</AdminTableCell>
-                <AdminTableCell>{formatNumber(s.signups)}</AdminTableCell>
-                <AdminTableCell>
-                  {s.visits > 0 ? formatPercent(s.signupRate) : "-"}
-                </AdminTableCell>
-              </AdminTableRow>
-            ))}
-          </tbody>
-        </AdminTable>
-      )}
+      {children(result.data)}
     </Section>
   );
 }
 
-export async function DevicesSection({ scope }: { scope: ReportScope }) {
-  let data;
-  try {
-    const [devices] = await Promise.all([report.devices(scope)]);
-    data = { devices };
-  } catch (error) {
-    return <SectionError title="Phone or computer" error={error} />;
-  }
-
+export function VisitorsSection({ scope }: { scope: ReportScope }) {
   return (
-    <Section title="Phone or computer">
-      {(() => {
-        const d = data.devices;
+    <ReportSection
+      title="Visitors"
+      help={(at) => `Numbers fetched at ${fetchedAtLabel(at)}.`}
+      load={async () => {
+        const [traffic, engagement] = await Promise.all([
+          report.traffic(scope),
+          report.engagement(scope),
+        ]);
+        return {
+          data: { traffic: traffic.data, engagement: engagement.data },
+          fetchedAt: Math.min(traffic.fetchedAt, engagement.fetchedAt),
+        };
+      }}
+    >
+      {({ traffic, engagement }) => {
+        const mostViews = Math.max(...traffic.perDay.map((x) => x.views), 1);
+        return (
+          <>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <Stat
+                label="Page views"
+                value={formatNumber(traffic.totalViews)}
+                hint="Every time a page was opened."
+              />
+              <Stat
+                label="Different people"
+                value={formatNumber(traffic.uniqueVisitors)}
+                hint="Counted per day without cookies, so someone who comes back on another day counts again."
+              />
+              <Stat
+                label="Visits"
+                value={formatNumber(engagement.visits)}
+                hint="One visit is one stay on the site."
+              />
+            </div>
+            {traffic.perDay.length > 0 ? (
+              <AdminCard>
+                <p className="mb-3 text-sm text-onwei-blue/70">
+                  Page views each day
+                </p>
+                <div className="flex flex-col gap-1.5">
+                  {traffic.perDay.map((d) => (
+                    <div
+                      key={d.day}
+                      className="grid grid-cols-[5.5rem_1fr_3rem] items-center gap-3 text-sm sm:grid-cols-[6rem_1fr_4rem]"
+                    >
+                      <span>{d.day}</span>
+                      <Bar fraction={d.views / mostViews} />
+                      <span className="text-right">
+                        {formatNumber(d.views)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </AdminCard>
+            ) : (
+              <p className="text-onwei-blue/70">
+                No visits recorded in this time range yet. Numbers show up
+                within a few minutes of someone opening the site.
+              </p>
+            )}
+          </>
+        );
+      }}
+    </ReportSection>
+  );
+}
+
+export function SourcesSection({ scope }: { scope: ReportScope }) {
+  return (
+    <ReportSection
+      title="Where visitors came from"
+      help="Use a tracked link for each place you share the site so it shows up by name. Anything without one shows as Direct or unknown, which includes most WhatsApp shares. Signup rate is signups divided by visits."
+      load={() => report.sources(scope)}
+    >
+      {(sources) => {
+        if (sources.length === 0) {
+          return (
+            <p className="text-onwei-blue/70">
+              Nothing yet. Once people arrive, you&apos;ll see where they came
+              from here.
+            </p>
+          );
+        }
+        const signupsHidden = sources.every((s) => s.signups === null);
+        return (
+          <>
+            {signupsHidden ? (
+              <p className="text-sm text-onwei-blue/70">
+                Signups aren&apos;t tied to a page, so they&apos;re hidden while
+                one page is selected. Pick All pages to see them.
+              </p>
+            ) : null}
+            <AdminTable>
+              <AdminTableHead>
+                <AdminTableHeaderCell>Source</AdminTableHeaderCell>
+                <AdminTableHeaderCell>Campaign</AdminTableHeaderCell>
+                <AdminTableHeaderCell>Visits</AdminTableHeaderCell>
+                {signupsHidden ? null : (
+                  <>
+                    <AdminTableHeaderCell>Signups</AdminTableHeaderCell>
+                    <AdminTableHeaderCell>Signup rate</AdminTableHeaderCell>
+                  </>
+                )}
+              </AdminTableHead>
+              <tbody>
+                {sources.map((s) => (
+                  <AdminTableRow key={`${s.label}|${s.campaign ?? ""}`}>
+                    <AdminTableCell>{s.label}</AdminTableCell>
+                    <AdminTableCell>{s.campaign ?? "-"}</AdminTableCell>
+                    <AdminTableCell>{formatNumber(s.visits)}</AdminTableCell>
+                    {signupsHidden ? null : (
+                      <>
+                        <AdminTableCell>
+                          {formatNumber(s.signups ?? 0)}
+                        </AdminTableCell>
+                        <AdminTableCell>
+                          {s.visits > 0 && s.signupRate !== null
+                            ? formatPercent(s.signupRate)
+                            : "-"}
+                        </AdminTableCell>
+                      </>
+                    )}
+                  </AdminTableRow>
+                ))}
+              </tbody>
+            </AdminTable>
+          </>
+        );
+      }}
+    </ReportSection>
+  );
+}
+
+export function DevicesSection({ scope }: { scope: ReportScope }) {
+  return (
+    <ReportSection title="Phone or computer" load={() => report.devices(scope)}>
+      {(d) => {
         const total = d.phone + d.tablet + d.computer + d.other;
         if (total === 0)
           return <p className="text-onwei-blue/70">No visits yet.</p>;
@@ -231,7 +281,7 @@ export async function DevicesSection({ scope }: { scope: ReportScope }) {
               .map(([label, n]) => (
                 <div
                   key={label}
-                  className="grid grid-cols-[6rem_1fr_6rem] items-center gap-3 text-sm"
+                  className="grid grid-cols-[5rem_1fr_3.5rem] items-center gap-3 text-sm sm:grid-cols-[6rem_1fr_6rem]"
                 >
                   <span>{label}</span>
                   <Bar fraction={n / total} />
@@ -240,210 +290,196 @@ export async function DevicesSection({ scope }: { scope: ReportScope }) {
               ))}
           </AdminCard>
         );
-      })()}
-    </Section>
+      }}
+    </ReportSection>
   );
 }
 
-export async function EngagementSection({ scope }: { scope: ReportScope }) {
-  let data;
-  try {
-    const [engagement] = await Promise.all([report.engagement(scope)]);
-    data = { engagement };
-  } catch (error) {
-    return <SectionError title="How people use the site" error={error} />;
-  }
-
+export function EngagementSection({ scope }: { scope: ReportScope }) {
   return (
-    <Section
+    <ReportSection
       title="How people use the site"
       help="A bounce is a visit that opened one page and did nothing else: no scrolling, tapping or typing."
+      load={() => report.engagement(scope)}
     >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Stat
-          label="Bounce rate"
-          value={formatPercent(data.engagement.bounceRate)}
-        />
-        <Stat
-          label="Average time on site"
-          value={formatDuration(data.engagement.averageSeconds)}
-        />
-        <Stat
-          label="Pages per visit"
-          value={String(data.engagement.pagesPerVisit)}
-        />
-        <Stat
-          label="How far people scroll"
-          value={
-            data.engagement.typicalScrollPercent
-              ? `${data.engagement.typicalScrollPercent}%`
-              : "-"
-          }
-          hint="The typical deepest point reached on a page."
-        />
-        <Stat
-          label="Time to first move"
-          value={
-            data.engagement.typicalSecondsToFirstInteraction
-              ? `${data.engagement.typicalSecondsToFirstInteraction}s`
-              : "-"
-          }
-          hint="Typical wait before someone scrolls, taps or types."
-        />
-      </div>
-    </Section>
-  );
-}
-
-export async function TopPagesSection({ scope }: { scope: ReportScope }) {
-  let data;
-  try {
-    const [topPages] = await Promise.all([report.topPages(scope)]);
-    data = { topPages };
-  } catch (error) {
-    return <SectionError title="Most visited pages" error={error} />;
-  }
-  const { days } = scope;
-
-  return (
-    <Section title="Most visited pages">
-      {data.topPages.length === 0 ? (
-        <p className="text-onwei-blue/70">No page views yet.</p>
-      ) : (
-        <AdminTable>
-          <AdminTableHead>
-            <AdminTableHeaderCell>Page</AdminTableHeaderCell>
-            <AdminTableHeaderCell>Views</AdminTableHeaderCell>
-            <AdminTableHeaderCell>People</AdminTableHeaderCell>
-            <AdminTableHeaderCell>Scrolled halfway</AdminTableHeaderCell>
-          </AdminTableHead>
-          <tbody>
-            {data.topPages.map((p) => (
-              <AdminTableRow key={p.path}>
-                <AdminTableCell>
-                  <Link
-                    href={hrefFor(days, undefined, p.path)}
-                    className="underline"
-                  >
-                    {p.path}
-                  </Link>
-                </AdminTableCell>
-                <AdminTableCell>{formatNumber(p.views)}</AdminTableCell>
-                <AdminTableCell>{formatNumber(p.visitors)}</AdminTableCell>
-                <AdminTableCell>
-                  {formatPercent(p.reachedHalfway)}
-                </AdminTableCell>
-              </AdminTableRow>
-            ))}
-          </tbody>
-        </AdminTable>
+      {(e) => (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <Stat label="Bounce rate" value={formatPercent(e.bounceRate)} />
+          <Stat
+            label="Average time on site"
+            value={formatDuration(e.averageSeconds)}
+          />
+          <Stat label="Pages per visit" value={String(e.pagesPerVisit)} />
+          <Stat
+            label="How far people scroll"
+            value={e.typicalScrollPercent ? `${e.typicalScrollPercent}%` : "-"}
+            hint="The typical deepest point reached on a page."
+          />
+          <Stat
+            label="Time to first move"
+            value={
+              e.typicalSecondsToFirstInteraction
+                ? `${e.typicalSecondsToFirstInteraction}s`
+                : "-"
+            }
+            hint="Typical wait before someone scrolls, taps or types."
+          />
+        </div>
       )}
-    </Section>
+    </ReportSection>
   );
 }
 
-export async function FormsSection({ scope }: { scope: ReportScope }) {
-  let data;
-  try {
-    const [forms] = await Promise.all([report.forms(scope)]);
-    data = { forms };
-  } catch (error) {
-    return <SectionError title="Forms" error={error} />;
-  }
-
+export function TopPagesSection({ scope }: { scope: ReportScope }) {
+  const { days } = scope;
   return (
-    <Section
+    <ReportSection
+      title="Most visited pages"
+      load={() => report.topPages(scope)}
+    >
+      {(topPages) =>
+        topPages.length === 0 ? (
+          <p className="text-onwei-blue/70">No page views yet.</p>
+        ) : (
+          <AdminTable>
+            <AdminTableHead>
+              <AdminTableHeaderCell>Page</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Views</AdminTableHeaderCell>
+              <AdminTableHeaderCell>People</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Scrolled halfway</AdminTableHeaderCell>
+            </AdminTableHead>
+            <tbody>
+              {topPages.map((p) => (
+                <AdminTableRow key={p.path}>
+                  <AdminTableCell>
+                    <Link
+                      href={hrefFor(days, undefined, p.path)}
+                      className="underline"
+                    >
+                      {p.path}
+                    </Link>
+                  </AdminTableCell>
+                  <AdminTableCell>{formatNumber(p.views)}</AdminTableCell>
+                  <AdminTableCell>{formatNumber(p.visitors)}</AdminTableCell>
+                  <AdminTableCell>
+                    {formatPercent(p.reachedHalfway)}
+                  </AdminTableCell>
+                </AdminTableRow>
+              ))}
+            </tbody>
+          </AdminTable>
+        )
+      }
+    </ReportSection>
+  );
+}
+
+export function FormsSection({ scope }: { scope: ReportScope }) {
+  return (
+    <ReportSection
       title="Forms"
       help="How many people get through each step, and the field they were on when they gave up."
+      load={() => report.forms(scope)}
     >
-      {data.forms.length === 0 ? (
-        <p className="text-onwei-blue/70">
-          No one has started a form in this time range.
-        </p>
-      ) : (
-        data.forms.map((form) => (
-          <AdminCard key={form.name} className="flex flex-col gap-4">
-            <p className="font-semibold capitalize">
-              {form.name} form
-              <span className="ml-2 text-sm font-normal text-onwei-blue/70">
-                {formatNumber(form.started)} started,{" "}
-                {formatNumber(form.submitted)} finished
-              </span>
-            </p>
-            <div className="flex flex-col gap-1.5">
-              {form.steps.map((step) => (
-                <div
-                  key={step.label}
-                  className="grid grid-cols-[12rem_1fr_4rem] items-center gap-3 text-sm"
-                >
-                  <span>{step.label}</span>
-                  <Bar fraction={step.people / Math.max(form.started, 1)} />
-                  <span className="text-right">
-                    {formatNumber(step.people)}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {form.leftAt.length > 0 ? (
-              <div className="text-sm">
-                <p className="font-medium">
-                  Where people gave up (last field they touched)
-                </p>
-                <ul className="mt-1 list-disc pl-5">
-                  {form.leftAt.map((l) => (
-                    <li key={l.field}>
-                      {l.field}: {formatNumber(l.people)}{" "}
-                      {l.people === 1 ? "person" : "people"}
-                    </li>
-                  ))}
-                </ul>
+      {(forms) =>
+        forms.length === 0 ? (
+          <p className="text-onwei-blue/70">
+            No one has started a form in this time range.
+          </p>
+        ) : (
+          forms.map((form) => (
+            <AdminCard key={form.name} className="flex flex-col gap-4">
+              <p className="font-semibold capitalize">
+                {form.name} form
+                <span className="ml-2 text-sm font-normal text-onwei-blue/70">
+                  {formatNumber(form.started)} started,{" "}
+                  {formatNumber(form.submitted)} finished
+                </span>
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {form.steps.map((step) => (
+                  <div
+                    key={step.label}
+                    className="grid grid-cols-[7rem_1fr_3rem] items-center gap-3 text-sm sm:grid-cols-[12rem_1fr_4rem]"
+                  >
+                    <span>{step.label}</span>
+                    <Bar fraction={step.people / Math.max(form.started, 1)} />
+                    <span className="text-right">
+                      {formatNumber(step.people)}
+                    </span>
+                  </div>
+                ))}
               </div>
-            ) : null}
-          </AdminCard>
-        ))
-      )}
-    </Section>
+              {form.leftAt.length > 0 ? (
+                <div className="text-sm">
+                  <p className="font-medium">
+                    Where people gave up (last field they touched)
+                  </p>
+                  <ul className="mt-1 list-disc pl-5">
+                    {form.leftAt.map((l) => (
+                      <li key={l.field}>
+                        {l.field}: {formatNumber(l.people)}{" "}
+                        {l.people === 1 ? "person" : "people"}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </AdminCard>
+          ))
+        )
+      }
+    </ReportSection>
   );
 }
 
-export async function LocationsSection({ scope }: { scope: ReportScope }) {
-  let data;
-  try {
-    const [locations] = await Promise.all([report.locations(scope)]);
-    data = { locations };
-  } catch (error) {
-    return <SectionError title="Where people are" error={error} />;
-  }
-
+export function LocationsSection({ scope }: { scope: ReportScope }) {
   return (
-    <Section
+    <ReportSection
       title="Where people are"
       help="Worked out from their internet connection, so it's approximate and sometimes wrong (VPNs, mobile networks)."
+      load={() => report.locations(scope)}
     >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {(
-          [
-            ["Visitors", data.locations.visitors],
-            ["Signups", data.locations.signups],
-          ] as const
-        ).map(([title, rows]) => (
-          <AdminCard key={title}>
-            <p className="mb-2 font-semibold">{title}</p>
-            {rows.length === 0 ? (
-              <p className="text-sm text-onwei-blue/70">Nothing yet.</p>
-            ) : (
-              <ul className="flex flex-col gap-1 text-sm">
-                {rows.map((r) => (
-                  <li key={r.place} className="flex justify-between gap-4">
-                    <span>{r.place}</span>
-                    <span>{formatNumber(r.people)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </AdminCard>
-        ))}
-      </div>
-    </Section>
+      {(locations) => {
+        const columns = [
+          ["Visitors", locations.visitors],
+          ...(locations.signupsHidden
+            ? []
+            : [["Signups", locations.signups] as const]),
+        ] as const;
+        return (
+          <>
+            {locations.signupsHidden ? (
+              <p className="text-sm text-onwei-blue/70">
+                Signup places aren&apos;t tied to a page, so they&apos;re hidden
+                while one page is selected.
+              </p>
+            ) : null}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              {columns.map(([title, rows]) => (
+                <AdminCard key={title}>
+                  <p className="mb-2 font-semibold">{title}</p>
+                  {rows.length === 0 ? (
+                    <p className="text-sm text-onwei-blue/70">Nothing yet.</p>
+                  ) : (
+                    <ul className="flex flex-col gap-1 text-sm">
+                      {rows.map((r) => (
+                        <li
+                          key={r.place}
+                          className="flex justify-between gap-4"
+                        >
+                          <span>{r.place}</span>
+                          <span>{formatNumber(r.people)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </AdminCard>
+              ))}
+            </div>
+          </>
+        );
+      }}
+    </ReportSection>
   );
 }

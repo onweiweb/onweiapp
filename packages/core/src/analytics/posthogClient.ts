@@ -42,9 +42,17 @@ export function readPosthogConfig(
 export type HogqlValue = string | number;
 export type HogqlRow = (string | number | null)[];
 
+/** A hung PostHog must not hang the admin page. */
+// Measured against the live project: a query that is not already cached on
+// PostHog's side takes about 5s, and a cold page fires about 9 at once, which
+// PostHog partly queues (the last ones finish near 10s). 8s timed out 90-day
+// views, so this leaves room for two rounds.
+export const HOGQL_TIMEOUT_MS = 20000;
+
 export interface RunHogqlOptions {
   config?: PosthogConfig | null;
   fetchImpl?: typeof fetch;
+  timeoutMs?: number;
 }
 
 /** Runs one HogQL query. `values` fill {placeholders}, never string-concatenate user input. */
@@ -78,6 +86,7 @@ export async function runHogql(
           },
         }),
         cache: "no-store",
+        signal: AbortSignal.timeout(options.timeoutMs ?? HOGQL_TIMEOUT_MS),
       },
     );
   } catch {

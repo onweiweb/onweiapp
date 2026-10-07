@@ -106,6 +106,26 @@ features are built, not just written into the test files silently.
   query against `Order`/`OrderItem` (guard this with a query-plan or query-
   count assertion, not just a snapshot of the output).
 
+## Visitor analytics (`apps/web` + `packages/core` + `apps/admin`)
+
+- `sanitizeAttribution`, `buildUtmLink` and `describeSource` are unit tested (slugs, unknown
+  channel, empty campaign, own-host referrer counts as direct).
+- `runHogql` sends values as parameters and collapses the query to one line; each report
+  (traffic, sources with campaign, engagement, forms funnel) is unit tested with mocked responses,
+  including the not-configured and failed-request cases.
+- `useFormTracking` never sends a field value, sends `form_abandoned` once with the last field, and
+  nothing after a successful submit.
+- `POST /api/waitlist` stores cleaned UTM, referrer and geo headers, and still signs up when
+  attribution is junk or missing (DB integration test, needs `DATABASE_URL`).
+- Audit follow-up tests: query timeout maps to `REQUEST_FAILED`; mixed-case UTMs merge with stored
+  slugs; page filter hides signups in sources and locations (and skips the DB); day buckets use
+  Asia/Kolkata; `refreshAnalytics` checks `waitlist:view`, is rate limited and only clears the cache
+  when allowed; `buildLinkAction` happy path and empty-campaign error; `listKnownCampaigns`;
+  first touch is saved when a tagged link is followed after a direct landing.
+- Admin filters: clicking another filter navigates, the current one does nothing, new-tab clicks are
+  left alone. Manual check after any change to `analytics/page.tsx`: switch filters and confirm the
+  old numbers are replaced, not shown next to the new ones.
+
 ## End-to-end (Playwright, run in CI, not on every commit)
 
 - New customer: sign up with OTP → browse a category → view a product →

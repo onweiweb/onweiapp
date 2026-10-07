@@ -102,6 +102,9 @@ that's serving checkout traffic. The plan is a small set of summary tables
 (e.g. `daily_sales_summary`) refreshed on a schedule, which the admin
 dashboard reads from instead of aggregating `Order`/`OrderItem` directly.
 Funnel events (`product_viewed`, `added_to_cart`, `checkout_started`) are
-logged to an `AnalyticsEvent` table for now; if this needs richer analysis
-later, swapping in a dedicated tool (PostHog, etc.) means changing where
-events are sent, not how the rest of the app is built.
+sent to PostHog (decided and shipped 2026-10-07, see `docs/SECURITY_AND_DPDP.md`),
+not to an `AnalyticsEvent` table. Visitor and engagement metrics are read back
+over PostHog's query API by `packages/core/src/analytics` and shown on the
+admin `/analytics` page, behind a short shared cache. Events are declared in one
+typed registry (`apps/web/lib/analytics/events.ts`). Order and revenue metrics
+are still planned as summary tables in our own DB, not PostHog.

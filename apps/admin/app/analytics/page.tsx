@@ -54,6 +54,9 @@ function timeNow() {
   });
 }
 
+// Cold loads run about 9 PostHog queries that take several seconds each.
+export const maxDuration = 30;
+
 export default async function AnalyticsPage({
   searchParams,
 }: {

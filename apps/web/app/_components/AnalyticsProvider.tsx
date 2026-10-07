@@ -11,6 +11,20 @@ const SCROLL_STEPS = [25, 50, 75, 100] as const;
 type PostHog = (typeof import("posthog-js"))["default"];
 let initPromise: Promise<PostHog> | null = null;
 
+// Re-read on every page, not just at start: someone who lands direct and later
+// follows a tagged link in the same tab gets that link as their first touch
+// with data (see getFirstTouch).
+function registerFirstTouch(posthog: PostHog) {
+  const touch = getFirstTouch();
+  posthog.register({
+    ft_utm_source: touch.utmSource,
+    ft_utm_medium: touch.utmMedium,
+    ft_utm_campaign: touch.utmCampaign,
+    ft_utm_content: touch.utmContent,
+    ft_referrer_host: touch.referrerHost,
+  });
+}
+
 // Sets PostHog up once per tab. Cookieless: no cookie is set and no banner
 // is needed. Pageviews are sent by hand (below) so the very first one already
 // carries the page type and where the visitor came from.
@@ -31,15 +45,9 @@ function ensurePosthog(key: string): Promise<PostHog> {
       disable_session_recording: true,
       person_profiles: "never",
     });
-    const touch = getFirstTouch();
     posthog.register({
       environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? "development",
       visit_id: getVisitId(),
-      ft_utm_source: touch.utmSource,
-      ft_utm_medium: touch.utmMedium,
-      ft_utm_campaign: touch.utmCampaign,
-      ft_utm_content: touch.utmContent,
-      ft_referrer_host: touch.referrerHost,
     });
     markAnalyticsReady();
     return posthog;
@@ -66,6 +74,7 @@ export function AnalyticsProvider() {
 
     void ensurePosthog(key).then((posthog) => {
       if (cancelled) return;
+      registerFirstTouch(posthog);
       posthog.register({ page_type: pageTypeFromPath(pathname) });
       posthog.capture("$pageview");
 

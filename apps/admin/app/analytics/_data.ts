@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { cache } from "react";
 import {
   getDeviceSplit,
   getEngagement,
@@ -13,10 +14,10 @@ import {
 } from "@onwei/core";
 
 // PostHog answers each report in 1 to 3 seconds, so in production every
-// report is cached for a minute in Next's shared cache. Unlike core's
-// in-memory cache, this one survives across requests and across serverless
-// instances, so only the first person to open the page in a window waits.
-// Local development skips caching so numbers are always current.
+// report is cached for a minute in Next's shared cache. It survives across
+// requests and across serverless instances, so only the first person to open
+// the page in a window waits. Local development skips caching so numbers are
+// always current.
 const CACHE_SECONDS = 60;
 const USE_CACHE = process.env.NODE_ENV !== "development";
 
@@ -26,42 +27,59 @@ export interface ReportScope {
   ownHost: string | null;
 }
 
+/** A report plus the moment PostHog was actually asked (not when it was shown). */
+export interface Timed<T> {
+  data: T;
+  fetchedAt: number;
+}
+
 function cachedReport<T>(
   name: string,
   load: (opts: AnalyticsQueryOptions) => Promise<T>,
+  // Only the sources report cares which host is our own. Leaving it out of
+  // the other keys lets the dashboard card and this page share one entry.
+  usesOwnHost = false,
 ) {
-  const run = (days: number, pageJson: string, ownHost: string | null) =>
-    load({
+  const run = async (
+    days: number,
+    pageJson: string,
+    ownHost: string | null,
+  ): Promise<Timed<T>> => {
+    const started = Date.now();
+    const data = await load({
       days: days as AnalyticsRangeDays,
       page: JSON.parse(pageJson) as PageFilter,
       ownHost,
     });
-  if (!USE_CACHE) {
-    return async (scope: ReportScope) => {
-      const started = Date.now();
-      const result = await run(
-        scope.days,
-        JSON.stringify(scope.page),
-        scope.ownHost,
-      );
+    if (!USE_CACHE) {
       console.log(
-        `[analytics] ${name} days=${scope.days} page=${JSON.stringify(scope.page)} ${Date.now() - started}ms`,
+        `[analytics] ${name} days=${days} page=${pageJson} ${Date.now() - started}ms`,
       );
-      return result;
-    };
-  }
-  const cached = unstable_cache(
-    // Arguments must be plain values to form the cache key.
-    run,
-    ["analytics-report", name],
-    { revalidate: CACHE_SECONDS, tags: ["analytics"] },
-  );
-  return (scope: ReportScope) =>
-    cached(scope.days, JSON.stringify(scope.page), scope.ownHost);
+    }
+    return { data, fetchedAt: Date.now() };
+  };
+  const loadScope = USE_CACHE
+    ? unstable_cache(
+        // Arguments must be plain values to form the cache key.
+        run,
+        ["analytics-report", name],
+        { revalidate: CACHE_SECONDS, tags: ["analytics"] },
+      )
+    : run;
+  const forScope = (scope: ReportScope) =>
+    loadScope(
+      scope.days,
+      JSON.stringify(scope.page),
+      usesOwnHost ? scope.ownHost : null,
+    );
+  // React's per-request cache, so two sections asking for the same report
+  // (Visitors and Engagement both need engagement) share one query even on a
+  // cold cache. Relies on every section receiving the same scope object.
+  return cache(forScope);
 }
 
 export const traffic = cachedReport("traffic", getTrafficSummary);
-export const sources = cachedReport("sources", getSourceBreakdown);
+export const sources = cachedReport("sources", getSourceBreakdown, true);
 export const devices = cachedReport("devices", getDeviceSplit);
 export const engagement = cachedReport("engagement", getEngagement);
 export const topPages = cachedReport("top-pages", getTopPages);

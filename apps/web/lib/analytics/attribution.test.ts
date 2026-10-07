@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { readFirstTouchFromUrl, referrerHostOf } from "./attribution";
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+  getFirstTouch,
+  readFirstTouchFromUrl,
+  referrerHostOf,
+} from "./attribution";
 
 describe("referrerHostOf", () => {
   it("returns the host without www", () => {
@@ -29,5 +33,28 @@ describe("readFirstTouchFromUrl", () => {
       utmContent: null,
       referrerHost: "l.instagram.com",
     });
+  });
+});
+
+describe("getFirstTouch", () => {
+  beforeEach(() => window.sessionStorage.clear());
+
+  it("keeps a direct landing empty, then saves a tagged link followed later in the same tab", () => {
+    window.history.pushState({}, "", "/ontheway");
+    expect(getFirstTouch().utmSource).toBeNull();
+
+    window.history.pushState(
+      {},
+      "",
+      "/ontheway?utm_source=instagram&utm_campaign=launch",
+    );
+    expect(getFirstTouch()).toMatchObject({
+      utmSource: "instagram",
+      utmCampaign: "launch",
+    });
+
+    // A third page without tags keeps the saved touch.
+    window.history.pushState({}, "", "/about");
+    expect(getFirstTouch().utmSource).toBe("instagram");
   });
 });

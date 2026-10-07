@@ -84,6 +84,13 @@ and when (needed to demonstrably show consent under the DPDP Act, see
 `docs/SECURITY_AND_DPDP.md`). `DataSubjectRequest` tracks access/erasure/
 correction requests, also a DPDP requirement once a customer asks for one.
 
+**Waitlist attribution.** `WaitlistEntry` also records where a signup came from:
+`utmSource`, `utmMedium`, `utmCampaign`, `utmContent`, `referrerHost` (all cleaned to
+short slugs by `sanitizeAttribution`), and an approximate `country`, `region`, `city`
+read from the host's IP headers. All nullable, all personal data tied to the row, so
+they follow its retention and deletion. Phase 2 orders should reuse the same
+`Attribution` shape (`packages/core/src/analytics/attribution.ts`).
+
 ## Deliberately deferred
 
 Multi-currency, multi-language, and multi-warehouse _routing_ (choosing which

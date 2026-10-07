@@ -2,11 +2,28 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const push = vi.fn();
-vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
+const refreshRouter = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, refresh: refreshRouter }),
+}));
+const refreshAnalytics = vi.fn();
+vi.mock("./_actions", () => ({
+  refreshAnalytics: () => refreshAnalytics(),
+}));
 
-import { AnalyticsShell, FilterLink, ReportArea } from "./_shell";
+import { act } from "@testing-library/react";
+import {
+  AnalyticsShell,
+  FilterLink,
+  RefreshButton,
+  ReportArea,
+} from "./_shell";
 
-beforeEach(() => push.mockReset());
+beforeEach(() => {
+  push.mockReset();
+  refreshRouter.mockReset();
+  refreshAnalytics.mockReset();
+});
 
 function setup() {
   render(
@@ -17,6 +34,7 @@ function setup() {
       <FilterLink href="/analytics?days=30" current={false} className="x">
         Last 30 days
       </FilterLink>
+      <RefreshButton />
       <ReportArea>
         <p>Real numbers</p>
       </ReportArea>
@@ -46,5 +64,28 @@ describe("analytics filters", () => {
     setup();
     fireEvent.click(screen.getByText("Last 30 days"), { metaKey: true });
     expect(push).not.toHaveBeenCalled();
+  });
+
+  it("reloads the page after a refresh", async () => {
+    refreshAnalytics.mockResolvedValue({ ok: true });
+    setup();
+    await act(async () => {
+      fireEvent.click(screen.getByText("Refresh numbers"));
+    });
+    expect(refreshRouter).toHaveBeenCalled();
+  });
+
+  it("shows the message and keeps the old numbers when a refresh is refused", async () => {
+    refreshAnalytics.mockResolvedValue({
+      ok: false,
+      message: "Wait a minute and try again.",
+    });
+    setup();
+    await act(async () => {
+      fireEvent.click(screen.getByText("Refresh numbers"));
+    });
+    expect(screen.getByRole("alert").textContent).toContain("Wait a minute");
+    expect(refreshRouter).not.toHaveBeenCalled();
+    expect(screen.getByText("Real numbers")).toBeTruthy();
   });
 });

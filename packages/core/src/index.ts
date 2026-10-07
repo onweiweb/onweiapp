@@ -218,6 +218,11 @@ export {
   type BuildUtmLinkResult,
 } from "./analytics/utmBuilder";
 export { describeSource } from "./analytics/sourceLabels";
+export { listKnownCampaigns } from "./analytics/campaigns";
+export {
+  checkAnalyticsRefreshRateLimit,
+  _resetAnalyticsRefreshRateLimiterForTests,
+} from "./analytics/refreshRateLimit";
 export {
   AnalyticsUnavailableError,
   readPosthogConfig,
@@ -231,7 +236,6 @@ export {
   getTopPages,
   getFormFunnels,
   getLocations,
-  clearAnalyticsCache,
   type AnalyticsRangeDays,
   type PageFilter,
   type AnalyticsQueryOptions,

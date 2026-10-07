@@ -402,6 +402,29 @@ are live queries, storefront catalog list queries are unbounded (cached 30s to 5
   vendor), so login does not work in production. Next 16.3.5 carries a critical `next/og` advisory
   (code does not use `next/og`), upgrade needs a plan.
 
+## Visitor analytics (2026-10-06 to 2026-10-07), deployed
+
+- PostHog (cookieless) on the storefront: pageviews, scroll depth, time to first interaction,
+  field-level waitlist form events with the last field touched on abandon, product and collection
+  events. First-touch UTM and referrer captured per visit.
+- Migration `add_waitlist_attribution` (additive): `WaitlistEntry` gains `country`, `region`,
+  `city`, `referrerHost`, `utmSource`, `utmMedium`, `utmCampaign`, `utmContent`. Prod migrated.
+- Admin: `/analytics` (traffic, sources with campaign, phone vs computer, engagement, top pages,
+  forms, locations), `/analytics/links` (tracked link builder), dashboard card, waitlist table and
+  CSV gained source and location columns. Reuses the `waitlist:view` permission.
+- Also shipped the same week: founder bios "Read more" on mobile (`ExpandableBio`), the waitlist card
+  strip stays on card 1 until scrolled to then loops, upgraded `ScrollReveal`.
+- Bugs worth remembering: multi-line HogQL silently dropped rows (collapsed to one line in
+  `runHogql`); per-Suspense `key` left stale sections on screen (key a wrapper instead); PostHog
+  drops cookieless events unless the project's cookieless server hash mode is on.
+- Audit follow-up (2026-10-07): dashboard card no longer blocks on PostHog; signups hidden under a
+  page filter; fetched-at shows the real query time; UTM casing normalized on both sides; India-time
+  day buckets; single 60s cache (core cache removed); 20s query timeout; refresh rate limited; link
+  builder suggests campaigns and lists products. No schema change. Saved links list deferred (needs
+  a table and a prod migration).
+- Open: visitor-level location needs a small endpoint feeding Vercel geo headers into events if the
+  client wants it; PostHog region (US) still needs the client's DPDP sign-off.
+
 ## Update discipline
 
 Whenever new work changes any of the above (new dependency version constraints, new gotchas, new

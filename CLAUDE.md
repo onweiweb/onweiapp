@@ -129,6 +129,52 @@ read before assuming something that looks broken is a missing asset.
 - Check with `npm run test:e2e` (`e2e/responsive.spec.ts`): 12 widths, overflow assertions, screenshots in
   `e2e/shots/` (gitignored). Dev DB must be in LIVE site mode for non-waitlist pages.
 
+## Visitor analytics (added 2026-10-07)
+
+PostHog Cloud (US, project 649503), cookieless. The storefront sends events, our DB stores
+attribution on signups, the admin `/analytics` page reads reports back. Full privacy notes are in
+`docs/SECURITY_AND_DPDP.md` ("Visitor analytics").
+
+- **Send side (`apps/web`):** `AnalyticsProvider` (mounted in the root layout) boots PostHog after
+  first paint and sends pageviews by hand so the first one already carries `page_type`, `visit_id`
+  and first-touch `ft_utm_*` / `ft_referrer_host`. Events go through the same-origin `/ingest`
+  rewrite (`next.config.ts`; `proxy.ts` lets `/ingest` through the waitlist gate and keeps the query
+  string when it redirects, so tagged links keep their UTMs). Nothing loads if
+  `NEXT_PUBLIC_POSTHOG_KEY` is unset, which is why local dev stays quiet unless it is added.
+- **Add an event:** declare it in `apps/web/lib/analytics/events.ts` first (typed), then call
+  `track()` or use `<TrackView>`. **Never send anything a visitor typed.** Forms use
+  `useFormTracking(name, FIELDS)` with a module-level constant fields array.
+- **Read side:** `packages/core/src/analytics/` (`posthogClient`, `queries`, `attribution`,
+  `utmBuilder`, `sourceLabels`). Queries are HogQL sent on ONE line (`runHogql` collapses
+  whitespace: multi-line copies silently dropped rows on PostHog's side). Filter by
+  `properties.environment`; use `properties.visit_id`, not `$session_id` (cookieless mode).
+- **Admin (`apps/admin/app/analytics`):** reports are cached 60s in production via
+  `unstable_cache` (`_data.ts`, the only cache; core has none), no caching at all in `next dev`.
+  Each report returns `{ data, fetchedAt }` so the page can show when PostHog was really asked.
+  The "Refresh numbers" button clears the cache, limited to 6 per minute per staff member. Gated by
+  `waitlist:view`. Link builder at `/analytics/links` (fixed channel list in `utmBuilder.ts`, page
+  picker includes active products, campaign field suggests names already used on signups).
+- **PostHog speed (measured 2026-10-07):** an uncached query takes about 5s, a cold page fires about
+  9, PostHog queues beyond about 6, so a cold load is 5 to 10s. Capping concurrency made it worse
+  (tried 1, 2, 3, 6). `runHogql` times out at 20s and the page sets `maxDuration = 30`.
+- **Signups and page filters:** signups are not tied to a page, so with a page filter on, the
+  Sources and Locations reports hide the signup columns (`signups: null`, `signupsHidden`).
+- **UTM casing:** visits carry raw link values, signups are stored as slugs, so `mergeSources`
+  slugifies both sides before matching. Keep it that way.
+- **Gotcha (cost a debugging round):** do NOT put `key` on each `<Suspense>` to re-show skeletons on
+  filter change. React keeps the old section on screen next to the new one, so numbers look stuck.
+  Key a wrapper `<div>` around all sections instead (see `analytics/page.tsx`). Also, React keeps
+  old content during a navigation, so `_shell.tsx` swaps the report area to placeholders while a
+  filter is pending.
+- **Env vars:** web `NEXT_PUBLIC_POSTHOG_KEY` (`phc_`, public), `POSTHOG_INGEST_HOST`
+  (`us.i.posthog.com`). Admin `POSTHOG_PROJECT_ID`, `POSTHOG_HOST` (`https://us.posthog.com`), the
+  access key as `POSTHOG_PERSONAL_API_KEY` or `POSTHOG_ALLACCESS_TOKEN` (`phx_`, secret). Local admin
+  sets `POSTHOG_ENVIRONMENT=development` to see local test events, never set it on Vercel. The
+  project's "Cookieless server hash mode" must stay ON in PostHog or events are silently dropped.
+- **Known limits:** visitor location in PostHog is empty (cookieless strips the IP before GeoIP);
+  signup location comes from Vercel IP headers on `WaitlistEntry` (`country`, `region`, `city`).
+  WhatsApp and outreach only show by name when the link carries a UTM.
+
 ## Tech stack (proposed, see docs/OPEN_DECISIONS.md for what's still open)
 
 - Next.js, App Router, TypeScript (strict)
@@ -170,14 +216,15 @@ docs/       -> architecture, schema rationale, test plan, security notes, open d
 
 ## Where things live
 
-| Feature                                 | Lives in                                               |
-| --------------------------------------- | ------------------------------------------------------ |
-| Product browsing, PDP, cart, checkout   | `apps/web`                                             |
-| Coupon / discount rule engine           | `packages/core`                                        |
-| OTP signup/login, RBAC checks           | `packages/auth`                                        |
-| Product/category/inventory/review admin | `apps/admin`                                           |
-| DB schema & migrations                  | `packages/database`                                    |
-| Order status timeline / tracking        | `packages/core` (state machine) + `apps/web` (display) |
+| Feature                                 | Lives in                                                                              |
+| --------------------------------------- | ------------------------------------------------------------------------------------- |
+| Product browsing, PDP, cart, checkout   | `apps/web`                                                                            |
+| Coupon / discount rule engine           | `packages/core`                                                                       |
+| OTP signup/login, RBAC checks           | `packages/auth`                                                                       |
+| Product/category/inventory/review admin | `apps/admin`                                                                          |
+| DB schema & migrations                  | `packages/database`                                                                   |
+| Order status timeline / tracking        | `packages/core` (state machine) + `apps/web` (display)                                |
+| Visitor analytics (events, reports)     | `apps/web/lib/analytics` + `packages/core/src/analytics` + `apps/admin/app/analytics` |
 
 ## Docs index
 

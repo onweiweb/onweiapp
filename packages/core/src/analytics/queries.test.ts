@@ -5,11 +5,11 @@ vi.mock("@onwei/database", () => ({
   prisma: { waitlistEntry: { groupBy: (...a: unknown[]) => groupBy(...a) } },
 }));
 
-import { AnalyticsUnavailableError } from "./posthogClient";
+import { AnalyticsUnavailableError, runHogql } from "./posthogClient";
 import {
-  clearAnalyticsCache,
   getEngagement,
   getFormFunnels,
+  getLocations,
   getSourceBreakdown,
   getTrafficSummary,
 } from "./queries";
@@ -30,7 +30,6 @@ function mockFetch(...results: unknown[][][]) {
 }
 
 beforeEach(() => {
-  clearAnalyticsCache();
   groupBy.mockReset();
 });
 
@@ -69,12 +68,76 @@ describe("posthog queries", () => {
     expect(body.query.query).not.toContain("waitlist");
   });
 
-  it("caches repeat calls", async () => {
-    const fetchImpl = mockFetch([[1, 1]], [], [[2, 2]], []);
-    const opts = { days: 7 as const, config, fetchImpl };
-    await getTrafficSummary(opts);
-    await getTrafficSummary(opts);
-    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  it("gives up when PostHog does not answer in time", async () => {
+    const fetchImpl = vi.fn(
+      (_url: unknown, init: { signal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          init.signal.addEventListener("abort", () =>
+            reject(init.signal.reason),
+          );
+        }),
+    );
+    await expect(
+      runHogql(
+        "SELECT 1",
+        {},
+        {
+          config,
+          fetchImpl: fetchImpl as never,
+          timeoutMs: 10,
+        },
+      ),
+    ).rejects.toMatchObject({ reason: "REQUEST_FAILED" });
+  });
+
+  it("buckets days in India time", async () => {
+    const fetchImpl = mockFetch([[1, 1]], []);
+    await getTrafficSummary({ days: 7, config, fetchImpl });
+    const queries = (fetchImpl.mock.calls as [string, { body: string }][]).map(
+      (c) => JSON.parse(c[1].body).query.query as string,
+    );
+    expect(queries.some((q) => q.includes("Asia/Kolkata"))).toBe(true);
+  });
+
+  it("treats mixed-case UTM values like the stored slugs", async () => {
+    groupBy.mockResolvedValue([
+      {
+        utmSource: "instagram",
+        utmMedium: "bio",
+        utmCampaign: "launch-week",
+        referrerHost: null,
+        _count: { _all: 1 },
+      },
+    ]);
+    const fetchImpl = mockFetch([["Instagram", "Bio", "Launch Week", "", 4]]);
+    const rows = await getSourceBreakdown({ days: 7, config, fetchImpl });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      label: "Instagram bio link",
+      campaign: "launch-week",
+      visits: 4,
+      signups: 1,
+    });
+  });
+
+  it("leaves signups out of sources and locations when a page filter is on", async () => {
+    const page = { kind: "pageType", value: "home" } as const;
+    const sources = await getSourceBreakdown({
+      days: 7,
+      page,
+      config,
+      fetchImpl: mockFetch([["instagram", "bio", "launch", "", 10]]),
+    });
+    expect(sources[0]).toMatchObject({ signups: null, signupRate: null });
+    const locations = await getLocations({
+      days: 7,
+      page,
+      config,
+      fetchImpl: mockFetch([["Hyderabad", "India", 3]]),
+    });
+    expect(locations.signupsHidden).toBe(true);
+    expect(locations.signups).toEqual([]);
+    expect(groupBy).not.toHaveBeenCalled();
   });
 
   it("merges visits and signups by friendly source and campaign and computes the rate", async () => {
