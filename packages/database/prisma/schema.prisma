@@ -78,8 +78,9 @@ model StaffUser {
   lastLoginAt  DateTime?
   createdAt    DateTime  @default(now())
 
-  roles     StaffUserRole[]
-  auditLogs AuditLog[]
+  roles        StaffUserRole[]
+  auditLogs    AuditLog[]
+  trackedLinks TrackedLink[]
 }
 
 model Role {
@@ -872,6 +873,24 @@ model AuditLog {
   createdAt   DateTime   @default(now())
 
   @@index([entityType, entityId])
+}
+
+// Tagged links staff made in the admin link builder, kept so they can be
+// copied again and campaign names get reused instead of retyped. Internal
+// tool data (no money, stock or access), so hard delete and no audit row.
+model TrackedLink {
+  id          String     @id @default(cuid())
+  // The full tagged URL. Unique so making the same link twice reuses the row.
+  url         String     @unique
+  channelId   String // an id from UTM_CHANNELS
+  pagePath    String // e.g. "/ontheway" or "/product/<slug>"
+  campaign    String // already a slug
+  content     String? // the optional extra label, already a slug
+  createdById String?
+  createdBy   StaffUser? @relation(fields: [createdById], references: [id])
+  createdAt   DateTime   @default(now())
+
+  @@index([createdAt])
 }
 
 // Funnel events for the admin analytics dashboard. Kept intentionally thin,

@@ -122,6 +122,10 @@ features are built, not just written into the test files silently.
   Asia/Kolkata; `refreshAnalytics` checks `waitlist:view`, is rate limited and only clears the cache
   when allowed; `buildLinkAction` happy path and empty-campaign error; `listKnownCampaigns`;
   first touch is saved when a tagged link is followed after a direct landing.
+- Saved links: saving the same URL twice keeps one row, list is newest first and pages, delete
+  reports false the second time (DB integration test, needs `DATABASE_URL`); `buildLinkAction`
+  saves the cleaned values and does not save on error; `removeLinkAction` checks `waitlist:view`
+  and reports an already removed link.
 - Admin filters: clicking another filter navigates, the current one does nothing, new-tab clicks are
   left alone. Manual check after any change to `analytics/page.tsx`: switch filters and confirm the
   old numbers are replaced, not shown next to the new ones.

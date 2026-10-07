@@ -1,8 +1,22 @@
 import Link from "next/link";
-import { UTM_CHANNELS, listKnownCampaigns } from "@onwei/core";
+import {
+  UTM_CHANNELS,
+  listKnownCampaigns,
+  listTrackedLinks,
+} from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { UtmLinkBuilder } from "../../_components/UtmLinkBuilder";
+import { SavedLinkActions } from "../../_components/SavedLinkActions";
+import {
+  AdminPager,
+  AdminTable,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTableRow,
+} from "../../_components/ui";
+import { pageWindow, parsePage, trimPage } from "../../_lib/pagination";
 
 const PAGES = [
   { value: "/ontheway", label: "Waitlist page" },
@@ -26,13 +40,22 @@ async function getProductPages() {
   }));
 }
 
-export default async function UtmLinksPage() {
+export default async function UtmLinksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   await requirePageSession("waitlist:view");
+  const page = parsePage((await searchParams).page);
   // Suggestions are a nicety, so a failure here must not break the page.
-  const [productPages, campaigns] = await Promise.all([
+  const [productPages, campaigns, saved] = await Promise.all([
     getProductPages().catch(() => []),
     listKnownCampaigns().catch(() => []),
+    listTrackedLinks(pageWindow(page)),
   ]);
+  const { rows: links, hasNext } = trimPage(saved);
+  const channelLabel = (id: string) =>
+    UTM_CHANNELS.find((c) => c.id === id)?.label ?? id;
 
   return (
     <main className="flex flex-col gap-6">
@@ -54,6 +77,54 @@ export default async function UtmLinksPage() {
         pages={[...PAGES, ...productPages]}
         campaigns={campaigns}
       />
+
+      <section className="flex flex-col gap-3">
+        <h2 className="font-display text-lg font-semibold uppercase">
+          Links you&apos;ve made
+        </h2>
+        {links.length === 0 && page === 1 ? (
+          <p className="text-onwei-blue/70">
+            Links you make will show up here, so you can copy them again later.
+          </p>
+        ) : (
+          <AdminTable>
+            <AdminTableHead>
+              <AdminTableHeaderCell>Made on</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Shared on</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Opens</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Campaign</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Extra label</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Made by</AdminTableHeaderCell>
+              <AdminTableHeaderCell>
+                <span className="sr-only">Actions</span>
+              </AdminTableHeaderCell>
+            </AdminTableHead>
+            <tbody>
+              {links.map((l) => (
+                <AdminTableRow key={l.id}>
+                  <AdminTableCell>
+                    {l.createdAt.toLocaleDateString("en-IN", {
+                      timeZone: "Asia/Kolkata",
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </AdminTableCell>
+                  <AdminTableCell>{channelLabel(l.channelId)}</AdminTableCell>
+                  <AdminTableCell>{l.pagePath}</AdminTableCell>
+                  <AdminTableCell>{l.campaign}</AdminTableCell>
+                  <AdminTableCell>{l.content ?? "-"}</AdminTableCell>
+                  <AdminTableCell>{l.createdBy?.name ?? "-"}</AdminTableCell>
+                  <AdminTableCell>
+                    <SavedLinkActions id={l.id} url={l.url} />
+                  </AdminTableCell>
+                </AdminTableRow>
+              ))}
+            </tbody>
+          </AdminTable>
+        )}
+        <AdminPager pathname="/analytics/links" page={page} hasNext={hasNext} />
+      </section>
     </main>
   );
 }

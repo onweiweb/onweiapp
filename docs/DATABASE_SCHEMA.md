@@ -91,6 +91,12 @@ read from the host's IP headers. All nullable, all personal data tied to the row
 they follow its retention and deletion. Phase 2 orders should reuse the same
 `Attribution` shape (`packages/core/src/analytics/attribution.ts`).
 
+**Tracked links.** `TrackedLink` keeps every tagged link staff make in the admin link builder
+(`url` unique, `channelId`, `pagePath`, `campaign`, `content`, `createdById`, `createdAt`), so a
+link can be copied again and campaign names get reused. Internal tool data with no money, stock or
+access effect, so it is hard deleted and writes no audit row. Making the exact same link twice
+reuses the row (upsert on `url`). Migration `add_tracked_links` (additive).
+
 ## Deliberately deferred
 
 Multi-currency, multi-language, and multi-warehouse _routing_ (choosing which

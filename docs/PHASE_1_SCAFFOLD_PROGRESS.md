@@ -421,7 +421,8 @@ are live queries, storefront catalog list queries are unbounded (cached 30s to 5
   page filter; fetched-at shows the real query time; UTM casing normalized on both sides; India-time
   day buckets; single 60s cache (core cache removed); 20s query timeout; refresh rate limited; link
   builder suggests campaigns and lists products. No schema change. Saved links list deferred (needs
-  a table and a prod migration).
+  a table and a prod migration). Then built the same day: `TrackedLink` table (migration
+  `add_tracked_links`, prod must be migrated), saved list with Copy and Remove under the builder.
 - Open: visitor-level location needs a small endpoint feeding Vercel geo headers into events if the
   client wants it; PostHog region (US) still needs the client's DPDP sign-off.
 

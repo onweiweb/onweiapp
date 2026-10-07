@@ -1,6 +1,7 @@
 "use server";
 
-import { buildUtmLink } from "@onwei/core";
+import { buildUtmLink, deleteTrackedLink, saveTrackedLink } from "@onwei/core";
+import { revalidatePath } from "next/cache";
 import { requirePageSession } from "../../_lib/requirePageSession";
 
 export type LinkBuilderState =
@@ -20,17 +21,38 @@ export async function buildLinkAction(
   _previous: LinkBuilderState,
   formData: FormData,
 ): Promise<LinkBuilderState> {
-  await requirePageSession("waitlist:view");
+  const { staffUserId } = await requirePageSession("waitlist:view");
 
+  const channelId = String(formData.get("channel") ?? "");
   const result = buildUtmLink({
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.onwei.in",
     pageUrl: String(formData.get("page") ?? "/ontheway"),
-    channelId: String(formData.get("channel") ?? ""),
+    channelId,
     campaign: String(formData.get("campaign") ?? ""),
     content: String(formData.get("content") ?? ""),
   });
   if (!result.ok) {
     return { status: "error", message: ERROR_COPY[result.reason] };
   }
+  await saveTrackedLink({
+    url: result.url,
+    channelId,
+    pagePath: result.pagePath,
+    campaign: result.campaign,
+    content: result.content,
+    createdById: staffUserId,
+  });
+  revalidatePath("/analytics/links");
   return { status: "done", url: result.url };
+}
+
+export type RemoveLinkResult = { ok: true } | { ok: false; message: string };
+
+export async function removeLinkAction(id: string): Promise<RemoveLinkResult> {
+  await requirePageSession("waitlist:view");
+  const removed = await deleteTrackedLink(id);
+  revalidatePath("/analytics/links");
+  return removed
+    ? { ok: true }
+    : { ok: false, message: "That link was already removed." };
 }

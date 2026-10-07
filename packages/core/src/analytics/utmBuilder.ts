@@ -50,7 +50,14 @@ export const UTM_CHANNELS: readonly UtmChannel[] = [
 ];
 
 export type BuildUtmLinkResult =
-  | { ok: true; url: string }
+  | {
+      ok: true;
+      url: string;
+      /** The cleaned parts, so callers can store them without re-parsing the URL. */
+      pagePath: string;
+      campaign: string;
+      content: string | null;
+    }
   | { ok: false; reason: "UNKNOWN_CHANNEL" | "EMPTY_CAMPAIGN" | "BAD_URL" };
 
 /** Builds a tagged link. `pageUrl` may be a full URL or a path like "/ontheway". */
@@ -79,5 +86,11 @@ export function buildUtmLink(input: {
   url.searchParams.set("utm_campaign", campaign);
   const content = input.content ? slugifyUtmValue(input.content) : "";
   if (content) url.searchParams.set("utm_content", content);
-  return { ok: true, url: url.toString() };
+  return {
+    ok: true,
+    url: url.toString(),
+    pagePath: url.pathname,
+    campaign,
+    content: content || null,
+  };
 }

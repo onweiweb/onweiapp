@@ -154,6 +154,8 @@ attribution on signups, the admin `/analytics` page reads reports back. Full pri
   The "Refresh numbers" button clears the cache, limited to 6 per minute per staff member. Gated by
   `waitlist:view`. Link builder at `/analytics/links` (fixed channel list in `utmBuilder.ts`, page
   picker includes active products, campaign field suggests names already used on signups).
+  Every link made is saved in `TrackedLink` (upsert on `url`) and listed under the builder with
+  Copy and Remove.
 - **PostHog speed (measured 2026-10-07):** an uncached query takes about 5s, a cold page fires about
   9, PostHog queues beyond about 6, so a cold load is 5 to 10s. Capping concurrency made it worse
   (tried 1, 2, 3, 6). `runHogql` times out at 20s and the page sets `maxDuration = 30`.

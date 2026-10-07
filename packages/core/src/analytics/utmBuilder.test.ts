@@ -14,6 +14,9 @@ describe("buildUtmLink", () => {
     ).toEqual({
       ok: true,
       url: "https://www.onwei.in/ontheway?utm_source=instagram&utm_medium=bio&utm_campaign=launch-week",
+      pagePath: "/ontheway",
+      campaign: "launch-week",
+      content: null,
     });
   });
   it("adds content when given and keeps any existing query", () => {
@@ -24,6 +27,8 @@ describe("buildUtmLink", () => {
       campaign: "friends",
       content: "Story 2",
     });
+    expect(result.ok && result.pagePath).toBe("/collection");
+    expect(result.ok && result.content).toBe("story-2");
     expect(result.ok && result.url).toContain("sort=new");
     expect(result.ok && result.url).toContain("utm_content=story-2");
   });

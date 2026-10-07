@@ -220,6 +220,12 @@ export {
 export { describeSource } from "./analytics/sourceLabels";
 export { listKnownCampaigns } from "./analytics/campaigns";
 export {
+  saveTrackedLink,
+  listTrackedLinks,
+  deleteTrackedLink,
+  type TrackedLinkInput,
+} from "./analytics/trackedLinks";
+export {
   checkAnalyticsRefreshRateLimit,
   _resetAnalyticsRefreshRateLimiterForTests,
 } from "./analytics/refreshRateLimit";
