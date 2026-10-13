@@ -1,37 +1,9 @@
 import Image from "@/_components/ScaledImage";
 import Link from "next/link";
 import { formatCurrency } from "@onwei/core";
-import type { ProductListItem, ReviewSummary } from "@onwei/core";
-
-// Real per-product review data (packages/core's listApprovedReviews, joined
-// in by the catalog list functions), renders nothing when a product has no
-// approved reviews yet, rather than a fake/invented count.
-function ProductRating({ summary }: { summary: ReviewSummary }) {
-  const rounded = Math.round(summary.average);
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-0.5">
-        {Array.from({ length: 5 }).map((_, index) => (
-          <Image
-            key={index}
-            src={
-              index < rounded
-                ? "/images/shared/star-full.svg"
-                : "/images/shared/star-outline.svg"
-            }
-            alt=""
-            width={10}
-            height={10}
-            aria-hidden
-          />
-        ))}
-      </div>
-      <span className="font-grotesk text-[length:max(0.625rem,11px)] leading-[1.36] text-onwei-black">
-        ({summary.count})
-      </span>
-    </div>
-  );
-}
+import type { ProductListItem } from "@onwei/core";
+import { ProductRating } from "./ProductRating";
+import { HighlightTags } from "./HighlightTags";
 
 export function ProductCard({
   product,
@@ -49,7 +21,15 @@ export function ProductCard({
   // below-the-fold sections like RelatedProducts.
   eager?: boolean;
 }) {
-  const price = formatCurrency(product.priceRangeMinorUnits.min, "INR");
+  const price = formatCurrency(
+    product.priceRangeMinorUnits.min,
+    "INR",
+    "en-IN",
+    {
+      dropZeroPaise: true,
+    },
+  );
+  const tags = product.highlightTags.slice(0, 3);
 
   return (
     <div className="flex w-[14.375rem] max-w-[14.375rem] shrink-0 flex-col items-start gap-3 desk:w-[17.625rem] desk:max-w-[17.625rem] desk:gap-6">
@@ -65,7 +45,7 @@ export function ProductCard({
               fill
               sizes="282px"
               loading={eager ? "eager" : "lazy"}
-              className="object-contain p-6"
+              className="object-contain p-6 desk:p-0"
             />
           ) : null}
         </div>
@@ -79,6 +59,7 @@ export function ProductCard({
             </p>
             <p className="shrink-0 text-[length:max(0.75rem,11px)]">{price}</p>
           </div>
+          <HighlightTags tags={tags} />
         </div>
       </Link>
       {/* Figma labels this "add to cart", but cart/checkout is Phase 2 and
@@ -87,7 +68,7 @@ export function ProductCard({
           functional stand-in, not a design change. */}
       <Link
         href={`/product/${product.slug}`}
-        className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase text-onwei-beige"
+        className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-2.5 font-grotesk text-[length:max(0.75rem,11px)] uppercase leading-none text-onwei-beige desk:py-3 desk:text-label"
       >
         add to cart
       </Link>

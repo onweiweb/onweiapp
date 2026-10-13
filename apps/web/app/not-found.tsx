@@ -8,7 +8,7 @@ export default function NotFound() {
       <p className="font-display text-[1.75rem] font-bold uppercase text-onwei-blue">
         Page not found
       </p>
-      <p className="max-w-md font-grotesk text-[length:max(0.875rem,11px)] text-onwei-blue/70">
+      <p className="max-w-md font-grotesk text-body text-onwei-blue/70">
         That page does not exist or has moved.
       </p>
       <Link

@@ -5,10 +5,13 @@ import { usePathname } from "next/navigation";
 import { track } from "../../lib/analytics/track";
 import { useProductVariant } from "./ProductVariantContext";
 
-function chipClassName(active: boolean) {
-  return `flex h-[1.875rem] items-center justify-center rounded-[1.875rem] border border-onwei-blue px-6 font-display text-[length:max(0.875rem,11px)] font-semibold uppercase text-onwei-blue ${
-    active ? "bg-onwei-green" : "bg-transparent"
-  }`;
+// Figma 759:3069 / 759:3078: 30px pills, 48px side padding, the picked one
+// filled green and semibold, the rest medium weight. Size pills share the
+// row equally (flex-1), colour pills keep their own width.
+function chipClassName(active: boolean, fill = false) {
+  return `flex h-[1.875rem] items-center justify-center rounded-[1.875rem] border border-onwei-blue px-12 font-display text-[length:max(0.875rem,11px)] uppercase text-onwei-blue ${
+    active ? "bg-onwei-green font-semibold" : "bg-transparent font-medium"
+  } ${fill ? "min-w-0 flex-1 px-2 desk:px-12" : ""}`;
 }
 
 export function ProductVariantPicker() {
@@ -61,13 +64,13 @@ export function ProductVariantPicker() {
           <p className="font-display text-[length:max(0.875rem,11px)] font-medium capitalize text-onwei-blue">
             Size:
           </p>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full items-center gap-2">
             {sizes.map((size) => (
               <button
                 key={size}
                 type="button"
                 onClick={() => setSelectedSize(size)}
-                className={chipClassName(size === selectedSize)}
+                className={chipClassName(size === selectedSize, true)}
               >
                 {size}
               </button>
@@ -83,7 +86,7 @@ export function ProductVariantPicker() {
         <button
           type="button"
           disabled
-          className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase text-onwei-beige disabled:opacity-70"
+          className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase leading-none text-onwei-beige disabled:cursor-not-allowed"
         >
           add to cart
         </button>

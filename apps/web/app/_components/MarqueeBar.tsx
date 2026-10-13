@@ -17,7 +17,7 @@ function MarqueeGroup({ items }: { items: readonly string[] }) {
     <div className="flex shrink-0 items-center gap-6 pr-6">
       {repeated.map((item, index) => (
         <div key={index} className="flex shrink-0 items-center gap-6">
-          <p className="whitespace-nowrap font-grotesk text-label uppercase text-onwei-white">
+          <p className="whitespace-nowrap font-grotesk text-[length:max(0.75rem,11px)] uppercase text-onwei-white desk:text-label">
             {item}
           </p>
           <Image
@@ -25,6 +25,7 @@ function MarqueeGroup({ items }: { items: readonly string[] }) {
             alt=""
             width={20}
             height={15}
+            className="h-[0.625rem] w-[0.8125rem] desk:h-[0.9375rem] desk:w-5"
           />
         </div>
       ))}
@@ -35,7 +36,7 @@ function MarqueeGroup({ items }: { items: readonly string[] }) {
 export function MarqueeBar({ items }: { items: readonly string[] }) {
   return (
     <div
-      className="w-full overflow-hidden rounded-[1.25rem] bg-onwei-blue py-3"
+      className="w-full overflow-hidden rounded-[1.25rem] bg-onwei-blue py-2 desk:py-3"
       aria-hidden
     >
       <div className="flex w-max animate-[onwei-marquee_60s_linear_infinite]">

@@ -73,7 +73,9 @@ export function buildArticleJsonLd(article: ArticleDetail) {
     headline: article.title,
     description: article.excerpt ?? undefined,
     image: article.coverImageUrl ?? undefined,
-    datePublished: article.publishedAt?.toISOString(),
+    datePublished: article.publishedAt
+      ? new Date(article.publishedAt).toISOString()
+      : undefined,
     dateModified: article.updatedAt.toISOString(),
   };
 }

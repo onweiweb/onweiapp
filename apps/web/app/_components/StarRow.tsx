@@ -6,6 +6,7 @@ export function StarRow({
   count,
   size = 18,
   tone = "light",
+  shrinkOnMobile = false,
 }: {
   count: number;
   size?: number;
@@ -13,6 +14,9 @@ export function StarRow({
   // backgrounds this was built for. The PDP rating row sits on the white
   // info panel instead, where white-on-white is invisible, pass "dark".
   tone?: "light" | "dark";
+  // Mobile review cards draw 12px stars where desktop uses 18px (Figma
+  // 761:5075).
+  shrinkOnMobile?: boolean;
 }) {
   return (
     <div className="flex items-start gap-0.5">
@@ -28,6 +32,7 @@ export function StarRow({
           width={size}
           height={size}
           aria-hidden
+          className={shrinkOnMobile ? "max-desk:!w-3" : undefined}
         />
       ))}
     </div>

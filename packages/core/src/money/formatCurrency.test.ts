@@ -13,4 +13,10 @@ describe("formatCurrency", () => {
   it("formats zero", () => {
     expect(formatCurrency(0)).toBe("₹0.00");
   });
+
+  it("drops zero paise when asked, keeps real paise", () => {
+    const options = { dropZeroPaise: true };
+    expect(formatCurrency(150000, "INR", "en-IN", options)).toBe("₹1,500");
+    expect(formatCurrency(150050, "INR", "en-IN", options)).toBe("₹1,500.50");
+  });
 });

@@ -9,7 +9,7 @@ import {
   cachedListComparableProducts as listComparableProducts,
   cachedListFaqs as listFaqs,
   cachedListInstagramPhotos as listInstagramPhotos,
-  cachedListMarqueeItems as listMarqueeItems,
+  cachedListAllActiveProductSlugsForSitemap as listAllActiveProductSlugs,
   cachedListValueProps as listValueProps,
 } from "../../../lib/cachedCatalog";
 import { buildProductMetadata } from "../../../lib/seo/metadata";
@@ -24,11 +24,12 @@ import { SiteFooter } from "@/_components/SiteFooter";
 import { ProductVariantPicker } from "@/_components/ProductVariantPicker";
 import { Accordion, AccordionItem } from "@/_components/Accordion";
 import { PlayCharacteristics } from "@/_components/PlayCharacteristics";
-import { StarRow } from "@/_components/StarRow";
-import { MarqueeBar } from "@/_components/MarqueeBar";
+import { ProductRating } from "@/_components/ProductRating";
+import { HighlightTags } from "@/_components/HighlightTags";
+import { ReviewMarquee } from "@/_components/ReviewMarquee";
 import { ValueProps } from "@/_components/ValueProps";
 import { ComparisonTable } from "@/_components/ComparisonTable";
-import { ReviewWall } from "@/_components/ReviewWall";
+import { ReviewList } from "@/_components/ReviewList";
 import { RelatedProducts } from "@/_components/RelatedProducts";
 import { FaqSection } from "@/_components/FaqSection";
 import { InstagramGrid } from "@/_components/InstagramGrid";
@@ -50,6 +51,24 @@ import { VariantPrice } from "@/_components/VariantPrice";
 // rather than the mobile mockup's separate 5-item breakdown; (2) "Shipping
 // & Returns" is static shared copy (it read as generic store policy in
 // Figma, not product-specific), not a per-product field.
+function chunkTags(tags: readonly string[], size: number) {
+  const rows: string[][] = [];
+  for (let index = 0; index < tags.length; index += size) {
+    rows.push(tags.slice(index, index + size));
+  }
+  return rows;
+}
+
+// Built once per product and refreshed every minute (or on demand when staff
+// edit the catalog), instead of rendering on every visit. A product added
+// after the build is rendered on its first visit and cached from then on.
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  const products = await listAllActiveProductSlugs();
+  return products.map(({ slug }) => ({ slug }));
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -79,7 +98,6 @@ export default async function ProductPage({
     relatedProducts,
     comparableSiblings,
     faqs,
-    marqueeItems,
     valueProps,
     instagramPhotos,
   ] = await Promise.all([
@@ -87,7 +105,6 @@ export default async function ProductPage({
     listRelatedProducts(product.id, 4),
     listComparableProducts(product.id, 2),
     listFaqs(product.id),
-    listMarqueeItems("PDP"),
     listValueProps(),
     listInstagramPhotos(),
   ]);
@@ -97,7 +114,9 @@ export default async function ProductPage({
   const formattedPrices = Object.fromEntries(
     product.variants.map((variant) => [
       variant.id,
-      formatCurrency(variant.priceMinorUnits, "INR"),
+      formatCurrency(variant.priceMinorUnits, "INR", "en-IN", {
+        dropZeroPaise: true,
+      }),
     ]),
   );
 
@@ -141,28 +160,19 @@ export default async function ProductPage({
         ])}
       />
       {faqs.length > 0 ? <JsonLd data={buildFaqJsonLd(faqs)} /> : null}
-      <SiteHeader />
+      <SiteHeader nav="inner" />
 
-      <section className="flex flex-col items-center bg-onwei-green px-6 py-14 desk:px-14">
-        <div className="flex w-full max-w-[90rem] flex-col gap-8 desk:flex-row desk:items-start">
+      <section className="flex flex-col items-center bg-onwei-green px-6 pt-14 desk:px-14 desk:pt-0">
+        <div className="flex w-full max-w-[90rem] flex-col gap-8 desk:flex-row desk:items-start desk:gap-14">
           <ProductGallery images={product.images} productName={product.name} />
 
           <ProductVariantProvider
             variants={product.variants}
             formattedPrices={formattedPrices}
           >
-            <div className="flex w-full flex-col items-start gap-3 rounded-[1.875rem] bg-onwei-white px-6 py-8 desk:px-8 desk:py-12 desk:flex-1">
+            <div className="flex w-full min-w-0 flex-col items-start gap-3 rounded-[1.875rem] bg-onwei-white px-6 py-8 desk:flex-1 desk:px-8 desk:py-12">
               {reviewSummary.count > 0 ? (
-                <div className="flex items-center gap-2">
-                  <StarRow
-                    count={Math.round(reviewSummary.average)}
-                    size={14}
-                    tone="dark"
-                  />
-                  <span className="font-grotesk text-[length:max(0.75rem,11px)] text-onwei-blue">
-                    ({reviewSummary.count})
-                  </span>
-                </div>
+                <ProductRating summary={reviewSummary} starSize={11} />
               ) : null}
 
               <div className="flex w-full items-center justify-between gap-4">
@@ -172,11 +182,16 @@ export default async function ProductPage({
                 <VariantPrice />
               </div>
 
-              {product.highlightTags.length > 0 ? (
-                <p className="font-grotesk text-[length:max(0.75rem,11px)] uppercase text-onwei-blue">
-                  {product.highlightTags.join(" ⬥ ")}
-                </p>
-              ) : null}
+              {/* Figma 759:3055: two tags per row. */}
+              <div className="flex w-full flex-col gap-0.5">
+                {chunkTags(product.highlightTags, 2).map((row) => (
+                  <HighlightTags
+                    key={row.join("|")}
+                    tags={row}
+                    className="desk:text-[0.75rem]"
+                  />
+                ))}
+              </div>
 
               <ProductVariantPicker />
 
@@ -215,7 +230,7 @@ export default async function ProductPage({
                   </AccordionItem>
                 ) : null}
 
-                <AccordionItem title="Shipping & returns">
+                <AccordionItem title="Shipping">
                   <p>
                     We offer standard shipping on all orders. Once your order is
                     handed over to the carrier, delivery typically takes 1-3
@@ -235,25 +250,21 @@ export default async function ProductPage({
             </div>
           </ProductVariantProvider>
         </div>
-
-        <div className="mt-14 w-full max-w-[90rem]">
-          <MarqueeBar items={marqueeItems} />
-        </div>
       </section>
 
-      <section className="flex flex-col items-center bg-onwei-green px-3 pb-24 desk:px-14">
+      <div className="bg-onwei-green pt-12">
+        <ReviewMarquee reviews={reviews} />
+      </div>
+
+      <section className="flex flex-col items-center bg-onwei-green px-3 pb-24 pt-14 desk:px-14 desk:py-[4.5rem]">
         <div className="flex w-full max-w-[90rem] flex-col gap-6 desk:flex-row">
-          <ValueProps items={valueProps} />
+          <ValueProps items={valueProps} row />
         </div>
       </section>
 
       <ComparisonTable products={comparisonProducts} />
 
-      <ReviewWall
-        reviews={reviews}
-        heading="What athletes are saying"
-        shareLabel="Share your On wei routine and get rewarded"
-      />
+      <ReviewList reviews={reviews} heading="What athletes are saying" />
 
       <RelatedProducts products={relatedProducts} />
 

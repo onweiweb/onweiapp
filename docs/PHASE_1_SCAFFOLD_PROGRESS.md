@@ -426,6 +426,25 @@ are live queries, storefront catalog list queries are unbounded (cached 30s to 5
 - Open: visitor-level location needs a small endpoint feeding Vercel geo headers into events if the
   client wants it; PostHog region (US) still needs the client's DPDP sign-off.
 
+## Figma audit pass (2026-10-12), local only, not deployed
+
+Dev DB set to LIVE site mode, prod stays WAITLIST, nothing pushed. Full list in `docs/FIGMA_AUDIT.md`. Highlights:
+Homepage desktop and mobile, Collection, PDP and About Us were rebuilt section by section against Figma; shared
+pieces are `ProductRating`, `HighlightTags`, `ReviewList`, `ReviewMarquee`; header, footer and Instagram take per page
+props because Figma differs per page. Seed adds 3 Figma-style articles for the "from the playbook" row (dev only,
+`seedArticles`). Found and fixed a real bug: `unstable_cache` returns dates as strings, which crashed the Homepage
+once an article existed. No schema change, no migration needed for prod. Before launch: push these changes together,
+re-check `/ontheway` and `/about` in WAITLIST mode.
+
+## Speed pass (2026-10-12), local only
+
+Collection, product and journal pages are now built once and refreshed every 60s (or on demand when staff edit the
+catalog), with `generateStaticParams`, instead of rendering on every visit. Collection sorting moved to the browser
+(`CollectionSort.tsx`): the server sends each category's three orderings made by core's `sortProductList`, the
+browser picks one and mirrors it into `?sort=` with `replaceState`. Category switches went from a server render to
+about 35 to 180ms (measured on a production build, 1x and 4x CPU). Footer sprite replaced by a 15 KB crop.
+Dev (`next dev`) is still slower than production because it serves unminified code and compiles on first visit.
+
 ## Update discipline
 
 Whenever new work changes any of the above (new dependency version constraints, new gotchas, new

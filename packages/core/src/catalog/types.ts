@@ -23,6 +23,8 @@ export interface ProductListItem {
   // null when the product has no approved reviews yet, the card shows no
   // rating row at all rather than a fake/invented count.
   reviewSummary: ReviewSummary | null;
+  // Short curated tags the card shows under the name (Figma 380:1672).
+  highlightTags: string[];
 }
 
 export interface ProductVariantDTO {

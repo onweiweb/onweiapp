@@ -22,6 +22,8 @@ export interface ProductWithCatalogRelations {
   name: string;
   slug: string;
   description: string | null;
+  // Optional so older fixtures still type-check, the real query returns it.
+  highlightTags?: readonly string[];
   images: readonly {
     url: string;
     altText: string | null;
@@ -121,5 +123,6 @@ export function mapToListItem(
     priceRangeMinorUnits: derivePriceRangeMinorUnits(variants),
     inStock: variants.some((variant) => variant.inStock),
     reviewSummary: summarizeProductReviews(product.reviews),
+    highlightTags: [...(product.highlightTags ?? [])],
   };
 }

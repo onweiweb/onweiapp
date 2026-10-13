@@ -10,6 +10,8 @@ const PAGES = [
   "/",
   "/collection/pickleball",
   "/collection/pilates",
+  "/collection/all",
+  "/product/reset-touch",
 ];
 const TAG = process.env.SHOT_TAG ?? "after";
 

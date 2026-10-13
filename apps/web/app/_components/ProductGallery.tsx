@@ -22,16 +22,16 @@ export function ProductGallery({
     .filter(({ index }) => index !== selectedIndex);
 
   return (
-    <div className="flex w-full gap-4 desk:w-auto">
+    <div className="flex w-full gap-4 desk:sticky desk:top-28 desk:w-[53.375rem] desk:shrink-0 desk:self-start">
       {thumbnails.length > 0 ? (
-        <div className="hidden w-[12.625rem] flex-col gap-4 desk:flex">
+        <div className="hidden h-[44.1875rem] w-[12.625rem] flex-col gap-4 desk:flex">
           {thumbnails.map(({ image, index }) => (
             <button
               key={index}
               type="button"
               onClick={() => setSelectedIndex(index)}
               aria-label={`Show image ${index + 1} of ${images.length}`}
-              className="relative aspect-square w-full overflow-hidden rounded-[1.25rem]"
+              className="relative min-h-0 w-full flex-1 overflow-hidden rounded-[1.25rem]"
             >
               <Image
                 src={image.url}
@@ -51,7 +51,7 @@ export function ProductGallery({
             alt={selected.altText ?? productName}
             fill
             sizes="((min-width: 768px)) 636px, 100vw"
-            className="object-contain p-10"
+            className="object-contain p-6 desk:p-4"
           />
         ) : null}
       </div>

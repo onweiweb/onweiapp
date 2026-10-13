@@ -44,7 +44,7 @@ export function NewsletterForm() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex w-full max-w-[26.5625rem] flex-col items-start gap-4"
+      className="mx-auto flex w-full max-w-[21rem] flex-col items-start gap-4 desk:mx-0 desk:max-w-[26.5625rem]"
     >
       <label htmlFor={inputId} className="sr-only">
         Email address
@@ -56,7 +56,7 @@ export function NewsletterForm() {
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         placeholder="EMAIL ADDRESS"
-        className="h-12 w-full rounded-[31.25rem] border border-onwei-beige bg-transparent px-5 font-cta text-cta uppercase text-onwei-beige placeholder:text-onwei-beige placeholder:opacity-100 focus:outline-none"
+        className="h-11 w-full rounded-[31.25rem] border border-onwei-beige bg-transparent px-5 font-cta text-[0.75rem] uppercase desk:h-12 desk:text-cta text-onwei-beige placeholder:text-onwei-beige placeholder:opacity-100 focus:outline-none"
       />
       <ConsentCheckbox
         checked={consent}
@@ -68,7 +68,7 @@ export function NewsletterForm() {
       <Button
         type="submit"
         disabled={status === "submitting"}
-        className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-beige px-6 py-3 font-grotesk text-label uppercase text-onwei-purple disabled:opacity-70"
+        className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-beige px-6 py-[0.6875rem] font-grotesk text-[length:max(0.75rem,11px)] uppercase leading-none text-onwei-purple desk:py-3 desk:text-label disabled:opacity-70"
       >
         {status === "submitting" ? "submitting..." : "submit"}
       </Button>

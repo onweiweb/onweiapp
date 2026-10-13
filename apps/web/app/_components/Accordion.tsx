@@ -17,13 +17,18 @@ export function AccordionItem({
   id,
   title,
   defaultOpen = false,
+  tone = "dark",
   children,
 }: {
   id?: string;
   title: string;
   defaultOpen?: boolean;
+  // "light" is the white-on-purple FAQ section (Figma 759:3281), "dark" the
+  // navy-on-white PDP info panel (759:3090).
+  tone?: "dark" | "light";
   children: React.ReactNode;
 }) {
+  const light = tone === "light";
   const [open, setOpen] = useState(defaultOpen);
 
   useEffect(() => {
@@ -42,19 +47,28 @@ export function AccordionItem({
   }, [id]);
 
   return (
-    <div id={id} className="border-b border-onwei-blue py-5 first:border-t">
+    <div
+      id={id}
+      className={
+        light
+          ? "border-b border-onwei-white py-4"
+          : "border-b border-onwei-blue py-5 first:border-t"
+      }
+    >
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         className="flex w-full items-center justify-between gap-4 text-left"
       >
-        <span className="font-display text-[length:max(1rem,11px)] font-medium text-onwei-blue">
+        <span
+          className={`font-display text-[length:max(1rem,11px)] font-medium uppercase leading-none tracking-[-0.01rem] ${light ? "text-onwei-white" : "text-onwei-blue"}`}
+        >
           {title}
         </span>
         <span
           aria-hidden
-          className="relative h-[0.875rem] w-[0.875rem] shrink-0 text-onwei-blue"
+          className={`relative h-[0.875rem] w-[0.875rem] shrink-0 ${light ? "text-onwei-white" : "text-onwei-blue"}`}
         >
           <span className="absolute left-0 top-1/2 h-px w-full -translate-y-1/2 bg-current" />
           <span
@@ -63,7 +77,9 @@ export function AccordionItem({
         </span>
       </button>
       {open ? (
-        <div className="pt-4 font-grotesk text-[length:max(0.875rem,11px)] leading-normal text-onwei-blue">
+        <div
+          className={`font-grotesk text-body leading-normal ${light ? "pb-4 pt-6 text-onwei-white desk:max-w-[36.5rem]" : "pt-4 text-onwei-blue"}`}
+        >
           {children}
         </div>
       ) : null}

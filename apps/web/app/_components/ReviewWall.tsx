@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Image from "@/_components/ScaledImage";
 import type { ReviewListItem } from "@onwei/core";
 import { ScrollCarousel } from "./ScrollCarousel";
@@ -9,7 +10,40 @@ import { CtaLink } from "./CtaLink";
 // `listApprovedReviews` and is reused on the PDP and Collection page with
 // page-specific heading/share copy (Figma duplicates this section per page
 // rather than treating it as Homepage-only).
-const TONES = ["purple", "dark"] as const;
+// Figma's "Component 703" (node 758:2378) runs purple, purple, navy cards.
+const TONES = ["purple", "purple", "dark"] as const;
+
+// Lifestyle photo tiles Figma slots between the review cards (498x429, same
+// height as a card). They are fixed brand shots, not CMS content.
+const PHOTOS = [
+  {
+    src: "/images/reviews/photo-1.png",
+    alt: "Hands smoothing out a rolled yoga mat",
+  },
+  {
+    src: "/images/reviews/photo-2.png",
+    alt: "Blurred motion shot of an athlete on court",
+  },
+  {
+    src: "/images/reviews/photo-1.png",
+    alt: "Hands smoothing out a rolled yoga mat",
+  },
+] as const;
+
+function PhotoTile({ photo }: { photo: (typeof PHOTOS)[number] }) {
+  return (
+    <div className="relative h-[19.8125rem] w-[21.9375rem] shrink-0 overflow-hidden rounded-[1.875rem] desk:h-[26.8125rem] desk:w-[31.125rem]">
+      <Image
+        src={photo.src}
+        alt={photo.alt}
+        fill
+        sizes="498px"
+        loading="eager"
+        className="object-cover"
+      />
+    </div>
+  );
+}
 
 function ReviewCard({
   review,
@@ -24,15 +58,11 @@ function ReviewCard({
         tone === "purple" ? "bg-onwei-purple" : "bg-onwei-blue"
       }`}
     >
-      <StarRow count={review.rating} />
+      <StarRow count={review.rating} shrinkOnMobile />
       {review.title ? (
-        <p className="font-grotesk text-[length:max(0.875rem,11px)] font-bold">
-          {review.title}
-        </p>
+        <p className="font-grotesk text-body font-bold">{review.title}</p>
       ) : null}
-      <p className="font-grotesk text-[length:max(0.875rem,11px)]">
-        {review.body}
-      </p>
+      <p className="font-grotesk text-body">{review.body}</p>
       <div className="flex flex-col items-center gap-1.5">
         <p className="font-display text-[length:max(1rem,11px)] font-semibold uppercase tracking-[-0.01rem]">
           {review.authorDisplay ?? "Onwei Customer"}
@@ -45,7 +75,7 @@ function ReviewCard({
             height={18}
             aria-hidden
           />
-          <span className="font-display text-[length:max(1rem,11px)] font-semibold uppercase tracking-[-0.01rem] opacity-70">
+          <span className="font-display text-[length:max(1rem,11px)] font-normal uppercase tracking-[-0.01rem] opacity-70">
             Verified Review
           </span>
         </div>
@@ -90,30 +120,34 @@ export function ReviewWall({
       />
       <div className="flex w-full max-w-[90rem] flex-col items-center gap-8">
         <div className="relative flex w-full flex-col items-center gap-6 desk:flex-row desk:flex-wrap desk:items-end desk:justify-between">
-          <div className="flex flex-col items-center gap-2 desk:items-start">
+          <div className="flex flex-col items-center desk:relative desk:items-start">
             <p className="text-center font-display text-[2.5rem] font-bold uppercase leading-[0.9] text-onwei-blue desk:text-left desk:text-display-md">
               {heading}
             </p>
+            {/* Desktop (node 758:2377): the underline hangs 5.6px under the
+                heading without taking row height. */}
             <Image
               src="/images/reviews/underline.svg"
               alt=""
               width={526}
               height={4}
               aria-hidden
-              className="h-[0.125rem] w-[20.625rem] max-w-full desk:h-auto desk:w-[32.875rem]"
+              className="h-[0.125rem] w-[20.625rem] max-w-full desk:absolute desk:left-px desk:top-[7.6019rem] desk:h-auto desk:w-[32.875rem]"
             />
           </div>
-          <span className="relative hidden items-center gap-2 font-script text-script-md uppercase text-onwei-blue desk:flex">
+          {/* Desktop (node 758:2374, 758:2375): note over the heading's top
+              right and a curly arrow, both absolute to the header row. */}
+          <span className="absolute left-[33rem] top-[-0.7269rem] hidden whitespace-nowrap font-script text-script-md uppercase leading-[1.2] text-onwei-blue desk:block">
             {shareLabel}
-            <Image
-              src="/images/reviews/arrow.svg"
-              alt=""
-              width={20}
-              height={17}
-              aria-hidden
-              className="-rotate-[30deg]"
-            />
           </span>
+          <Image
+            src="/images/reviews/arrow-desktop.svg"
+            alt=""
+            width={50}
+            height={83}
+            aria-hidden
+            className="absolute left-[35.77rem] top-[1.945rem] hidden -rotate-[117.97deg] desk:block"
+          />
           <CtaLink
             href={ctaHref}
             className="bg-onwei-blue text-onwei-beige max-desk:hidden"
@@ -122,18 +156,23 @@ export function ReviewWall({
           </CtaLink>
         </div>
 
-        <ScrollCarousel>
+        <ScrollCarousel
+          wrapperClassName="w-full desk:gap-8"
+          trackClassName="max-desk:hidden"
+        >
           {reviews.map((review, index) => (
-            <ReviewCard
-              key={review.id}
-              review={review}
-              tone={TONES[index % TONES.length] ?? "purple"}
-            />
+            <Fragment key={review.id}>
+              <ReviewCard
+                review={review}
+                tone={TONES[index % TONES.length] ?? "purple"}
+              />
+              <PhotoTile photo={PHOTOS[index % PHOTOS.length]!} />
+            </Fragment>
           ))}
         </ScrollCarousel>
         <CtaLink
           href={ctaHref}
-          className="w-full bg-onwei-blue text-onwei-beige desk:hidden"
+          className="w-full bg-onwei-blue text-onwei-beige max-desk:py-2.5 desk:hidden"
         >
           {ctaLabel}
         </CtaLink>

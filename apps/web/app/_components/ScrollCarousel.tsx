@@ -17,22 +17,36 @@ export function ScrollCarousel({
   className = "",
   trackClassName = "",
   wrapperClassName = "w-full",
+  centerChildOnMount,
 }: {
   children: React.ReactNode;
   gap?: string;
   className?: string;
   trackClassName?: string;
   wrapperClassName?: string;
+  // Figma's mobile journal row (761:5161) opens with its middle card
+  // centered, not scrolled to the start. Pass that child's index. A row
+  // that does not overflow (desktop) is left alone.
+  centerChildOnMount?: number;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
   const [progress, setProgress] = useState(0);
   const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
+    const el = scrollerRef.current;
+    const child =
+      centerChildOnMount === undefined
+        ? undefined
+        : el?.children[centerChildOnMount];
+    if (el && child instanceof HTMLElement && el.scrollWidth > el.clientWidth) {
+      el.scrollLeft =
+        child.offsetLeft - (el.clientWidth - child.offsetWidth) / 2;
+    }
     return () => {
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
-  }, []);
+  }, [centerChildOnMount]);
 
   // A raw scroll event fires many times per frame during a touch/trackpad
   // gesture; coalescing to one setState per animation frame (instead of one

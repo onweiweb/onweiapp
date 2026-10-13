@@ -1035,6 +1035,52 @@ async function seedInstagramPhotos() {
   }
 }
 
+// Figma's "from the playbook" row (node 758:2484) shows three posts with the
+// same lorem body, dated Feb 25, 2026. Seeded so the Homepage section has
+// real rows to render, staff replace them in the admin.
+const LOREM_EXCERPT =
+  "Lorem ipsum dolor sit amet consectetur. Arcu diam pellentesque libero iaculis adipiscing. Turpis sem odio gravida sagittis pretium velit non. Dignissim mauris purus vitae mattis turpis eu. Pharetra eu arcu integer integer elementum. Ullamcorper mattis lectus turpis nulla tristique tincidunt. Eget odio semper facilisis mauris id elementum faucibus non purus. Volutpat porta integer in feugiat tortor eu diam volutpat.";
+
+const ARTICLES = [
+  {
+    slug: "5-drills-to-improve-your-pickleball-dink-game",
+    title: "5 Drills to Improve Your Pickleball Dink Game",
+    coverImageUrl: "/images/journal/article-1.png",
+    publishedAt: new Date("2026-02-25T00:00:02.000Z"),
+  },
+  {
+    slug: "morning-yoga-routine-for-athletes",
+    title: "Morning Yoga Routine for Athletes",
+    coverImageUrl: "/images/journal/article-2.png",
+    publishedAt: new Date("2026-02-25T00:00:01.000Z"),
+  },
+  {
+    slug: "how-to-choose-your-first-pickleball-racquet",
+    title: "How to Choose Your First Pickleball Racquet",
+    coverImageUrl: "/images/journal/article-3.png",
+    publishedAt: new Date("2026-02-25T00:00:00.000Z"),
+  },
+] as const;
+
+async function seedArticles() {
+  for (const article of ARTICLES) {
+    const data = {
+      title: article.title,
+      excerpt: LOREM_EXCERPT,
+      bodyHtml: `<p>${LOREM_EXCERPT}</p>`,
+      coverImageUrl: article.coverImageUrl,
+      isPublished: true,
+      publishedAt: article.publishedAt,
+    };
+    await prisma.article.upsert({
+      where: { slug: article.slug },
+      // Only the ordering stamp is refreshed, staff edits stay untouched.
+      update: { publishedAt: article.publishedAt },
+      create: { slug: article.slug, ...data },
+    });
+  }
+}
+
 async function seedMarqueeItems() {
   for (const group of MARQUEE_ITEMS) {
     for (const [index, label] of group.labels.entries()) {
@@ -1093,6 +1139,7 @@ async function main() {
   await seedValueProps();
   await seedInstagramPhotos();
   await seedMarqueeItems();
+  await seedArticles();
 
   await seedPermissions();
   await seedSuperAdmin();

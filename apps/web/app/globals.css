@@ -98,8 +98,12 @@ body {
   --text-display-md--line-height: 0.9;
   --text-script-md: 1.25rem;
   --text-script-md--line-height: 1.2;
+  --text-body: max(0.875rem, 11px);
+  --text-body--line-height: 1.2143;
   --text-label: max(0.875rem, 11px);
-  --text-label--line-height: normal;
+  /* Figma's mono font (ABC Monument Grotesk Mono) has a 17px normal line
+     height at 14px, Space Mono's is taller, so pin the ratio (17/14). */
+  --text-label--line-height: 1.2143;
 }
 
 @keyframes onwei-marquee {

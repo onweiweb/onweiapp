@@ -112,6 +112,22 @@ read before assuming something that looks broken is a missing asset.
 - Root `prebuild` was removed: `turbo build` already depends on `test` and
   `typecheck`, so it ran everything twice.
 
+## Dev DB is free to change, prod is waitlist-only (added 2026-10-12)
+
+- Owner confirmed: the dev DB (every local `.env*`) can be freely changed for testing, for example flipping
+  `SiteSetting.siteMode` to LIVE to see gated pages, reseeding, or trying schema changes. Local dev runs in
+  LIVE mode for the non-waitlist build-out. Never read or print waitlist entries or other customer personal data, even
+  from the dev DB, use counts only.
+- Prod stays in WAITLIST mode while signups are open. Until the owner says the storefront launches, do not
+  push or merge storefront work to `main` (Vercel auto-deploys it) and do not run any migration on prod. Keep
+  the work local or on a feature branch, and commit only when asked.
+- Figma differs per page for the header nav, newsletter headline and Instagram note/arrow, use the `SiteHeader nav`,
+  `SiteFooter desktopHeading` and `InstagramGrid` position props, not one shared copy. Capture screenshots per section
+  after scrolling (full-page captures miss lazy images and SVGs). Details in `docs/FIGMA_AUDIT.md`.
+- Audit standard for `apps/web` against Figma: every illustration, artwork, image, button and copy line must
+  match the frame exactly, at desktop and mobile widths. Compare live screenshots section by section, not by
+  reading code.
+
 ## Responsive system (added 2026-10-01)
 
 - `1rem` is fluid (see `apps/web/app/globals.css`). Desktop (>= 768): 1440px frame = 16px, scales

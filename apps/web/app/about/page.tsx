@@ -66,7 +66,7 @@ export default async function AboutPage() {
           inverted
         />
       ) : (
-        <SiteHeader inverted />
+        <SiteHeader nav="about" />
       )}
 
       <ScrollReveal
@@ -106,7 +106,7 @@ export default async function AboutPage() {
             className="pointer-events-none absolute left-full top-1 ml-3 hidden desk:block"
           />
         </div>
-        <div className="flex max-w-[48.3125rem] flex-col gap-4 font-grotesk text-[length:max(0.875rem,11px)] leading-relaxed text-onwei-blue">
+        <div className="flex max-w-[48.3125rem] flex-col gap-4 font-grotesk text-body leading-relaxed text-onwei-blue">
           <p>
             Not a gear company. Not a wellness brand. Not another startup that
             discovered sport after reading a trend report.
@@ -211,11 +211,11 @@ export default async function AboutPage() {
             <span className="relative">Sabhya</span>
           </p>
           <ExpandableBio
-            className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-white"
+            className="font-grotesk text-body leading-[1.3] text-onwei-white"
             paragraphs={SABHYA_BIO}
           />
           {!isWaitlistMode && (
-            <span className="w-fit rounded-[1.875rem] bg-onwei-beige px-6 py-3 font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-blue">
+            <span className="w-fit rounded-[1.875rem] bg-onwei-beige px-6 py-3 font-grotesk text-body uppercase text-onwei-blue">
               Read Sabhya&apos;s substack
             </span>
           )}
@@ -350,7 +350,7 @@ export default async function AboutPage() {
             <span className="relative">Sakshi</span>
           </p>
           <ExpandableBio
-            className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-white"
+            className="font-grotesk text-body leading-[1.3] text-onwei-white"
             paragraphs={SAKSHI_BIO}
           />
         </ScrollReveal>
@@ -400,7 +400,7 @@ export default async function AboutPage() {
             className="pointer-events-none absolute -bottom-2 left-1/2 hidden -translate-x-1/2 desk:block"
           />
         </div>
-        <div className="flex max-w-[48.3125rem] flex-col gap-1 font-grotesk text-[length:max(0.875rem,11px)] leading-relaxed text-onwei-blue">
+        <div className="flex max-w-[48.3125rem] flex-col gap-1 font-grotesk text-body leading-relaxed text-onwei-blue">
           <p>
             Two SRCC and ISB alumni who couldn&apos;t stop talking about fitness
             and gear.
@@ -473,7 +473,7 @@ export default async function AboutPage() {
               <span className="relative">Onwei</span>
             </span>
           </h2>
-          <div className="flex max-w-[48.3125rem] flex-col gap-4 font-grotesk text-[length:max(0.875rem,11px)] leading-relaxed text-onwei-blue">
+          <div className="flex max-w-[48.3125rem] flex-col gap-4 font-grotesk text-body leading-relaxed text-onwei-blue">
             <p>
               Because the person who shows up at 7am when no one&apos;s watching
               deserves better than gear that gave up before they did.
@@ -508,7 +508,7 @@ export default async function AboutPage() {
                   ? "/ontheway#join-onwei-insiders"
                   : "/collection/pickleball"
               }
-              className="rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-beige"
+              className="rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-body uppercase text-onwei-beige"
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.97 }}
             >

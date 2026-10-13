@@ -19,8 +19,8 @@ export function AskMeWidget({ faqs }: { faqs: FaqItem[] }) {
 
   return (
     <div className="flex w-full flex-col gap-6 rounded-[1.875rem] bg-onwei-purple px-6 py-6 desk:px-8">
-      <div className="flex w-full items-center justify-between gap-4 rounded-[1.875rem] bg-onwei-beige px-6 py-4">
-        <p className="font-grotesk text-[length:max(0.875rem,11px)] uppercase text-onwei-blue">
+      <div className="flex h-12 w-full items-center justify-between gap-4 rounded-[31.25rem] bg-onwei-beige pl-[1.1875rem] pr-4">
+        <p className="font-cta text-cta uppercase leading-none text-onwei-blue">
           Have questions? Ask me!
         </p>
         <Image
@@ -44,7 +44,7 @@ export function AskMeWidget({ faqs }: { faqs: FaqItem[] }) {
                 }),
               )
             }
-            className="shrink-0 whitespace-nowrap rounded-[1.875rem] bg-onwei-beige px-6 py-3 text-left font-grotesk text-[length:max(0.875rem,11px)] text-onwei-blue"
+            className="h-[1.875rem] shrink-0 whitespace-nowrap rounded-[1.875rem] border border-onwei-blue px-6 text-left font-display text-[length:max(0.875rem,11px)] font-medium leading-[1.3] text-onwei-blue"
           >
             {faq.question}
           </button>

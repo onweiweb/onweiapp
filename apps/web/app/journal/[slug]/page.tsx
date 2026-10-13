@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
+import { formatArticleDate } from "../../../lib/formatDate";
 import Image from "@/_components/ScaledImage";
 import { notFound } from "next/navigation";
-import { cachedGetPublishedArticleBySlug as getPublishedArticleBySlug } from "../../../lib/cachedCatalog";
+import {
+  cachedGetPublishedArticleBySlug as getPublishedArticleBySlug,
+  cachedListPublishedArticles as listPublishedArticles,
+} from "../../../lib/cachedCatalog";
 import { buildArticleMetadata } from "../../../lib/seo/metadata";
 import { JsonLd } from "../../../lib/seo/jsonLd";
 import {
@@ -16,6 +20,15 @@ import { SiteFooter } from "@/_components/SiteFooter";
 // intentionally reuses the site's existing type/color tokens rather than
 // inventing a new visual language. Replace with a Figma-driven layout once
 // one exists, per root CLAUDE.md ground rule 8.
+// Built once per article and refreshed every minute, like the other catalog
+// pages. An article published after the build renders on its first visit.
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  const articles = await listPublishedArticles(50);
+  return articles.map(({ slug }) => ({ slug }));
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -64,7 +77,7 @@ export default async function JournalArticlePage({
           <div className="flex flex-col gap-2">
             {article.publishedAt ? (
               <p className="font-grotesk text-[length:max(0.6875rem,11px)] font-light text-onwei-blue/70">
-                {article.publishedAt.toLocaleDateString()}
+                {formatArticleDate(article.publishedAt)}
               </p>
             ) : null}
             <h1 className="font-display text-[2.25rem] font-bold uppercase leading-[0.95] text-onwei-blue desk:text-[3rem]">

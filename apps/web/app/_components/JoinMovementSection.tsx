@@ -7,16 +7,20 @@ import { CtaLink } from "./CtaLink";
 // Onwei" vs Homepage's "Find Your Wei").
 export function JoinMovementSection({
   buttonLabel = "Find Your Wei",
+  // Figma's mobile frame (761:5152) says "move with onwei" where the
+  // Homepage desktop frame says "find your wei".
+  mobileButtonLabel = "Move With Onwei",
   buttonHref = "#",
 }: {
   buttonLabel?: string;
+  mobileButtonLabel?: string;
   buttonHref?: string;
 }) {
   return (
-    <section className="flex items-end justify-center bg-onwei-green px-3 pb-14 pt-[4.5rem] desk:px-[7.5rem] desk:py-14">
+    <section className="flex items-end justify-center bg-onwei-green px-3 pb-14 pt-[4.5rem] desk:px-[7.5rem] desk:py-[4.5rem]">
       <div className="relative flex w-full max-w-[90rem] items-end justify-center gap-2.5">
-        {/* Straddles the section boundary in Figma, half the illustration
-          sits in the white space above this section, not fully inside it.
+        {/* Straddles the section boundary in Figma (node 758:2455: x 409, y -66.9
+          of the section, so 289 and -139 inside the 1200 content frame).
           Mobile (node 761:5119) pins it top right of the heading instead. */}
         <Image
           src="/images/about2/illustration.svg"
@@ -24,7 +28,7 @@ export function JoinMovementSection({
           width={205}
           height={202}
           aria-hidden
-          className="pointer-events-none absolute left-[60.9%] top-[-7.546rem] h-[8.5rem] w-[8.625rem] desk:left-auto desk:right-[38%] desk:-top-24 desk:h-auto desk:w-[12.8125rem]"
+          className="pointer-events-none absolute left-[60.9%] top-[-7.546rem] h-[8.5rem] w-[8.625rem] desk:left-[18.0625rem] desk:-top-[8.6825rem] desk:h-[12.625rem] desk:w-[12.8125rem]"
         />
         <div className="flex w-full flex-col items-center justify-between gap-6 desk:flex-row desk:items-start desk:gap-8">
           <p className="w-[12.9375rem] text-center font-display text-[2.5rem] font-bold uppercase leading-[0.9] text-onwei-blue desk:w-auto desk:max-w-[36.125rem] desk:text-left desk:text-[4.375rem]">
@@ -32,10 +36,11 @@ export function JoinMovementSection({
           </p>
           <div className="relative flex flex-col items-center gap-6 desk:items-start">
             <div className="relative">
-              <p className="max-w-[22.25rem] text-center font-grotesk text-[length:max(0.875rem,11px)] text-onwei-blue desk:max-w-[30.25rem] desk:text-left">
-                Movement events, community sessions, early access, product
-                testing, and exclusive rewards - and a say in what we build
-                next!
+              <p className="max-w-[22.25rem] text-center font-grotesk text-body text-onwei-blue desk:max-w-[30.25rem] desk:text-left">
+                Movement events, community sessions, early{" "}
+                <br className="max-desk:hidden" />
+                access, product testing, and exclusive rewards - <br />
+                and a say in what we build next!
               </p>
               <Image
                 src="/images/about2/underline.svg"
@@ -48,9 +53,10 @@ export function JoinMovementSection({
             </div>
             <CtaLink
               href={buttonHref}
-              className="bg-onwei-blue text-onwei-beige"
+              className="bg-onwei-blue text-onwei-beige max-desk:py-2.5"
             >
-              {buttonLabel}
+              <span className="desk:hidden">{mobileButtonLabel}</span>
+              <span className="max-desk:hidden">{buttonLabel}</span>
             </CtaLink>
             <Image
               src="/images/about2/underline.svg"
