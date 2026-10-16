@@ -426,17 +426,18 @@ are live queries, storefront catalog list queries are unbounded (cached 30s to 5
 - Open: visitor-level location needs a small endpoint feeding Vercel geo headers into events if the
   client wants it; PostHog region (US) still needs the client's DPDP sign-off.
 
-## Figma audit pass (2026-10-12), local only, not deployed
+## Figma audit pass (2026-10-12), pushed 2026-10-13 (commit 6782342)
 
-Dev DB set to LIVE site mode, prod stays WAITLIST, nothing pushed. Full list in `docs/FIGMA_AUDIT.md`. Highlights:
+Dev DB set to LIVE site mode, prod stays WAITLIST (pushed code is live but gated). Full list in `docs/FIGMA_AUDIT.md`. Highlights:
 Homepage desktop and mobile, Collection, PDP and About Us were rebuilt section by section against Figma; shared
 pieces are `ProductRating`, `HighlightTags`, `ReviewList`, `ReviewMarquee`; header, footer and Instagram take per page
 props because Figma differs per page. Seed adds 3 Figma-style articles for the "from the playbook" row (dev only,
 `seedArticles`). Found and fixed a real bug: `unstable_cache` returns dates as strings, which crashed the Homepage
-once an article existed. No schema change, no migration needed for prod. Before launch: push these changes together,
-re-check `/ontheway` and `/about` in WAITLIST mode.
+once an article existed. No schema change, no migration needed for prod. `/ontheway` was compared with production
+before the push and looked the same. After the push, `/ontheway` and `/about` stayed up and `/` still redirects.
+Before launch: flip prod site mode, then check Homepage, a collection page and a product page.
 
-## Speed pass (2026-10-12), local only
+## Speed pass (2026-10-12), pushed with the audit
 
 Collection, product and journal pages are now built once and refreshed every 60s (or on demand when staff edit the
 catalog), with `generateStaticParams`, instead of rendering on every visit. Collection sorting moved to the browser

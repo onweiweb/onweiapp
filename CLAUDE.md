@@ -112,15 +112,17 @@ read before assuming something that looks broken is a missing asset.
 - Root `prebuild` was removed: `turbo build` already depends on `test` and
   `typecheck`, so it ran everything twice.
 
-## Dev DB is free to change, prod is waitlist-only (added 2026-10-12)
+## Dev DB is free to change, prod is waitlist-only (added 2026-10-12, updated 2026-10-13)
 
 - Owner confirmed: the dev DB (every local `.env*`) can be freely changed for testing, for example flipping
   `SiteSetting.siteMode` to LIVE to see gated pages, reseeding, or trying schema changes. Local dev runs in
   LIVE mode for the non-waitlist build-out. Never read or print waitlist entries or other customer personal data, even
   from the dev DB, use counts only.
-- Prod stays in WAITLIST mode while signups are open. Until the owner says the storefront launches, do not
-  push or merge storefront work to `main` (Vercel auto-deploys it) and do not run any migration on prod. Keep
-  the work local or on a feature branch, and commit only when asked.
+- Prod stays in WAITLIST mode while signups are open, so the whole storefront (Homepage, collection, product,
+  journal) is gated behind `/ontheway` by `proxy.ts`. The Figma audit pass was pushed to `main` on 2026-10-13
+  (commit 6782342) at the owner's request: the code is live but hidden. Flipping prod to LIVE is the owner's call
+  (admin Settings, site mode), and the first look after the flip is the real check because collection, product and
+  journal pages are prebuilt. Push to `main` only when asked, and run no prod migration without the owner.
 - Figma differs per page for the header nav, newsletter headline and Instagram note/arrow, use the `SiteHeader nav`,
   `SiteFooter desktopHeading` and `InstagramGrid` position props, not one shared copy. Capture screenshots per section
   after scrolling (full-page captures miss lazy images and SVGs). Details in `docs/FIGMA_AUDIT.md`.
@@ -254,6 +256,11 @@ docs/       -> architecture, schema rationale, test plan, security notes, open d
 - `docs/EMAIL_PLAN.md`: parked plan and open questions for real email (OTP, offers, delivery updates)
 
 ## Current phase
+
+**Latest (2026-10-13):** Homepage, Collection, PDP and About Us were audited against Figma and fixed, and
+collection, product and journal pages are prebuilt and revalidated every 60s (sorting runs in the browser). Pushed, live
+but gated by the waitlist. Login, journal article and 404 have no Figma frame, so they wait for an approved design.
+Open items and decisions: `docs/FIGMA_AUDIT.md`. Older status below.
 
 **Phase 1 is functionally complete and deployed**: DB schema, dummy OTP auth,
 product browsing (Homepage/Collection/PDP), and a full admin CMS (catalog,

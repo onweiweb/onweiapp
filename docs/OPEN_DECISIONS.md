@@ -84,3 +84,18 @@ of that gets built.
 or EU region is acceptable for DPDP, and whether they want a consent banner
 anyway (a banner is new storefront UI that is not in Figma, so it needs
 design approval first). See `docs/SECURITY_AND_DPDP.md`, "Visitor analytics".
+
+## Pending from the 2026-10-12 Figma audit (owner decision or a plan needed)
+
+- **Login, journal article and 404** have no Figma frame. Build only after a layout is approved (ground rule 8).
+- **Mobile Homepage** hides the "Designed to Move." heading, "at your pace" note and marquee because the mobile frame
+  has none of them. Confirm that is intended.
+- **PDP review photos** (two per review in Figma) need a review image model, which is a schema change and a plan.
+- **PDP value cards** use different copy in Figma than the Homepage cards, but both read one `ValueProp` table. Needs a
+  per page surface or separate copy.
+- **PDP marquee** now shows review quotes (Figma 759:3116), so the admin's old "PDP" marquee surface no longer shows
+  anywhere on the PDP. Remove it from the admin or give it a new home.
+- **Mobile marquee between About and Reviews** (761:5063) has its own items in Figma, today it reuses the Showcase items.
+- **Footer consent checkbox** is not in Figma, needs design sign-off (it is required by the consent rule).
+- **PDP Add to cart** stays disabled until the cart exists, drawn at full strength like Figma.
+- **Flip prod to LIVE** is the launch step, owner only. Check Homepage, a collection page and a product page right after.

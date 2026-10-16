@@ -2,7 +2,7 @@
 
 Figma file `kGG2vJdbqU6b1d1xmIhRwG`. Method: Figma section screenshot vs live dev screenshot (Playwright, one
 element screenshot per section after images load), side by side, then exact specs from `get_design_context`.
-Dev DB is in LIVE site mode. Nothing here is committed or deployed (prod waitlist stays untouched).
+Dev DB is in LIVE site mode. Pushed to `main` on 2026-10-13 (commit 6782342), live but gated by the prod waitlist.
 
 Lesson: full-page screenshots miss lazy images and SVGs, which showed fake "missing" items in the first pass. Always
 capture per section after scrolling the page.
