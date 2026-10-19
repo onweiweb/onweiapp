@@ -488,12 +488,9 @@ function AboutSection() {
 // hardcoded straight from the Figma file.
 // Was 100% hardcoded lorem-ipsum placeholder with href="#" dead links (see
 // docs/OPEN_DECISIONS.md's SEO entry), now backed by the real Article
-// model. No real /journal index page exists yet (out of this pass's scope,
-// only /journal/[slug] detail pages), so "explore blogs" points at the
-// most recent article rather than a listing that doesn't exist.
+// model. "Explore blogs" opens the /journal index.
 function JournalSection({ articles }: { articles: ArticleListItem[] }) {
-  const [mostRecent] = articles;
-  if (!mostRecent) return null;
+  if (articles.length === 0) return null;
 
   return (
     <section className="flex flex-col items-center bg-onwei-white px-3 py-14 desk:px-14 desk:py-24">
@@ -517,7 +514,7 @@ function JournalSection({ articles }: { articles: ArticleListItem[] }) {
             />
           </div>
           <CtaLink
-            href={`/journal/${mostRecent.slug}`}
+            href="/journal"
             className="bg-onwei-blue text-onwei-beige max-desk:py-2.5"
           >
             <span className="desk:hidden">view all blogs</span>

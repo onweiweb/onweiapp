@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { formatArticleDate } from "../../../lib/formatDate";
 import Image from "@/_components/ScaledImage";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import { BlogCard } from "@/_components/BlogCard";
 import {
   cachedGetPublishedArticleBySlug as getPublishedArticleBySlug,
   cachedListPublishedArticles as listPublishedArticles,
@@ -48,6 +50,9 @@ export default async function JournalArticlePage({
   const { slug } = await params;
   const article = await getPublishedArticleBySlug(slug);
   if (!article) notFound();
+  const morePosts = (await listPublishedArticles(4))
+    .filter((post) => post.slug !== article.slug)
+    .slice(0, 3);
 
   return (
     <main>
@@ -62,6 +67,26 @@ export default async function JournalArticlePage({
 
       <article className="flex flex-col items-center bg-onwei-white px-6 py-14 desk:px-14">
         <div className="flex w-full max-w-[47.5rem] flex-col gap-8">
+          <Link
+            href="/journal"
+            className="group inline-flex w-fit items-center gap-2 rounded-[1.875rem] border border-onwei-blue px-4 py-2 font-grotesk text-[length:max(0.75rem,11px)] uppercase leading-none text-onwei-blue transition-colors hover:bg-onwei-blue hover:text-onwei-beige desk:px-5 desk:py-2.5"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+              className="transition-transform group-hover:-translate-x-0.5"
+            >
+              <path d="M13 8H3m4-4L3 8l4 4" />
+            </svg>
+            All blogs
+          </Link>
           {article.coverImageUrl ? (
             <div className="relative aspect-[416/280] w-full overflow-hidden rounded-[1.25rem] bg-[#d4d4d4]">
               <Image
@@ -94,6 +119,21 @@ export default async function JournalArticlePage({
           />
         </div>
       </article>
+
+      {morePosts.length > 0 ? (
+        <section className="flex flex-col items-center bg-onwei-white px-6 pb-14 desk:px-14 desk:pb-24">
+          <div className="flex w-full max-w-[90rem] flex-col gap-8">
+            <h2 className="font-display text-[1.75rem] font-bold uppercase leading-[0.95] text-onwei-blue desk:text-[2.25rem]">
+              more from the playbook
+            </h2>
+            <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 desk:grid-cols-3">
+              {morePosts.map((post) => (
+                <BlogCard key={post.slug} post={post} />
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
 
       <SiteFooter />
     </main>

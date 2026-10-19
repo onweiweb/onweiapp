@@ -76,7 +76,7 @@ export function buildArticleJsonLd(article: ArticleDetail) {
     datePublished: article.publishedAt
       ? new Date(article.publishedAt).toISOString()
       : undefined,
-    dateModified: article.updatedAt.toISOString(),
+    dateModified: new Date(article.updatedAt).toISOString(),
   };
 }
 

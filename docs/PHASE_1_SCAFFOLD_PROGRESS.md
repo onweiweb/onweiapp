@@ -446,6 +446,15 @@ browser picks one and mirrors it into `?sort=` with `replaceState`. Category swi
 about 35 to 180ms (measured on a production build, 1x and 4x CPU). Footer sprite replaced by a 15 KB crop.
 Dev (`next dev`) is still slower than production because it serves unminified code and compiles on first visit.
 
+## Blogs page (2026-10-19)
+
+New `/journal` index (featured latest post, 3-column card grid, `?page=` pagination, 9 per page), footer
+"Blogs" link and homepage "explore blogs" now point to it, added to the sitemap. Post pages gained a
+"Back to Blogs" link and a "more from the playbook" row. No Figma frame exists, layout was approved in chat
+and reuses the homepage card style (`BlogCard`). Admin Content > Blog posts: edit existing posts, cover image
+upload (`/api/content/articles/cover`), formatting buttons and preview. Core: `listPublishedArticlesPage`.
+No schema change, no prod migration. Not pushed.
+
 ## Update discipline
 
 Whenever new work changes any of the above (new dependency version constraints, new gotchas, new

@@ -38,6 +38,8 @@ export default async function ContentPage() {
           slug: true,
           title: true,
           excerpt: true,
+          bodyHtml: true,
+          coverImageUrl: true,
           isPublished: true,
         },
       }),
@@ -139,13 +141,13 @@ export default async function ContentPage() {
           },
           {
             id: "articles",
-            label: "Articles",
+            label: "Blog posts",
             content: (
               <div className="flex flex-col gap-3">
                 <p className="text-sm text-onwei-blue/70">
-                  The homepage&apos;s &quot;From the Playbook&quot; section and
-                  each article&apos;s own page. Drafts stay hidden from the
-                  storefront until published.
+                  Blog posts. They show on the Blogs page, on each post&apos;s
+                  own page and in the homepage&apos;s &quot;From the
+                  Playbook&quot; row. Drafts stay hidden until you publish.
                 </p>
                 <ArticlesEditor items={articles} />
               </div>

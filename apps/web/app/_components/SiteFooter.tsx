@@ -18,7 +18,7 @@ const FOOTER_COLUMNS = [
     heading: "About",
     links: [
       { label: "Our Story", href: "/about" },
-      { label: "Blogs", href: "#" },
+      { label: "Blogs", href: "/journal" },
       { label: "Contact Us", href: "#" },
     ],
   },

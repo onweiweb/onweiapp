@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "../src/client";
+import { ARTICLE_CONTENT } from "./articleContent";
 
 // Runs against the same shared Neon dev database as everything else in this
 // repo, so every write here is an `upsert` (or find-then-create for
@@ -1064,10 +1065,11 @@ const ARTICLES = [
 
 async function seedArticles() {
   for (const article of ARTICLES) {
+    const content = ARTICLE_CONTENT[article.slug];
     const data = {
       title: article.title,
-      excerpt: LOREM_EXCERPT,
-      bodyHtml: `<p>${LOREM_EXCERPT}</p>`,
+      excerpt: content?.excerpt ?? LOREM_EXCERPT,
+      bodyHtml: content?.bodyHtml ?? `<p>${LOREM_EXCERPT}</p>`,
       coverImageUrl: article.coverImageUrl,
       isPublished: true,
       publishedAt: article.publishedAt,
@@ -1078,6 +1080,17 @@ async function seedArticles() {
       update: { publishedAt: article.publishedAt },
       create: { slug: article.slug, ...data },
     });
+    // Rows still holding the old lorem placeholder get the long copy. Anything
+    // staff have edited no longer matches, so it is left alone.
+    if (content) {
+      await prisma.article.updateMany({
+        where: {
+          slug: article.slug,
+          bodyHtml: `<p>${LOREM_EXCERPT}</p>`,
+        },
+        data: { excerpt: content.excerpt, bodyHtml: content.bodyHtml },
+      });
+    }
   }
 }
 

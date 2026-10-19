@@ -110,6 +110,8 @@ export { listValueProps } from "./catalog/listValueProps";
 export { listInstagramPhotos } from "./catalog/listInstagramPhotos";
 export { listMarqueeItems } from "./catalog/listMarqueeItems";
 export { listPublishedArticles } from "./catalog/listPublishedArticles";
+export { listPublishedArticlesPage } from "./catalog/listPublishedArticlesPage";
+export type { ArticlePage } from "./catalog/listPublishedArticlesPage";
 export { getPublishedArticleBySlug } from "./catalog/getPublishedArticleBySlug";
 export type {
   ArticleDetail,

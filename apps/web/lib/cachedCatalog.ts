@@ -11,6 +11,7 @@ import {
   listInstagramPhotos,
   listMarqueeItems,
   listPublishedArticles,
+  listPublishedArticlesPage,
   listRelatedProducts,
   listSurfaceReviews,
   listValueProps,
@@ -99,6 +100,12 @@ export const cachedListAllActiveProductSlugsForSitemap = unstable_cache(
 export const cachedListPublishedArticles = unstable_cache(
   listPublishedArticles,
   ["catalog:listPublishedArticles"],
+  { revalidate: REVALIDATE_SECONDS, tags: TAGS },
+);
+
+export const cachedListPublishedArticlesPage = unstable_cache(
+  listPublishedArticlesPage,
+  ["catalog:listPublishedArticlesPage"],
   { revalidate: REVALIDATE_SECONDS, tags: TAGS },
 );
 
