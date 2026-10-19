@@ -1,5 +1,4 @@
-import { PageHeader } from "../../_components/ui";
-import Link from "next/link";
+import { EmptyState, LinkButton, PageHeader } from "../../_components/ui";
 import { prisma } from "@onwei/database";
 import { ProductForm } from "../../_components/ProductForm";
 
@@ -10,20 +9,20 @@ export default async function NewProductPage() {
   });
 
   return (
-    <main className="flex flex-col gap-6">
+    <main className="flex flex-col gap-5">
       <PageHeader
         title="Add a product"
         back={{ href: "/products", label: "Products" }}
-        description="Add a product, then add its variants and images."
+        description="Fill in the basics now. You can add photos and variants right after."
       />
       {categories.length === 0 ? (
-        <p className="text-neutral-600">
-          You need at least one category before you can add a product -{" "}
-          <Link href="/categories/new" className="underline">
-            add one first
-          </Link>
-          .
-        </p>
+        <EmptyState
+          title="Add a category first"
+          description="Every product belongs to a category, so you need at least one before adding a product."
+          action={
+            <LinkButton href="/categories/new">Add a category</LinkButton>
+          }
+        />
       ) : (
         <ProductForm mode="create" categories={categories} />
       )}

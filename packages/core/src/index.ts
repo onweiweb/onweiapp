@@ -246,6 +246,7 @@ export {
   getDeviceSplit,
   getEngagement,
   getTopPages,
+  getBlogReport,
   getFormFunnels,
   getLocations,
   type AnalyticsRangeDays,
@@ -256,6 +257,8 @@ export {
   type DeviceSplit,
   type EngagementSummary,
   type TopPageRow,
+  type BlogReport,
+  type BlogPostRow,
   type FormFunnel,
   type LocationSummary,
 } from "./analytics/queries";

@@ -455,6 +455,13 @@ and reuses the homepage card style (`BlogCard`). Admin Content > Blog posts: edi
 upload (`/api/content/articles/cover`), formatting buttons and preview. Core: `listPublishedArticlesPage`.
 No schema change, no prod migration. Not pushed.
 
+## Blog analytics (2026-10-19)
+
+Events `blog_card_clicked` (post_slug, source: home, waitlist, journal, post_more) and `blog_nav_clicked`
+(target: all_blogs, back_to_blogs; source) are sent through `TrackedLink` (a link that sends one typed event on
+click). Admin `/analytics` has a "Blog posts" section (`getBlogReport`): views, people and share who read most of each
+post, plus card clicks by source. It ignores the page filter. Pageviews and the "Journal" page type already existed.
+
 ## Update discipline
 
 Whenever new work changes any of the above (new dependency version constraints, new gotchas, new

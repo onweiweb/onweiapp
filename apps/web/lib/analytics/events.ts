@@ -28,6 +28,16 @@ export interface AnalyticsEvents {
   variant_selected: { product_slug: string; variant_id: string };
   collection_viewed: { category_slug: string; product_count: number };
   collection_sorted: { category_slug: string; sort: string };
+
+  // Blog events.
+  blog_card_clicked: {
+    post_slug: string;
+    source: "home" | "waitlist" | "journal" | "post_more";
+  };
+  blog_nav_clicked: {
+    target: "all_blogs" | "back_to_blogs";
+    source: "home" | "waitlist" | "post";
+  };
 }
 
 export type AnalyticsEventName = keyof AnalyticsEvents;

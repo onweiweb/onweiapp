@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import Image from "@/_components/ScaledImage";
-import Link from "next/link";
 import {
   cachedListActiveProductsByCategorySlug as listActiveProductsByCategorySlug,
   cachedListInstagramPhotos as listInstagramPhotos,
@@ -25,6 +24,7 @@ import { InstagramGrid } from "@/_components/InstagramGrid";
 import { ReviewWall } from "@/_components/ReviewWall";
 import { JoinMovementSection } from "@/_components/JoinMovementSection";
 import { ScrollCarousel } from "@/_components/ScrollCarousel";
+import { TrackedLink } from "@/_components/TrackedLink";
 import { StarRow } from "@/_components/StarRow";
 import { CtaLink } from "@/_components/CtaLink";
 import { formatArticleDate } from "../lib/formatDate";
@@ -515,6 +515,10 @@ function JournalSection({ articles }: { articles: ArticleListItem[] }) {
           </div>
           <CtaLink
             href="/journal"
+            analytics={{
+              event: "blog_nav_clicked",
+              props: { target: "all_blogs", source: "home" },
+            }}
             className="bg-onwei-blue text-onwei-beige max-desk:py-2.5"
           >
             <span className="desk:hidden">view all blogs</span>
@@ -565,12 +569,16 @@ function JournalSection({ articles }: { articles: ArticleListItem[] }) {
                     </p>
                   ) : null}
                 </div>
-                <Link
+                <TrackedLink
+                  analytics={{
+                    event: "blog_card_clicked",
+                    props: { post_slug: post.slug, source: "home" },
+                  }}
                   href={`/journal/${post.slug}`}
                   className="font-display text-[length:max(1rem,11px)] capitalize leading-[1.3] tracking-[0.012rem] underline"
                 >
                   Read More
-                </Link>
+                </TrackedLink>
               </div>
             </article>
           ))}

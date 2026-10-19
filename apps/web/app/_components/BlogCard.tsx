@@ -1,5 +1,5 @@
 import Image from "@/_components/ScaledImage";
-import Link from "next/link";
+import { TrackedLink } from "@/_components/TrackedLink";
 import type { ArticleListItem } from "@onwei/core";
 import { formatArticleDate } from "../../lib/formatDate";
 
@@ -8,15 +8,22 @@ import { formatArticleDate } from "../../lib/formatDate";
 export function BlogCard({
   post,
   eager = false,
+  source,
 }: {
   post: ArticleListItem;
   // Set for cards inside a horizontally scrolling row, lazy loading never
   // fires for images off-screen to the right.
   eager?: boolean;
+  // Where this card is shown, sent with the click event.
+  source: "home" | "waitlist" | "journal" | "post_more";
 }) {
   return (
     <article className="flex flex-col gap-3">
-      <Link
+      <TrackedLink
+        analytics={{
+          event: "blog_card_clicked",
+          props: { post_slug: post.slug, source },
+        }}
         href={`/journal/${post.slug}`}
         className="relative block aspect-[416/280] w-full overflow-hidden rounded-[1.25rem] bg-[#d4d4d4]"
         aria-label={post.title}
@@ -31,7 +38,7 @@ export function BlogCard({
             className="object-cover"
           />
         ) : null}
-      </Link>
+      </TrackedLink>
       <div className="flex flex-col items-start gap-6 text-onwei-blue">
         <div className="flex w-full flex-col gap-3">
           <div className="flex flex-col gap-2">
@@ -50,12 +57,16 @@ export function BlogCard({
             </p>
           ) : null}
         </div>
-        <Link
+        <TrackedLink
+          analytics={{
+            event: "blog_card_clicked",
+            props: { post_slug: post.slug, source },
+          }}
           href={`/journal/${post.slug}`}
           className="font-display text-[length:max(1rem,11px)] capitalize leading-[1.3] tracking-[0.012rem] underline"
         >
           Read More
-        </Link>
+        </TrackedLink>
       </div>
     </article>
   );

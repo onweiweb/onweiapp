@@ -8,6 +8,7 @@ import { WaitlistHeader } from "@/_components/WaitlistHeader";
 import { WaitlistFooter } from "@/_components/WaitlistFooter";
 import { getSiteSetting } from "@onwei/core";
 import { CtaLink } from "@/_components/CtaLink";
+import { TrackedLink } from "@/_components/TrackedLink";
 import { cachedListPublishedArticlesPage as listPublishedArticlesPage } from "../../lib/cachedCatalog";
 import { formatArticleDate } from "../../lib/formatDate";
 import { JsonLd } from "../../lib/seo/jsonLd";
@@ -81,8 +82,12 @@ export default async function BlogsPage({
 
           {featured ? (
             <article className="grid gap-6 desk:grid-cols-2 desk:items-center desk:gap-12">
-              <Link
+              <TrackedLink
                 href={`/journal/${featured.slug}`}
+                analytics={{
+                  event: "blog_card_clicked",
+                  props: { post_slug: featured.slug, source: "journal" },
+                }}
                 aria-label={featured.title}
                 className="relative block aspect-[416/280] w-full overflow-hidden rounded-[1.25rem] bg-[#d4d4d4]"
               >
@@ -96,7 +101,7 @@ export default async function BlogsPage({
                     className="object-cover"
                   />
                 ) : null}
-              </Link>
+              </TrackedLink>
               <div className="flex flex-col items-start gap-6 text-onwei-blue">
                 <div className="flex flex-col gap-3">
                   {featured.publishedAt ? (
@@ -113,6 +118,10 @@ export default async function BlogsPage({
                 </div>
                 <CtaLink
                   href={`/journal/${featured.slug}`}
+                  analytics={{
+                    event: "blog_card_clicked",
+                    props: { post_slug: featured.slug, source: "journal" },
+                  }}
                   className="bg-onwei-blue text-onwei-beige"
                 >
                   read post
@@ -124,7 +133,7 @@ export default async function BlogsPage({
           {grid.length > 0 ? (
             <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 desk:grid-cols-3">
               {grid.map((post) => (
-                <BlogCard key={post.slug} post={post} />
+                <BlogCard key={post.slug} post={post} source="journal" />
               ))}
             </div>
           ) : null}

@@ -21,6 +21,7 @@ import {
   LocationsSection,
   SourcesSection,
   TopPagesSection,
+  BlogSection,
   VisitorsSection,
 } from "./_sections";
 
@@ -165,6 +166,9 @@ export default async function AnalyticsPage({
             </Suspense>
             <Suspense fallback={<SectionSkeleton title="Most visited pages" />}>
               <TopPagesSection scope={scope} />
+            </Suspense>
+            <Suspense fallback={<SectionSkeleton title="Blog posts" />}>
+              <BlogSection scope={scope} />
             </Suspense>
             <Suspense fallback={<SectionSkeleton title="Forms" />}>
               <FormsSection scope={scope} />

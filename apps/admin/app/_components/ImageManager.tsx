@@ -21,11 +21,15 @@ export function ImageManager({
   const confirm = useConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleUpload(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (file) await uploadFile(file);
+  }
+
+  async function uploadFile(file: File) {
     setError(null);
     setUploading(true);
 
@@ -66,46 +70,94 @@ export function ImageManager({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap gap-3">
-        {images.map((image) => (
-          <div
-            key={image.id}
-            className="relative h-24 w-24 overflow-hidden rounded-[16px] border border-onwei-blue/10"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element -- admin-uploaded Blob URLs, next/image's domain allowlist isn't worth configuring for a simple thumbnail */}
-            <img
-              src={image.url}
-              alt=""
-              className="h-full w-full object-cover"
-            />
-            {image.isPlaceholder ? (
-              <span className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5 text-center text-[10px] text-white">
-                Placeholder
-              </span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleRemove(image.id)}
-                className="absolute right-1 top-1 rounded-full bg-black/60 px-1.5 text-xs text-white"
-                aria-label="Remove image"
-              >
-                ×
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
+    <div className="flex flex-col gap-4">
+      {images.length === 0 ? (
+        <p className="text-sm text-onwei-blue/70">
+          No photos yet. The first photo is the one shoppers see on the
+          collection page.
+        </p>
+      ) : (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
+          {images.map((image, index) => (
+            <div
+              key={image.id}
+              className="group relative aspect-square overflow-hidden rounded-[16px] border border-onwei-blue/10 bg-onwei-white"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element -- admin-uploaded Blob URLs, next/image's domain allowlist isn't worth configuring for a simple thumbnail */}
+              <img
+                src={image.url}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+              {index === 0 ? (
+                <span className="absolute left-2 top-2 rounded-[30px] bg-onwei-green px-2 py-0.5 text-[0.6875rem] font-medium uppercase text-onwei-blue">
+                  Main
+                </span>
+              ) : null}
+              {image.isPlaceholder ? (
+                <span className="absolute inset-x-0 bottom-0 bg-onwei-blue/70 px-1 py-1 text-center text-[0.6875rem] text-onwei-white">
+                  Placeholder
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => handleRemove(image.id)}
+                  className="absolute right-2 top-2 rounded-[30px] bg-onwei-black px-2.5 py-0.5 text-[0.6875rem] uppercase text-onwei-white opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100"
+                  aria-label="Remove image"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
-      <label className="flex w-fit cursor-pointer items-center gap-2 rounded-[30px] border border-onwei-blue px-5 py-2 font-cta text-sm uppercase tracking-wide text-onwei-blue">
-        {uploading ? "Uploading..." : "Upload a photo"}
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          const file = e.dataTransfer.files?.[0];
+          if (file) void uploadFile(file);
+        }}
+        className={`flex w-full max-w-xl cursor-pointer flex-col items-center justify-center gap-2 rounded-[20px] border-2 border-dashed px-4 py-8 text-center text-onwei-blue transition-colors ${
+          dragging
+            ? "border-onwei-purple bg-onwei-purple/10"
+            : "border-onwei-blue/30 hover:border-onwei-purple"
+        }`}
+      >
+        <svg
+          width="32"
+          height="32"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="M12 16V4m0 0L7 9m5-5 5 5" />
+          <path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3" />
+        </svg>
+        <span className="text-sm font-medium">
+          {uploading ? "Uploading..." : "Click to upload or drag a photo here"}
+        </span>
+        <span className="text-xs text-onwei-blue/70">
+          JPEG, PNG or WebP, up to 8MB
+        </span>
         <input
           ref={fileInputRef}
           type="file"
           accept="image/jpeg,image/png,image/webp"
           onChange={handleUpload}
           disabled={uploading}
-          className="hidden"
+          className="sr-only"
         />
       </label>
       {error ? <p className="text-sm text-onwei-black">{error}</p> : null}

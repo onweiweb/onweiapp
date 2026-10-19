@@ -14,7 +14,9 @@ import {
 export default async function CategoriesPage() {
   const categories = await prisma.category.findMany({
     orderBy: { sortOrder: "asc" },
-    include: { _count: { select: { products: true } } },
+    include: {
+      _count: { select: { products: { where: { deletedAt: null } } } },
+    },
   });
 
   return (

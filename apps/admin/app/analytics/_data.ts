@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
 import {
+  getBlogReport,
   getDeviceSplit,
   getEngagement,
   getFormFunnels,
@@ -85,3 +86,4 @@ export const engagement = cachedReport("engagement", getEngagement);
 export const topPages = cachedReport("top-pages", getTopPages);
 export const forms = cachedReport("forms", getFormFunnels);
 export const locations = cachedReport("locations", getLocations);
+export const blog = cachedReport("blog", getBlogReport);

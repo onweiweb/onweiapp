@@ -94,6 +94,8 @@ export async function adjustInventory(
 /** Flat variant x warehouse stock list for the admin inventory screen. */
 export async function listInventory(options?: { lowStockOnly?: boolean }) {
   const rows = await prisma.inventory.findMany({
+    // Deleted products no longer count toward stock lists or "running low".
+    where: { productVariant: { product: { deletedAt: null } } },
     include: {
       productVariant: { include: { product: true } },
       warehouse: true,

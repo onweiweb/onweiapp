@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { formatArticleDate } from "../../../lib/formatDate";
 import Image from "@/_components/ScaledImage";
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import { TrackedLink } from "@/_components/TrackedLink";
 import { BlogCard } from "@/_components/BlogCard";
 import {
   cachedGetPublishedArticleBySlug as getPublishedArticleBySlug,
@@ -77,8 +77,12 @@ export default async function JournalArticlePage({
 
       <article className="flex flex-col items-center bg-onwei-white px-6 py-14 desk:px-14">
         <div className="flex w-full max-w-[47.5rem] flex-col gap-8">
-          <Link
+          <TrackedLink
             href="/journal"
+            analytics={{
+              event: "blog_nav_clicked",
+              props: { target: "back_to_blogs", source: "post" },
+            }}
             className="group inline-flex w-fit items-center gap-2 rounded-[1.875rem] border border-onwei-blue px-4 py-2 font-grotesk text-[length:max(0.75rem,11px)] uppercase leading-none text-onwei-blue transition-colors hover:bg-onwei-blue hover:text-onwei-beige desk:px-5 desk:py-2.5"
           >
             <svg
@@ -96,7 +100,7 @@ export default async function JournalArticlePage({
               <path d="M13 8H3m4-4L3 8l4 4" />
             </svg>
             All blogs
-          </Link>
+          </TrackedLink>
           {article.coverImageUrl ? (
             <div className="relative aspect-[416/280] w-full overflow-hidden rounded-[1.25rem] bg-[#d4d4d4]">
               <Image
@@ -138,7 +142,7 @@ export default async function JournalArticlePage({
             </h2>
             <div className="grid gap-x-6 gap-y-12 sm:grid-cols-2 desk:grid-cols-3">
               {morePosts.map((post) => (
-                <BlogCard key={post.slug} post={post} />
+                <BlogCard key={post.slug} post={post} source="post_more" />
               ))}
             </div>
           </div>

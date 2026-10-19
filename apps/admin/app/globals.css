@@ -43,3 +43,32 @@
 .admin-nav-scroll::-webkit-scrollbar-thumb:hover {
   background: rgb(255 255 255 / 0.35);
 }
+
+/* Tailwind v4 leaves buttons with the plain arrow cursor. Show the pointing
+   hand on everything clickable, and the blocked sign on disabled buttons. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+summary,
+select:not(:disabled),
+input[type="checkbox"]:not(:disabled),
+input[type="file"]:not(:disabled) {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* Dropdowns: the browser's own arrow sits hard against the rounded edge.
+   Draw our own chevron with room on the right. */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.5rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23161845' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 0.75rem;
+}
+select:disabled {
+  opacity: 0.6;
+}

@@ -23,6 +23,10 @@ export function WaitlistBlogSection({
           </p>
           <CtaLink
             href="/journal"
+            analytics={{
+              event: "blog_nav_clicked",
+              props: { target: "all_blogs", source: "waitlist" },
+            }}
             className="bg-onwei-blue text-onwei-beige max-desk:py-2.5"
           >
             view all blogs
@@ -40,7 +44,7 @@ export function WaitlistBlogSection({
               key={post.slug}
               className="w-[18.9167rem] shrink-0 desk:w-auto desk:flex-1 desk:shrink"
             >
-              <BlogCard post={post} eager />
+              <BlogCard post={post} eager source="waitlist" />
             </div>
           ))}
         </ScrollCarousel>

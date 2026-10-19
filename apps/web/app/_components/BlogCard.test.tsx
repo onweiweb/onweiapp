@@ -13,6 +13,7 @@ describe("BlogCard", () => {
           coverImageUrl: null,
           publishedAt: new Date("2026-10-01T00:00:00Z"),
         }}
+        source="journal"
       />,
     );
     expect(screen.getByText("First post")).toBeTruthy();
@@ -33,6 +34,7 @@ describe("BlogCard", () => {
           coverImageUrl: null,
           publishedAt: null,
         }}
+        source="journal"
       />,
     );
     expect(screen.getByText("Bare")).toBeTruthy();

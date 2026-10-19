@@ -7,6 +7,7 @@ vi.mock("@onwei/database", () => ({
 
 import { AnalyticsUnavailableError, runHogql } from "./posthogClient";
 import {
+  getBlogReport,
   getEngagement,
   getFormFunnels,
   getLocations,
@@ -207,5 +208,35 @@ describe("posthog queries", () => {
       "Joined",
     ]);
     expect(form!.leftAt[0]).toEqual({ field: "email", people: 25 });
+  });
+
+  it("builds the blog report from post views and card clicks", async () => {
+    const fetchImpl = mockFetch(
+      [["/journal/a-post", 20, 12, 3, 6]],
+      [
+        ["home", 5],
+        ["waitlist", 2],
+      ],
+    );
+    const out = await getBlogReport({ days: 30, config, fetchImpl });
+    expect(out.posts).toEqual([
+      { path: "/journal/a-post", views: 20, visitors: 12, readMost: 0.5 },
+    ]);
+    expect(out.clicksBySource).toEqual([
+      { source: "home", clicks: 5 },
+      { source: "waitlist", clicks: 2 },
+    ]);
+  });
+
+  it("ignores a page filter for the blog report", async () => {
+    const fetchImpl = mockFetch([], []);
+    await getBlogReport({
+      days: 7,
+      page: { kind: "pageType", value: "home" },
+      config,
+      fetchImpl,
+    });
+    const body = JSON.parse(fetchImpl.mock.calls[0]![1].body as string);
+    expect(JSON.stringify(body)).not.toContain("page_type");
   });
 });

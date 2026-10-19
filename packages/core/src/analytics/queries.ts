@@ -484,3 +484,59 @@ export function getLocations(
     };
   })();
 }
+
+// ------------------------------------------------------------- blog posts
+
+export interface BlogPostRow {
+  path: string;
+  views: number;
+  visitors: number;
+  /** Share of visits that scrolled at least three quarters down, 0 to 1. */
+  readMost: number;
+}
+
+export interface BlogReport {
+  posts: BlogPostRow[];
+  /** Card clicks by where the card was shown, e.g. "home", "waitlist". */
+  clicksBySource: { source: string; clicks: number }[];
+}
+
+/** Views per blog post and how people reached the posts. Always covers every
+ * page, so the page filter on the dashboard does not apply here. */
+export function getBlogReport(
+  opts: AnalyticsQueryOptions,
+): Promise<BlogReport> {
+  const s = scopeFor({ ...opts, page: { kind: "all" } });
+  return (async () => {
+    const [posts, clicks] = await Promise.all([
+      s.run(
+        `SELECT properties.$pathname AS path,
+                countIf(event = '$pageview') AS views,
+                uniqIf(distinct_id, event = '$pageview') AS visitors,
+                uniqIf(properties.visit_id, event = 'scroll_depth' AND toFloat(properties.depth) = 75) AS read_most,
+                uniqIf(properties.visit_id, event = '$pageview') AS sessions
+         FROM events
+         WHERE event IN ('$pageview', 'scroll_depth') AND properties.$pathname LIKE '/journal/%' AND ${s.where}
+         GROUP BY path ORDER BY views DESC LIMIT 10`,
+      ),
+      s.run(
+        `SELECT properties.source AS source, count() AS clicks
+         FROM events WHERE event = 'blog_card_clicked' AND ${s.where}
+         GROUP BY source ORDER BY clicks DESC`,
+      ),
+    ]);
+    return {
+      posts: posts
+        .filter((r) => str(r[0]))
+        .map((r) => ({
+          path: String(r[0]),
+          views: num(r[1]),
+          visitors: num(r[2]),
+          readMost: num(r[4]) > 0 ? Math.min(num(r[3]) / num(r[4]), 1) : 0,
+        })),
+      clicksBySource: clicks
+        .filter((r) => str(r[0]))
+        .map((r) => ({ source: String(r[0]), clicks: num(r[1]) })),
+    };
+  })();
+}

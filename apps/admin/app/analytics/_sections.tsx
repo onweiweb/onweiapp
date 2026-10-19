@@ -483,3 +483,72 @@ export function LocationsSection({ scope }: { scope: ReportScope }) {
     </ReportSection>
   );
 }
+
+const BLOG_SOURCE_LABELS: Record<string, string> = {
+  home: "Homepage row",
+  waitlist: "Waitlist page row",
+  journal: "Blogs page",
+  post_more: "More posts under an article",
+};
+
+export function BlogSection({ scope }: { scope: ReportScope }) {
+  return (
+    <ReportSection
+      title="Blog posts"
+      help="How many people read each post, and where they clicked from. Not affected by the page filter above."
+      load={() => report.blog(scope)}
+    >
+      {(blog) =>
+        blog.posts.length === 0 && blog.clicksBySource.length === 0 ? (
+          <p className="text-onwei-blue/70">
+            No blog visits in this time range.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {blog.posts.length > 0 ? (
+              <AdminTable>
+                <AdminTableHead>
+                  <AdminTableHeaderCell>Post</AdminTableHeaderCell>
+                  <AdminTableHeaderCell>Views</AdminTableHeaderCell>
+                  <AdminTableHeaderCell>People</AdminTableHeaderCell>
+                  <AdminTableHeaderCell>Read most of it</AdminTableHeaderCell>
+                </AdminTableHead>
+                <tbody>
+                  {blog.posts.map((p) => (
+                    <AdminTableRow key={p.path}>
+                      <AdminTableCell>{p.path}</AdminTableCell>
+                      <AdminTableCell>{formatNumber(p.views)}</AdminTableCell>
+                      <AdminTableCell>
+                        {formatNumber(p.visitors)}
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        {formatPercent(p.readMost)}
+                      </AdminTableCell>
+                    </AdminTableRow>
+                  ))}
+                </tbody>
+              </AdminTable>
+            ) : null}
+            {blog.clicksBySource.length > 0 ? (
+              <AdminCard className="flex flex-col gap-2">
+                <p className="text-sm font-semibold">
+                  Where people clicked into a post
+                </p>
+                <ul className="flex flex-col gap-1 text-sm">
+                  {blog.clicksBySource.map((c) => (
+                    <li key={c.source} className="flex justify-between gap-4">
+                      <span>{BLOG_SOURCE_LABELS[c.source] ?? c.source}</span>
+                      <span className="font-medium">
+                        {formatNumber(c.clicks)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </AdminCard>
+            ) : null}
+          </div>
+        )
+      }
+    </ReportSection>
+  );
+}
