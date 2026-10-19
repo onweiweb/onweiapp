@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { OrderStatus } from "@onwei/database";
-import { AdminButton, AdminSelect } from "./ui";
+import { AdminButton, AdminSelect, useConfirm } from "./ui";
 
 export function OrderStatusForm({
   orderId,
@@ -15,6 +15,7 @@ export function OrderStatusForm({
   statusLabels: Record<OrderStatus, string>;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [status, setStatus] = useState<OrderStatus | "">(nextStatuses[0] ?? "");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -32,13 +33,12 @@ export function OrderStatusForm({
     if (!status) return;
 
     const label = statusLabels[status];
-    if (
-      !window.confirm(
-        `This will mark the order as "${label}". This can't be undone from here, make sure that's correct.`,
-      )
-    ) {
-      return;
-    }
+    const ok = await confirm({
+      title: `Mark order as ${label}?`,
+      message: "This can't be undone from here, make sure that's correct.",
+      confirmLabel: "Yes, update",
+    });
+    if (!ok) return;
 
     setError(null);
     setSubmitting(true);

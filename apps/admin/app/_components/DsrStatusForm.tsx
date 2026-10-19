@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { DsrStatus } from "@onwei/database";
-import { AdminButton, AdminSelect } from "./ui";
+import { AdminButton, AdminSelect, useConfirm } from "./ui";
 import { DSR_STATUS_LABELS } from "../_lib/complianceLabels";
 
 const NEXT_STATUSES: Record<DsrStatus, DsrStatus[]> = {
@@ -27,6 +27,7 @@ export function DsrStatusForm({
   currentStatus: DsrStatus;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const options = NEXT_STATUSES[currentStatus];
   const [status, setStatus] = useState<DsrStatus | "">(options[0] ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +46,12 @@ export function DsrStatusForm({
     if (!status) return;
 
     const consequence = CONSEQUENCE_COPY[status];
-    if (consequence && !window.confirm(consequence)) return;
+    if (
+      consequence &&
+      !(await confirm({ title: "Update this request?", message: consequence }))
+    ) {
+      return;
+    }
 
     setError(null);
     setSubmitting(true);

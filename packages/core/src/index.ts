@@ -181,7 +181,11 @@ export type {
   CreateReviewPlacementInput,
 } from "./reviews/types";
 export type { ProductSearchIndex } from "./search/ProductSearchIndex";
-export { getSiteSetting, updateSiteSetting } from "./settings/siteSetting";
+export {
+  clearSiteSettingCache,
+  getSiteSetting,
+  updateSiteSetting,
+} from "./settings/siteSetting";
 export type {
   SiteSettingSummary,
   UpdateSiteSettingInput,

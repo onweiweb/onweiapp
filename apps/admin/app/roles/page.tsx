@@ -2,12 +2,13 @@ import Link from "next/link";
 import { prisma } from "@onwei/database";
 import { requirePageSession } from "../_lib/requirePageSession";
 import {
-  AdminButton,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  LinkButton,
+  PageHeader,
 } from "../_components/ui";
 
 export default async function RolesPage() {
@@ -20,12 +21,15 @@ export default async function RolesPage() {
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold uppercase">Roles</h1>
-        <Link href="/roles/new">
-          <AdminButton>Add role</AdminButton>
-        </Link>
-      </div>
+      <PageHeader
+        title="Roles"
+        description="Groups of permissions you can give to staff."
+        actions={
+          <>
+            <LinkButton href="/roles/new">Add role</LinkButton>
+          </>
+        }
+      />
 
       {roles.length === 0 ? (
         <p className="text-onwei-blue/70">

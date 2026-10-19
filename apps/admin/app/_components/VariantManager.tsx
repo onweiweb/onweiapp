@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  AdminButton,
+  AdminInput,
+  AdminSelect,
+  AdminTable,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTableRow,
+  EmptyState,
+  Field,
+} from "./ui";
 
 interface Variant {
   id: string;
@@ -81,111 +93,92 @@ export function VariantManager({
   return (
     <div className="flex flex-col gap-4">
       {variants.length === 0 ? (
-        <p className="text-sm text-neutral-600">
-          No variants yet, this product won&apos;t be purchasable on the
-          storefront until it has at least one.
-        </p>
+        <EmptyState
+          title="No variants yet"
+          description="This product won't be purchasable on the storefront until it has at least one."
+        />
       ) : (
-        <table className="w-full border-collapse overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm">
-          <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-              <th className="px-3 py-2 font-medium">SKU</th>
-              <th className="px-3 py-2 font-medium">Attributes</th>
-              <th className="px-3 py-2 font-medium">Price</th>
-              <th className="px-3 py-2 font-medium">Status</th>
-            </tr>
-          </thead>
+        <AdminTable>
+          <AdminTableHead>
+            <AdminTableHeaderCell>SKU</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Attributes</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Price</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Status</AdminTableHeaderCell>
+          </AdminTableHead>
           <tbody>
             {variants.map((variant) => (
-              <tr key={variant.id} className="border-b border-neutral-100">
-                <td className="px-3 py-2 font-mono">{variant.sku}</td>
-                <td className="px-3 py-2">
+              <AdminTableRow key={variant.id}>
+                <AdminTableCell className="font-mono text-xs">
+                  {variant.sku}
+                </AdminTableCell>
+                <AdminTableCell>
                   {Object.entries(variant.attributes)
                     .map(([key, value]) => `${key}: ${value}`)
                     .join(", ") || "-"}
-                </td>
-                <td className="px-3 py-2">{variant.priceFormatted}</td>
-                <td className="px-3 py-2">
-                  <select
+                </AdminTableCell>
+                <AdminTableCell>{variant.priceFormatted}</AdminTableCell>
+                <AdminTableCell>
+                  <AdminSelect
                     value={variant.status}
                     onChange={(event) =>
                       handleStatusChange(variant.id, event.target.value)
                     }
-                    className="rounded-md border border-neutral-300 px-2 py-1"
+                    aria-label={`Status for ${variant.sku}`}
+                    className="!h-9"
                   >
                     <option value="ACTIVE">Live</option>
                     <option value="DRAFT">Draft</option>
                     <option value="ARCHIVED">Discontinued</option>
-                  </select>
-                </td>
-              </tr>
+                  </AdminSelect>
+                </AdminTableCell>
+              </AdminTableRow>
             ))}
           </tbody>
-        </table>
+        </AdminTable>
       )}
 
       <form
         onSubmit={handleAddVariant}
-        className="flex flex-wrap items-end gap-2 rounded-lg border border-neutral-200 bg-white p-4"
+        className="flex flex-wrap items-end gap-3 rounded-[20px] border border-onwei-blue/10 bg-onwei-white p-4"
       >
-        <div className="flex flex-col gap-1">
-          <label htmlFor="variant-sku" className="text-xs font-medium">
-            SKU
-          </label>
-          <input
-            id="variant-sku"
+        <Field label="SKU" className="w-36">
+          <AdminInput
             value={sku}
             onChange={(event) => setSku(event.target.value)}
             required
-            className="w-32 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+            className="!h-9"
           />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="variant-size" className="text-xs font-medium">
-            Size
-          </label>
-          <input
-            id="variant-size"
+        </Field>
+        <Field label="Size" className="w-24">
+          <AdminInput
             value={size}
             onChange={(event) => setSize(event.target.value)}
-            className="w-20 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+            className="!h-9"
           />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="variant-color" className="text-xs font-medium">
-            Color
-          </label>
-          <input
-            id="variant-color"
+        </Field>
+        <Field label="Color" className="w-28">
+          <AdminInput
             value={color}
             onChange={(event) => setColor(event.target.value)}
-            className="w-24 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+            className="!h-9"
           />
-        </div>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="variant-price" className="text-xs font-medium">
-            Price (₹)
-          </label>
-          <input
-            id="variant-price"
+        </Field>
+        <Field label="Price (₹)" className="w-32">
+          <AdminInput
             type="number"
             min="0"
             step="0.01"
             value={price}
             onChange={(event) => setPrice(event.target.value)}
             required
-            className="w-28 rounded-md border border-neutral-300 px-2 py-1.5 text-sm"
+            className="!h-9"
           />
-        </div>
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm text-white disabled:opacity-60"
-        >
-          {submitting ? "Adding…" : "Add variant"}
-        </button>
+        </Field>
+        <AdminButton type="submit" disabled={submitting}>
+          {submitting ? "Adding..." : "Add variant"}
+        </AdminButton>
       </form>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm text-onwei-black">{error}</p> : null}
     </div>
   );
 }

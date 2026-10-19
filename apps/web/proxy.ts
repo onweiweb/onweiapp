@@ -61,8 +61,11 @@ export async function proxy(request: NextRequest) {
   }
 
   let siteMode: string;
+  let showBlogOnWaitlist = false;
   try {
-    siteMode = (await getSiteSetting()).siteMode;
+    const setting = await getSiteSetting();
+    siteMode = setting.siteMode;
+    showBlogOnWaitlist = setting.showBlogOnWaitlist;
   } catch {
     // Fail closed to the pre-launch gate rather than 500ing or accidentally
     // exposing the unfinished storefront if the settings read fails.
@@ -70,6 +73,14 @@ export async function proxy(request: NextRequest) {
   }
 
   if (siteMode === "WAITLIST") {
+    // The Blogs pages are open during the waitlist only when staff turned on
+    // "Show blog posts on the waitlist page" in admin settings.
+    if (
+      showBlogOnWaitlist &&
+      (pathname === "/journal" || pathname.startsWith("/journal/"))
+    ) {
+      return NextResponse.next();
+    }
     // Keep the query string so a tagged link (utm_source=...) to any page
     // still lands on the waitlist with its UTM values.
     const target = new URL("/ontheway", request.url);

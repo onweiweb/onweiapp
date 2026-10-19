@@ -16,6 +16,9 @@ import {
 } from "../../../lib/seo/structuredData";
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
+import { WaitlistHeader } from "@/_components/WaitlistHeader";
+import { WaitlistFooter } from "@/_components/WaitlistFooter";
+import { getSiteSetting } from "@onwei/core";
 
 // No Figma frame exists for this page yet, it's new infrastructure (see
 // docs/OPEN_DECISIONS.md's SEO entry), not a designed screen, so this
@@ -50,6 +53,9 @@ export default async function JournalArticlePage({
   const { slug } = await params;
   const article = await getPublishedArticleBySlug(slug);
   if (!article) notFound();
+  const { siteMode, instagramUrl, youtubeUrl, spotifyUrl } =
+    await getSiteSetting();
+  const isWaitlistMode = siteMode === "WAITLIST";
   const morePosts = (await listPublishedArticles(4))
     .filter((post) => post.slug !== article.slug)
     .slice(0, 3);
@@ -63,7 +69,11 @@ export default async function JournalArticlePage({
           { name: article.title, path: `/journal/${article.slug}` },
         ])}
       />
-      <SiteHeader />
+      {isWaitlistMode ? (
+        <WaitlistHeader navHref="/ontheway" navLabel="Join the Movement" />
+      ) : (
+        <SiteHeader />
+      )}
 
       <article className="flex flex-col items-center bg-onwei-white px-6 py-14 desk:px-14">
         <div className="flex w-full max-w-[47.5rem] flex-col gap-8">
@@ -135,7 +145,15 @@ export default async function JournalArticlePage({
         </section>
       ) : null}
 
-      <SiteFooter />
+      {isWaitlistMode ? (
+        <WaitlistFooter
+          instagramUrl={instagramUrl}
+          youtubeUrl={youtubeUrl}
+          spotifyUrl={spotifyUrl}
+        />
+      ) : (
+        <SiteFooter />
+      )}
     </main>
   );
 }

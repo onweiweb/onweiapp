@@ -1,3 +1,4 @@
+import { PageHeader } from "../../_components/ui";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { StaffUserForm } from "../../_components/StaffUserForm";
 
@@ -6,9 +7,11 @@ export default async function NewStaffPage() {
 
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold uppercase">
-        Add staff
-      </h1>
+      <PageHeader
+        title="Add staff"
+        back={{ href: "/staff", label: "Staff" }}
+        description="Create a login for a team member."
+      />
       <StaffUserForm />
     </main>
   );

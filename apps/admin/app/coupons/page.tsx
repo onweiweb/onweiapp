@@ -3,12 +3,13 @@ import { prisma } from "@onwei/database";
 import { requirePageSession } from "../_lib/requirePageSession";
 import {
   AdminBadge,
-  AdminButton,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  LinkButton,
+  PageHeader,
 } from "../_components/ui";
 
 export default async function CouponsPage() {
@@ -21,14 +22,15 @@ export default async function CouponsPage() {
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold uppercase">
-          Coupons
-        </h1>
-        <Link href="/coupons/new">
-          <AdminButton>Add coupon</AdminButton>
-        </Link>
-      </div>
+      <PageHeader
+        title="Coupons"
+        description="Discount codes shoppers can use at checkout."
+        actions={
+          <>
+            <LinkButton href="/coupons/new">Add coupon</LinkButton>
+          </>
+        }
+      />
 
       {coupons.length === 0 ? (
         <p className="text-onwei-blue/70">

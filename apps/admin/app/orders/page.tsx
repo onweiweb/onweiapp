@@ -15,6 +15,7 @@ import {
   AdminTableHeaderCell,
   AdminTableRow,
   orderStatusTone,
+  PageHeader,
 } from "../_components/ui";
 
 const STATUS_OPTIONS = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[];
@@ -44,24 +45,27 @@ export default async function OrdersPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold uppercase">
-          Orders
-        </h1>
-        <form className="flex items-center gap-2">
-          <AdminSelect name="status" defaultValue={statusFilter ?? ""}>
-            <option value="">All statuses</option>
-            {STATUS_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {ORDER_STATUS_LABELS[option]}
-              </option>
-            ))}
-          </AdminSelect>
-          <AdminButton type="submit" variant="secondary">
-            Filter
-          </AdminButton>
-        </form>
-      </div>
+      <PageHeader
+        title="Orders"
+        description="Every order placed on the store."
+        actions={
+          <>
+            <form className="flex items-center gap-2">
+              <AdminSelect name="status" defaultValue={statusFilter ?? ""}>
+                <option value="">All statuses</option>
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option} value={option}>
+                    {ORDER_STATUS_LABELS[option]}
+                  </option>
+                ))}
+              </AdminSelect>
+              <AdminButton type="submit" variant="secondary">
+                Filter
+              </AdminButton>
+            </form>
+          </>
+        }
+      />
 
       {orders.length === 0 ? (
         <p className="text-onwei-blue/70">

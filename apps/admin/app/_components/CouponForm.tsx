@@ -39,6 +39,18 @@ export function CouponForm({
   const [isActive, setIsActive] = useState(initial?.isActive ?? true);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const current = JSON.stringify([
+    code,
+    description,
+    usageLimit,
+    perCustomerLimit,
+    minOrderValue,
+    startsAt,
+    endsAt,
+    isActive,
+  ]);
+  const [baseline, setBaseline] = useState(current);
+  const dirty = mode === "create" || current !== baseline;
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -84,6 +96,7 @@ export function CouponForm({
         return;
       }
       setSubmitting(false);
+      setBaseline(current);
       router.push(`/coupons/${mode === "create" ? data.coupon!.id : couponId}`);
       router.refresh();
     } catch {
@@ -163,7 +176,11 @@ export function CouponForm({
         </label>
       ) : null}
       {error ? <p className="text-sm text-onwei-black">{error}</p> : null}
-      <AdminButton type="submit" disabled={submitting} className="self-start">
+      <AdminButton
+        type="submit"
+        disabled={submitting || !dirty}
+        className="self-start"
+      >
         {submitting
           ? "Saving…"
           : mode === "create"

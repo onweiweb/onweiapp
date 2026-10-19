@@ -3,12 +3,13 @@ import { prisma } from "@onwei/database";
 import { requirePageSession } from "../_lib/requirePageSession";
 import {
   AdminBadge,
-  AdminButton,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  LinkButton,
+  PageHeader,
 } from "../_components/ui";
 
 export default async function StaffPage() {
@@ -21,12 +22,15 @@ export default async function StaffPage() {
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold uppercase">Staff</h1>
-        <Link href="/staff/new">
-          <AdminButton>Add staff</AdminButton>
-        </Link>
-      </div>
+      <PageHeader
+        title="Staff"
+        description="Team members who can sign in to this admin."
+        actions={
+          <>
+            <LinkButton href="/staff/new">Add staff</LinkButton>
+          </>
+        }
+      />
 
       <AdminTable>
         <AdminTableHead>

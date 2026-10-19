@@ -12,6 +12,7 @@ import {
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  PageHeader,
 } from "../_components/ui";
 
 export default async function CustomersPage({
@@ -44,21 +45,24 @@ export default async function CustomersPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold uppercase">
-          Customers
-        </h1>
-        <form className="flex items-center gap-2">
-          <AdminInput
-            name="q"
-            defaultValue={query ?? ""}
-            placeholder="Search by name, email, or phone"
-          />
-          <AdminButton type="submit" variant="secondary">
-            Search
-          </AdminButton>
-        </form>
-      </div>
+      <PageHeader
+        title="Customers"
+        description="People who have created an account on the storefront."
+        actions={
+          <>
+            <form className="flex items-center gap-2">
+              <AdminInput
+                name="q"
+                defaultValue={query ?? ""}
+                placeholder="Search by name, email, or phone"
+              />
+              <AdminButton type="submit" variant="secondary">
+                Search
+              </AdminButton>
+            </form>
+          </>
+        }
+      />
 
       {customers.length === 0 ? (
         <p className="text-onwei-blue/70">No customers match that search.</p>

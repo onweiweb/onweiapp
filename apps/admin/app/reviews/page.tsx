@@ -15,6 +15,7 @@ import {
   AdminTableHeaderCell,
   AdminTableRow,
   reviewApprovalTone,
+  PageHeader,
 } from "../_components/ui";
 
 export default async function ReviewsPage({
@@ -38,26 +39,29 @@ export default async function ReviewsPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold uppercase">
-          Reviews
-        </h1>
-        <div className="flex items-center gap-2">
-          <form className="flex items-center gap-2">
-            <AdminSelect name="isApproved" defaultValue={isApproved ?? ""}>
-              <option value="">All</option>
-              <option value="false">Awaiting review</option>
-              <option value="true">Live</option>
-            </AdminSelect>
-            <AdminButton type="submit" variant="secondary">
-              Filter
-            </AdminButton>
-          </form>
-          <Link href="/reviews/new">
-            <AdminButton>Add review</AdminButton>
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Reviews"
+        description="Approve or hide reviews before they show on the site."
+        actions={
+          <>
+            <div className="flex items-center gap-2">
+              <form className="flex items-center gap-2">
+                <AdminSelect name="isApproved" defaultValue={isApproved ?? ""}>
+                  <option value="">All</option>
+                  <option value="false">Awaiting review</option>
+                  <option value="true">Live</option>
+                </AdminSelect>
+                <AdminButton type="submit" variant="secondary">
+                  Filter
+                </AdminButton>
+              </form>
+              <Link href="/reviews/new">
+                <AdminButton>Add review</AdminButton>
+              </Link>
+            </div>
+          </>
+        }
+      />
 
       {reviews.length === 0 ? (
         <p className="text-onwei-blue/70">No reviews match that filter.</p>

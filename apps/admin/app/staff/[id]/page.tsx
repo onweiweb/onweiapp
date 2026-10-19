@@ -3,7 +3,7 @@ import { prisma } from "@onwei/database";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { StaffStatusToggle } from "../../_components/StaffStatusToggle";
 import { StaffRoleAssignment } from "../../_components/StaffRoleAssignment";
-import { AdminBadge, AdminCard } from "../../_components/ui";
+import { AdminBadge, AdminCard, PageHeader } from "../../_components/ui";
 
 export default async function StaffDetailPage({
   params,
@@ -25,15 +25,16 @@ export default async function StaffDetailPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <h1 className="font-display text-2xl font-semibold uppercase">
-          {staffUser.name}
-        </h1>
-        <AdminBadge tone={staffUser.isActive ? "success" : "problem"}>
-          {staffUser.isActive ? "Active" : "Deactivated"}
-        </AdminBadge>
-      </div>
-      <p className="text-sm text-onwei-blue/70">{staffUser.email}</p>
+      <PageHeader
+        back={{ href: "/staff", label: "Staff" }}
+        title={staffUser.name}
+        description={staffUser.email}
+        actions={
+          <AdminBadge tone={staffUser.isActive ? "success" : "problem"}>
+            {staffUser.isActive ? "Active" : "Deactivated"}
+          </AdminBadge>
+        }
+      />
 
       <AdminCard>
         <h2 className="mb-3 font-display text-sm font-semibold uppercase text-onwei-blue/70">

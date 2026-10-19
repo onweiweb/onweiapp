@@ -1,13 +1,13 @@
-import { parseJsonBody } from "@onwei/core";
+import { clearSiteSettingCache, parseJsonBody } from "@onwei/core";
 import { timingSafeEqual } from "node:crypto";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
 // Only tags the storefront actually caches under (apps/web/lib/cachedCatalog.ts).
 // An unknown tag is a caller bug, not something to silently accept.
 const bodySchema = z.object({
-  tag: z.enum(["catalog"]).default("catalog"),
+  tag: z.enum(["catalog", "site-setting"]).default("catalog"),
 });
 
 function isAuthorized(header: string | null, secret: string | undefined) {
@@ -53,6 +53,18 @@ export async function POST(request: Request) {
   // 0 } is what Next's own docs recommend for exactly this case: an
   // external caller (webhook/other service) that needs the data gone
   // immediately (see revalidateTag.md's "Route Handler" example).
+  if (tag === "site-setting") {
+    // Site settings are read straight from the database (not the catalog
+    // cache), so drop this process's copy and rebuild the pages that show
+    // them. Without this, a switch flipped in admin took up to ~45s to show.
+    clearSiteSettingCache();
+    for (const path of ["/ontheway", "/about", "/journal"]) {
+      revalidatePath(path);
+    }
+    revalidatePath("/journal/[slug]", "page");
+    return NextResponse.json({ ok: true, revalidated: tag });
+  }
+
   revalidateTag(tag, { expire: 0 });
   return NextResponse.json({ ok: true, revalidated: tag });
 }

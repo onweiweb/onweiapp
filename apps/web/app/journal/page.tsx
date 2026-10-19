@@ -4,6 +4,9 @@ import Link from "next/link";
 import { BlogCard } from "@/_components/BlogCard";
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
+import { WaitlistHeader } from "@/_components/WaitlistHeader";
+import { WaitlistFooter } from "@/_components/WaitlistFooter";
+import { getSiteSetting } from "@onwei/core";
 import { CtaLink } from "@/_components/CtaLink";
 import { cachedListPublishedArticlesPage as listPublishedArticlesPage } from "../../lib/cachedCatalog";
 import { formatArticleDate } from "../../lib/formatDate";
@@ -32,6 +35,9 @@ export default async function BlogsPage({
   searchParams: Promise<{ page?: string }>;
 }) {
   const { page: pageParam } = await searchParams;
+  const { siteMode, instagramUrl, youtubeUrl, spotifyUrl } =
+    await getSiteSetting();
+  const isWaitlistMode = siteMode === "WAITLIST";
   const requested = Number.parseInt(pageParam ?? "1", 10);
   const { items, page, pageCount } = await listPublishedArticlesPage(
     Number.isFinite(requested) ? requested : 1,
@@ -50,7 +56,11 @@ export default async function BlogsPage({
           { name: "Blogs", path: "/journal" },
         ])}
       />
-      <SiteHeader />
+      {isWaitlistMode ? (
+        <WaitlistHeader navHref="/ontheway" navLabel="Join the Movement" />
+      ) : (
+        <SiteHeader />
+      )}
 
       <section className="flex flex-col items-center bg-onwei-white px-3 py-14 desk:px-14 desk:py-24">
         <div className="flex w-full max-w-[90rem] flex-col gap-[3.125rem]">
@@ -142,7 +152,15 @@ export default async function BlogsPage({
         </div>
       </section>
 
-      <SiteFooter />
+      {isWaitlistMode ? (
+        <WaitlistFooter
+          instagramUrl={instagramUrl}
+          youtubeUrl={youtubeUrl}
+          spotifyUrl={spotifyUrl}
+        />
+      ) : (
+        <SiteFooter />
+      )}
     </main>
   );
 }

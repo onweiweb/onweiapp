@@ -10,6 +10,7 @@ import {
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  PageHeader,
 } from "../_components/ui";
 
 export default async function AuditLogPage({
@@ -38,9 +39,10 @@ export default async function AuditLogPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold uppercase">
-        Audit log
-      </h1>
+      <PageHeader
+        title="Audit log"
+        description="A record of who changed what, and when."
+      />
 
       <form className="flex flex-wrap items-center gap-2">
         <AdminInput

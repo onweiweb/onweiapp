@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminButton, AdminInput } from "./ui";
+import { AdminButton, AdminInput, useConfirm } from "./ui";
 
 export interface MarqueeItemRow {
   id: string;
@@ -19,6 +19,7 @@ export function MarqueeItemsEditor({
   items: MarqueeItemRow[];
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [label, setLabel] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -46,9 +47,13 @@ export function MarqueeItemsEditor({
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this marquee item? This can't be undone.")) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Delete this marquee item?",
+      message: "This can't be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     setSubmitting(true);
     await fetch(`/api/content/marquee-items/${id}`, { method: "DELETE" });
     setSubmitting(false);

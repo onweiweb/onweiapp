@@ -11,6 +11,7 @@ import {
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  PageHeader,
 } from "../_components/ui";
 
 export default async function NewsletterPage({
@@ -30,9 +31,10 @@ export default async function NewsletterPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold uppercase">
-        Newsletter
-      </h1>
+      <PageHeader
+        title="Newsletter"
+        description="People who signed up for emails."
+      />
 
       {canManage ? <AddNewsletterSubscriberForm /> : null}
 

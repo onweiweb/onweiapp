@@ -13,6 +13,10 @@ vi.mock("../_lib/requireStaffSession", () => ({
   }),
 }));
 
+vi.mock("../_lib/triggerCatalogRevalidate", () => ({
+  triggerCatalogRevalidate: vi.fn(),
+}));
+
 import { PATCH } from "./route";
 
 function patch(body: unknown) {
@@ -57,6 +61,20 @@ describe("PATCH /api/settings", () => {
 
   it("rejects an unknown site mode", async () => {
     const response = await patch({ siteMode: "CLOSED" });
+    expect(response.status).toBe(400);
+  });
+
+  it("passes the waitlist blog switch through", async () => {
+    const response = await patch({ showBlogOnWaitlist: true });
+    expect(response.status).toBe(200);
+    expect(updateSiteSetting).toHaveBeenCalledWith(
+      expect.objectContaining({ showBlogOnWaitlist: true }),
+      expect.anything(),
+    );
+  });
+
+  it("rejects a non-boolean waitlist blog switch", async () => {
+    const response = await patch({ showBlogOnWaitlist: "yes" });
     expect(response.status).toBe(400);
   });
 });

@@ -1,5 +1,15 @@
-import Link from "next/link";
 import { prisma } from "@onwei/database";
+import {
+  AdminBadge,
+  AdminTable,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTableRow,
+  EmptyState,
+  LinkButton,
+  PageHeader,
+} from "../_components/ui";
 
 export default async function CategoriesPage() {
   const categories = await prisma.category.findMany({
@@ -8,51 +18,56 @@ export default async function CategoriesPage() {
   });
 
   return (
-    <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Categories</h1>
-        <Link
-          href="/categories/new"
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm text-white"
-        >
-          Add a category
-        </Link>
-      </div>
+    <main className="flex flex-col gap-5">
+      <PageHeader
+        title="Categories"
+        description="The groups shoppers browse by, such as Pickleball or Pilates."
+        actions={<LinkButton href="/categories/new">Add a category</LinkButton>}
+      />
 
       {categories.length === 0 ? (
-        <p className="text-neutral-600">
-          No categories yet, add your first one to start organizing products.
-        </p>
+        <EmptyState
+          title="No categories yet"
+          description="Add your first category to start organizing products."
+          action={
+            <LinkButton href="/categories/new">Add a category</LinkButton>
+          }
+        />
       ) : (
-        <table className="w-full border-collapse overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm">
-          <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-              <th className="px-4 py-2 font-medium">Name</th>
-              <th className="px-4 py-2 font-medium">Products</th>
-              <th className="px-4 py-2 font-medium">Visible on site</th>
-              <th className="px-4 py-2" />
-            </tr>
-          </thead>
+        <AdminTable>
+          <AdminTableHead>
+            <AdminTableHeaderCell>Name</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Products</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Visible on site</AdminTableHeaderCell>
+            <AdminTableHeaderCell>
+              <span className="sr-only">Actions</span>
+            </AdminTableHeaderCell>
+          </AdminTableHead>
           <tbody>
             {categories.map((category) => (
-              <tr key={category.id} className="border-b border-neutral-100">
-                <td className="px-4 py-2">{category.name}</td>
-                <td className="px-4 py-2">{category._count.products}</td>
-                <td className="px-4 py-2">
-                  {category.isActive ? "Yes" : "No"}
-                </td>
-                <td className="px-4 py-2 text-right">
-                  <Link
+              <AdminTableRow key={category.id}>
+                <AdminTableCell className="font-medium">
+                  {category.name}
+                </AdminTableCell>
+                <AdminTableCell>{category._count.products}</AdminTableCell>
+                <AdminTableCell>
+                  <AdminBadge tone={category.isActive ? "success" : "pending"}>
+                    {category.isActive ? "Visible" : "Hidden"}
+                  </AdminBadge>
+                </AdminTableCell>
+                <AdminTableCell className="text-right">
+                  <LinkButton
                     href={`/categories/${category.id}`}
-                    className="text-neutral-700 underline"
+                    variant="secondary"
+                    className="!px-3 !py-1 text-xs"
                   >
                     Edit
-                  </Link>
-                </td>
-              </tr>
+                  </LinkButton>
+                </AdminTableCell>
+              </AdminTableRow>
             ))}
           </tbody>
-        </table>
+        </AdminTable>
       )}
     </main>
   );

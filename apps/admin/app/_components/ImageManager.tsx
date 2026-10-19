@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useConfirm } from "./ui";
 
 interface ProductImage {
   id: string;
@@ -17,6 +18,7 @@ export function ImageManager({
   images: ProductImage[];
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,13 @@ export function ImageManager({
   }
 
   async function handleRemove(imageId: string) {
-    if (!window.confirm("Remove this image from the product?")) return;
+    const ok = await confirm({
+      title: "Remove image?",
+      message: "This image will be removed from the product.",
+      confirmLabel: "Remove",
+      danger: true,
+    });
+    if (!ok) return;
     await fetch(`/api/products/${productId}/images/${imageId}`, {
       method: "DELETE",
     });
@@ -63,7 +71,7 @@ export function ImageManager({
         {images.map((image) => (
           <div
             key={image.id}
-            className="relative h-24 w-24 overflow-hidden rounded-md border border-neutral-200"
+            className="relative h-24 w-24 overflow-hidden rounded-[16px] border border-onwei-blue/10"
           >
             {/* eslint-disable-next-line @next/next/no-img-element -- admin-uploaded Blob URLs, next/image's domain allowlist isn't worth configuring for a simple thumbnail */}
             <img
@@ -89,8 +97,8 @@ export function ImageManager({
         ))}
       </div>
 
-      <label className="flex w-fit cursor-pointer items-center gap-2 rounded-md border border-neutral-300 px-3 py-2 text-sm">
-        {uploading ? "Uploading…" : "Upload a photo"}
+      <label className="flex w-fit cursor-pointer items-center gap-2 rounded-[30px] border border-onwei-blue px-5 py-2 font-cta text-sm uppercase tracking-wide text-onwei-blue">
+        {uploading ? "Uploading..." : "Upload a photo"}
         <input
           ref={fileInputRef}
           type="file"
@@ -100,7 +108,7 @@ export function ImageManager({
           className="hidden"
         />
       </label>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm text-onwei-black">{error}</p> : null}
     </div>
   );
 }

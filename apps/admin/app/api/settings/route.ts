@@ -2,6 +2,7 @@ import { updateSiteSetting } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { defineAdminRoute } from "../_lib/defineAdminRoute";
+import { triggerCatalogRevalidate } from "../_lib/triggerCatalogRevalidate";
 
 // These links are rendered as <a href> in the storefront footer, so only
 // plain web addresses are accepted. A value like "javascript:..." would run
@@ -37,6 +38,7 @@ const bodySchema = z.object({
     ),
   showCountdown: z.boolean().optional(),
   allowInternationalPhone: z.boolean().optional(),
+  showBlogOnWaitlist: z.boolean().optional(),
   instagramUrl: linkField,
   linkedinUrl: linkField,
   facebookUrl: linkField,
@@ -54,6 +56,7 @@ export const PATCH = defineAdminRoute(
     const setting = await updateSiteSetting(body, {
       staffUserId: staff.staffUserId,
     });
+    await triggerCatalogRevalidate("site-setting");
     return NextResponse.json({ ok: true, setting });
   },
 );

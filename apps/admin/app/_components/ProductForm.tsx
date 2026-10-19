@@ -74,6 +74,23 @@ export function ProductForm({
   );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const current = JSON.stringify([
+    name,
+    slug,
+    categoryId,
+    description,
+    status,
+    specs,
+    whoThisIsFor,
+    careInstructions,
+    powerRating,
+    spinRating,
+    controlRating,
+    metaTitle,
+    metaDescription,
+  ]);
+  const [baseline] = useState(current);
+  const dirty = mode === "create" || current !== baseline;
 
   function updateSpecRow(
     index: number,
@@ -378,7 +395,7 @@ export function ProductForm({
               ? "Create product"
               : "Save changes"
         }
-        submitDisabled={submitting || categories.length === 0}
+        submitDisabled={submitting || categories.length === 0 || !dirty}
       />
     </form>
   );

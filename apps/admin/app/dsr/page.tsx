@@ -11,6 +11,7 @@ import {
   AdminTableHeaderCell,
   AdminTableRow,
   dsrStatusTone,
+  PageHeader,
 } from "../_components/ui";
 
 export default async function DsrPage() {
@@ -24,9 +25,10 @@ export default async function DsrPage() {
 
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold uppercase">
-        Data requests
-      </h1>
+      <PageHeader
+        title="Data requests"
+        description="Requests from customers to see, fix or delete their personal data."
+      />
 
       {requests.length === 0 ? (
         <p className="text-onwei-blue/70">

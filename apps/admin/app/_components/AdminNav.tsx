@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { PendingSpinner } from "./PendingSpinner";
-import { useSyncExternalStore } from "react";
 import {
   LayoutDashboard,
   Settings,
@@ -12,20 +13,19 @@ import {
   ShoppingCart,
   Undo2,
   Ticket,
-  Megaphone,
   FileText,
+  Newspaper,
   Star,
   LayoutList,
   Mail,
   ListChecks,
-  Users,
   UserCog,
   ShieldCheck,
   UsersRound,
-  ShieldAlert,
   ScrollText,
   FileSearch,
   BarChart3,
+  Scale,
   type LucideIcon,
 } from "lucide-react";
 
@@ -40,146 +40,122 @@ const ICONS = {
   ShoppingCart,
   Undo2,
   Ticket,
-  Megaphone,
   FileText,
+  Newspaper,
   Star,
   LayoutList,
   Mail,
   ListChecks,
-  Users,
   UserCog,
   ShieldCheck,
   UsersRound,
-  ShieldAlert,
   ScrollText,
   FileSearch,
   BarChart3,
+  Scale,
 } satisfies Record<string, LucideIcon>;
 
 export type AdminNavIconName = keyof typeof ICONS;
 
-export interface AdminNavGroup {
+export interface AdminNavItem {
   label: string;
+  href: string;
   icon: AdminNavIconName;
-  items: readonly { label: string; href: string; icon: AdminNavIconName }[];
 }
 
-/**
- * Sections default collapsed, only a label explicitly expanded before
- * (persisted here) starts open on a later visit. useSyncExternalStore reads
- * localStorage safely: the server snapshot is always "collapsed" (no
- * window on the server), and the real per-viewer value takes over after
- * hydration with no mismatch warning, the pattern React designed this
- * hook for, instead of setting state from inside an effect.
- */
-const STORAGE_KEY_PREFIX = "onwei-admin-nav-expanded:";
-const listeners = new Set<() => void>();
-
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
+export interface AdminNavGroup {
+  /** Small heading above the group. Omit for the top, unlabelled group. */
+  label?: string;
+  items: readonly AdminNavItem[];
 }
 
-function getExpandedSnapshot(label: string): boolean {
-  try {
-    return window.localStorage.getItem(STORAGE_KEY_PREFIX + label) === "1";
-  } catch {
-    return false;
-  }
+/** How well a nav link matches the current address, or -1 for no match.
+ * Longer, more specific links win, so "Review placements" does not also
+ * light up "Reviews". */
+function matchScore(
+  href: string,
+  pathname: string,
+  tab: string | null,
+): number {
+  const [path = "", query] = href.split("?");
+  const linkTab = query ? new URLSearchParams(query).get("tab") : null;
+  const onPath =
+    path === "/"
+      ? pathname === "/"
+      : pathname === path || pathname.startsWith(`${path}/`);
+  if (!onPath) return -1;
+  if (linkTab && linkTab !== tab) return -1;
+  return path.length + (linkTab ? 1 : 0);
 }
 
-function getServerSnapshot(): boolean {
-  return false;
-}
+function NavLinks({ groups }: { groups: readonly AdminNavGroup[] }) {
+  const pathname = usePathname();
+  const tab = useSearchParams().get("tab");
 
-function setExpanded(label: string, expanded: boolean) {
-  try {
-    if (expanded) {
-      window.localStorage.setItem(STORAGE_KEY_PREFIX + label, "1");
-    } else {
-      window.localStorage.removeItem(STORAGE_KEY_PREFIX + label);
+  let best = -1;
+  let bestHref = "";
+  for (const group of groups) {
+    for (const item of group.items) {
+      const score = matchScore(item.href, pathname, tab);
+      if (score > best) {
+        best = score;
+        bestHref = item.href;
+      }
     }
-  } catch {
-    // localStorage unavailable (private window, blocked storage), expanded
-    // state just won't persist, section still works collapsed by default.
   }
-  listeners.forEach((listener) => listener());
-}
-
-function ChevronIcon({ expanded }: { expanded: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 12 12"
-      width={10}
-      height={10}
-      aria-hidden="true"
-      className={`transition-transform ${expanded ? "rotate-180" : ""}`}
-    >
-      <path
-        d="M2.5 4.5L6 8l3.5-3.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.5}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-
-function NavSection({ group }: { group: AdminNavGroup }) {
-  const expanded = useSyncExternalStore(
-    subscribe,
-    () => getExpandedSnapshot(group.label),
-    getServerSnapshot,
-  );
-  const GroupIcon = ICONS[group.icon];
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setExpanded(group.label, !expanded)}
-        aria-expanded={expanded}
-        className="flex w-full items-center justify-between gap-2 rounded-[30px] px-3 py-2 text-left text-sm uppercase tracking-wide text-onwei-beige/50 hover:text-onwei-beige/80"
-      >
-        <span className="flex items-center gap-3">
-          <GroupIcon size={16} aria-hidden className="shrink-0" />
-          {group.label}
-        </span>
-        <span className="shrink-0">
-          <ChevronIcon expanded={expanded} />
-        </span>
-      </button>
-      {expanded ? (
-        <ul className="mb-2 ml-5 mt-1 flex flex-col gap-1 border-l border-onwei-beige/20 pl-2">
+    <div className="flex flex-col gap-4">
+      {groups.map((group, index) => (
+        <div key={group.label ?? index} className="flex flex-col gap-0.5">
+          {group.label ? (
+            <p className="px-3 pb-1 text-[0.6875rem] uppercase tracking-widest text-onwei-beige/50">
+              {group.label}
+            </p>
+          ) : null}
           {group.items.map((item) => {
-            const ItemIcon = ICONS[item.icon];
+            const Icon = ICONS[item.icon];
+            const active = item.href === bestHref;
             return (
-              <li key={item.label}>
-                <Link
-                  href={item.href}
-                  className="flex items-center gap-3 rounded-[30px] px-3 py-2 text-xs uppercase tracking-wide hover:bg-onwei-green hover:text-onwei-blue"
-                >
-                  <ItemIcon size={14} aria-hidden className="shrink-0" />
-                  {item.label}
-                  <PendingSpinner />
-                </Link>
-              </li>
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                  active
+                    ? "bg-onwei-beige/15 font-medium text-onwei-white"
+                    : "text-onwei-beige/80 hover:bg-onwei-beige/10 hover:text-onwei-white"
+                }`}
+              >
+                <Icon size={15} aria-hidden className="shrink-0" />
+                {item.label}
+                <PendingSpinner />
+              </Link>
             );
           })}
-        </ul>
-      ) : null}
+        </div>
+      ))}
     </div>
   );
 }
 
 export function AdminNav({ groups }: { groups: readonly AdminNavGroup[] }) {
+  // useSearchParams needs a Suspense boundary; the plain links render first.
   return (
-    <div className="flex flex-col gap-2">
-      {groups.map((group) => (
-        <NavSection key={group.label} group={group} />
-      ))}
-    </div>
+    <Suspense
+      fallback={
+        <div className="flex flex-col gap-4">
+          {groups.flatMap((g) =>
+            g.items.map((item) => (
+              <Link key={item.href} href={item.href} className="px-3 text-sm">
+                {item.label}
+              </Link>
+            )),
+          )}
+        </div>
+      }
+    >
+      <NavLinks groups={groups} />
+    </Suspense>
   );
 }

@@ -43,6 +43,7 @@ export function SiteSettingForm({
   initialLaunchAt,
   initialShowCountdown,
   initialAllowInternationalPhone,
+  initialShowBlogOnWaitlist,
   initialInstagramUrl,
   initialLinkedinUrl,
   initialFacebookUrl,
@@ -53,6 +54,7 @@ export function SiteSettingForm({
   initialLaunchAt: string;
   initialShowCountdown: boolean;
   initialAllowInternationalPhone: boolean;
+  initialShowBlogOnWaitlist: boolean;
   initialInstagramUrl: string;
   initialLinkedinUrl: string;
   initialFacebookUrl: string;
@@ -68,6 +70,9 @@ export function SiteSettingForm({
   const [allowInternationalPhone, setAllowInternationalPhone] = useState(
     initialAllowInternationalPhone,
   );
+  const [showBlogOnWaitlist, setShowBlogOnWaitlist] = useState(
+    initialShowBlogOnWaitlist,
+  );
   const [instagramUrl, setInstagramUrl] = useState(initialInstagramUrl);
   const [linkedinUrl, setLinkedinUrl] = useState(initialLinkedinUrl);
   const [facebookUrl, setFacebookUrl] = useState(initialFacebookUrl);
@@ -76,6 +81,22 @@ export function SiteSettingForm({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Save stays off until something differs from what was last saved.
+  const current = JSON.stringify([
+    siteMode,
+    launchAt,
+    showCountdown,
+    allowInternationalPhone,
+    showBlogOnWaitlist,
+    instagramUrl.trim(),
+    linkedinUrl.trim(),
+    facebookUrl.trim(),
+    youtubeUrl.trim(),
+    spotifyUrl.trim(),
+  ]);
+  const [baseline, setBaseline] = useState(current);
+  const dirty = current !== baseline;
 
   const selectedMode = MODE_OPTIONS.find((option) => option.value === siteMode);
   const modeChanged = siteMode !== initialSiteMode;
@@ -95,6 +116,7 @@ export function SiteSettingForm({
           launchAt: new Date(launchAt).toISOString(),
           showCountdown,
           allowInternationalPhone,
+          showBlogOnWaitlist,
           instagramUrl: instagramUrl.trim() || null,
           linkedinUrl: linkedinUrl.trim() || null,
           facebookUrl: facebookUrl.trim() || null,
@@ -110,6 +132,7 @@ export function SiteSettingForm({
         return;
       }
 
+      setBaseline(current);
       setSaved(true);
       setSubmitting(false);
       router.refresh();
@@ -185,6 +208,23 @@ export function SiteSettingForm({
           </p>
         </div>
 
+        <div className="flex flex-col gap-1.5">
+          <label className="flex items-center gap-2 text-sm font-medium">
+            <input
+              type="checkbox"
+              checked={showBlogOnWaitlist}
+              onChange={(event) => setShowBlogOnWaitlist(event.target.checked)}
+            />
+            Show blog posts on the waitlist page
+          </label>
+          <p className="text-xs text-onwei-blue/70">
+            Adds a &quot;From the playbook&quot; row with your 3 latest
+            published posts above the footer, and lets visitors open the Blogs
+            page while the site is still in waitlist mode. Nothing shows until
+            at least one post is published.
+          </p>
+        </div>
+
         <label className="flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -256,7 +296,11 @@ export function SiteSettingForm({
         {error ? <p className="text-sm text-onwei-black">{error}</p> : null}
         {saved ? <p className="text-sm text-green-700">Saved.</p> : null}
 
-        <AdminButton type="submit" disabled={submitting} className="w-fit">
+        <AdminButton
+          type="submit"
+          disabled={submitting || !dirty}
+          className="w-fit"
+        >
           {submitting ? "Saving..." : "Save changes"}
         </AdminButton>
       </div>

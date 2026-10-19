@@ -694,6 +694,9 @@ model SiteSetting {
   // Whether WaitlistEntry.phone accepts any valid international number or
   // only Indian mobile numbers, see packages/core/src/validation/phone.ts.
   allowInternationalPhone Boolean  @default(true)
+  // true adds a "From the playbook" row to /ontheway and lets /journal pages
+  // through the WAITLIST gate. Off by default.
+  showBlogOnWaitlist      Boolean  @default(false)
   // Social links shown in apps/web's SiteFooter and WaitlistFooter, null
   // means "don't show this icon" rather than a dead "#" link, which is
   // what every one of these defaulted to before this field existed.

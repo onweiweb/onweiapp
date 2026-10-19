@@ -10,6 +10,7 @@ import {
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  useConfirm,
 } from "./ui";
 
 export interface InstagramPhotoRow {
@@ -24,6 +25,7 @@ export function InstagramPhotosEditor({
   items: InstagramPhotoRow[];
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [form, setForm] = useState({ imageUrl: "", altText: "" });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -50,9 +52,13 @@ export function InstagramPhotosEditor({
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this Instagram photo? This can't be undone.")) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Delete this Instagram photo?",
+      message: "This can't be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     setSubmitting(true);
     await fetch(`/api/content/instagram-photos/${id}`, { method: "DELETE" });
     setSubmitting(false);

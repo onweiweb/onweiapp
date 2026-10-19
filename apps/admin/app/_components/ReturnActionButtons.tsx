@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminButton } from "./ui";
+import { AdminButton, useConfirm } from "./ui";
 
 export function ReturnActionButtons({
   returnRequestId,
@@ -14,21 +14,25 @@ export function ReturnActionButtons({
   quantity: number;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   async function act(action: "approve" | "reject") {
-    if (action === "approve") {
-      const confirmed = window.confirm(
-        `This will add ${quantity} unit${quantity === 1 ? "" : "s"} of ${sku} back to stock.`,
-      );
-      if (!confirmed) return;
-    } else {
-      const confirmed = window.confirm(
-        "This will reject the return, no stock will be added back.",
-      );
-      if (!confirmed) return;
-    }
+    const confirmed =
+      action === "approve"
+        ? await confirm({
+            title: "Approve this return?",
+            message: `This will add ${quantity} unit${quantity === 1 ? "" : "s"} of ${sku} back to stock.`,
+            confirmLabel: "Approve",
+          })
+        : await confirm({
+            title: "Reject this return?",
+            message: "No stock will be added back.",
+            confirmLabel: "Reject",
+            danger: true,
+          });
+    if (!confirmed) return;
 
     setError(null);
     setSubmitting(true);

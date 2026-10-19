@@ -1,8 +1,18 @@
-import Link from "next/link";
 import { deriveInStock } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { pageWindow, parsePage, trimPage } from "../_lib/pagination";
-import { AdminPager } from "../_components/ui";
+import {
+  AdminBadge,
+  AdminPager,
+  AdminTable,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTableRow,
+  EmptyState,
+  LinkButton,
+  PageHeader,
+} from "../_components/ui";
 
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: "Draft",
@@ -37,62 +47,75 @@ export default async function ProductsPage({
   const { rows: products, hasNext } = trimPage(fetched);
 
   return (
-    <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Products</h1>
-        <Link
-          href="/products/new"
-          className="rounded-md bg-neutral-900 px-4 py-2 text-sm text-white"
-        >
-          Add a product
-        </Link>
-      </div>
+    <main className="flex flex-col gap-5">
+      <PageHeader
+        title="Products"
+        description="Everything you sell. Open a product to edit its details, variants and images."
+        actions={<LinkButton href="/products/new">Add a product</LinkButton>}
+      />
 
       {products.length === 0 ? (
-        <p className="text-neutral-600">No products yet, add your first one.</p>
+        <EmptyState
+          title="No products yet"
+          description="Add your first product to start building the catalog."
+          action={<LinkButton href="/products/new">Add a product</LinkButton>}
+        />
       ) : (
-        <table className="w-full border-collapse overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm">
-          <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-              <th className="px-4 py-2 font-medium">Name</th>
-              <th className="px-4 py-2 font-medium">Category</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium">Stock</th>
-              <th className="px-4 py-2" />
-            </tr>
-          </thead>
+        <AdminTable>
+          <AdminTableHead>
+            <AdminTableHeaderCell>Name</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Category</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Status</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Stock</AdminTableHeaderCell>
+            <AdminTableHeaderCell>
+              <span className="sr-only">Actions</span>
+            </AdminTableHeaderCell>
+          </AdminTableHead>
           <tbody>
             {products.map((product) => {
               const inStock = product.variants.some((variant) =>
                 deriveInStock(variant.inventory),
               );
               return (
-                <tr key={product.id} className="border-b border-neutral-100">
-                  <td className="px-4 py-2">{product.name}</td>
-                  <td className="px-4 py-2">{product.category.name}</td>
-                  <td className="px-4 py-2">
-                    {STATUS_LABELS[product.status] ?? product.status}
-                  </td>
-                  <td className="px-4 py-2">
+                <AdminTableRow key={product.id}>
+                  <AdminTableCell className="font-medium">
+                    {product.name}
+                  </AdminTableCell>
+                  <AdminTableCell>{product.category.name}</AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge
+                      tone={
+                        product.status === "ACTIVE"
+                          ? "success"
+                          : product.status === "DRAFT"
+                            ? "pending"
+                            : "problem"
+                      }
+                    >
+                      {STATUS_LABELS[product.status] ?? product.status}
+                    </AdminBadge>
+                  </AdminTableCell>
+                  <AdminTableCell>
                     {product.variants.length === 0
                       ? "No variants yet"
                       : inStock
                         ? "In stock"
                         : "Out of stock"}
-                  </td>
-                  <td className="px-4 py-2 text-right">
-                    <Link
+                  </AdminTableCell>
+                  <AdminTableCell className="text-right">
+                    <LinkButton
                       href={`/products/${product.id}`}
-                      className="text-neutral-700 underline"
+                      variant="secondary"
+                      className="!px-3 !py-1 text-xs"
                     >
                       Edit
-                    </Link>
-                  </td>
-                </tr>
+                    </LinkButton>
+                  </AdminTableCell>
+                </AdminTableRow>
               );
             })}
           </tbody>
-        </table>
+        </AdminTable>
       )}
       <AdminPager
         pathname="/products"

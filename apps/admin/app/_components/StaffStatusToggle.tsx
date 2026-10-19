@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminButton } from "./ui";
+import { AdminButton, useConfirm } from "./ui";
 
 export function StaffStatusToggle({
   staffUserId,
@@ -14,6 +14,7 @@ export function StaffStatusToggle({
   isViewingOwnAccount: boolean;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -27,11 +28,16 @@ export function StaffStatusToggle({
 
   async function handleClick() {
     const nextIsActive = !isActive;
-    const confirmed = window.confirm(
-      nextIsActive
+    const confirmed = await confirm({
+      title: nextIsActive
+        ? "Reactivate this person?"
+        : "Deactivate this person?",
+      message: nextIsActive
         ? "This will let this person sign in again."
         : "This will sign this person out and block them from signing in again.",
-    );
+      confirmLabel: nextIsActive ? "Reactivate" : "Deactivate",
+      danger: !nextIsActive,
+    });
     if (!confirmed) return;
 
     setError(null);

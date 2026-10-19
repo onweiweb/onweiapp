@@ -1,3 +1,14 @@
+import {
+  AdminBadge,
+  AdminTable,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTableRow,
+  EmptyState,
+  LinkButton,
+  PageHeader,
+} from "../_components/ui";
 import { listInventory } from "@onwei/core";
 import { InventoryAdjustRow } from "../_components/InventoryAdjustRow";
 
@@ -10,65 +21,84 @@ export default async function InventoryPage({
   const rows = await listInventory({ lowStockOnly: lowStockOnly === "true" });
 
   return (
-    <main className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">
-        Inventory{lowStockOnly === "true" ? ", running low" : ""}
-      </h1>
+    <main className="flex flex-col gap-5">
+      <PageHeader
+        title={<>Inventory{lowStockOnly === "true" ? ", running low" : ""}</>}
+        description="Stock on hand for every variant. Adjust counts when stock arrives or goes missing."
+      />
+
+      <div className="flex gap-2">
+        <LinkButton
+          href="/inventory"
+          variant={lowStockOnly === "true" ? "secondary" : "primary"}
+          className="!px-4 !py-1 text-xs"
+        >
+          All stock
+        </LinkButton>
+        <LinkButton
+          href="/inventory?lowStockOnly=true"
+          variant={lowStockOnly === "true" ? "primary" : "secondary"}
+          className="!px-4 !py-1 text-xs"
+        >
+          Running low
+        </LinkButton>
+      </div>
 
       {rows.length === 0 ? (
-        <p className="text-neutral-600">
-          {lowStockOnly === "true"
-            ? "Nothing is running low right now."
-            : "No stock records yet, add a product with a variant first."}
-        </p>
+        <EmptyState
+          title={
+            lowStockOnly === "true"
+              ? "Nothing is running low right now"
+              : "No stock records yet"
+          }
+          description={
+            lowStockOnly === "true"
+              ? undefined
+              : "Add a product with a variant first."
+          }
+        />
       ) : (
-        <table className="w-full border-collapse overflow-hidden rounded-lg border border-neutral-200 bg-white text-sm">
-          <thead>
-            <tr className="border-b border-neutral-200 bg-neutral-50 text-left">
-              <th className="px-3 py-2 font-medium">Product</th>
-              <th className="px-3 py-2 font-medium">SKU</th>
-              <th className="px-3 py-2 font-medium">Warehouse</th>
-              <th className="px-3 py-2 font-medium">On hand</th>
-              <th className="px-3 py-2 font-medium">Reserved</th>
-              <th className="px-3 py-2 font-medium">Adjust</th>
-            </tr>
-          </thead>
+        <AdminTable>
+          <AdminTableHead>
+            <AdminTableHeaderCell>Product</AdminTableHeaderCell>
+            <AdminTableHeaderCell>SKU</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Warehouse</AdminTableHeaderCell>
+            <AdminTableHeaderCell>On hand</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Reserved</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Adjust</AdminTableHeaderCell>
+          </AdminTableHead>
           <tbody>
             {rows.map((row) => {
               const isLow = row.quantityOnHand <= row.reorderThreshold;
               return (
-                <tr key={row.id} className="border-b border-neutral-100">
-                  <td className="px-3 py-2">
+                <AdminTableRow key={row.id}>
+                  <AdminTableCell className="font-medium">
                     {row.productVariant.product.name}
-                  </td>
-                  <td className="px-3 py-2 font-mono">
+                  </AdminTableCell>
+                  <AdminTableCell className="font-mono text-xs">
                     {row.productVariant.sku}
-                  </td>
-                  <td className="px-3 py-2">{row.warehouse.name}</td>
-                  <td className="px-3 py-2">
-                    <span
-                      className={isLow ? "font-semibold text-amber-700" : ""}
-                    >
-                      {row.quantityOnHand}
-                    </span>
+                  </AdminTableCell>
+                  <AdminTableCell>{row.warehouse.name}</AdminTableCell>
+                  <AdminTableCell>
+                    {row.quantityOnHand}
                     {isLow ? (
-                      <span className="ml-1 text-xs text-amber-700">
-                        (running low)
+                      <span className="ml-2">
+                        <AdminBadge tone="problem">Running low</AdminBadge>
                       </span>
                     ) : null}
-                  </td>
-                  <td className="px-3 py-2">{row.quantityReserved}</td>
-                  <td className="px-3 py-2">
+                  </AdminTableCell>
+                  <AdminTableCell>{row.quantityReserved}</AdminTableCell>
+                  <AdminTableCell>
                     <InventoryAdjustRow
                       productVariantId={row.productVariantId}
                       warehouseId={row.warehouseId}
                     />
-                  </td>
-                </tr>
+                  </AdminTableCell>
+                </AdminTableRow>
               );
             })}
           </tbody>
-        </table>
+        </AdminTable>
       )}
     </main>
   );

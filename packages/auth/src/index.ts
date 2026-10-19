@@ -7,6 +7,8 @@ export {
 export type { OtpChannel, OtpSender } from "./otp/OtpSender";
 export { hashPassword, verifyPassword } from "./password/password";
 export { hasAllPermissions, hasPermission } from "./rbac/hasPermission";
+export { getStaffAccess } from "./rbac/getStaffAccess";
+export type { StaffAccess } from "./rbac/getStaffAccess";
 export { getStaffPermissions } from "./rbac/getStaffPermissions";
 export {
   createSessionToken,

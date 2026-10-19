@@ -18,6 +18,12 @@ export function RolePermissionChecklist({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const current = JSON.stringify([...selected].sort());
+  const [baseline, setBaseline] = useState(
+    JSON.stringify([...initialKeys].sort()),
+  );
+  const dirty = current !== baseline;
+
   const groups = new Map<string, string[]>();
   for (const key of allPermissionKeys) {
     const domain = key.split(":")[0] ?? key;
@@ -49,6 +55,7 @@ export function RolePermissionChecklist({
         setSubmitting(false);
         return;
       }
+      setBaseline(current);
       setSubmitting(false);
       router.refresh();
     } catch {
@@ -81,7 +88,7 @@ export function RolePermissionChecklist({
       {error ? <p className="text-xs text-onwei-black">{error}</p> : null}
       <AdminButton
         type="button"
-        disabled={submitting}
+        disabled={submitting || !dirty}
         onClick={handleSave}
         className="self-start"
       >

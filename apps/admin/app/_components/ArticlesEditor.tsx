@@ -12,6 +12,8 @@ import {
   AdminTableHeaderCell,
   AdminTableRow,
   AdminTextarea,
+  useConfirm,
+  useToast,
 } from "./ui";
 
 export interface ArticleRow {
@@ -64,8 +66,13 @@ const TOOLS: { label: string; before: string; after: string }[] = [
 // "From the Playbook" row. Add, edit, publish and remove.
 export function ArticlesEditor({ items }: { items: ArticleRow[] }) {
   const router = useRouter();
+  const confirm = useConfirm();
+  const toast = useToast();
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const [open, setOpen] = useState(false);
+  const [publishedOverride, setPublishedOverride] = useState<
+    Record<string, boolean>
+  >({});
   const [dragging, setDragging] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
@@ -89,10 +96,30 @@ export function ArticlesEditor({ items }: { items: ArticleRow[] }) {
     setOpen(true);
   }
 
+  // Editing an existing post: Save stays off until something changes.
+  const formKey = JSON.stringify([
+    form.title,
+    form.slug,
+    form.excerpt,
+    form.bodyHtml,
+    form.coverImageUrl,
+  ]);
+  const [editBaseline, setEditBaseline] = useState("");
+  const dirty = !editingId || formKey !== editBaseline;
+
   function startEdit(item: ArticleRow) {
     setOpen(true);
     setEditingId(item.id);
     setError(null);
+    setEditBaseline(
+      JSON.stringify([
+        item.title,
+        item.slug,
+        item.excerpt ?? "",
+        item.bodyHtml,
+        item.coverImageUrl ?? "",
+      ]),
+    );
     setForm({
       title: item.title,
       slug: item.slug,
@@ -190,20 +217,31 @@ export function ArticlesEditor({ items }: { items: ArticleRow[] }) {
   }
 
   async function togglePublished(item: ArticleRow) {
-    setSubmitting(true);
-    await fetch(`/api/content/articles/${item.id}`, {
+    const next = !item.isPublished;
+    // Show the new status straight away, then confirm with the server.
+    setPublishedOverride((o) => ({ ...o, [item.id]: next }));
+    const response = await fetch(`/api/content/articles/${item.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isPublished: !item.isPublished }),
-    });
-    setSubmitting(false);
+      body: JSON.stringify({ isPublished: next }),
+    }).catch(() => null);
+    if (!response?.ok) {
+      setPublishedOverride((o) => ({ ...o, [item.id]: item.isPublished }));
+      toast("Couldn't change that post. Please try again.", "error");
+      return;
+    }
+    toast(next ? "Post published." : "Post moved back to drafts.");
     router.refresh();
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this post? This can't be undone.")) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Delete this post?",
+      message: "This can't be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     setSubmitting(true);
     await fetch(`/api/content/articles/${id}`, { method: "DELETE" });
     setSubmitting(false);
@@ -439,6 +477,7 @@ export function ArticlesEditor({ items }: { items: ArticleRow[] }) {
                   disabled={
                     submitting ||
                     uploading ||
+                    !dirty ||
                     !form.title.trim() ||
                     !form.slug.trim()
                   }
@@ -469,43 +508,49 @@ export function ArticlesEditor({ items }: { items: ArticleRow[] }) {
             <AdminTableHeaderCell>Action</AdminTableHeaderCell>
           </AdminTableHead>
           <tbody>
-            {items.map((item) => (
-              <AdminTableRow key={item.id}>
-                <AdminTableCell>{item.title}</AdminTableCell>
-                <AdminTableCell className="font-mono text-xs">
-                  /journal/{item.slug}
-                </AdminTableCell>
-                <AdminTableCell>
-                  {item.isPublished ? "Published" : "Draft"}
-                </AdminTableCell>
-                <AdminTableCell className="flex gap-2">
-                  <AdminButton
-                    type="button"
-                    variant="secondary"
-                    disabled={submitting}
-                    onClick={() => startEdit(item)}
-                  >
-                    Edit
-                  </AdminButton>
-                  <AdminButton
-                    type="button"
-                    variant="secondary"
-                    disabled={submitting}
-                    onClick={() => togglePublished(item)}
-                  >
-                    {item.isPublished ? "Unpublish" : "Publish"}
-                  </AdminButton>
-                  <AdminButton
-                    type="button"
-                    variant="danger"
-                    disabled={submitting}
-                    onClick={() => remove(item.id)}
-                  >
-                    Remove
-                  </AdminButton>
-                </AdminTableCell>
-              </AdminTableRow>
-            ))}
+            {items.map((row) => {
+              const item = {
+                ...row,
+                isPublished: publishedOverride[row.id] ?? row.isPublished,
+              };
+              return (
+                <AdminTableRow key={item.id}>
+                  <AdminTableCell>{item.title}</AdminTableCell>
+                  <AdminTableCell className="font-mono text-xs">
+                    /journal/{item.slug}
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    {item.isPublished ? "Published" : "Draft"}
+                  </AdminTableCell>
+                  <AdminTableCell className="flex gap-2">
+                    <AdminButton
+                      type="button"
+                      variant="secondary"
+                      disabled={submitting}
+                      onClick={() => startEdit(item)}
+                    >
+                      Edit
+                    </AdminButton>
+                    <AdminButton
+                      type="button"
+                      variant="secondary"
+                      disabled={submitting}
+                      onClick={() => togglePublished(item)}
+                    >
+                      {item.isPublished ? "Unpublish" : "Publish"}
+                    </AdminButton>
+                    <AdminButton
+                      type="button"
+                      variant="danger"
+                      disabled={submitting}
+                      onClick={() => remove(item.id)}
+                    >
+                      Remove
+                    </AdminButton>
+                  </AdminTableCell>
+                </AdminTableRow>
+              );
+            })}
           </tbody>
         </AdminTable>
       ) : null}

@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminButton, AdminCard, AdminInput, AdminTextarea } from "./ui";
+import {
+  AdminButton,
+  AdminCard,
+  AdminInput,
+  AdminTextarea,
+  useConfirm,
+} from "./ui";
 
 export interface LegalSectionRow {
   id: string;
@@ -52,6 +58,7 @@ function SectionEditor({
   isLast: boolean;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [heading, setHeading] = useState(section.heading);
   const [body, setBody] = useState(section.body);
   const [busy, setBusy] = useState(false);
@@ -134,14 +141,15 @@ function SectionEditor({
           type="button"
           variant="danger"
           disabled={busy}
-          onClick={() => {
-            if (
-              window.confirm(
-                "Remove this point? It disappears from the page and can't be brought back. Use Hide from site if you might want it later.",
-              )
-            ) {
-              void run(() => send(base, "DELETE"));
-            }
+          onClick={async () => {
+            const ok = await confirm({
+              title: "Remove this point?",
+              message:
+                "It disappears from the page and can't be brought back. Use Hide from site if you might want it later.",
+              confirmLabel: "Remove",
+              danger: true,
+            });
+            if (ok) void run(() => send(base, "DELETE"));
           }}
         >
           Remove
@@ -293,7 +301,7 @@ export function LegalPagesEditor({ pages }: { pages: LegalPageRow[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-2">
+      <div className={pages.length > 1 ? "flex gap-2" : "hidden"}>
         {pages.map((page) => (
           <AdminButton
             key={page.id}

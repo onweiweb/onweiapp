@@ -11,6 +11,7 @@ import {
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  PageHeader,
 } from "../_components/ui";
 
 export default async function WaitlistPage({
@@ -29,19 +30,22 @@ export default async function WaitlistPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-semibold uppercase">
-          Waitlist
-        </h1>
-        <p className="text-sm text-onwei-blue/70">
-          {q ? `${total} matching` : `${total} in total`}
-        </p>
-        <a href="/api/waitlist/export">
-          <AdminButton type="button" variant="secondary">
-            Export as CSV
-          </AdminButton>
-        </a>
-      </div>
+      <PageHeader
+        title="Waitlist"
+        description="People who signed up before launch."
+        actions={
+          <>
+            <p className="text-sm text-onwei-blue/70">
+              {q ? `${total} matching` : `${total} in total`}
+            </p>
+            <a href="/api/waitlist/export">
+              <AdminButton type="button" variant="secondary">
+                Export as CSV
+              </AdminButton>
+            </a>
+          </>
+        }
+      />
 
       <form method="get" className="flex items-end gap-3">
         <label className="flex flex-col gap-1.5 text-sm">

@@ -1,14 +1,10 @@
 import type { Metadata } from "next";
 import { Archivo, IBM_Plex_Mono, Raleway } from "next/font/google";
 import Image from "next/image";
-import { cookies } from "next/headers";
-import {
-  STAFF_SESSION_COOKIE_NAME,
-  verifyStaffSessionToken,
-} from "@onwei/auth";
-import { prisma } from "@onwei/database";
 import { AdminNav } from "./_components/AdminNav";
 import { SignOutButton } from "./_components/SignOutButton";
+import { AdminFeedbackProvider } from "./_components/ui";
+import { getCurrentStaff } from "./_lib/session";
 import "./globals.css";
 
 // Same font families as apps/web (see apps/web/app/layout.tsx) so admin
@@ -40,16 +36,10 @@ export const metadata: Metadata = {
 
 const NAV_GROUPS = [
   {
-    label: "Overview",
-    icon: "LayoutDashboard",
-    items: [
-      { label: "Dashboard", href: "/", icon: "LayoutDashboard" },
-      { label: "Site settings", href: "/settings", icon: "Settings" },
-    ],
+    items: [{ label: "Dashboard", href: "/", icon: "LayoutDashboard" }],
   },
   {
     label: "Catalog",
-    icon: "Package",
     items: [
       { label: "Products", href: "/products", icon: "Package" },
       { label: "Categories", href: "/categories", icon: "Tags" },
@@ -58,70 +48,58 @@ const NAV_GROUPS = [
   },
   {
     label: "Sales",
-    icon: "ShoppingCart",
     items: [
       { label: "Orders", href: "/orders", icon: "ShoppingCart" },
       { label: "Returns", href: "/returns", icon: "Undo2" },
       { label: "Coupons", href: "/coupons", icon: "Ticket" },
+      { label: "Customers", href: "/customers", icon: "UsersRound" },
     ],
   },
   {
-    label: "Marketing & content",
-    icon: "Megaphone",
+    label: "Audience",
     items: [
-      { label: "Content", href: "/content", icon: "FileText" },
+      { label: "Waitlist", href: "/waitlist", icon: "ListChecks" },
+      { label: "Newsletter", href: "/newsletter", icon: "Mail" },
+      { label: "Visitors", href: "/analytics", icon: "BarChart3" },
+    ],
+  },
+  {
+    label: "Website content",
+    items: [
+      { label: "Blog posts", href: "/content/blog", icon: "Newspaper" },
+      {
+        label: "Homepage sections",
+        href: "/content/homepage",
+        icon: "FileText",
+      },
+      { label: "Legal pages", href: "/content/legal", icon: "Scale" },
       { label: "Reviews", href: "/reviews", icon: "Star" },
       {
         label: "Review placements",
         href: "/reviews/placements",
         icon: "LayoutList",
       },
-      { label: "Newsletter", href: "/newsletter", icon: "Mail" },
-      { label: "Waitlist", href: "/waitlist", icon: "ListChecks" },
-      { label: "Visitors", href: "/analytics", icon: "BarChart3" },
     ],
   },
   {
-    label: "People",
-    icon: "Users",
+    label: "Team and settings",
     items: [
       { label: "Staff", href: "/staff", icon: "UserCog" },
       { label: "Roles", href: "/roles", icon: "ShieldCheck" },
-      { label: "Customers", href: "/customers", icon: "UsersRound" },
-    ],
-  },
-  {
-    label: "Compliance",
-    icon: "ShieldAlert",
-    items: [
+      { label: "Site settings", href: "/settings", icon: "Settings" },
       { label: "Audit log", href: "/audit-log", icon: "ScrollText" },
       { label: "Data requests", href: "/dsr", icon: "FileSearch" },
     ],
   },
 ] as const;
 
-async function getCurrentStaffName(): Promise<string | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(STAFF_SESSION_COOKIE_NAME)?.value;
-  const sessionSecret = process.env.ADMIN_SESSION_JWT_SECRET;
-  if (!token || !sessionSecret) return null;
-
-  const session = await verifyStaffSessionToken(token, sessionSecret);
-  if (!session) return null;
-
-  const staffUser = await prisma.staffUser.findUnique({
-    where: { id: session.staffUserId },
-    select: { name: true },
-  });
-  return staffUser?.name ?? null;
-}
-
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const staffName = await getCurrentStaffName();
+  const staff = await getCurrentStaff();
+  const staffName = staff?.name ?? null;
 
   return (
     <html
@@ -129,41 +107,57 @@ export default async function RootLayout({
       className={`${raleway.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
     >
       <body className="min-h-screen bg-onwei-beige font-grotesk text-onwei-blue">
-        {staffName ? (
-          <div className="flex min-h-screen">
-            <nav
-              aria-label="Admin"
-              className="sticky top-0 flex h-screen w-56 shrink-0 flex-col justify-between gap-4 self-start rounded-r-[30px] bg-onwei-blue p-4 text-onwei-beige"
-            >
-              <div className="admin-nav-scroll -mr-2 min-h-0 flex-1 overflow-y-auto pr-2">
-                <div className="mb-6 flex items-center gap-2 px-2">
-                  <Image
-                    src="/images/footer/logo-circle.svg"
-                    alt=""
-                    width={28}
-                    height={28}
-                    aria-hidden
-                  />
-                  <p className="font-display text-lg font-semibold uppercase">
-                    Onwei Admin
-                  </p>
+        <AdminFeedbackProvider>
+          {staffName ? (
+            <div className="flex min-h-screen">
+              <nav
+                aria-label="Admin"
+                className="sticky top-0 hidden h-screen w-52 shrink-0 flex-col justify-between gap-3 self-start bg-onwei-blue p-3 text-onwei-beige lg:flex"
+              >
+                <div className="admin-nav-scroll -mr-1.5 min-h-0 flex-1 overflow-y-auto pr-1.5">
+                  <div className="mb-5 flex items-center gap-2 px-3 pt-1">
+                    <Image
+                      src="/images/footer/logo-circle.svg"
+                      alt=""
+                      width={24}
+                      height={24}
+                      aria-hidden
+                    />
+                    <p className="font-display text-base font-semibold uppercase">
+                      Onwei Admin
+                    </p>
+                  </div>
+                  <AdminNav groups={NAV_GROUPS} />
                 </div>
-                <AdminNav groups={NAV_GROUPS} />
+                <div className="flex shrink-0 items-center justify-between gap-2 border-t border-onwei-beige/20 pt-3">
+                  <p className="min-w-0 truncate px-1 text-xs text-onwei-beige/80">
+                    {staffName}
+                  </p>
+                  <SignOutButton />
+                </div>
+              </nav>
+              <div className="min-w-0 flex-1">
+                <details className="border-b border-onwei-blue/10 bg-onwei-blue text-onwei-beige lg:hidden">
+                  <summary className="cursor-pointer px-4 py-3 font-display text-sm font-semibold uppercase">
+                    Onwei Admin menu
+                  </summary>
+                  <div className="max-h-[70vh] overflow-y-auto p-3">
+                    <AdminNav groups={NAV_GROUPS} />
+                    <div className="mt-3 flex items-center justify-between gap-2 border-t border-onwei-beige/20 pt-3">
+                      <p className="truncate text-xs">{staffName}</p>
+                      <SignOutButton />
+                    </div>
+                  </div>
+                </details>
+                <div className="mx-auto w-full max-w-[96rem] px-4 py-5 lg:px-8 lg:py-6">
+                  {children}
+                </div>
               </div>
-              <div className="flex shrink-0 flex-col gap-2 border-t border-onwei-beige/30 pt-4">
-                <p className="px-2 text-xs text-onwei-beige/80">
-                  Signed in as
-                  <br />
-                  <span className="text-onwei-white">{staffName}</span>
-                </p>
-                <SignOutButton />
-              </div>
-            </nav>
-            <div className="flex-1 p-8">{children}</div>
-          </div>
-        ) : (
-          children
-        )}
+            </div>
+          ) : (
+            children
+          )}
+        </AdminFeedbackProvider>
       </body>
     </html>
   );

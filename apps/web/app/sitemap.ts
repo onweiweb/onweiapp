@@ -9,13 +9,22 @@ import { SITE_URL } from "../lib/seo/siteUrl";
 export const revalidate = 300;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const { siteMode } = await getSiteSetting();
+  const { siteMode, showBlogOnWaitlist } = await getSiteSetting();
 
   if (siteMode === "WAITLIST") {
     // Matches proxy.ts's own allowlist: /ontheway plus the two legal
     // pages are the only routes a crawler can reach right now.
     return [
       { url: `${SITE_URL}/ontheway`, changeFrequency: "daily" },
+      ...(showBlogOnWaitlist
+        ? [
+            {
+              url: `${SITE_URL}/journal`,
+              changeFrequency: "weekly" as const,
+              priority: 0.5,
+            },
+          ]
+        : []),
       { url: `${SITE_URL}/privacy`, changeFrequency: "yearly", priority: 0.2 },
       { url: `${SITE_URL}/terms`, changeFrequency: "yearly", priority: 0.2 },
     ];

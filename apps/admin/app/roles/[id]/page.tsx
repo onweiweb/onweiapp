@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@onwei/database";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { RolePermissionChecklist } from "../../_components/RolePermissionChecklist";
-import { AdminCard } from "../../_components/ui";
+import { AdminCard, PageHeader } from "../../_components/ui";
 
 export default async function RoleDetailPage({
   params,
@@ -24,14 +24,11 @@ export default async function RoleDetailPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <div>
-        <h1 className="font-display text-2xl font-semibold uppercase">
-          {role.name}
-        </h1>
-        {role.description ? (
-          <p className="text-sm text-onwei-blue/70">{role.description}</p>
-        ) : null}
-      </div>
+      <PageHeader
+        back={{ href: "/roles", label: "Roles" }}
+        title={role.name}
+        description={role.description ?? undefined}
+      />
 
       <AdminCard>
         <h2 className="mb-3 font-display text-sm font-semibold uppercase text-onwei-blue/70">

@@ -5,7 +5,7 @@ import { ProductForm } from "../../_components/ProductForm";
 import { VariantManager } from "../../_components/VariantManager";
 import { ImageManager } from "../../_components/ImageManager";
 import { ReviewPlacementManager } from "../../_components/ReviewPlacementManager";
-import { AdminTabs } from "../../_components/ui";
+import { AdminTabs, PageHeader } from "../../_components/ui";
 
 export default async function EditProductPage({
   params,
@@ -46,7 +46,10 @@ export default async function EditProductPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Edit {product.name}</h1>
+      <PageHeader
+        title={<>Edit {product.name}</>}
+        back={{ href: "/products", label: "Products" }}
+      />
       <AdminTabs
         defaultActive={tab}
         tabs={[

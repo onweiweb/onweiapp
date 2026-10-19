@@ -10,6 +10,7 @@ import {
   AdminTableHeaderCell,
   AdminTableRow,
   returnStatusTone,
+  PageHeader,
 } from "../_components/ui";
 
 export default async function ReturnsPage() {
@@ -28,7 +29,10 @@ export default async function ReturnsPage() {
 
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold uppercase">Returns</h1>
+      <PageHeader
+        title="Returns"
+        description="Return requests from customers."
+      />
 
       {returnRequests.length === 0 ? (
         <p className="text-onwei-blue/70">

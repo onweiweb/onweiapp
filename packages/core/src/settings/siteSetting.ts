@@ -16,6 +16,7 @@ export interface SiteSettingSummary {
   launchAt: Date;
   showCountdown: boolean;
   allowInternationalPhone: boolean;
+  showBlogOnWaitlist: boolean;
   // Shown in apps/web's SiteFooter/WaitlistFooter, null means "don't show
   // this icon" rather than the dead "#" link every one of these used to be.
   instagramUrl: string | null;
@@ -32,6 +33,7 @@ function toSummary(row: {
   launchAt: Date;
   showCountdown: boolean;
   allowInternationalPhone: boolean;
+  showBlogOnWaitlist: boolean;
   instagramUrl: string | null;
   linkedinUrl: string | null;
   facebookUrl: string | null;
@@ -43,12 +45,19 @@ function toSummary(row: {
     launchAt: row.launchAt,
     showCountdown: row.showCountdown,
     allowInternationalPhone: row.allowInternationalPhone,
+    showBlogOnWaitlist: row.showBlogOnWaitlist,
     instagramUrl: row.instagramUrl,
     linkedinUrl: row.linkedinUrl,
     facebookUrl: row.facebookUrl,
     youtubeUrl: row.youtubeUrl,
     spotifyUrl: row.spotifyUrl,
   };
+}
+
+/** Drops this process's cached copy, so the next read hits the database.
+ * The storefront calls it when admin pings that settings changed. */
+export function clearSiteSettingCache(): void {
+  cached = null;
 }
 
 /**
@@ -74,6 +83,7 @@ export interface UpdateSiteSettingInput {
   launchAt?: Date;
   showCountdown?: boolean;
   allowInternationalPhone?: boolean;
+  showBlogOnWaitlist?: boolean;
   instagramUrl?: string | null;
   linkedinUrl?: string | null;
   facebookUrl?: string | null;
@@ -96,6 +106,7 @@ export async function updateSiteSetting(
       launchAt: input.launchAt,
       showCountdown: input.showCountdown,
       allowInternationalPhone: input.allowInternationalPhone,
+      showBlogOnWaitlist: input.showBlogOnWaitlist,
       instagramUrl: input.instagramUrl,
       linkedinUrl: input.linkedinUrl,
       facebookUrl: input.facebookUrl,

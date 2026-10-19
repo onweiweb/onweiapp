@@ -1,3 +1,4 @@
+import { PageHeader } from "../../_components/ui";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { CouponForm } from "../../_components/CouponForm";
 
@@ -6,9 +7,10 @@ export default async function NewCouponPage() {
 
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold uppercase">
-        Add coupon
-      </h1>
+      <PageHeader
+        title="Add coupon"
+        back={{ href: "/coupons", label: "Coupons" }}
+      />
       <CouponForm mode="create" />
     </main>
   );

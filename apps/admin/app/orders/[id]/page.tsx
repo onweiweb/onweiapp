@@ -20,6 +20,7 @@ import {
   orderStatusTone,
   paymentStatusTone,
   returnStatusTone,
+  PageHeader,
 } from "../../_components/ui";
 
 export default async function OrderDetailPage({
@@ -47,21 +48,16 @@ export default async function OrderDetailPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="font-display text-2xl font-semibold uppercase">
-            Order {order.orderNumber}
-          </h1>
-          <p className="text-sm text-onwei-blue/70">
-            {order.customer.name ?? order.customer.email ?? "Unknown customer"}
-            {" · "}
-            {order.placedAt.toLocaleString()}
-          </p>
-        </div>
-        <AdminBadge tone={orderStatusTone(order.status)}>
-          {ORDER_STATUS_LABELS[order.status]}
-        </AdminBadge>
-      </div>
+      <PageHeader
+        back={{ href: "/orders", label: "Orders" }}
+        title={`Order ${order.orderNumber}`}
+        description={`${order.customer.name ?? order.customer.email ?? "Unknown customer"} · ${order.placedAt.toLocaleString()}`}
+        actions={
+          <AdminBadge tone={orderStatusTone(order.status)}>
+            {ORDER_STATUS_LABELS[order.status]}
+          </AdminBadge>
+        }
+      />
 
       <AdminCard>
         <h2 className="mb-3 font-display text-sm font-semibold uppercase text-onwei-blue/70">

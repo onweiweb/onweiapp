@@ -1,3 +1,4 @@
+import { PageHeader } from "../../_components/ui";
 import { notFound } from "next/navigation";
 import { prisma } from "@onwei/database";
 import { CategoryForm } from "../../_components/CategoryForm";
@@ -13,7 +14,10 @@ export default async function EditCategoryPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Edit {category.name}</h1>
+      <PageHeader
+        title={<>Edit {category.name}</>}
+        back={{ href: "/categories", label: "Categories" }}
+      />
       <CategoryForm
         mode="edit"
         categoryId={category.id}

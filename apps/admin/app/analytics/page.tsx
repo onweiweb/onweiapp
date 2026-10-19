@@ -1,11 +1,10 @@
-import Link from "next/link";
+import { LinkButton, PageHeader } from "../_components/ui";
 import { Suspense } from "react";
 import {
   PAGE_TYPES,
   type AnalyticsRangeDays,
   type PageFilter,
 } from "@onwei/core";
-import { PendingSpinner } from "../_components/PendingSpinner";
 import {
   AnalyticsShell,
   FilterLink,
@@ -84,18 +83,15 @@ export default async function AnalyticsPage({
   return (
     <AnalyticsShell>
       <main className="flex flex-col gap-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="font-display text-2xl font-semibold uppercase">
-            Visitors and engagement
-          </h1>
-          <Link
-            href="/analytics/links"
-            className="flex items-center gap-2 rounded-[30px] border border-onwei-blue px-5 py-2 font-cta text-sm uppercase tracking-wide"
-          >
-            Make a tracked link
-            <PendingSpinner />
-          </Link>
-        </div>
+        <PageHeader
+          title="Visitors and engagement"
+          description="Who visits the site, where they come from, and what they do."
+          actions={
+            <LinkButton href="/analytics/links" variant="secondary">
+              Make a tracked link
+            </LinkButton>
+          }
+        />
 
         <div className="flex flex-col gap-3">
           <nav aria-label="Time range" className="flex flex-wrap gap-2">

@@ -1,3 +1,4 @@
+import { PageHeader } from "../../_components/ui";
 import { prisma } from "@onwei/database";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { ManualReviewForm } from "../../_components/ManualReviewForm";
@@ -13,9 +14,10 @@ export default async function NewReviewPage() {
 
   return (
     <main className="flex flex-col gap-6">
-      <h1 className="font-display text-2xl font-semibold uppercase">
-        Add review
-      </h1>
+      <PageHeader
+        title="Add review"
+        back={{ href: "/reviews", label: "Reviews" }}
+      />
       <ManualReviewForm products={products} />
     </main>
   );

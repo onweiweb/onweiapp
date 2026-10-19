@@ -10,6 +10,7 @@ import {
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  useConfirm,
 } from "./ui";
 
 export interface ValuePropRow {
@@ -25,6 +26,7 @@ export interface ValuePropRow {
 // the same rows (packages/core's listValueProps).
 export function ValuePropsEditor({ items }: { items: ValuePropRow[] }) {
   const router = useRouter();
+  const confirm = useConfirm();
   const [form, setForm] = useState({
     illustrationUrl: "",
     width: "",
@@ -69,9 +71,13 @@ export function ValuePropsEditor({ items }: { items: ValuePropRow[] }) {
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this value prop? This can't be undone.")) {
-      return;
-    }
+    const ok = await confirm({
+      title: "Delete this value prop?",
+      message: "This can't be undone.",
+      confirmLabel: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
     setSubmitting(true);
     await fetch(`/api/content/value-props/${id}`, { method: "DELETE" });
     setSubmitting(false);

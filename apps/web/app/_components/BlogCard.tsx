@@ -5,7 +5,15 @@ import { formatArticleDate } from "../../lib/formatDate";
 
 // Card used on the Blogs index and the "more posts" row. Same look as the
 // homepage "From the Playbook" cards.
-export function BlogCard({ post }: { post: ArticleListItem }) {
+export function BlogCard({
+  post,
+  eager = false,
+}: {
+  post: ArticleListItem;
+  // Set for cards inside a horizontally scrolling row, lazy loading never
+  // fires for images off-screen to the right.
+  eager?: boolean;
+}) {
   return (
     <article className="flex flex-col gap-3">
       <Link
@@ -18,6 +26,7 @@ export function BlogCard({ post }: { post: ArticleListItem }) {
             src={post.coverImageUrl}
             alt=""
             fill
+            loading={eager ? "eager" : undefined}
             sizes="(min-width: 768px) 33vw, 100vw"
             className="object-cover"
           />

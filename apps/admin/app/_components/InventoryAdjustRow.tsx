@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { AdminButton, AdminInput, AdminSelect, useToast } from "./ui";
 
 const REASON_OPTIONS = [
   { value: "RESTOCK", label: "Restock" },
@@ -17,6 +18,7 @@ export function InventoryAdjustRow({
   warehouseId: string;
 }) {
   const router = useRouter();
+  const toast = useToast();
   const [delta, setDelta] = useState("");
   const [reason, setReason] =
     useState<(typeof REASON_OPTIONS)[number]["value"]>("RESTOCK");
@@ -28,7 +30,7 @@ export function InventoryAdjustRow({
     setError(null);
     const parsedDelta = Number(delta);
     if (!delta || Number.isNaN(parsedDelta) || parsedDelta === 0) {
-      setError("Enter a non-zero amount.");
+      setError("Enter a number other than zero, like 10 or -2.");
       return;
     }
     setSubmitting(true);
@@ -47,14 +49,14 @@ export function InventoryAdjustRow({
       const data = (await response.json()) as { ok: boolean; error?: string };
       if (!data.ok) {
         setError(data.error ?? "Something went wrong. Please try again.");
-        setSubmitting(false);
         return;
       }
       setDelta("");
-      setSubmitting(false);
+      toast("Stock updated.");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
+    } finally {
       setSubmitting(false);
     }
   }
@@ -62,33 +64,35 @@ export function InventoryAdjustRow({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
-        <input
+        <AdminInput
           type="number"
           value={delta}
           onChange={(event) => setDelta(event.target.value)}
           placeholder="+/-"
-          className="w-20 rounded-md border border-neutral-300 px-2 py-1 text-sm"
+          aria-label="Change in stock"
+          className="!h-9 w-20 text-center"
         />
-        <select
+        <AdminSelect
           value={reason}
           onChange={(event) => setReason(event.target.value as typeof reason)}
-          className="rounded-md border border-neutral-300 px-2 py-1 text-sm"
+          aria-label="Reason"
+          className="!h-9"
         >
           {REASON_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
           ))}
-        </select>
-        <button
+        </AdminSelect>
+        <AdminButton
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-neutral-900 px-2 py-1 text-sm text-white disabled:opacity-60"
+          className="!px-4 !py-1.5 text-xs"
         >
-          {submitting ? "Saving…" : "Apply"}
-        </button>
+          {submitting ? "Saving..." : "Apply"}
+        </AdminButton>
       </div>
-      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      {error ? <p className="text-xs text-onwei-black">{error}</p> : null}
     </form>
   );
 }

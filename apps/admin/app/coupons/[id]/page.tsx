@@ -16,6 +16,7 @@ import {
   AdminTableHeaderCell,
   AdminTableRow,
   AdminTabs,
+  PageHeader,
 } from "../../_components/ui";
 
 export default async function CouponDetailPage({
@@ -43,14 +44,15 @@ export default async function CouponDetailPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <h1 className="font-display text-2xl font-semibold uppercase">
-          {coupon.code}
-        </h1>
-        <AdminBadge tone={coupon.isActive ? "success" : "pending"}>
-          {coupon.isActive ? "Active" : "Inactive"}
-        </AdminBadge>
-      </div>
+      <PageHeader
+        back={{ href: "/coupons", label: "Coupons" }}
+        title={coupon.code}
+        actions={
+          <AdminBadge tone={coupon.isActive ? "success" : "pending"}>
+            {coupon.isActive ? "Active" : "Inactive"}
+          </AdminBadge>
+        }
+      />
 
       <AdminTabs
         tabs={[

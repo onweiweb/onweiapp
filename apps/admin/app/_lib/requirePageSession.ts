@@ -1,11 +1,6 @@
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import {
-  STAFF_SESSION_COOKIE_NAME,
-  verifyStaffSessionToken,
-  getStaffPermissions,
-  hasPermission,
-} from "@onwei/auth";
+import { hasPermission } from "@onwei/auth";
+import { getCurrentStaff } from "./session";
 
 export interface PageStaffContext {
   staffUserId: string;
@@ -19,28 +14,19 @@ export interface PageStaffContext {
  * finer-grained check too, not just a hidden nav link. Redirects to /login
  * instead of returning a response, since a Server Component page has no
  * response object of its own to short-circuit with.
+ *
+ * Shares the request's single staff lookup with the layout (see
+ * getCurrentStaff), so it adds no extra database query.
  */
 export async function requirePageSession(
   permission?: string,
 ): Promise<PageStaffContext> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get(STAFF_SESSION_COOKIE_NAME)?.value;
-  const sessionSecret = process.env.ADMIN_SESSION_JWT_SECRET;
+  const staff = await getCurrentStaff();
+  if (!staff) redirect("/login");
 
-  const session =
-    token && sessionSecret
-      ? await verifyStaffSessionToken(token, sessionSecret)
-      : null;
-
-  if (!session) {
-    redirect("/login");
-  }
-
-  const permissions = await getStaffPermissions(session.staffUserId);
-
-  if (permission && !hasPermission(permissions, permission)) {
+  if (permission && !hasPermission(staff.permissions, permission)) {
     redirect("/");
   }
 
-  return { staffUserId: session.staffUserId, permissions };
+  return { staffUserId: staff.staffUserId, permissions: staff.permissions };
 }

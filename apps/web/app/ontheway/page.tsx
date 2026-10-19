@@ -5,6 +5,8 @@ import { WaitlistCountdown } from "@/_components/WaitlistCountdown";
 import { WaitlistCardScroll } from "@/_components/WaitlistCardScroll";
 import { WaitlistForm } from "@/_components/WaitlistForm";
 import { WaitlistFooter } from "@/_components/WaitlistFooter";
+import { WaitlistBlogSection } from "@/_components/WaitlistBlogSection";
+import { cachedListPublishedArticles as listPublishedArticles } from "../../lib/cachedCatalog";
 import { ScrollReveal } from "@/_components/ScrollReveal";
 import { SmoothScrollLink } from "@/_components/SmoothScrollLink";
 
@@ -22,8 +24,15 @@ export const revalidate = 30;
 // card-scroll section, and the form are client islands (see each
 // component's own file); everything else here ships with zero client JS.
 export default async function WaitlistPage() {
-  const { launchAt, showCountdown, instagramUrl, youtubeUrl, spotifyUrl } =
-    await getSiteSetting();
+  const {
+    launchAt,
+    showCountdown,
+    instagramUrl,
+    youtubeUrl,
+    spotifyUrl,
+    showBlogOnWaitlist,
+  } = await getSiteSetting();
+  const articles = showBlogOnWaitlist ? await listPublishedArticles(3) : [];
 
   return (
     <main className="flex flex-col items-center bg-onwei-beige">
@@ -140,6 +149,8 @@ export default async function WaitlistPage() {
           <WaitlistForm instagramUrl={instagramUrl} />
         </ScrollReveal>
       </section>
+
+      <WaitlistBlogSection articles={articles} />
 
       <WaitlistFooter
         instagramUrl={instagramUrl}

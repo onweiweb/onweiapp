@@ -14,6 +14,7 @@ import {
   AdminCard,
   orderStatusTone,
   dsrStatusTone,
+  PageHeader,
 } from "../../_components/ui";
 
 export default async function CustomerDetailPage({
@@ -38,17 +39,18 @@ export default async function CustomerDetailPage({
 
   return (
     <main className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <h1 className="font-display text-2xl font-semibold uppercase">
-          {customer.name ?? customer.email ?? "Customer"}
-        </h1>
-        <AdminBadge tone={customer.status === "ACTIVE" ? "success" : "problem"}>
-          {customer.status === "ACTIVE" ? "Active" : "Suspended"}
-        </AdminBadge>
-      </div>
-      <p className="text-sm text-onwei-blue/70">
-        {customer.email ?? "No email"} · {customer.phone ?? "No phone"}
-      </p>
+      <PageHeader
+        back={{ href: "/customers", label: "Customers" }}
+        title={customer.name ?? customer.email ?? "Customer"}
+        description={`${customer.email ?? "No email"} · ${customer.phone ?? "No phone"}`}
+        actions={
+          <AdminBadge
+            tone={customer.status === "ACTIVE" ? "success" : "problem"}
+          >
+            {customer.status === "ACTIVE" ? "Active" : "Suspended"}
+          </AdminBadge>
+        }
+      />
 
       <AdminCard>
         <h2 className="mb-3 font-display text-sm font-semibold uppercase text-onwei-blue/70">

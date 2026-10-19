@@ -1,3 +1,4 @@
+import { PageHeader } from "../../_components/ui";
 import { prisma } from "@onwei/database";
 import { resolveSurfaceLimit } from "@onwei/core";
 import type { ReviewSurface } from "@onwei/database";
@@ -52,9 +53,11 @@ export default async function ReviewPlacementsPage() {
 
   return (
     <main className="flex flex-col gap-10">
-      <h1 className="font-display text-2xl font-semibold uppercase">
-        Homepage review placements
-      </h1>
+      <PageHeader
+        title="Homepage review placements"
+        back={{ href: "/reviews", label: "Reviews" }}
+        description="Choose which approved reviews appear on the homepage."
+      />
 
       <div className="flex flex-col gap-3">
         <div>
