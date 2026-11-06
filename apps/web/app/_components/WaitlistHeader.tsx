@@ -64,7 +64,7 @@ export function WaitlistHeader({
 
         <HoverLink
           href={navHref}
-          className={`font-grotesk text-label max-desk:text-[length:max(0.75rem,11px)] uppercase ${inverted ? "text-onwei-green" : "text-onwei-blue"}`}
+          className={`font-grotesk text-label max-desk:text-[length:max(0.9375rem,11px)] uppercase ${inverted ? "text-onwei-green" : "text-onwei-blue"}`}
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.97 }}
         >
