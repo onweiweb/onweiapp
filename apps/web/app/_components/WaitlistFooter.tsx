@@ -100,7 +100,7 @@ export function WaitlistFooter({
     // spanning full width. This is why the inner bg/flex wrapper alone
     // wasn't enough.
     <footer className="w-full">
-      <div className="flex flex-col items-center bg-onwei-purple px-3 py-12 desk:px-14">
+      <div className="flex flex-col items-center bg-onwei-purple px-5 py-12 desk:px-14">
         <ScrollReveal className="flex w-full flex-col items-center">
           {/* Figma is three independent columns (brand / "let's be friends" /
             illustration), not two flex children spread with justify-between,

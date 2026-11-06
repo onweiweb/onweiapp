@@ -40,7 +40,7 @@ export function WaitlistHeader({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, ease: "easeOut" }}
     >
-      <div className="flex h-[5.75rem] w-full items-center justify-between px-5 py-3 desk:h-auto desk:px-14 desk:py-6">
+      <div className="flex h-[4rem] w-full items-center justify-between px-5 py-3 desk:h-auto desk:px-14 desk:py-6">
         <Link
           href="/ontheway"
           aria-label="Onwei home"
@@ -51,7 +51,7 @@ export function WaitlistHeader({
             alt="Onwei"
             width={150}
             height={27}
-            className="max-desk:h-auto max-desk:w-[6.12rem]"
+            className="max-desk:h-auto max-desk:w-[5.25rem]"
             priority
           />
         </Link>
@@ -64,7 +64,7 @@ export function WaitlistHeader({
 
         <HoverLink
           href={navHref}
-          className={`font-grotesk text-label uppercase ${inverted ? "text-onwei-green" : "text-onwei-blue"}`}
+          className={`font-grotesk text-label max-desk:text-[length:max(0.75rem,11px)] uppercase ${inverted ? "text-onwei-green" : "text-onwei-blue"}`}
           whileHover={{ scale: 1.04 }}
           whileTap={{ scale: 0.97 }}
         >
