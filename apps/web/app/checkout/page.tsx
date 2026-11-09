@@ -16,8 +16,12 @@ export const metadata: Metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default async function CheckoutPage() {
-  const session = await getSession();
+export default async function CheckoutPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pay?: string }>;
+}) {
+  const [session, { pay }] = await Promise.all([getSession(), searchParams]);
   const [account, addresses, settings] = await Promise.all([
     session ? getAccountSummary(session.customerId) : Promise.resolve(null),
     session ? listAddresses(session.customerId) : Promise.resolve([]),
@@ -38,6 +42,7 @@ export default async function CheckoutPage() {
             : null
         }
         initialAddresses={addresses}
+        preferCod={pay === "cod"}
         states={INDIAN_STATES}
         cod={{
           enabled: settings.codEnabled,

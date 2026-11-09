@@ -50,7 +50,7 @@ export default async function CouponDetailPage({
         description={`${loaded.uses.confirmed} used${loaded.uses.held ? `, ${loaded.uses.held} held in open checkouts` : ""}.`}
         actions={
           <AdminBadge tone={loaded.draft.isActive ? "success" : "problem"}>
-            {loaded.draft.isActive ? "On" : "Off"}
+            {loaded.draft.isActive ? "Live" : "Paused"}
           </AdminBadge>
         }
       />

@@ -153,3 +153,30 @@ export const RETURN_BLOCKED_LABELS: Record<string, string> = {
   NOT_RETURNABLE: "This item can't be returned",
   ALREADY_REQUESTED: "Return already requested",
 };
+
+/**
+ * Plain words for Razorpay's failure reason codes (`error.reason`), shown on
+ * the payment failed page. Matched loosely, since Razorpay adds codes over
+ * time; anything unknown falls back to the general list of causes.
+ */
+const PAYMENT_FAILURE_PATTERNS: [RegExp, string][] = [
+  [/insufficient|balance/, "Your bank said there wasn't enough balance."],
+  [/otp|authentication|3ds|auth_/, "The OTP or bank check didn't go through."],
+  [/timed?_?out|timeout|expired/, "The payment request timed out."],
+  [/limit/, "You've hit the limit on your card or UPI app."],
+  [/declined|rejected|blocked|risk/, "Your bank declined the payment."],
+  [/invalid|incorrect|mismatch/, "The card or UPI details didn't match."],
+  [/cancel/, "The payment was cancelled before it finished."],
+  [
+    /bank|server|technical|gateway|network/,
+    "Your bank had a technical problem. Trying again usually works.",
+  ],
+];
+
+export function paymentFailureMessage(code: string | undefined): string | null {
+  if (!code || code === "payment_failed") return null;
+  for (const [pattern, message] of PAYMENT_FAILURE_PATTERNS) {
+    if (pattern.test(code)) return message;
+  }
+  return null;
+}

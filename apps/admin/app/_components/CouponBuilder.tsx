@@ -2,6 +2,10 @@
 
 import type { CouponDraft, DraftErrors } from "@onwei/core";
 import { useRouter } from "next/navigation";
+import {
+  removeCoupon,
+  setCouponPaused,
+} from "../coupons/_components/CouponActions";
 import { useEffect, useMemo, useState } from "react";
 import {
   AdminButton,
@@ -358,31 +362,32 @@ export function CouponBuilder({
     } | null;
     if (!data?.ok || !data.id)
       return toast(data?.error ?? "Couldn't copy it.", "error");
-    toast("Copy made. It starts switched off.", "success");
+    toast("Copy made. It starts paused.", "success");
     router.push(`/coupons/${data.id}`);
   }
 
   async function toggleActive() {
-    const next = !draft.isActive;
-    if (
-      !next &&
-      !(await confirm({
-        title: "Switch this coupon off?",
-        message:
-          "Customers can't use it from now on. Orders already placed keep their discount.",
-        confirmLabel: "Switch off",
-      }))
-    )
-      return;
-    const response = await fetch(`/api/coupons/${couponId}/active`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isActive: next }),
-    }).catch(() => null);
-    if (!response?.ok) return toast("That didn't work. Try again.", "error");
-    setDraft((d) => ({ ...d, isActive: next }));
-    setBaseline((b) => JSON.stringify({ ...JSON.parse(b), isActive: next }));
-    toast(next ? "Switched on." : "Switched off.", "success");
+    const pause = draft.isActive;
+    const ok = await setCouponPaused(couponId!, pause, confirm);
+    if (ok === null) return;
+    if (!ok) return toast("That didn't work. Try again.", "error");
+    setDraft((d) => ({ ...d, isActive: !pause }));
+    setBaseline((b) => JSON.stringify({ ...JSON.parse(b), isActive: !pause }));
+    toast(pause ? "Paused." : "Live again.", "success");
+    router.refresh();
+  }
+
+  async function remove() {
+    const result = await removeCoupon(
+      couponId!,
+      draft.code.toUpperCase(),
+      confirm,
+    );
+    if (result === null) return;
+    if (!result.ok)
+      return toast(result.error ?? "That didn't work. Try again.", "error");
+    toast("Coupon deleted.", "success");
+    router.push("/coupons");
     router.refresh();
   }
 
@@ -876,7 +881,7 @@ export function CouponBuilder({
                 variant="secondary"
                 onClick={toggleActive}
               >
-                {draft.isActive ? "Switch off" : "Switch on"}
+                {draft.isActive ? "Pause" : "Resume"}
               </AdminButton>
               <AdminButton
                 type="button"
@@ -885,13 +890,16 @@ export function CouponBuilder({
               >
                 Duplicate
               </AdminButton>
+              <AdminButton type="button" variant="danger" onClick={remove}>
+                Delete
+              </AdminButton>
             </>
           ) : null}
         </div>
       </div>
 
       <div className="xl:sticky xl:top-6 xl:self-start">
-        <AdminCard className="flex flex-col gap-3">
+        <AdminCard className="flex flex-col gap-3 border-onwei-purple! bg-onwei-purple!">
           <h2 className="text-lg font-semibold text-onwei-blue">Preview</h2>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Cart value (₹)">
@@ -922,7 +930,15 @@ export function CouponBuilder({
               />
             </Field>
           </div>
-          <p className="rounded-lg bg-onwei-beige p-3 text-sm">
+          <p
+            className={`rounded-lg p-3 text-sm font-semibold ${
+              preview === null
+                ? "bg-onwei-white text-onwei-blue"
+                : preview.reason
+                  ? "bg-[#fde2e1] text-[#8a1c1c]"
+                  : "bg-onwei-blue text-onwei-green"
+            }`}
+          >
             {preview === null
               ? "Working it out..."
               : preview.reason
@@ -931,7 +947,7 @@ export function CouponBuilder({
                   ? `A ₹${sample.cartValue.toLocaleString("en-IN")} cart would get free delivery.`
                   : `A ₹${sample.cartValue.toLocaleString("en-IN")} cart with ${sample.items} item${sample.items === 1 ? "" : "s"} would get ₹${(preview.discount / 100).toLocaleString("en-IN")} off.`}
           </p>
-          <p className="text-xs text-onwei-blue/60">
+          <p className="text-xs text-onwei-blue">
             Uses the same maths as checkout. Assumes every item qualifies and no
             other discounts.
           </p>

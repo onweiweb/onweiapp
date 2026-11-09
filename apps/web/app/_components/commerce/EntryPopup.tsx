@@ -6,10 +6,11 @@ import { useCart } from "./CartProvider";
 import { NameStep } from "./NameStep";
 import { SignInPanel } from "./SignInPanel";
 
-// Shown once per browser on the first storefront visit: sign in, or carry
-// on as a guest (closing counts as carrying on). No Figma frame exists; the
-// owner approved building it in the checkout frames' style (2026-11-09).
-const SEEN_KEY = "onwei_entry_seen";
+// Shown once per visit (browser tab session) to signed-out visitors: sign
+// in, or carry on as a guest (closing counts as carrying on). It comes back
+// on the next visit until they sign in. No Figma frame exists; the owner
+// approved building it in the checkout frames' style (2026-11-09).
+const SEEN_KEY = "onwei_entry_seen_visit";
 const SKIP_PREFIXES = [
   "/ontheway",
   "/insider",
@@ -33,12 +34,18 @@ export function EntryPopup() {
     if (skip || !session || session.signedIn) return;
     if (/bot|crawl|spider/i.test(navigator.userAgent)) return;
     try {
-      if (localStorage.getItem(SEEN_KEY)) return;
+      if (sessionStorage.getItem(SEEN_KEY)) return;
     } catch {
       return;
     }
-    const timer = setTimeout(() => setVisible(true), 1500);
-    return () => clearTimeout(timer);
+    // Never on top of something the visitor is already using (the bag, the
+    // option picker): wait until it's closed.
+    const timer = setInterval(() => {
+      if (document.querySelector('[role="dialog"]')) return;
+      clearInterval(timer);
+      setVisible(true);
+    }, 1500);
+    return () => clearInterval(timer);
   }, [skip, session]);
 
   useEffect(() => {
@@ -53,9 +60,9 @@ export function EntryPopup() {
 
   function dismiss() {
     try {
-      localStorage.setItem(SEEN_KEY, "1");
+      sessionStorage.setItem(SEEN_KEY, "1");
     } catch {
-      // private mode: it simply shows again next visit
+      // storage blocked: it may show again on the next page
     }
     setVisible(false);
   }
@@ -102,9 +109,7 @@ export function EntryPopup() {
               Good to see you on the Wei.
             </h2>
             <p className="font-grotesk text-[length:max(0.875rem,12px)] leading-[1.5]">
-              Sign in to check out faster and keep track of your orders. On the
-              waitlist? Use the same email or phone and your Insider discount
-              applies by itself.
+              Sign in for faster checkout and your Insider discount.
             </p>
             <div className="flex flex-col gap-2 pt-2">
               <button
@@ -127,7 +132,7 @@ export function EntryPopup() {
           <div className="pr-6">
             <SignInPanel
               heading="Sign in"
-              intro="We'll send you a code. No password needed."
+              intro="We'll send a one-time code."
               onDone={async ({ needsName }) => {
                 await Promise.all([refreshSession(), refresh()]);
                 if (needsName) setStep("name");

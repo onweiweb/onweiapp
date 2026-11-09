@@ -368,6 +368,8 @@ export interface OrderDetail {
   }[];
   returnWindowEndsAt: Date | null;
   awaitingPayment: boolean;
+  /** When an unpaid online order's stock hold runs out. */
+  holdExpiresAt: Date | null;
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -497,6 +499,7 @@ export async function getCustomerOrder(
       order.status === "PENDING" &&
       order.paymentMethod === "RAZORPAY" &&
       (order.reservationExpiresAt?.getTime() ?? 0) > Date.now(),
+    holdExpiresAt: order.reservationExpiresAt ?? null,
   };
 }
 

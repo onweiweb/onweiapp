@@ -18,7 +18,7 @@ export function LoginClient({ next }: { next: string }) {
   return (
     <SignInPanel
       heading="Sign in"
-      intro="Enter your email or mobile number and we'll send you a code. No password needed. On the waitlist? Use the same email or phone and your Insider discount comes with you."
+      intro="We'll send a one-time code. Waitlist members, use the same email or phone."
       onDone={async ({ needsName }) => {
         await Promise.all([refresh(), refreshSession()]);
         if (needsName) setAskName(true);

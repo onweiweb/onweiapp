@@ -9,7 +9,7 @@ interface RazorpaySuccess {
 }
 
 interface RazorpayFailure {
-  error?: { description?: string; reason?: string };
+  error?: { code?: string; description?: string; reason?: string };
 }
 
 interface RazorpayInstance {
@@ -47,6 +47,12 @@ export function loadRazorpay(): Promise<boolean> {
   return loading;
 }
 
+/** The failed page's address, carrying the reason when there is one. */
+export function failedPageUrl(orderNumber: string, reason?: string): string {
+  const why = reason ? `&why=${encodeURIComponent(reason)}` : "";
+  return `/checkout/failed?order=${encodeURIComponent(orderNumber)}${why}`;
+}
+
 /**
  * Razorpay steps the browser back when its window closes, which would undo a
  * client-side route change made at the same moment. A short pause and a full
@@ -67,6 +73,7 @@ export async function openRazorpay(input: {
     contact?: string | null;
   };
   onSuccess: (response: RazorpaySuccess) => void;
+  /** Razorpay's failure reason code, e.g. "insufficient_funds". */
   onFailure: (reason: string) => void;
   onDismiss: () => void;
 }): Promise<boolean> {
@@ -96,6 +103,11 @@ export async function openRazorpay(input: {
       input.onSuccess(response);
     },
     modal: {
+      // The window only closes when the customer means it: no Esc, no
+      // click outside, and the close button asks "cancel this payment?".
+      escape: false,
+      backdropclose: false,
+      confirm_close: true,
       ondismiss: () => {
         if (paid) return;
         if (failedReason) input.onFailure(failedReason);
@@ -104,7 +116,11 @@ export async function openRazorpay(input: {
     },
   });
   rzp.on("payment.failed", (response) => {
-    failedReason = response.error?.description ?? "Payment didn't go through";
+    // Keep the short machine code; the failed page turns it into plain words.
+    const code = response.error?.reason ?? response.error?.code ?? "";
+    failedReason = /^[a-z_]{1,40}$/i.test(code)
+      ? code.toLowerCase()
+      : "payment_failed";
   });
   rzp.open();
   return true;

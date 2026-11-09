@@ -63,7 +63,6 @@ export function ProductCard({
       </Link>
       <QuickAddButton
         productId={product.id}
-        slug={product.slug}
         inStock={product.inStock}
         className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-2.5 font-grotesk text-[length:max(0.75rem,11px)] uppercase leading-none text-onwei-beige desk:py-3 desk:text-label"
       />

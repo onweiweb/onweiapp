@@ -4,7 +4,11 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "@/_components/commerce/CartProvider";
-import { goAfterRazorpay, openRazorpay } from "@/_components/commerce/razorpay";
+import {
+  failedPageUrl,
+  goAfterRazorpay,
+  openRazorpay,
+} from "@/_components/commerce/razorpay";
 import { CHECKOUT_ERRORS } from "../../../lib/messages/commerce";
 
 const PRIMARY =
@@ -75,9 +79,9 @@ export function RetryPayment({
             : `/checkout/failed?order=${orderNumber}`,
         );
       },
-      onFailure: () => {
+      onFailure: (reason) => {
         setWorking(false);
-        goAfterRazorpay(`/checkout/failed?order=${orderNumber}`);
+        goAfterRazorpay(failedPageUrl(orderNumber, reason));
       },
       onDismiss: () => setWorking(false),
     });

@@ -59,7 +59,7 @@ export default async function OrderPage({
         : ORDER_STATUS_LABELS[order.status];
 
   return (
-    <CheckoutShell>
+    <CheckoutShell header="site">
       <div className="grid grid-cols-1 gap-8 desk:grid-cols-[1fr_27.5rem] desk:gap-14">
         <div className="flex flex-col gap-6">
           <Link

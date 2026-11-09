@@ -131,6 +131,30 @@ Found while testing:
 Pre-existing test failures (not from this work): `apps/web/app/about/page.test.tsx` fails when the dev DB is LIVE (async
 footer), `apps/admin/app/page.test.tsx` calls cookies outside a request.
 
+### 2026-11-09 (after first push): owner feedback round
+
+Pushed as 3650c51 (web and admin). Then, from the owner's testing, built locally (not pushed):
+
+- **Add to cart on product cards** opened the product page whenever a product had more than one option (almost every
+  product). Now a small option picker opens in place (same colour and size pills as the product page, sold-out options
+  marked, "See full details" link); picking adds to the bag and opens it. Same in the bag's "You'll also love" row.
+  `quickAddProduct` returns the options (`QuickAddChoice`) instead of only a slug.
+- **Header:** account, order details and sign-in pages now use the full site header (account and bag icons).
+  Checkout and its result pages keep the plain header on purpose (no distractions mid-payment, matches Figma).
+- **Entry popup** now shows once per visit until sign-in (see section 6). **Sign-in copy** shortened.
+- **Checkout sign-in:** signing in can change the bag (saved items merge in, Insider discount applies), so the bag
+  opens right after sign-in for a quick review; "Back to your bag" link on the sign-in step.
+- **Razorpay window** closes only on purpose: no Esc, no click outside, and the close button asks to confirm.
+- **Payment failed page:** shows Razorpay's actual reason in plain words (`paymentFailureMessage`, from `error.reason`
+  carried as `?why=`), how many minutes the items are still held (`OrderDetail.holdExpiresAt`), "Start again" when the
+  hold has ended instead of a retry that bounces, and "Pay on delivery instead" (opens checkout on the payment step
+  with COD picked, `/checkout?pay=cod`) when COD is allowed for that total.
+- **Coupons:** Pause / Resume and Delete on the list and the edit page. Delete only works for codes never used on an
+  order (orders keep their history); used codes can only be paused. Audit-logged as `coupon.delete`. The builder
+  preview is now a purple panel; the result turns navy and green when the code applies, red when it doesn't.
+- **Emails:** the Insider email used the PDF's washed-out green (#d0e191); now the brand yellow-green #eded86 like the
+  other emails, with `bgcolor` fallbacks for mail apps that drop CSS backgrounds.
+
 Before launch (all after the phases, as agreed):
 
 1. Prod migrations (owner, `DIRECT_URL`): the five migrations from 2026-11-09.
@@ -318,9 +342,13 @@ Before launch (all after the phases, as agreed):
 
 ### Entry popup
 
-- Shown once per browser on the first storefront visit (not on `/ontheway`, legal pages, or to bots).
-- "Sign in" and "Continue without signing in". Closing it counts as continue. It never comes back on every page.
-- Line for Insiders: "On the waitlist? Sign in with the same email or phone to unlock your Insider discount."
+- Shown once per visit (browser tab session) to signed-out visitors, until they sign in. Changed 2026-11-09 from
+  "once per browser ever", which meant it never showed again after a first close. Not on `/ontheway`, `/insider`,
+  legal pages, checkout, account, sign-in, or to bots, and never on top of the bag or the option picker.
+- "Sign in" and "Continue without signing in". Closing it counts as continue for that visit.
+- Copy kept short (owner, 2026-11-09): "Sign in for faster checkout and your Insider discount."
+- Sign-in intros are one line: "We'll send a one-time code." (popup), plus "Waitlist members, use the same email or
+  phone." on `/login` and "Your bag stays as it is." at checkout.
 
 ### Signed-in Insiders
 

@@ -1,7 +1,7 @@
 "use client";
 
-import type { CartView } from "@onwei/core";
-import { usePathname, useRouter } from "next/navigation";
+import type { CartView, ProductVariantDTO } from "@onwei/core";
+import { usePathname } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -12,6 +12,13 @@ import {
   type ReactNode,
 } from "react";
 import { CART_ERRORS, codeMessage } from "../../../lib/messages/commerce";
+
+/** A product card's "add to cart" when the product has several options. */
+export interface QuickChoice {
+  slug: string;
+  name: string;
+  variants: ProductVariantDTO[];
+}
 
 export interface SessionInfo {
   signedIn: boolean;
@@ -33,7 +40,8 @@ interface CartState {
   refresh: () => Promise<void>;
   refreshSession: () => Promise<SessionInfo | null>;
   add: (variantId: string, quantity?: number) => Promise<boolean>;
-  quickAdd: (productId: string, slug: string) => Promise<void>;
+  /** Adds a single-option product; returns the options when there are several. */
+  quickAdd: (productId: string) => Promise<QuickChoice | null>;
   setQuantity: (variantId: string, quantity: number) => Promise<void>;
   applyCode: (code: string) => Promise<{ ok: boolean; message?: string }>;
   removeCode: (code: string) => Promise<void>;
@@ -65,7 +73,6 @@ async function call<T>(
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [cart, setCart] = useState<CartView | null>(null);
   const [freeShippingThreshold, setThreshold] = useState<number | null>(null);
   const [session, setSession] = useState<SessionInfo | null>(null);
@@ -151,10 +158,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const quickAdd = useCallback(
-    async (productId: string, slug: string) => {
+    async (productId: string): Promise<QuickChoice | null> => {
       setBusy(true);
       setNotice(null);
-      const data = await call<{ cart?: CartView; slug?: string }>(
+      const data = await call<{ cart?: CartView; choice?: QuickChoice }>(
         "/api/cart/quick",
         {
           method: "POST",
@@ -162,22 +169,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
         },
       );
       setBusy(false);
-      if (data?.reason === "NEEDS_CHOICE") {
-        router.push(`/product/${data.slug ?? slug}`);
-        return;
-      }
+      if (data?.reason === "NEEDS_CHOICE" && data.choice) return data.choice;
       if (!data?.ok || !data.cart) {
         setNotice({
           tone: "error",
           text: CART_ERRORS[data?.reason ?? "NETWORK"] ?? CART_ERRORS.NETWORK!,
         });
         setOpen(true);
-        return;
+        return null;
       }
       take(data.cart);
       setOpen(true);
+      return null;
     },
-    [router, take],
+    [take],
   );
 
   const setQuantity = useCallback(
@@ -316,7 +321,7 @@ const INERT: CartState = {
   refresh: async () => {},
   refreshSession: async () => null,
   add: async () => false,
-  quickAdd: async () => {},
+  quickAdd: async () => null,
   setQuantity: async () => {},
   applyCode: async () => ({ ok: false }),
   removeCode: async () => {},

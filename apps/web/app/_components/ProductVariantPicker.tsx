@@ -16,7 +16,15 @@ function chipClassName(active: boolean, fill = false) {
   } ${fill ? "min-w-0 flex-1 px-2 desk:px-12" : ""}`;
 }
 
-export function ProductVariantPicker() {
+export function ProductVariantPicker({
+  slug,
+  onAdded,
+}: {
+  /** Product slug for analytics when the picker isn't on the product page. */
+  slug?: string;
+  /** Called after a successful add (the card's quick picker closes itself). */
+  onAdded?: () => void;
+} = {}) {
   const {
     colors,
     sizes,
@@ -30,15 +38,16 @@ export function ProductVariantPicker() {
 
   // Report a pick, not the default shown on load.
   const pathname = usePathname();
+  const productSlug = slug ?? pathname.split("/").pop() ?? "";
   const lastVariantId = useRef(selectedVariant.id);
   useEffect(() => {
     if (lastVariantId.current === selectedVariant.id) return;
     lastVariantId.current = selectedVariant.id;
     track("variant_selected", {
-      product_slug: pathname.split("/").pop() ?? "",
+      product_slug: productSlug,
       variant_id: selectedVariant.id,
     });
-  }, [selectedVariant.id, pathname]);
+  }, [selectedVariant.id, productSlug]);
 
   return (
     <div className="flex w-full flex-col items-start gap-3">
@@ -88,10 +97,12 @@ export function ProductVariantPicker() {
           disabled={!selectedVariant.inStock || busy}
           onClick={() => {
             track("add_to_cart", {
-              product_slug: pathname.split("/").pop() ?? "",
+              product_slug: productSlug,
               variant_id: selectedVariant.id,
             });
-            void add(selectedVariant.id, 1);
+            void add(selectedVariant.id, 1).then((ok) => {
+              if (ok) onAdded?.();
+            });
           }}
           className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase leading-none text-onwei-beige disabled:cursor-not-allowed disabled:opacity-60"
         >

@@ -17,12 +17,13 @@ import {
   PageHeader,
   type StatusTone,
 } from "../_components/ui";
+import { CouponRowActions } from "./_components/CouponActions";
 
 const STATE: Record<CouponState, { label: string; tone: StatusTone }> = {
   LIVE: { label: "Live", tone: "success" },
   SCHEDULED: { label: "Starts later", tone: "pending" },
   ENDED: { label: "Ended", tone: "problem" },
-  OFF: { label: "Off", tone: "problem" },
+  OFF: { label: "Paused", tone: "problem" },
   USED_UP: { label: "Used up", tone: "problem" },
 };
 
@@ -51,6 +52,9 @@ export default async function CouponsPage() {
             <AdminTableHeaderCell>Used</AdminTableHeaderCell>
             <AdminTableHeaderCell>Given away</AdminTableHeaderCell>
             <AdminTableHeaderCell>Ends</AdminTableHeaderCell>
+            <AdminTableHeaderCell>
+              <span className="sr-only">Actions</span>
+            </AdminTableHeaderCell>
           </AdminTableHead>
           <tbody>
             {coupons.map((c) => (
@@ -87,6 +91,13 @@ export default async function CouponsPage() {
                         timeZone: "Asia/Kolkata",
                       })
                     : "-"}
+                </AdminTableCell>
+                <AdminTableCell>
+                  <CouponRowActions
+                    couponId={c.id}
+                    code={c.code}
+                    isActive={c.isActive}
+                  />
                 </AdminTableCell>
               </AdminTableRow>
             ))}

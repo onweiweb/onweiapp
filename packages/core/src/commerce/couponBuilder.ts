@@ -350,9 +350,7 @@ export async function saveCoupon(
   return { ok: true, id };
 }
 
-export async function loadCouponDraft(
-  couponId: string,
-): Promise<{
+export async function loadCouponDraft(couponId: string): Promise<{
   draft: CouponDraft;
   locked: boolean;
   uses: { confirmed: number; held: number };
@@ -463,6 +461,43 @@ export async function setCouponActive(
   });
 }
 
+/**
+ * Deletes a coupon that has never been used. A code that appears on any
+ * order (or is held for one) is kept for the order history: pause it instead.
+ */
+export async function deleteCoupon(
+  couponId: string,
+  actor: AuditActor,
+): Promise<{ ok: true } | { ok: false; reason: "NOT_FOUND" | "USED" }> {
+  return prisma.$transaction(async (tx) => {
+    const coupon = await tx.coupon.findUnique({
+      where: { id: couponId },
+      select: { id: true, code: true, isActive: true },
+    });
+    if (!coupon) return { ok: false as const, reason: "NOT_FOUND" as const };
+    const [redemptions, onOrders] = await Promise.all([
+      tx.couponRedemption.count({ where: { couponId } }),
+      tx.orderDiscount.count({ where: { couponId } }),
+    ]);
+    if (redemptions > 0 || onOrders > 0)
+      return { ok: false as const, reason: "USED" as const };
+    await tx.discountRule.deleteMany({ where: { couponId } });
+    await tx.coupon.delete({ where: { id: couponId } });
+    await writeAuditLog(
+      {
+        staffUserId: actor.staffUserId,
+        action: "coupon.delete",
+        entityType: "Coupon",
+        entityId: couponId,
+        beforeState: coupon,
+        afterState: null,
+      },
+      tx,
+    );
+    return { ok: true as const };
+  });
+}
+
 export type CouponState = "LIVE" | "SCHEDULED" | "ENDED" | "OFF" | "USED_UP";
 
 export interface CouponListRow {
@@ -470,6 +505,7 @@ export interface CouponListRow {
   code: string;
   summary: string;
   state: CouponState;
+  isActive: boolean;
   autoApply: boolean;
   uses: number;
   usageLimit: number | null;
@@ -506,6 +542,7 @@ export async function listCouponsForAdmin(): Promise<CouponListRow[]> {
       code: coupon.code.toUpperCase(),
       summary: pricing ? describeGive(pricing) : "No discount set",
       state,
+      isActive: coupon.isActive,
       autoApply: coupon.autoApply,
       uses,
       usageLimit: coupon.usageLimit,

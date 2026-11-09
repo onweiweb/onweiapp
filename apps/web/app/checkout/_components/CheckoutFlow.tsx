@@ -8,7 +8,11 @@ import { ProductImage } from "@/_components/ProductImage";
 import { AddressForm } from "@/_components/commerce/AddressForm";
 import { CodeBox } from "@/_components/commerce/CartDrawer";
 import { useCart } from "@/_components/commerce/CartProvider";
-import { goAfterRazorpay, openRazorpay } from "@/_components/commerce/razorpay";
+import {
+  failedPageUrl,
+  goAfterRazorpay,
+  openRazorpay,
+} from "@/_components/commerce/razorpay";
 import { SignInPanel } from "@/_components/commerce/SignInPanel";
 import { track } from "../../../lib/analytics/track";
 import { CHECKOUT_ERRORS, rupees } from "../../../lib/messages/commerce";
@@ -128,10 +132,13 @@ export function CheckoutFlow({
   initialAddresses,
   states,
   cod,
+  preferCod = false,
 }: {
   signedIn: boolean;
   account: CheckoutAccount | null;
   initialAddresses: AddressView[];
+  /** From the payment failed page: open on payment with cash on delivery. */
+  preferCod?: boolean;
   states: readonly string[];
   cod: {
     enabled: boolean;
@@ -141,8 +148,12 @@ export function CheckoutFlow({
   };
 }) {
   const router = useRouter();
-  const { cart: providerCart, refresh, refreshSession } = useCart();
-  const [step, setStep] = useState<"details" | "payment">("details");
+  const { cart: providerCart, refresh, refreshSession, setOpen } = useCart();
+  const [step, setStep] = useState<"details" | "payment">(
+    preferCod && signedIn && initialAddresses.length > 0
+      ? "payment"
+      : "details",
+  );
   const [addresses, setAddresses] = useState(initialAddresses);
   const [addressId, setAddressId] = useState<string | null>(
     initialAddresses.find((a) => a.isDefault)?.id ??
@@ -150,7 +161,9 @@ export function CheckoutFlow({
       null,
   );
   const [adding, setAdding] = useState(initialAddresses.length === 0);
-  const [method, setMethod] = useState<Method>("RAZORPAY");
+  const [method, setMethod] = useState<Method>(
+    preferCod && cod.enabled ? "COD" : "RAZORPAY",
+  );
   const [view, setView] = useState<CartView | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [placing, setPlacing] = useState(false);
@@ -195,13 +208,24 @@ export function CheckoutFlow({
         <Card>
           <SignInPanel
             heading="Sign in to check out"
-            intro="We'll send a code to your email or phone. No password needed, and your bag comes with you."
+            intro="We'll send a one-time code. Your bag stays as it is."
             onDone={async () => {
               await Promise.all([refresh(), refreshSession()]);
               router.refresh();
+              // Signing in can change the bag (items saved on an earlier
+              // visit merge in, the Insider discount applies), so show it
+              // before carrying on.
+              setOpen(true);
             }}
           />
         </Card>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="self-center font-grotesk text-[length:max(0.8125rem,11px)] underline underline-offset-4"
+        >
+          Back to your bag
+        </button>
       </div>
     );
   }
@@ -300,7 +324,7 @@ export function CheckoutFlow({
       },
       onFailure: (reason) => {
         track("payment_failed", { reason: reason.slice(0, 60) });
-        goAfterRazorpay(`/checkout/failed?order=${orderNumber}`);
+        goAfterRazorpay(failedPageUrl(orderNumber, reason));
       },
       onDismiss: () =>
         goAfterRazorpay(`/checkout/abandoned?order=${orderNumber}`),

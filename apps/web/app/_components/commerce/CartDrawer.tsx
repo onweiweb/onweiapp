@@ -6,6 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { ProductImage } from "@/_components/ProductImage";
 import { codeMessage, rupees } from "../../../lib/messages/commerce";
 import { useCart } from "./CartProvider";
+import { QuickAddButton } from "./QuickAddButton";
 
 // Figma "Cart Drawer" (TgMpkXMC2QpghHlH6N63oV, 1217:3338 with items,
 // 1217:3486 empty). Desktop 580px from the right; full width on phones (no
@@ -165,7 +166,6 @@ function Line({ line }: { line: CartLineView }) {
 }
 
 function Recommendations({ excludeIds }: { excludeIds: string[] }) {
-  const { quickAdd, busy } = useCart();
   const [products, setProducts] = useState<ProductListItem[]>([]);
   const key = excludeIds.join(",");
   useEffect(() => {
@@ -216,14 +216,11 @@ function Recommendations({ excludeIds }: { excludeIds: string[] }) {
                 {product.highlightTags.slice(0, 2).join(" · ")}
               </p>
             ) : null}
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => quickAdd(product.id, product.slug)}
-              className="mt-auto rounded-full bg-onwei-blue py-2 font-grotesk text-[length:max(0.75rem,11px)] uppercase text-onwei-beige disabled:opacity-60"
-            >
-              Add to cart
-            </button>
+            <QuickAddButton
+              productId={product.id}
+              inStock={product.inStock}
+              className="mt-auto rounded-full bg-onwei-blue py-2 font-grotesk text-[length:max(0.75rem,11px)] uppercase text-onwei-beige"
+            />
           </div>
         ))}
       </div>

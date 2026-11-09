@@ -437,6 +437,7 @@ export {
   loadCouponDraft,
   duplicateCoupon,
   setCouponActive,
+  deleteCoupon,
   listCouponsForAdmin,
   previewCoupon,
   couponUseCount,

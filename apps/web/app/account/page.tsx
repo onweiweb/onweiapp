@@ -53,7 +53,7 @@ export default async function AccountPage({
   const first = account.name?.split(/\s+/)[0];
 
   return (
-    <CheckoutShell>
+    <CheckoutShell header="site">
       <div className="flex flex-col gap-8">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>

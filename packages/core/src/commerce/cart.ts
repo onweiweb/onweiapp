@@ -1,5 +1,6 @@
 import { prisma, type Prisma } from "@onwei/database";
-import { mapAttributes } from "../catalog/mapProduct";
+import { mapAttributes, mapVariant } from "../catalog/mapProduct";
+import type { ProductVariantDTO } from "../catalog/types";
 import { toMinorUnits } from "../catalog/helpers";
 import { normalizeCode, isInsiderCodeFormat } from "../insiders/insiderCode";
 import {
@@ -583,17 +584,23 @@ export async function removeOrderedItems(
   await tx.cart.update({ where: { id: cart.id }, data: { couponCodes: [] } });
 }
 
+export interface QuickAddChoice {
+  ok: false;
+  reason: "NEEDS_CHOICE";
+  slug: string;
+  name: string;
+  /** Every active option, so the card can show a size and colour picker. */
+  variants: ProductVariantDTO[];
+}
+
 /**
  * "Add to cart" on a product card: adds straight away when the product has
- * one option in stock, otherwise says the customer needs to pick a size or
- * colour on the product page.
+ * one option, otherwise returns the options so the card can open a picker.
  */
 export async function quickAddProduct(
   owner: CartOwner,
   productId: string,
-): Promise<
-  CartActionResult | { ok: false; reason: "NEEDS_CHOICE"; slug: string }
-> {
+): Promise<CartActionResult | QuickAddChoice> {
   const product = await prisma.product.findFirst({
     where: { id: productId, status: "ACTIVE", deletedAt: null },
     include: {
@@ -607,7 +614,13 @@ export async function quickAddProduct(
     ),
   );
   if (product.variants.length > 1)
-    return { ok: false, reason: "NEEDS_CHOICE", slug: product.slug };
+    return {
+      ok: false,
+      reason: "NEEDS_CHOICE",
+      slug: product.slug,
+      name: product.name,
+      variants: product.variants.map(mapVariant),
+    };
   const only = inStock[0];
   if (!only) return { ok: false, reason: "OUT_OF_STOCK" };
   return addToCart(owner, only.id, 1);

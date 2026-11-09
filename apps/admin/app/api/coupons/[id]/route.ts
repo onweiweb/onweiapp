@@ -1,4 +1,4 @@
-import { updateCoupon } from "@onwei/core";
+import { deleteCoupon, updateCoupon } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { defineAdminRoute } from "../../_lib/defineAdminRoute";
@@ -40,5 +40,26 @@ export const PATCH = defineAdminRoute<typeof bodySchema, { id: string }>(
           : "Couldn't find that coupon.";
       return NextResponse.json({ ok: false, error: message }, { status: 400 });
     }
+  },
+);
+
+// Only codes that were never used can go; used ones stay for order history.
+export const DELETE = defineAdminRoute<never, { id: string }>(
+  { permission: "coupon:update" },
+  async ({ staff, params }) => {
+    const result = await deleteCoupon(params.id, {
+      staffUserId: staff.staffUserId,
+    });
+    if (result.ok) return NextResponse.json({ ok: true });
+    return NextResponse.json(
+      {
+        ok: false,
+        error:
+          result.reason === "USED"
+            ? "This code has already been used on orders, so it stays for their records. Pause it instead."
+            : "Couldn't find that coupon.",
+      },
+      { status: result.reason === "USED" ? 409 : 404 },
+    );
   },
 );

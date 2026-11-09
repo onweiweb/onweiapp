@@ -14,13 +14,20 @@ export async function POST(request: Request) {
   });
   const result = await quickAddProduct(owner, parsed.data.productId);
   if (!result.ok) {
-    return NextResponse.json(
-      {
+    if (result.reason === "NEEDS_CHOICE") {
+      return NextResponse.json({
         ok: false,
         reason: result.reason,
-        slug: "slug" in result ? result.slug : undefined,
-      },
-      { status: result.reason === "NEEDS_CHOICE" ? 200 : 400 },
+        choice: {
+          slug: result.slug,
+          name: result.name,
+          variants: result.variants,
+        },
+      });
+    }
+    return NextResponse.json(
+      { ok: false, reason: result.reason },
+      { status: 400 },
     );
   }
   const response = NextResponse.json({

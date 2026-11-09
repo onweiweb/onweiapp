@@ -1,8 +1,14 @@
 import { createHmac } from "node:crypto";
 import { prisma } from "@onwei/database";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { addToCart, applyCartCode, getCartView, mergeGuestCart } from "./cart";
-import { saveCoupon, type CouponDraft } from "./couponBuilder";
+import {
+  addToCart,
+  applyCartCode,
+  getCartView,
+  mergeGuestCart,
+  quickAddProduct,
+} from "./cart";
+import { deleteCoupon, saveCoupon, type CouponDraft } from "./couponBuilder";
 import { markOrderPaid, placeOrder, releaseExpiredOrders } from "./orders";
 import { getCustomerOrder } from "./account";
 import {
@@ -548,6 +554,35 @@ describe.skipIf(!process.env.DATABASE_URL)(
         where: { orderId: placed.orderId },
       });
       expect(refunds.map((r) => Number(r.amount))).toEqual([1000]);
+    });
+
+    it("deletes an unused coupon but keeps one that orders used", async () => {
+      const unused = await saveCoupon(draft({ code: `${TAG}-DEL` }), {
+        staffUserId,
+      });
+      if (!unused.ok) throw new Error(JSON.stringify(unused.errors));
+      couponIds.push(unused.id);
+      expect(await deleteCoupon(unused.id, { staffUserId })).toEqual({
+        ok: true,
+      });
+      expect(await prisma.coupon.count({ where: { id: unused.id } })).toBe(0);
+
+      const used = await prisma.coupon.findFirstOrThrow({
+        where: { code: { equals: `${TAG}-COD`, mode: "insensitive" } },
+      });
+      expect(await deleteCoupon(used.id, { staffUserId })).toEqual({
+        ok: false,
+        reason: "USED",
+      });
+    });
+
+    it("quick add puts a single-option product straight in the bag", async () => {
+      await setStock(10);
+      const result = await quickAddProduct(
+        { guestToken: `${TAG}-quick` },
+        productId,
+      );
+      expect(result.ok).toBe(true);
     });
   },
 );

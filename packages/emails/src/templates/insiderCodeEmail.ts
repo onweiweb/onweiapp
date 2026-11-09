@@ -13,8 +13,10 @@ import type { RenderedEmail } from "./otpEmail";
 
 const NAVY = "#161845";
 const BEIGE = "#eae8d6";
-// The emailer's card green, a touch greener than the site's yellow-green.
-const CARD_GREEN = "#d3e291";
+// Brand yellow-green, same as apps/web globals.css. The emailer PDF reads
+// #d0e191, but that is its export washing the colour out (looked dull in
+// inboxes), so the email uses the real brand value.
+const CARD_GREEN = "#eded86";
 const CODE_BG = "#eae8d6";
 
 const HEADING_FONT = "'Helvetica Neue',Helvetica,Arial,sans-serif";
@@ -54,13 +56,14 @@ export function renderInsiderCodeEmail(
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light only">
 <title>${escapeHtml(subject)}</title>
 </head>
 <body style="margin:0;padding:0;background:${BEIGE};">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${BEIGE};">${escapeHtml(preheader)}</div>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:${BEIGE};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${BEIGE}" style="background:${BEIGE};">
 <tr><td align="center" style="padding:24px 12px;">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:${CARD_GREEN};border-radius:32px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="${CARD_GREEN}" style="width:100%;max-width:600px;background:${CARD_GREEN};border-radius:32px;">
 <tr><td align="center" style="padding:40px 24px 8px;">
 <img src="${img("insider-card.png")}" width="460" alt="Your Onwei Insider card: let's get moving" style="display:block;width:100%;max-width:460px;height:auto;border:0;">
 </td></tr>

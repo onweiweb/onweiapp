@@ -27,7 +27,7 @@ export default async function LoginPage({
   const target = safeNext(next);
   if (await getSession()) redirect(target);
   return (
-    <CheckoutShell wide={false}>
+    <CheckoutShell wide={false} header="site">
       <Card>
         <LoginClient next={target} />
       </Card>
