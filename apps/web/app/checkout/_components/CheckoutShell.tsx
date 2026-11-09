@@ -48,12 +48,12 @@ function CheckoutHeader() {
             priority
           />
         </Link>
-        <a
-          href="mailto:admin@onwei.in"
+        <Link
+          href="/contact"
           className="font-grotesk text-[length:max(0.8125rem,11px)] underline underline-offset-2"
         >
           Need help? Contact us
-        </a>
+        </Link>
       </div>
     </header>
   );

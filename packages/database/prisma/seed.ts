@@ -1082,6 +1082,10 @@ async function seedSiteSetting() {
       siteMode: "WAITLIST",
       launchAt: new Date("2026-12-01T00:00:00+05:30"),
       allowInternationalPhone: true,
+      contactAddress:
+        "235, Binnamangala\n13th Cross Road, Indiranagar\nBengaluru, Bengaluru Urban\nKarnataka 560038",
+      contactPhone: "+91 7760487004",
+      contactEmail: "support@onwei.in",
     },
   });
 }

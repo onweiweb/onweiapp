@@ -1,13 +1,33 @@
+"use client";
+
+import { useState } from "react";
 import type { FaqItem } from "@onwei/core";
 import { Accordion, AccordionItem } from "./Accordion";
-import { CtaLink } from "./CtaLink";
+import { CTA_PILL, CtaLink } from "./CtaLink";
+
+const VIEW_ALL_CLASSES = "bg-onwei-white text-onwei-blue desk:w-[13.9375rem]";
 
 // Figma PDP (frame "PDP_draft 2", node 759:3281 "Ingredient" / "frequently
-// asked questions"), a purple band with white rows. Rows come from
-// `listFaqs`, real, CMS-editable answers instead of the literal placeholder
-// Q&A in Figma. The first row opens by default, as drawn.
-export function FaqSection({ faqs }: { faqs: FaqItem[] }) {
+// asked questions"), a purple band with white rows; the Contact Us frame
+// (1189:6080) reuses it. Rows come from `listFaqs`, real, CMS-editable
+// answers instead of the literal placeholder Q&A in Figma. The first row
+// opens by default, as drawn.
+//
+// `expandAfter`: show only that many rows and turn "view all" into a button
+// that reveals the rest in place (Contact Us, no FAQ page exists). Without
+// it, "view all" stays the link the PDP uses.
+export function FaqSection({
+  faqs,
+  expandAfter,
+}: {
+  faqs: FaqItem[];
+  expandAfter?: number;
+}) {
+  const [showAll, setShowAll] = useState(false);
   if (faqs.length === 0) return null;
+
+  const canExpand = expandAfter !== undefined && faqs.length > expandAfter;
+  const visible = canExpand && !showAll ? faqs.slice(0, expandAfter) : faqs;
 
   return (
     <section className="flex flex-col items-center bg-onwei-purple px-3 py-14 desk:px-24 desk:py-24">
@@ -16,17 +36,25 @@ export function FaqSection({ faqs }: { faqs: FaqItem[] }) {
           <p className="font-display text-[2.5rem] font-bold uppercase leading-[0.9] text-onwei-white desk:w-[24.0625rem] desk:text-display-md">
             frequently asked questions
           </p>
-          <CtaLink
-            href="/#faqs"
-            className="bg-onwei-white text-onwei-blue desk:w-[13.9375rem]"
-          >
-            view all
-          </CtaLink>
+          {expandAfter === undefined ? (
+            <CtaLink href="/#faqs" className={VIEW_ALL_CLASSES}>
+              view all
+            </CtaLink>
+          ) : canExpand ? (
+            <button
+              type="button"
+              aria-expanded={showAll}
+              onClick={() => setShowAll((value) => !value)}
+              className={`${CTA_PILL} ${VIEW_ALL_CLASSES}`}
+            >
+              {showAll ? "show fewer" : "view all"}
+            </button>
+          ) : null}
         </div>
 
         <div className="w-full desk:w-[41.875rem]">
           <Accordion>
-            {faqs.map((faq, index) => (
+            {visible.map((faq, index) => (
               <AccordionItem
                 key={faq.id}
                 id={`faq-${faq.id}`}

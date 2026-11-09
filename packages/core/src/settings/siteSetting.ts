@@ -24,6 +24,10 @@ export interface SiteSettingSummary {
   facebookUrl: string | null;
   youtubeUrl: string | null;
   spotifyUrl: string | null;
+  // Contact Us "For more support" block; null hides that line.
+  contactAddress: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
 }
 
 let cached: { value: SiteSettingSummary; expiresAt: number } | null = null;
@@ -39,6 +43,9 @@ function toSummary(row: {
   facebookUrl: string | null;
   youtubeUrl: string | null;
   spotifyUrl: string | null;
+  contactAddress: string | null;
+  contactPhone: string | null;
+  contactEmail: string | null;
 }): SiteSettingSummary {
   return {
     siteMode: row.siteMode,
@@ -51,6 +58,9 @@ function toSummary(row: {
     facebookUrl: row.facebookUrl,
     youtubeUrl: row.youtubeUrl,
     spotifyUrl: row.spotifyUrl,
+    contactAddress: row.contactAddress,
+    contactPhone: row.contactPhone,
+    contactEmail: row.contactEmail,
   };
 }
 
@@ -89,6 +99,9 @@ export interface UpdateSiteSettingInput {
   facebookUrl?: string | null;
   youtubeUrl?: string | null;
   spotifyUrl?: string | null;
+  contactAddress?: string | null;
+  contactPhone?: string | null;
+  contactEmail?: string | null;
 }
 
 export async function updateSiteSetting(
@@ -112,6 +125,9 @@ export async function updateSiteSetting(
       facebookUrl: input.facebookUrl,
       youtubeUrl: input.youtubeUrl,
       spotifyUrl: input.spotifyUrl,
+      contactAddress: input.contactAddress,
+      contactPhone: input.contactPhone,
+      contactEmail: input.contactEmail,
       updatedByStaffId: actor.staffUserId,
     },
   });

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { ReactNode } from "react";
 
 /** White rounded card with a navy border, as in the result frames. */
@@ -29,12 +30,12 @@ export function HelpCard({ title, body }: { title: string; body: string }) {
           {body}
         </p>
       </div>
-      <a
-        href="mailto:admin@onwei.in"
+      <Link
+        href="/contact"
         className="shrink-0 rounded-full border border-onwei-beige px-5 py-2 font-grotesk text-[length:max(0.75rem,11px)] uppercase"
       >
         Contact us
-      </a>
+      </Link>
     </div>
   );
 }

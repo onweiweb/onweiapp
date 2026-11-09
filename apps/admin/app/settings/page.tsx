@@ -66,6 +66,9 @@ export default async function SettingsPage({
         initialFacebookUrl={setting.facebookUrl ?? ""}
         initialYoutubeUrl={setting.youtubeUrl ?? ""}
         initialSpotifyUrl={setting.spotifyUrl ?? ""}
+        initialContactAddress={setting.contactAddress ?? ""}
+        initialContactPhone={setting.contactPhone ?? ""}
+        initialContactEmail={setting.contactEmail ?? ""}
       />
     </main>
   );

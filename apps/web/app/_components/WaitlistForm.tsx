@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Button } from "@onwei/ui";
 import { ConsentCheckbox } from "./ConsentCheckbox";
 import { FieldError, INVALID_BORDER } from "./FieldError";
+import { PILL_INPUT } from "./formStyles";
 import { WaitlistSuccessModal } from "./WaitlistSuccessModal";
 import { getFirstTouch } from "../../lib/analytics/attribution";
 import { useFormTracking } from "../../lib/analytics/useFormTracking";
@@ -178,7 +179,7 @@ export function WaitlistForm({
           aria-invalid={Boolean(fieldErrors.name)}
           aria-describedby={fieldErrors.name ? `${nameId}-error` : undefined}
           placeholder="FULL NAME"
-          className={`${fieldErrors.name ? INVALID_BORDER : ""} h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none`}
+          className={`${fieldErrors.name ? INVALID_BORDER : ""} ${PILL_INPUT}`}
         />
         <FieldError id={`${nameId}-error`} message={fieldErrors.name} />
 
@@ -206,7 +207,7 @@ export function WaitlistForm({
           aria-invalid={Boolean(fieldErrors.email)}
           aria-describedby={fieldErrors.email ? `${emailId}-error` : undefined}
           placeholder="EMAIL ADDRESS"
-          className={`${fieldErrors.email ? INVALID_BORDER : ""} h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase tracking-[0.0312rem] text-onwei-blue placeholder:text-onwei-blue focus:outline-none`}
+          className={`${fieldErrors.email ? INVALID_BORDER : ""} ${PILL_INPUT} tracking-[0.0312rem]`}
         />
         <FieldError id={`${emailId}-error`} message={fieldErrors.email} />
 
@@ -227,7 +228,7 @@ export function WaitlistForm({
           aria-invalid={Boolean(fieldErrors.phone)}
           aria-describedby={fieldErrors.phone ? `${phoneId}-error` : undefined}
           placeholder="PHONE NUMBER"
-          className={`${fieldErrors.phone ? INVALID_BORDER : ""} h-12 w-full rounded-[31.25rem] border border-onwei-blue bg-transparent px-5 font-cta text-cta uppercase text-onwei-blue placeholder:text-onwei-blue focus:outline-none`}
+          className={`${fieldErrors.phone ? INVALID_BORDER : ""} ${PILL_INPUT}`}
         />
         <FieldError id={`${phoneId}-error`} message={fieldErrors.phone} />
 

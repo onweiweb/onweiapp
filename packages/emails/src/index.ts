@@ -18,3 +18,5 @@ export {
   renderNewOrderAlertEmail,
 } from "./templates/orderEmails";
 export type { OrderEmailInput } from "./templates/orderEmails";
+export { renderContactAlertEmail } from "./templates/contactEmails";
+export type { ContactAlertInput } from "./templates/contactEmails";

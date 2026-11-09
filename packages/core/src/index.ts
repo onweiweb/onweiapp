@@ -466,3 +466,17 @@ export {
   captureRazorpayPayment,
   type RazorpayRefund,
 } from "./payments/razorpay";
+
+export {
+  CONTACT_LIMITS,
+  validateContactInput,
+  checkContactRateLimit,
+  saveContactMessage,
+  listContactMessages,
+  countNewContactMessages,
+  setContactMessageStatus,
+  type ContactField,
+  type ContactInput,
+  type ContactValidation,
+  type ContactMessageRow,
+} from "./contact/contactMessages";

@@ -53,6 +53,7 @@ const NAV_GROUPS = [
       { label: "Returns", href: "/returns", icon: "Undo2" },
       { label: "Coupons", href: "/coupons", icon: "Ticket" },
       { label: "Customers", href: "/customers", icon: "UsersRound" },
+      { label: "Messages", href: "/messages", icon: "Inbox" },
     ],
   },
   {

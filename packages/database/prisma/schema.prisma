@@ -891,8 +891,34 @@ model SiteSetting {
   facebookUrl             String?
   youtubeUrl              String?
   spotifyUrl              String?
+  // Contact Us page "For more support" block, null hides that line.
+  contactAddress          String?
+  contactPhone            String?
+  contactEmail            String?
   updatedAt               DateTime @updatedAt
   updatedByStaffId        String?
+}
+
+// A message sent from the storefront's Contact Us form. Staff read and mark
+// them replied in admin (Messages). The email alert is a convenience; this
+// row is the record.
+model ContactMessage {
+  id               String        @id @default(cuid())
+  fullName         String
+  email            String
+  phone            String?
+  message          String
+  status           ContactStatus @default(NEW)
+  createdAt        DateTime      @default(now())
+  repliedAt        DateTime?
+  repliedByStaffId String?
+
+  @@index([status, createdAt])
+}
+
+enum ContactStatus {
+  NEW
+  REPLIED
 }
 
 // Shop rules staff set in admin Settings: delivery fee, cash on delivery and

@@ -26,6 +26,7 @@ import {
   FileSearch,
   BarChart3,
   Scale,
+  Inbox,
   type LucideIcon,
 } from "lucide-react";
 
@@ -53,6 +54,7 @@ const ICONS = {
   FileSearch,
   BarChart3,
   Scale,
+  Inbox,
 } satisfies Record<string, LucideIcon>;
 
 export type AdminNavIconName = keyof typeof ICONS;

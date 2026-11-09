@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AdminButton, AdminInput, AdminSelect } from "./ui";
+import { AdminButton, AdminInput, AdminSelect, AdminTextarea } from "./ui";
 
 type SiteMode = "WAITLIST" | "PREORDERS" | "LIVE";
 
@@ -49,6 +49,9 @@ export function SiteSettingForm({
   initialFacebookUrl,
   initialYoutubeUrl,
   initialSpotifyUrl,
+  initialContactAddress,
+  initialContactPhone,
+  initialContactEmail,
 }: {
   initialSiteMode: SiteMode;
   initialLaunchAt: string;
@@ -60,6 +63,9 @@ export function SiteSettingForm({
   initialFacebookUrl: string;
   initialYoutubeUrl: string;
   initialSpotifyUrl: string;
+  initialContactAddress: string;
+  initialContactPhone: string;
+  initialContactEmail: string;
 }) {
   const router = useRouter();
   const [siteMode, setSiteMode] = useState<SiteMode>(initialSiteMode);
@@ -78,6 +84,9 @@ export function SiteSettingForm({
   const [facebookUrl, setFacebookUrl] = useState(initialFacebookUrl);
   const [youtubeUrl, setYoutubeUrl] = useState(initialYoutubeUrl);
   const [spotifyUrl, setSpotifyUrl] = useState(initialSpotifyUrl);
+  const [contactAddress, setContactAddress] = useState(initialContactAddress);
+  const [contactPhone, setContactPhone] = useState(initialContactPhone);
+  const [contactEmail, setContactEmail] = useState(initialContactEmail);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -94,6 +103,9 @@ export function SiteSettingForm({
     facebookUrl.trim(),
     youtubeUrl.trim(),
     spotifyUrl.trim(),
+    contactAddress.trim(),
+    contactPhone.trim(),
+    contactEmail.trim(),
   ]);
   const [baseline, setBaseline] = useState(current);
   const dirty = current !== baseline;
@@ -122,6 +134,9 @@ export function SiteSettingForm({
           facebookUrl: facebookUrl.trim() || null,
           youtubeUrl: youtubeUrl.trim() || null,
           spotifyUrl: spotifyUrl.trim() || null,
+          contactAddress: contactAddress.trim() || null,
+          contactPhone: contactPhone.trim() || null,
+          contactEmail: contactEmail.trim() || null,
         }),
       });
       const data = (await response.json()) as { ok: boolean; error?: string };
@@ -288,6 +303,44 @@ export function SiteSettingForm({
             value={spotifyUrl}
             onChange={(event) => setSpotifyUrl(event.target.value)}
             placeholder="https://open.spotify.com/user/onwei"
+          />
+        </label>
+
+        <div className="flex flex-col gap-1 pt-4">
+          <p className="text-sm font-medium">Contact details</p>
+          <p className="text-xs text-onwei-blue/70">
+            Shown under &quot;For more support&quot; on the Contact Us page.
+            Messages from its form are emailed to the support email and saved
+            under Messages. Leave a field blank to hide it.
+          </p>
+        </div>
+
+        <label className="flex flex-col gap-1.5 text-sm">
+          Address
+          <AdminTextarea
+            rows={4}
+            value={contactAddress}
+            onChange={(event) => setContactAddress(event.target.value)}
+            placeholder={"Street\nCity\nState and PIN code"}
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm">
+          Phone
+          <AdminInput
+            value={contactPhone}
+            onChange={(event) => setContactPhone(event.target.value)}
+            placeholder="+91 98765 43210"
+          />
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm">
+          Support email
+          <AdminInput
+            type="email"
+            value={contactEmail}
+            onChange={(event) => setContactEmail(event.target.value)}
+            placeholder="support@onwei.in"
           />
         </label>
       </div>

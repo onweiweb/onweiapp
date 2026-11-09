@@ -93,8 +93,9 @@ read before assuming something that looks broken is a missing asset.
 - Admin lists page with `apps/admin/app/_lib/pagination.ts` plus `AdminPager`, never a bare `take: N`.
 - State changes (orders, and later shipments, payments, invoices) use a transaction with a compare-and-set
   on the old status, and write history and audit rows in the same transaction.
-- Orders/checkout, GST invoicing, delivery partner and CRM are deliberately not built yet and have no
-  answers. Do not start them or add schema for them without an approved plan.
+- Orders, checkout, payments, coupons and returns are built (see `docs/COMMERCE_BUILD_PLAN.md`). GST invoicing,
+  delivery partner and CRM are deliberately not built yet and have no answers. Do not start them or add schema for them
+  without an approved plan.
 
 ## Databases and migrations (added 2026-10-01)
 
@@ -224,7 +225,8 @@ attribution on signups, the admin `/analytics` page reads reports back. Full pri
 - Redis (Upstash), OTP throttling, sessions, caching
 - Tailwind CSS + a small headless component layer
 - Vitest + React Testing Library (unit/integration), Playwright (e2e)
-- Payments: Razorpay is the leading candidate, **not yet finalized (placeholder)**; SMS/email OTP provider, **not yet confirmed**
+- Payments: Razorpay (live, Standard Checkout, server capture, webhook). Email OTP via Resend; SMS/WhatsApp provider
+  not chosen yet (static code, refused on live prod)
 - Hosting: Vercel; Vercel Postgres for data, Vercel Blob for images/uploads, confirmed
 - Amazon reviews: paid third-party aggregation service (confirmed route; vendor not yet picked)
 - Figma: Dev Mode MCP server connected live in Claude Code (not static exports)
@@ -282,9 +284,19 @@ docs/       -> architecture, schema rationale, test plan, security notes, open d
 ## Current phase
 
 **Latest (2026-11-09):** the commerce build (Insider codes, coupons, sign-in, cart, checkout with Razorpay and COD,
-account, returns, staff tools) is built locally and NOT pushed; dev DB migrated, prod not. Read
-`docs/COMMERCE_BUILD_PLAN.md` (progress log, launch checklist) before touching any of it. Orders/checkout are no longer
-"not built"; GST invoicing, delivery partner and CRM still are.
+account, returns, staff tools) is pushed (3650c51, then the feedback round b64b37c) and prod is migrated. Prod is still
+in WAITLIST mode, so the shop is hidden until the owner flips it to LIVE. Razorpay live keys and webhook, Resend
+(`onwei.in` and `mail.onwei.in` verified) and `admin.onwei.in` are set up. Read `docs/COMMERCE_BUILD_PLAN.md`
+(progress log, launch checklist, section 18) before touching any of it. Left: owner's admin setup (GST/HSN, shop rules,
+marquee, refund permission, Insider tiers), Insider email send (100 a day), Phase G (real SMS and WhatsApp, phone
+sign-in is refused on live prod until then), Phase H pre-order (needs answers in section 14a), and unplanned gaps
+(shipped/delivered/refund emails, PIN autofill). GST invoicing, delivery partner and CRM are still not started.
+Local test data: dev waitlist entry and Insider code WEI6615 for the owner's own email; test orders ONW1001 to ONW1006.
+Contact Us (2026-11-09, local, not pushed): `/contact` from Figma 1189:6006 / 1189:6203, reusing SiteHeader, FaqSection
+(new `expandAfter` for in-place "view all"), InstagramGrid, SiteFooter, shared `formStyles.ts` and `SocialIcons.tsx`.
+Messages are saved (`ContactMessage`), emailed to the support address with the sender as reply-to, and handled in admin
+Messages (`customer:view`). Contact details live on `SiteSetting` (admin Settings). Two migrations
+(`20261110120000_contact_us`, `20261110120100_contact_address_lines`) need the prod migration before the push.
 
 **Latest (2026-10-21):** Blogs page and admin blog editor, admin overhaul (speed, nav, shared kit), waitlist blog switch,
 blog analytics, product delete and redesigned product pages are pushed (up to f34223b). The backup product image work

@@ -1,4 +1,4 @@
-import { updateSiteSetting } from "@onwei/core";
+import { isValidEmail, updateSiteSetting } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { defineAdminRoute } from "../_lib/defineAdminRoute";
@@ -44,6 +44,16 @@ const bodySchema = z.object({
   facebookUrl: linkField,
   youtubeUrl: linkField,
   spotifyUrl: linkField,
+  contactAddress: z.string().trim().max(300).nullable().optional(),
+  contactPhone: z.string().trim().max(30).nullable().optional(),
+  contactEmail: z
+    .string()
+    .trim()
+    .nullable()
+    .refine((value) => !value || isValidEmail(value), {
+      error: "That support email doesn't look right.",
+    })
+    .optional(),
 });
 
 export const PATCH = defineAdminRoute(

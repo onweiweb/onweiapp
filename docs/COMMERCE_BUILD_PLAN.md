@@ -157,13 +157,14 @@ Pushed as 3650c51 (web and admin). Then, from the owner's testing, built locally
 
 Before launch (all after the phases, as agreed):
 
-1. Prod migrations (owner, `DIRECT_URL`): the five migrations from 2026-11-09.
+1. Prod migrations (owner, `DIRECT_URL`): the five migrations from 2026-11-09. Done by the owner 2026-11-09.
 2. Vercel env, web: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET`, `INSIDER_LINK_SECRET`,
    `CRON_SECRET`, `ORDER_ALERT_EMAIL` (optional), `ADMIN_APP_URL`, `OTP_STATIC_CODE` (until providers). Admin:
    `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `INSIDER_LINK_SECRET`, `RESEND_API_KEY`, `INSIDER_EMAIL_FROM`,
    `INSIDER_EMAIL_REPLY_TO`, `WEB_APP_URL`.
 3. Razorpay webhook: `https://<web domain>/api/payments/razorpay/webhook`, events payment.authorized, payment.captured,
-   payment.failed, order.paid, refund.processed, refund.failed.
+   payment.failed, order.paid, refund.processed, refund.failed. Created in test and live mode; live secret set on web
+   2026-11-09 (owner).
 4. Resend: verify `onwei.in`, rotate the exposed key, set the sender. Owner chose the free plan: the Insider email
    goes out 100 one day and the rest the next (admin Email tab has a "How many to send now" box, default 100).
    Done 2026-11-09: `onwei.in` and `mail.onwei.in` both verified in Resend, new key in place. Still to set on the admin
@@ -588,7 +589,7 @@ File: "On Wei || Checkout, Pre-order, Cart, Contact US" (`TgMpkXMC2QpghHlH6N63oV
 | Payment successful                             | 1257:7316                   | 1257:7898     | Order number, progress (placed, packing, shipped, delivered), details, "Track your order"                             |
 | Payment failed                                 | 1257:7520                   | 1257:8064     | "Try payment again", "Use another method", "Your cart's saved"                                                        |
 | Checkout abandoned                             | 1257:7695                   | 1257:8202     | Steps "Cart, Details, Payment", "Complete checkout"                                                                   |
-| Contact Us                                     | 1189:6005                   | 1189:6203     | Not built yet, separate from this plan                                                                                |
+| Contact Us                                     | 1189:6006                   | 1189:6203     | Built 2026-11-09 (`/contact`, admin Messages)                                                                         |
 | Header with "Insiders", account and cart icons | inside the pre-order frames |               | Header change for launch                                                                                              |
 
 ### Missing (approved 2026-11-09: design in the existing style)
