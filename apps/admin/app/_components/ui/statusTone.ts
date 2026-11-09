@@ -52,15 +52,24 @@ export function paymentStatusTone(
 }
 
 export function returnStatusTone(
-  status: "REQUESTED" | "APPROVED" | "REJECTED" | "PICKED_UP" | "REFUNDED",
+  status:
+    | "REQUESTED"
+    | "APPROVED"
+    | "REJECTED"
+    | "PICKED_UP"
+    | "RECEIVED"
+    | "REFUNDED"
+    | "EXCHANGED",
 ): StatusTone {
   switch (status) {
     case "REQUESTED":
       return "pending";
     case "APPROVED":
     case "PICKED_UP":
+    case "RECEIVED":
       return "active";
     case "REFUNDED":
+    case "EXCHANGED":
       return "success";
     case "REJECTED":
       return "problem";

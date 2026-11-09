@@ -45,6 +45,9 @@ export interface WaitlistEntrySummary {
   utmContent: string | null;
   submittedAt: Date;
   unsubscribedAt: Date | null;
+  /** Personal Onwei Insider code, null until assigned. */
+  insiderCode: string | null;
+  codeEmailedAt: Date | null;
 }
 
 export interface ListWaitlistEntriesInput {

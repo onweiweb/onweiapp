@@ -8,6 +8,7 @@ import { ProductForm } from "../../_components/ProductForm";
 import { VariantManager } from "../../_components/VariantManager";
 import { ImageManager } from "../../_components/ImageManager";
 import { ReviewPlacementManager } from "../../_components/ReviewPlacementManager";
+import { ProductCommerceForm } from "../../_components/ProductCommerceForm";
 import { AdminBadge, AdminTabLinks, PageHeader } from "../../_components/ui";
 
 const TABS = [
@@ -15,6 +16,7 @@ const TABS = [
   { id: "photos", label: "Photos" },
   { id: "variants", label: "Variants" },
   { id: "reviews", label: "Featured reviews" },
+  { id: "returns", label: "Returns and tax" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -25,6 +27,7 @@ const TAB_HELP: Record<TabId, string> = {
   variants:
     "Each size and color you sell, with its own code and price. A product can't be bought until it has at least one.",
   reviews: "Pick which approved reviews show on this product's page.",
+  returns: "Whether customers can return it, and its GST details for invoices.",
 };
 
 const STATUS: Record<
@@ -120,6 +123,25 @@ async function TabBody({
           controlRating: product.controlRating?.toString() ?? "",
           metaTitle: product.metaTitle ?? "",
           metaDescription: product.metaDescription ?? "",
+        }}
+      />
+    );
+  }
+
+  if (tab === "returns") {
+    const category = await prisma.category.findUnique({
+      where: { id: product.categoryId },
+      select: { isReturnable: true },
+    });
+    return (
+      <ProductCommerceForm
+        productId={id}
+        categoryReturnable={category?.isReturnable ?? true}
+        initial={{
+          isReturnable: product.isReturnable,
+          hsnCode: product.hsnCode ?? "",
+          gstRate:
+            product.gstRate === null ? "" : String(Number(product.gstRate)),
         }}
       />
     );

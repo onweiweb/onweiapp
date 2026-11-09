@@ -27,8 +27,10 @@ export interface RequestOtpResult {
 export async function requestOtpChallenge(
   input: RequestOtpInput,
   secret: string,
+  /** Static code for SMS/WhatsApp until real providers exist (staticOtp.ts). */
+  fixedCode?: string,
 ): Promise<RequestOtpResult> {
-  const code = generateOtpCode();
+  const code = fixedCode ?? generateOtpCode();
   const codeHash = hashOtpCode(code, secret);
   const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 

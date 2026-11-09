@@ -186,7 +186,9 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(response.status).toBe(401);
     });
 
-    it("approves and restocks on the happy path", async () => {
+    // Since the commerce build, approving accepts the request only; stock goes
+    // back when staff mark the item received (markReturnReceived).
+    it("approves without restocking on the happy path", async () => {
       const { returnRequest, inventory } = await createFixtureReturnRequest();
       const { POST } = await import("./route");
 
@@ -207,7 +209,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       const refreshed = await prisma.inventory.findUniqueOrThrow({
         where: { id: inventory.id },
       });
-      expect(refreshed.quantityOnHand).toBe(7);
+      expect(refreshed.quantityOnHand).toBe(5);
     });
 
     it("returns 400 with a plain-language error for an already-resolved return", async () => {

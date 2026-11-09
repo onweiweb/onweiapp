@@ -1,89 +1,32 @@
 import { prisma } from "@onwei/database";
-import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
+import { approveReturnRequest, ReturnActionError } from "../commerce/returns";
 import type { ResolveReturnInput } from "./types";
 
 /**
- * Approves a ReturnRequest and restocks the returned quantity. Restocks into
- * the first Inventory row found for that variant, only one warehouse
- * ("Onwei Main Warehouse") exists today, so there's no routing decision to
- * make yet; this is a documented assumption, not a solved multi-warehouse
- * flow. Per docs/TEST_PLAN.md: "approved return increments stock and logs
- * reason RETURN."
+ * Approves a ReturnRequest. Since the commerce build (2026-11-09) approving
+ * no longer restocks: stock goes back when staff mark the item received in
+ * good condition (markReturnReceived), so an approved return that never
+ * arrives can't inflate stock.
  */
 export async function approveReturn(
   input: ResolveReturnInput,
   actor: AuditActor,
 ) {
-  const before = await prisma.returnRequest.findUniqueOrThrow({
-    where: { id: input.returnRequestId },
-    include: { orderItem: { include: { productVariant: true } } },
-  });
-
-  const inventoryRow = await prisma.inventory.findFirst({
-    where: { productVariantId: before.orderItem.productVariantId },
-  });
-  if (!inventoryRow) {
-    throw new Error(
-      "no-inventory-row: no stock record exists for this variant to restock into",
-    );
-  }
-
-  // The REQUESTED -> APPROVED transition is claimed via a conditional
-  // updateMany inside the transaction (not a pre-checked `before.status`),
-  // so two concurrent approvals of the same return can't both pass the
-  // status check and both restock.
-  const returnRequest = await prisma.$transaction(async (tx) => {
-    const claimed = await tx.returnRequest.updateMany({
-      where: { id: input.returnRequestId, status: "REQUESTED" },
-      data: { status: "APPROVED", resolvedAt: new Date() },
-    });
-    if (claimed.count === 0) {
-      const current = await tx.returnRequest.findUniqueOrThrow({
+  try {
+    await approveReturnRequest(input.returnRequestId, actor);
+  } catch (error) {
+    if (error instanceof ReturnActionError) {
+      const current = await prisma.returnRequest.findUnique({
         where: { id: input.returnRequestId },
       });
       throw new Error(
-        `not-pending: return request is already ${current.status}`,
+        `not-pending: return request is already ${current?.status ?? "gone"}`,
       );
     }
-
-    await tx.inventory.update({
-      where: { id: inventoryRow.id },
-      data: { quantityOnHand: { increment: before.orderItem.quantity } },
-    });
-    await tx.inventoryLog.create({
-      data: {
-        productVariantId: before.orderItem.productVariantId,
-        variantSku: before.orderItem.productVariant.sku,
-        changeQty: before.orderItem.quantity,
-        reason: "RETURN",
-        actorType: "STAFF",
-        actorId: actor.staffUserId,
-      },
-    });
-
-    const updated = await tx.returnRequest.findUniqueOrThrow({
-      where: { id: input.returnRequestId },
-    });
-
-    await writeAuditLog(
-      {
-        staffUserId: actor.staffUserId,
-        action: "return.approve",
-        entityType: "ReturnRequest",
-        entityId: input.returnRequestId,
-        beforeState: { status: before.status },
-        afterState: {
-          status: updated.status,
-          restockedQty: before.orderItem.quantity,
-          note: input.note ?? null,
-        },
-      },
-      tx,
-    );
-
-    return updated;
+    throw error;
+  }
+  return prisma.returnRequest.findUniqueOrThrow({
+    where: { id: input.returnRequestId },
   });
-
-  return returnRequest;
 }

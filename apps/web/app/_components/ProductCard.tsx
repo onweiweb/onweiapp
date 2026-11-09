@@ -1,9 +1,10 @@
-import Image from "@/_components/ScaledImage";
+import { ProductImage } from "@/_components/ProductImage";
 import Link from "next/link";
 import { formatCurrency } from "@onwei/core";
 import type { ProductListItem } from "@onwei/core";
 import { ProductRating } from "./ProductRating";
 import { HighlightTags } from "./HighlightTags";
+import { QuickAddButton } from "./commerce/QuickAddButton";
 
 export function ProductCard({
   product,
@@ -38,16 +39,14 @@ export function ProductCard({
         className="flex w-full flex-col items-start gap-3"
       >
         <div className="relative h-[16.0625rem] w-full overflow-hidden rounded-[1.25rem] bg-onwei-green desk:h-[19.6875rem] desk:rounded-[1.875rem] desk:bg-[#f0e9da]">
-          {product.image ? (
-            <Image
-              src={product.image.url}
-              alt={product.image.altText ?? product.name}
-              fill
-              sizes="282px"
-              loading={eager ? "eager" : "lazy"}
-              className="object-contain p-6 desk:p-0"
-            />
-          ) : null}
+          <ProductImage
+            src={product.image?.url}
+            alt={product.image?.altText ?? product.name}
+            fill
+            sizes="282px"
+            loading={eager ? "eager" : "lazy"}
+            className="object-contain p-6 desk:p-0"
+          />
         </div>
         <div className="flex w-full flex-col items-start gap-2">
           {product.reviewSummary ? (
@@ -62,16 +61,12 @@ export function ProductCard({
           <HighlightTags tags={tags} />
         </div>
       </Link>
-      {/* Figma labels this "add to cart", but cart/checkout is Phase 2 and
-          doesn't exist yet (see CLAUDE.md "Current phase"). It links to the
-          product page rather than performing an add-to-cart action, a
-          functional stand-in, not a design change. */}
-      <Link
-        href={`/product/${product.slug}`}
+      <QuickAddButton
+        productId={product.id}
+        slug={product.slug}
+        inStock={product.inStock}
         className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-2.5 font-grotesk text-[length:max(0.75rem,11px)] uppercase leading-none text-onwei-beige desk:py-3 desk:text-label"
-      >
-        add to cart
-      </Link>
+      />
     </div>
   );
 }

@@ -34,7 +34,11 @@ export async function updateOrderStatus(
 
     const updated = await tx.order.updateMany({
       where: { id: input.orderId, status: before.status },
-      data: { status: input.toStatus },
+      data: {
+        status: input.toStatus,
+        ...(input.toStatus === "SHIPPED" ? { shippedAt: new Date() } : {}),
+        ...(input.toStatus === "DELIVERED" ? { deliveredAt: new Date() } : {}),
+      },
     });
     if (updated.count === 0) {
       throw new Error(

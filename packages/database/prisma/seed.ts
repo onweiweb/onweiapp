@@ -48,39 +48,6 @@ interface FaqSeed {
   sortOrder: number;
 }
 
-// Figma's own Homepage (node 758:2329, "Frame 31" / the "shop our gear"
-// section) reuses one placeholder product photo across every card, even
-// though the cards are conceptually different products, there is no
-// separate placeholder photo per product in the file. This mirrors that:
-// one shared, real Figma-exported placeholder gallery for every seeded
-// product, rather than inventing distinct flat-color mocks per SKU. Four
-// images (main + 3 thumbnails) so the PDP's gallery/thumbnail rail (Figma
-// frame "PDP_draft 2", node 759:3026 "Img") has something to render,
-// exported straight from that node's own main/thumbnail children
-// (759:3031, 759:3028-3030).
-const PLACEHOLDER_IMAGE_SET = [
-  {
-    suffix: "primary-image",
-    url: "/images/products/placeholder-main.png",
-    sortOrder: 0,
-  },
-  {
-    suffix: "thumb-1",
-    url: "/images/products/placeholder-thumb-1.png",
-    sortOrder: 1,
-  },
-  {
-    suffix: "thumb-2",
-    url: "/images/products/placeholder-thumb-2.png",
-    sortOrder: 2,
-  },
-  {
-    suffix: "thumb-3",
-    url: "/images/products/placeholder-thumb-3.png",
-    sortOrder: 3,
-  },
-] as const;
-
 // Shared across the three paddles below, same construction, same care
 // regardless of tier. Kept as a constant rather than repeated per product.
 const PADDLE_CARE_INSTRUCTIONS =
@@ -710,20 +677,8 @@ async function seedCategory(input: {
       },
     });
 
-    for (const image of PLACEHOLDER_IMAGE_SET) {
-      await prisma.productImage.upsert({
-        where: { id: `${product.id}-${image.suffix}` },
-        update: { url: image.url, sortOrder: image.sortOrder },
-        create: {
-          id: `${product.id}-${image.suffix}`,
-          productId: product.id,
-          url: image.url,
-          altText: productSeed.name,
-          sortOrder: image.sortOrder,
-          isPlaceholder: true,
-        },
-      });
-    }
+    // No placeholder photo rows: the storefront and admin show a shared
+    // "photo coming soon" tile for a product with no real photo.
 
     for (const variantSeed of productSeed.variants) {
       const variant = await prisma.productVariant.upsert({
@@ -871,6 +826,7 @@ const PERMISSION_KEYS = [
   "inventory:adjust",
   "order:view",
   "order:updateStatus",
+  "order:refund",
   "return:view",
   "return:approve",
   "return:reject",

@@ -9,6 +9,14 @@ const ALWAYS_ALLOWED_PREFIXES = [
   "/privacy",
   "/terms",
   "/api/waitlist",
+  // Private links from the Insider email ("Share your address",
+  // unsubscribe). Each request is checked against its signed token.
+  "/insider",
+  "/api/insider",
+  // Razorpay's server-to-server webhook (signature checked in the route) and
+  // the scheduled clean-up of unpaid orders (CRON_SECRET checked).
+  "/api/payments/razorpay/webhook",
+  "/api/cron/release-orders",
   // Analytics events (rewritten to PostHog in next.config.ts), must never
   // be redirected to the waitlist page.
   "/ingest",

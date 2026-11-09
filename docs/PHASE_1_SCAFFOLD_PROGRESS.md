@@ -231,10 +231,10 @@ Shipped and live at https://onweiapp.vercel.app (commits `3481699`, `a6a0f56`, `
 Two Vercel projects under the `onwei` team, both linked to `onweiweb/onweiapp` on GitHub (`main`
 branch), both pointed at the same Neon database:
 
-| Project          | Root Directory | URL                               |
-| ---------------- | -------------- | --------------------------------- |
-| `onweiapp`       | `apps/web`     | https://onweiapp.vercel.app       |
-| `onweiapp-admin` | `apps/admin`   | https://onweiapp-admin.vercel.app |
+| Project          | Root Directory | URL                                                                               |
+| ---------------- | -------------- | --------------------------------------------------------------------------------- |
+| `onweiapp`       | `apps/web`     | https://onweiapp.vercel.app                                                       |
+| `onweiapp-admin` | `apps/admin`   | https://admin.onwei.in (since 2026-11-09; also https://onweiapp-admin.vercel.app) |
 
 `onweiapp` already had a Vercel Postgres/Neon marketplace integration connected (auto-injects
 `DATABASE_URL` + the full `PG*`/`POSTGRES_*` var set), that's the same database migrated earlier.
@@ -453,7 +453,7 @@ New `/journal` index (featured latest post, 3-column card grid, `?page=` paginat
 "Back to Blogs" link and a "more from the playbook" row. No Figma frame exists, layout was approved in chat
 and reuses the homepage card style (`BlogCard`). Admin Content > Blog posts: edit existing posts, cover image
 upload (`/api/content/articles/cover`), formatting buttons and preview. Core: `listPublishedArticlesPage`.
-No schema change, no prod migration. Not pushed.
+No schema change. Pushed 2026-10-19 (1abc1c5).
 
 ## Blog analytics (2026-10-19)
 
@@ -461,6 +461,39 @@ Events `blog_card_clicked` (post_slug, source: home, waitlist, journal, post_mor
 (target: all_blogs, back_to_blogs; source) are sent through `TrackedLink` (a link that sends one typed event on
 click). Admin `/analytics` has a "Blog posts" section (`getBlogReport`): views, people and share who read most of each
 post, plus card clicks by source. It ignores the page filter. Pageviews and the "Journal" page type already existed.
+
+## Admin overhaul (2026-10-20), pushed (3d3914d, f34223b)
+
+Speed: `getStaffAccess` (packages/auth) fetches staff, roles and permissions in one round trip, and
+`apps/admin/app/_lib/session.ts` wraps it in React `cache` so layout and page share it (`requirePageSession` no longer
+queries). `app/loading.tsx` gives every page an instant skeleton. Pages with sections load only the open tab (URL
+tabs via `AdminTabLinks`). Nav is always expanded and grouped: Dashboard, Catalog, Sales, Audience, Website content, Team
+and settings. Content split into `/content/blog`, `/content/homepage?tab=value-props|instagram|marquee` and
+`/content/legal?tab=privacy|terms` (`/content` redirects). Shared kit in `app/_components/ui`: `PageHeader`,
+`LinkButton`, `Field`, `EmptyState`, `AdminTabLinks`, and `AdminFeedback` (`useConfirm`, `useToast`, replaces every
+`window.confirm`). Dashboard has a "Needs attention" panel. Edit forms keep Save disabled until something changed
+(baseline kept in state, not a ref, because lint forbids reading refs in render). Global CSS in `globals.css` gives
+buttons the pointer cursor and selects a custom chevron with right padding.
+
+## Waitlist blog switch (2026-10-20), pushed
+
+`SiteSetting.showBlogOnWaitlist` (migration `20261019120000_add_show_blog_on_waitlist`, applied to prod by the owner).
+When on: `/ontheway` shows a "From the playbook" row (`WaitlistBlogSection`, carousel on mobile) and `proxy.ts` lets
+`/journal` pages through the waitlist gate, using the waitlist header and footer. Saving Site settings pings the
+storefront (`triggerCatalogRevalidate("site-setting")`, `/api/revalidate`) which clears the settings cache and
+revalidates `/ontheway`, `/about`, `/journal`, so the switch takes effect in seconds (needs `WEB_APP_URL` and
+`REVALIDATE_SECRET` on the admin project).
+
+## Products admin and backup image (2026-10-21)
+
+Products: delete (soft delete, `product:delete`, `DeleteProductButton`) on list and edit page, deleted products hidden
+from inventory and category counts and 404 in admin. List has thumbnails, price range, status filter and search. Create
+and edit are one page (`ProductForm`, sticky Publishing card), edit uses URL tabs (details, photos, variants, featured
+reviews), photos are a grid with drag and drop. Backup image: storefront shows `/images/products/no-photo.svg` through
+`ProductImage` when a product has no photo or it fails to load, admin uses `SafeImage` and `ProductThumb`. The seed no
+longer creates placeholder photo rows and dev placeholder rows were deleted. Prod placeholder rows (`isPlaceholder`)
+are still there until removed from each product's Photos tab. The old `placeholder-*.png` files stay in
+`apps/web/public/images/products/` until prod is clear. The backup image work is not pushed yet.
 
 ## Update discipline
 

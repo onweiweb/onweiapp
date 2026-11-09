@@ -49,7 +49,7 @@ export default async function WaitlistPage({
 
       <form method="get" className="flex items-end gap-3">
         <label className="flex flex-col gap-1.5 text-sm">
-          Search by name, email, or phone
+          Search by name, email, phone or Insider code
           <AdminInput
             type="search"
             name="q"
@@ -75,6 +75,7 @@ export default async function WaitlistPage({
             <AdminTableHead>
               <AdminTableHeaderCell>No.</AdminTableHeaderCell>
               <AdminTableHeaderCell>Name</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Insider code</AdminTableHeaderCell>
               <AdminTableHeaderCell>Email</AdminTableHeaderCell>
               <AdminTableHeaderCell>Phone</AdminTableHeaderCell>
               <AdminTableHeaderCell>Movement flex</AdminTableHeaderCell>
@@ -88,6 +89,20 @@ export default async function WaitlistPage({
                 <AdminTableRow key={entry.id}>
                   <AdminTableCell>{firstSerial - index}</AdminTableCell>
                   <AdminTableCell>{entry.fullName}</AdminTableCell>
+                  <AdminTableCell>
+                    {entry.insiderCode ? (
+                      <span className="font-mono font-semibold tracking-wider">
+                        {entry.insiderCode}
+                      </span>
+                    ) : (
+                      <span className="text-onwei-blue/50">Not yet</span>
+                    )}
+                    {entry.codeEmailedAt ? (
+                      <span className="block text-xs text-onwei-blue/60">
+                        Emailed
+                      </span>
+                    ) : null}
+                  </AdminTableCell>
                   <AdminTableCell>{entry.email}</AdminTableCell>
                   <AdminTableCell>{entry.phone}</AdminTableCell>
                   <AdminTableCell>{entry.movementFlex ?? "-"}</AdminTableCell>

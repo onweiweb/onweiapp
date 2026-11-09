@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Image from "@/_components/ScaledImage";
+import { ProductImage } from "@/_components/ProductImage";
 import type { ProductImageDTO } from "@onwei/core";
 
 // Figma (frame "PDP_draft 2", node 759:3026 "Img") only specs the static
@@ -33,7 +33,7 @@ export function ProductGallery({
               aria-label={`Show image ${index + 1} of ${images.length}`}
               className="relative min-h-0 w-full flex-1 overflow-hidden rounded-[1.25rem]"
             >
-              <Image
+              <ProductImage
                 src={image.url}
                 alt={image.altText ?? productName}
                 fill
@@ -45,15 +45,13 @@ export function ProductGallery({
         </div>
       ) : null}
       <div className="relative aspect-square w-full overflow-hidden rounded-[1.875rem] border border-onwei-blue bg-onwei-green desk:h-[44.1875rem] desk:w-[39.75rem]">
-        {selected ? (
-          <Image
-            src={selected.url}
-            alt={selected.altText ?? productName}
-            fill
-            sizes="((min-width: 768px)) 636px, 100vw"
-            className="object-contain p-6 desk:p-4"
-          />
-        ) : null}
+        <ProductImage
+          src={selected?.url}
+          alt={selected?.altText ?? productName}
+          fill
+          sizes="((min-width: 768px)) 636px, 100vw"
+          className="object-contain p-6 desk:p-4"
+        />
       </div>
     </div>
   );

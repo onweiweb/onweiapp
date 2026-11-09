@@ -23,7 +23,34 @@ export const buyXGetYConfigSchema = z.object({
   getQty: z.number().int().min(1, "Free quantity must be at least 1."),
 });
 
+/** Amounts in rupees. Each tier: spend at least minSubtotal, get percent off. */
+export const tieredConfigSchema = z.object({
+  tiers: z
+    .array(
+      z.object({
+        minSubtotal: z
+          .number()
+          .positive("Each step needs a cart value above 0."),
+        percent: z
+          .number()
+          .int("Use whole percentages.")
+          .min(1, "Percentage must be between 1 and 90.")
+          .max(90, "Percentage must be between 1 and 90."),
+      }),
+    )
+    .min(1, "Add at least one step.")
+    .max(5, "Use at most five steps.")
+    .refine(
+      (tiers) =>
+        new Set(tiers.map((tier) => tier.minSubtotal)).size === tiers.length,
+      "Each step needs a different cart value.",
+    ),
+});
+
+export const freeShippingConfigSchema = z.object({});
+
 export type PercentageConfig = z.infer<typeof percentageConfigSchema>;
+export type TieredConfig = z.infer<typeof tieredConfigSchema>;
 export type FlatConfig = z.infer<typeof flatConfigSchema>;
 export type BuyXGetYConfig = z.infer<typeof buyXGetYConfigSchema>;
 
@@ -40,7 +67,11 @@ export function validateDiscountRuleConfig(
       ? percentageConfigSchema
       : type === "FLAT"
         ? flatConfigSchema
-        : buyXGetYConfigSchema;
+        : type === "BUY_X_GET_Y"
+          ? buyXGetYConfigSchema
+          : type === "TIERED"
+            ? tieredConfigSchema
+            : freeShippingConfigSchema;
 
   const result = schema.safeParse(config);
   if (!result.success) {

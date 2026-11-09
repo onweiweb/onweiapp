@@ -28,6 +28,10 @@ export interface AnalyticsEvents {
   variant_selected: { product_slug: string; variant_id: string };
   collection_viewed: { category_slug: string; product_count: number };
   collection_sorted: { category_slug: string; sort: string };
+  add_to_cart: { product_slug: string; variant_id: string };
+  checkout_started: { item_count: number; total: number };
+  order_placed: { payment_method: "RAZORPAY" | "COD"; total: number };
+  payment_failed: { reason: string };
 
   // Blog events.
   blog_card_clicked: {

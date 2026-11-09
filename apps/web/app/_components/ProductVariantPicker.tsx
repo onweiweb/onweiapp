@@ -4,6 +4,8 @@ import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { track } from "../../lib/analytics/track";
 import { useProductVariant } from "./ProductVariantContext";
+import { useCart } from "./commerce/CartProvider";
+import { rupees } from "../../lib/messages/commerce";
 
 // Figma 759:3069 / 759:3078: 30px pills, 48px side padding, the picked one
 // filled green and semibold, the rest medium weight. Size pills share the
@@ -24,6 +26,7 @@ export function ProductVariantPicker() {
     setSelectedSize,
     selectedVariant,
   } = useProductVariant();
+  const { add, busy, freeShippingThreshold } = useCart();
 
   // Report a pick, not the default shown on load.
   const pathname = usePathname();
@@ -80,19 +83,29 @@ export function ProductVariantPicker() {
       ) : null}
 
       <div className="flex w-full flex-col items-center gap-3 pt-3">
-        {/* Always disabled: cart/checkout is Phase 2 and doesn't exist yet
-            (see CLAUDE.md "Current phase"). Rendered present-and-disabled
-            per the Phase 1 plan rather than omitted, since Figma specs it. */}
         <button
           type="button"
-          disabled
-          className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase leading-none text-onwei-beige disabled:cursor-not-allowed"
+          disabled={!selectedVariant.inStock || busy}
+          onClick={() => {
+            track("add_to_cart", {
+              product_slug: pathname.split("/").pop() ?? "",
+              variant_id: selectedVariant.id,
+            });
+            void add(selectedVariant.id, 1);
+          }}
+          className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase leading-none text-onwei-beige disabled:cursor-not-allowed disabled:opacity-60"
         >
-          add to cart
+          {selectedVariant.inStock
+            ? busy
+              ? "adding..."
+              : "add to cart"
+            : "sold out"}
         </button>
         <p className="font-display text-[length:max(0.75rem,11px)] text-onwei-blue">
           {selectedVariant.inStock
-            ? "Free shipping on orders over ₹1500"
+            ? freeShippingThreshold
+              ? `Free shipping on orders over ${rupees(freeShippingThreshold)}`
+              : "Free shipping on bigger orders"
             : "Out of stock in this size/color"}
         </p>
       </div>

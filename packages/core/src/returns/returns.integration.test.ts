@@ -3,6 +3,7 @@ import { prisma } from "@onwei/database";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { approveReturn } from "./approveReturn";
 import { rejectReturn } from "./rejectReturn";
+import { markReturnReceived } from "../commerce/returns";
 
 describe.skipIf(!process.env.DATABASE_URL)(
   "approveReturn / rejectReturn (integration)",
@@ -166,6 +167,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
           orderId: order.id,
           orderItemId: orderItem.id,
           reason: "Doesn't fit",
+          quantity: 2,
         },
       });
       createdReturnIds.push(returnRequest.id);
@@ -173,7 +175,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       return { returnRequest, variant, inventory };
     }
 
-    it("approving restocks the returned quantity, logs reason RETURN, and writes an audit log entry", async () => {
+    it("approving accepts the request without restocking; receiving restocks and logs RETURN", async () => {
       const { returnRequest, variant, inventory } =
         await createFixtureReturnRequest(5);
 
@@ -181,9 +183,16 @@ describe.skipIf(!process.env.DATABASE_URL)(
         { returnRequestId: returnRequest.id },
         actor,
       );
-
       expect(updated.status).toBe("APPROVED");
+      expect(
+        (
+          await prisma.inventory.findUniqueOrThrow({
+            where: { id: inventory.id },
+          })
+        ).quantityOnHand,
+      ).toBe(5);
 
+      await markReturnReceived(returnRequest.id, true, actor);
       const refreshedInventory = await prisma.inventory.findUniqueOrThrow({
         where: { id: inventory.id },
       });
@@ -196,7 +205,10 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(inventoryLog?.productVariantId).toBe(variant.id);
 
       const auditLogs = await trackAuditLogsFor(returnRequest.id);
-      expect(auditLogs.some((log) => log.action === "return.approve")).toBe(
+      expect(auditLogs.some((log) => log.action === "return.approved")).toBe(
+        true,
+      );
+      expect(auditLogs.some((log) => log.action === "return.received")).toBe(
         true,
       );
     });
@@ -217,15 +229,15 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(refreshedInventory.quantityOnHand).toBe(5);
     });
 
-    it("only restocks once when the same return is approved concurrently", async () => {
+    it("only restocks once when the same return is received concurrently", async () => {
       const { returnRequest, inventory } = await createFixtureReturnRequest(5);
+      await approveReturn({ returnRequestId: returnRequest.id }, actor);
 
-      // Two concurrent approvals of the same REQUESTED return. A
-      // read-status-then-write implementation lets both pass the status
-      // check and double-restock; the conditional updateMany claim can't.
+      // Two concurrent "received" clicks. The conditional updateMany claim
+      // lets only one through, so stock goes back once.
       const results = await Promise.allSettled([
-        approveReturn({ returnRequestId: returnRequest.id }, actor),
-        approveReturn({ returnRequestId: returnRequest.id }, actor),
+        markReturnReceived(returnRequest.id, true, actor),
+        markReturnReceived(returnRequest.id, true, actor),
       ]);
 
       const fulfilled = results.filter((r) => r.status === "fulfilled");
@@ -233,7 +245,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(fulfilled).toHaveLength(1);
       expect(rejected).toHaveLength(1);
       if (rejected[0]?.status === "rejected") {
-        expect(String(rejected[0].reason)).toMatch(/not-pending/);
+        expect(String(rejected[0].reason)).toMatch(/already/);
       }
 
       const refreshedInventory = await prisma.inventory.findUniqueOrThrow({

@@ -2,6 +2,8 @@ export interface RenderedEmail {
   subject: string;
   html: string;
   text: string;
+  /** Extra mail headers, e.g. List-Unsubscribe on marketing mail. */
+  headers?: Record<string, string>;
 }
 
 /**

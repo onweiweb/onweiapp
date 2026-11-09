@@ -94,7 +94,12 @@ export default async function OrdersPage({
                   </Link>
                 </AdminTableCell>
                 <AdminTableCell>
-                  {order.customer.name ?? order.customer.email ?? "-"}
+                  {order.customer.name ??
+                    order.contactEmail ??
+                    order.customer.email ??
+                    order.contactPhone ??
+                    order.customer.phone ??
+                    "-"}
                 </AdminTableCell>
                 <AdminTableCell>
                   {order.placedAt.toLocaleDateString()}

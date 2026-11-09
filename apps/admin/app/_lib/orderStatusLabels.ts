@@ -1,7 +1,7 @@
 import type { OrderStatus, PaymentStatus, ReturnStatus } from "@onwei/database";
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
-  PENDING: "Pending",
+  PENDING: "Waiting for payment",
   CONFIRMED: "Confirmed",
   PACKED: "Packed",
   SHIPPED: "Shipped",
@@ -25,5 +25,7 @@ export const RETURN_STATUS_LABELS: Record<ReturnStatus, string> = {
   APPROVED: "Approved",
   REJECTED: "Rejected",
   PICKED_UP: "Picked up",
+  RECEIVED: "Received",
   REFUNDED: "Refunded",
+  EXCHANGED: "Exchange sent",
 };

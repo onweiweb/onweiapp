@@ -22,6 +22,7 @@ export async function listWaitlistEntries(
           { fullName: { contains: search, mode: "insensitive" } },
           { email: { contains: search, mode: "insensitive" } },
           { phone: { contains: search } },
+          { insiderCode: { equals: search.replace(/\s+/g, "").toUpperCase() } },
         ],
       }
     : undefined;
@@ -81,6 +82,7 @@ export async function exportWaitlistEntriesToCsv(): Promise<string> {
     "Full name",
     "Email",
     "Phone",
+    "Insider code",
     "Movement flex",
     "Source",
     "Country",
@@ -98,6 +100,7 @@ export async function exportWaitlistEntriesToCsv(): Promise<string> {
     csvEscape(entry.fullName),
     csvEscape(entry.email),
     csvEscape(entry.phone),
+    entry.insiderCode ?? "",
     entry.movementFlex?.toString() ?? "",
     csvEscape(entry.source ?? ""),
     csvEscape(entry.country ?? ""),

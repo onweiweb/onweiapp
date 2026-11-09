@@ -2,6 +2,7 @@ import { PageHeader } from "../../_components/ui";
 import { notFound } from "next/navigation";
 import { prisma } from "@onwei/database";
 import { CategoryForm } from "../../_components/CategoryForm";
+import { CategoryReturnableToggle } from "../../_components/ProductCommerceForm";
 
 export default async function EditCategoryPage({
   params,
@@ -29,6 +30,10 @@ export default async function EditCategoryPage({
           metaTitle: category.metaTitle ?? "",
           metaDescription: category.metaDescription ?? "",
         }}
+      />
+      <CategoryReturnableToggle
+        categoryId={category.id}
+        initial={category.isReturnable}
       />
     </main>
   );

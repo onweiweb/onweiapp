@@ -130,6 +130,27 @@ read before assuming something that looks broken is a missing asset.
   match the frame exactly, at desktop and mobile widths. Compare live screenshots section by section, not by
   reading code.
 
+## Admin conventions (added 2026-10-21)
+
+- Every admin page starts with `PageHeader` (title, description, back link, one primary action). Empty lists use
+  `EmptyState`, form fields use `Field`, link-looking buttons use `LinkButton`. No `neutral-*` classes, raw `<table>`s or
+  raw inputs, use the kit in `apps/admin/app/_components/ui`.
+- Confirmations and success or error messages go through `useConfirm()` and `useToast()`, never `window.confirm` or `alert`.
+- Get the signed-in staff member with `getCurrentStaff()` (`app/_lib/session.ts`) or `requirePageSession()`. Both share one
+  cached lookup per request, do not add new per-page staff or permission queries.
+- Pages with sections use URL tabs (`AdminTabLinks`, `?tab=`) and load only the open tab's data. A page has no `loading.tsx` of
+  its own unless it needs a special one, the root `app/loading.tsx` covers it.
+- Edit forms keep Save disabled until a field changes: keep a `baseline` in `useState` (not `useRef`, lint forbids reading refs in
+  render), compare a JSON snapshot, update the baseline after a successful save.
+- Saving site settings pings the storefront to revalidate (`triggerCatalogRevalidate("site-setting")`). Anything else the web app
+  caches that admin edits should be revalidated the same way.
+- Products and other customer-facing rows are soft deleted. Admin lists, inventory and counts must filter `deletedAt: null`.
+- A product with no photo shows the shared backup tile (`ProductImage` in web, `SafeImage` in admin). Never seed placeholder
+  photo rows.
+- Blog analytics events go through `TrackedLink` (typed events in `apps/web/lib/analytics/events.ts`). Admin Visitors has a
+  "Blog posts" report (`getBlogReport`).
+- The admin has no Figma, dropdown chevron and pointer cursor are global CSS in `apps/admin/app/globals.css`.
+
 ## Responsive system (added 2026-10-01)
 
 - `1rem` is fluid (see `apps/web/app/globals.css`). Desktop (>= 768): 1440px frame = 16px, scales
@@ -254,10 +275,23 @@ docs/       -> architecture, schema rationale, test plan, security notes, open d
 - `docs/SECURITY_AND_DPDP.md`, encryption, consent, data-subject rights
 - `docs/OPEN_DECISIONS.md`, things still needing sign-off before Phase 1
 - `docs/EMAIL_PLAN.md`: parked plan and open questions for real email (OTP, offers, delivery updates)
+- `docs/COMMERCE_BUILD_PLAN.md`: the approved commerce build (Insider codes, coupons, sign-in, cart, checkout,
+  account, returns, Razorpay, pre-order). Read it before any of that work; it has the progress log, coupon safety
+  rules and UX/messaging standards.
 
 ## Current phase
 
-**Latest (2026-10-13):** Homepage, Collection, PDP and About Us were audited against Figma and fixed, and
+**Latest (2026-11-09):** the commerce build (Insider codes, coupons, sign-in, cart, checkout with Razorpay and COD,
+account, returns, staff tools) is built locally and NOT pushed; dev DB migrated, prod not. Read
+`docs/COMMERCE_BUILD_PLAN.md` (progress log, launch checklist) before touching any of it. Orders/checkout are no longer
+"not built"; GST invoicing, delivery partner and CRM still are.
+
+**Latest (2026-10-21):** Blogs page and admin blog editor, admin overhaul (speed, nav, shared kit), waitlist blog switch,
+blog analytics, product delete and redesigned product pages are pushed (up to f34223b). The backup product image work
+(`no-photo.svg`, `ProductImage`, `SafeImage`, seed no longer creates placeholder rows) is done locally and not pushed.
+Prod still has placeholder photo rows to remove from each product's Photos tab. Details: `docs/PHASE_1_SCAFFOLD_PROGRESS.md`.
+
+**Earlier (2026-10-13):** Homepage, Collection, PDP and About Us were audited against Figma and fixed, and
 collection, product and journal pages are prebuilt and revalidated every 60s (sorting runs in the browser). Pushed, live
 but gated by the waitlist. Login, journal article and 404 have no Figma frame, so they wait for an approved design.
 Open items and decisions: `docs/FIGMA_AUDIT.md`. Older status below.

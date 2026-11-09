@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { prisma } from "@onwei/database";
+import {
+  formatCurrency,
+  listCouponsForAdmin,
+  type CouponState,
+} from "@onwei/core";
 import { requirePageSession } from "../_lib/requirePageSession";
 import {
   AdminBadge,
@@ -8,63 +12,81 @@ import {
   AdminTableHead,
   AdminTableHeaderCell,
   AdminTableRow,
+  EmptyState,
   LinkButton,
   PageHeader,
+  type StatusTone,
 } from "../_components/ui";
+
+const STATE: Record<CouponState, { label: string; tone: StatusTone }> = {
+  LIVE: { label: "Live", tone: "success" },
+  SCHEDULED: { label: "Starts later", tone: "pending" },
+  ENDED: { label: "Ended", tone: "problem" },
+  OFF: { label: "Off", tone: "problem" },
+  USED_UP: { label: "Used up", tone: "problem" },
+};
 
 export default async function CouponsPage() {
   await requirePageSession("coupon:create");
-
-  const coupons = await prisma.coupon.findMany({
-    include: { _count: { select: { rules: true, redemptions: true } } },
-    orderBy: { code: "asc" },
-  });
+  const coupons = await listCouponsForAdmin();
 
   return (
     <main className="flex flex-col gap-6">
       <PageHeader
         title="Coupons"
-        description="Discount codes shoppers can use at checkout."
-        actions={
-          <>
-            <LinkButton href="/coupons/new">Add coupon</LinkButton>
-          </>
-        }
+        description="Discount codes and automatic offers. The Insider discount is set on the Insiders page."
+        actions={<LinkButton href="/coupons/new">Add coupon</LinkButton>}
       />
-
       {coupons.length === 0 ? (
-        <p className="text-onwei-blue/70">
-          No coupons yet, add your first one.
-        </p>
+        <EmptyState
+          title="No coupons yet"
+          description="Create one to give customers a code at checkout."
+        />
       ) : (
         <AdminTable>
           <AdminTableHead>
             <AdminTableHeaderCell>Code</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Gives</AdminTableHeaderCell>
             <AdminTableHeaderCell>Status</AdminTableHeaderCell>
-            <AdminTableHeaderCell>Rules</AdminTableHeaderCell>
-            <AdminTableHeaderCell>Times used</AdminTableHeaderCell>
-            <AdminTableHeaderCell>Usage limit</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Used</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Given away</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Ends</AdminTableHeaderCell>
           </AdminTableHead>
           <tbody>
-            {coupons.map((coupon) => (
-              <AdminTableRow key={coupon.id}>
+            {coupons.map((c) => (
+              <AdminTableRow key={c.id}>
                 <AdminTableCell>
                   <Link
-                    href={`/coupons/${coupon.id}`}
-                    className="font-mono font-medium underline-offset-2 hover:underline"
+                    href={`/coupons/${c.id}`}
+                    className="font-mono font-semibold underline-offset-2 hover:underline"
                   >
-                    {coupon.code}
+                    {c.code}
                   </Link>
+                  {c.autoApply ? (
+                    <span className="block text-xs text-onwei-blue/60">
+                      Applies by itself
+                    </span>
+                  ) : null}
                 </AdminTableCell>
+                <AdminTableCell>{c.summary}</AdminTableCell>
                 <AdminTableCell>
-                  <AdminBadge tone={coupon.isActive ? "success" : "pending"}>
-                    {coupon.isActive ? "Active" : "Inactive"}
+                  <AdminBadge tone={STATE[c.state].tone}>
+                    {STATE[c.state].label}
                   </AdminBadge>
                 </AdminTableCell>
-                <AdminTableCell>{coupon._count.rules}</AdminTableCell>
-                <AdminTableCell>{coupon._count.redemptions}</AdminTableCell>
                 <AdminTableCell>
-                  {coupon.usageLimit ?? "Unlimited"}
+                  {c.uses}
+                  {c.usageLimit !== null ? ` of ${c.usageLimit}` : ""}
+                </AdminTableCell>
+                <AdminTableCell>
+                  {formatCurrency(c.totalDiscount)}
+                </AdminTableCell>
+                <AdminTableCell>
+                  {c.endsAt
+                    ? c.endsAt.toLocaleDateString("en-IN", {
+                        timeZone: "Asia/Kolkata",
+                      })
+                    : "-"}
                 </AdminTableCell>
               </AdminTableRow>
             ))}

@@ -9,6 +9,9 @@ import {
   buildWebSiteJsonLd,
 } from "../lib/seo/structuredData";
 import { AnalyticsProvider } from "./_components/AnalyticsProvider";
+import { CartProvider } from "./_components/commerce/CartProvider";
+import { CartDrawer } from "./_components/commerce/CartDrawer";
+import { EntryPopup } from "./_components/commerce/EntryPopup";
 import "./globals.css";
 
 // Figma specs "Author Variable" (display headlines, weights Medium/Semibold/
@@ -89,7 +92,11 @@ export default function RootLayout({
       <body>
         <JsonLd data={buildOrganizationJsonLd()} />
         <JsonLd data={buildWebSiteJsonLd()} />
-        {children}
+        <CartProvider>
+          {children}
+          <CartDrawer />
+          <EntryPopup />
+        </CartProvider>
         <AnalyticsProvider />
         <SpeedInsights />
       </body>

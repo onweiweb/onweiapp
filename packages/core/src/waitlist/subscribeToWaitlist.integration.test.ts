@@ -40,12 +40,14 @@ describe.skipIf(!process.env.DATABASE_URL)(
 
       const result = await subscribeToWaitlist(input);
 
-      expect(result).toEqual({ ok: true, alreadyJoined: false });
+      expect(result).toMatchObject({ ok: true, alreadyJoined: false });
       const row = await prisma.waitlistEntry.findUnique({
         where: { email: input.email },
       });
       expect(row).not.toBeNull();
       expect(row?.phone).toBe(`+91${input.phone}`);
+      // Every new Insider gets a code at signup.
+      expect(row?.insiderCode).toMatch(/^WEI\d{4}$/);
     });
 
     it("rejects an invalid name", async () => {
@@ -104,7 +106,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
 
       const result = await subscribeToWaitlist(input);
 
-      expect(result).toEqual({ ok: true, alreadyJoined: false });
+      expect(result).toMatchObject({ ok: true, alreadyJoined: false });
       const row = await prisma.waitlistEntry.findUnique({
         where: { email: input.email },
       });

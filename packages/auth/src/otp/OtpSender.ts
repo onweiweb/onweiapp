@@ -1,4 +1,4 @@
-export type OtpChannel = "EMAIL" | "SMS";
+export type OtpChannel = "EMAIL" | "SMS" | "WHATSAPP";
 
 /**
  * Vendor-abstraction interface for OTP delivery (docs/ARCHITECTURE.md).

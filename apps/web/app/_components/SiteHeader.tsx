@@ -1,6 +1,7 @@
 import Image from "@/_components/ScaledImage";
 import Link from "next/link";
 import { MobileNav } from "./MobileNav";
+import { CartButton } from "./commerce/CartButton";
 
 // Figma draws two desktop navs: the Homepage (758:2246) has five links with
 // "insiders" as a small tag over "find your wei", every inner page (Collection
@@ -108,7 +109,7 @@ export function SiteHeader({
           <MobileNav inverted={inverted} />
           <div className="flex items-center gap-2.5">
             <Link
-              href="/login"
+              href="/account"
               aria-label="Account"
               className="relative block h-[0.875rem] w-[0.875rem] after:absolute after:-inset-3.5 after:content-['']"
             >
@@ -129,11 +130,7 @@ export function SiteHeader({
                 className="absolute left-0 top-[0.5312rem]"
               />
             </Link>
-            <Link
-              href="#"
-              aria-label="Cart"
-              className="relative block h-[0.8125rem] w-[0.875rem] after:absolute after:-inset-3.5 after:content-['']"
-            >
+            <CartButton className="relative block h-[0.8125rem] w-[0.875rem] after:absolute after:-inset-3.5 after:content-['']">
               <Image
                 src={`${dir}/icon-cart.svg`}
                 alt=""
@@ -141,7 +138,7 @@ export function SiteHeader({
                 sizes="14px"
                 aria-hidden
               />
-            </Link>
+            </CartButton>
           </div>
         </div>
 
@@ -217,7 +214,7 @@ export function SiteHeader({
           <div className="flex shrink-0 items-center gap-6">
             <div className="flex items-center gap-3">
               <Link
-                href="/login"
+                href="/account"
                 aria-label="Account"
                 className="relative block h-[1.125rem] w-[1.125rem]"
               >
@@ -238,11 +235,7 @@ export function SiteHeader({
                   className="absolute left-0 top-[0.6875rem]"
                 />
               </Link>
-              <Link
-                href="#"
-                aria-label="Cart"
-                className="relative block h-[1.0625rem] w-[1.125rem]"
-              >
+              <CartButton className="relative block h-[1.0625rem] w-[1.125rem]">
                 <Image
                   src={`${dir}/icon-cart.svg`}
                   alt=""
@@ -250,7 +243,7 @@ export function SiteHeader({
                   sizes="18px"
                   aria-hidden
                 />
-              </Link>
+              </CartButton>
             </div>
           </div>
         </nav>

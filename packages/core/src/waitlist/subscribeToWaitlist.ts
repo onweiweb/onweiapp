@@ -2,6 +2,7 @@ import { prisma } from "@onwei/database";
 import { isValidEmail } from "../validation/email";
 import { validatePhone } from "../validation/phone";
 import { getSiteSetting } from "../settings/siteSetting";
+import { assignInsiderCode } from "../insiders/insiderCode";
 import type {
   SubscribeToWaitlistInput,
   SubscribeToWaitlistResult,
@@ -44,7 +45,7 @@ export async function subscribeToWaitlist(
   if (existingEmail) return { ok: false, reason: "DUPLICATE_EMAIL" };
   if (existingPhone) return { ok: false, reason: "DUPLICATE_PHONE" };
 
-  await prisma.waitlistEntry.create({
+  const created = await prisma.waitlistEntry.create({
     data: {
       fullName,
       email,
@@ -63,6 +64,14 @@ export async function subscribeToWaitlist(
       utmContent: input.attribution?.utmContent ?? null,
     },
   });
+
+  // Every Insider gets a code at signup. A failure here must not fail the
+  // signup: the admin Insiders page fills in any missing codes.
+  try {
+    await assignInsiderCode(created.id);
+  } catch (error) {
+    console.error("[waitlist] insider code assignment failed", error);
+  }
 
   return { ok: true, alreadyJoined: false, fullName, email };
 }

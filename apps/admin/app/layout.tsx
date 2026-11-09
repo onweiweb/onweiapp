@@ -59,6 +59,7 @@ const NAV_GROUPS = [
     label: "Audience",
     items: [
       { label: "Waitlist", href: "/waitlist", icon: "ListChecks" },
+      { label: "Insiders", href: "/insiders", icon: "Ticket" },
       { label: "Newsletter", href: "/newsletter", icon: "Mail" },
       { label: "Visitors", href: "/analytics", icon: "BarChart3" },
     ],

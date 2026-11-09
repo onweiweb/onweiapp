@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { SafeImage } from "./SafeImage";
 import { useConfirm } from "./ui";
 
 interface ProductImage {
@@ -58,7 +59,8 @@ export function ImageManager({
   async function handleRemove(imageId: string) {
     const ok = await confirm({
       title: "Remove image?",
-      message: "This image will be removed from the product.",
+      message:
+        'This photo will be removed from the product. If it was the only one, shoppers see a "photo coming soon" tile instead.',
       confirmLabel: "Remove",
       danger: true,
     });
@@ -83,31 +85,25 @@ export function ImageManager({
               key={image.id}
               className="group relative aspect-square overflow-hidden rounded-[16px] border border-onwei-blue/10 bg-onwei-white"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element -- admin-uploaded Blob URLs, next/image's domain allowlist isn't worth configuring for a simple thumbnail */}
-              <img
-                src={image.url}
-                alt=""
-                className="h-full w-full object-cover"
-              />
+              <SafeImage url={image.url} className="h-full w-full" />
               {index === 0 ? (
                 <span className="absolute left-2 top-2 rounded-[30px] bg-onwei-green px-2 py-0.5 text-[0.6875rem] font-medium uppercase text-onwei-blue">
                   Main
                 </span>
               ) : null}
+              <button
+                type="button"
+                onClick={() => handleRemove(image.id)}
+                className="absolute right-2 top-2 rounded-[30px] bg-onwei-black px-2.5 py-0.5 text-[0.6875rem] uppercase text-onwei-white opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100"
+                aria-label="Remove image"
+              >
+                Remove
+              </button>
               {image.isPlaceholder ? (
                 <span className="absolute inset-x-0 bottom-0 bg-onwei-blue/70 px-1 py-1 text-center text-[0.6875rem] text-onwei-white">
                   Placeholder
                 </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => handleRemove(image.id)}
-                  className="absolute right-2 top-2 rounded-[30px] bg-onwei-black px-2.5 py-0.5 text-[0.6875rem] uppercase text-onwei-white opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100"
-                  aria-label="Remove image"
-                >
-                  Remove
-                </button>
-              )}
+              ) : null}
             </div>
           ))}
         </div>

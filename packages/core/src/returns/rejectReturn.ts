@@ -1,6 +1,6 @@
 import { prisma } from "@onwei/database";
-import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
+import { rejectReturnRequest, ReturnActionError } from "../commerce/returns";
 import type { ResolveReturnInput } from "./types";
 
 /** Rejects a ReturnRequest. No inventory change, nothing was restocked. */
@@ -8,27 +8,24 @@ export async function rejectReturn(
   input: ResolveReturnInput,
   actor: AuditActor,
 ) {
-  const before = await prisma.returnRequest.findUniqueOrThrow({
-    where: { id: input.returnRequestId },
-  });
-
-  if (before.status !== "REQUESTED") {
-    throw new Error(`not-pending: return request is already ${before.status}`);
+  try {
+    await rejectReturnRequest(
+      input.returnRequestId,
+      input.note?.trim() || "This item doesn't meet our return conditions.",
+      actor,
+    );
+  } catch (error) {
+    if (error instanceof ReturnActionError) {
+      const current = await prisma.returnRequest.findUnique({
+        where: { id: input.returnRequestId },
+      });
+      throw new Error(
+        `not-pending: return request is already ${current?.status ?? "gone"}`,
+      );
+    }
+    throw error;
   }
-
-  const returnRequest = await prisma.returnRequest.update({
+  return prisma.returnRequest.findUniqueOrThrow({
     where: { id: input.returnRequestId },
-    data: { status: "REJECTED", resolvedAt: new Date() },
   });
-
-  await writeAuditLog({
-    staffUserId: actor.staffUserId,
-    action: "return.reject",
-    entityType: "ReturnRequest",
-    entityId: input.returnRequestId,
-    beforeState: { status: before.status },
-    afterState: { status: returnRequest.status, note: input.note ?? null },
-  });
-
-  return returnRequest;
 }

@@ -31,7 +31,7 @@ const PRIVACY: DefaultLegalPage = {
     },
     {
       heading: "What we collect",
-      body: "We only collect what we need to run the site and serve you.\n- Your name, email address and phone number when you join the Insiders list or log in.\n- A one-time password (OTP) sent to your phone or email so you can log in. We do not store your OTP after it expires.\n- Delivery addresses and order details when you place an order.\n- Reviews you choose to submit.\n- Basic device and usage information, such as browser type and pages visited, to keep the site working and understand what is popular.",
+      body: "We only collect what we need to run the site and serve you.\n- Your name, email address and phone number when you join the Insiders list or log in.\n- A one-time password (OTP) sent to your phone or email so you can log in. We do not store your OTP after it expires.\n- Delivery addresses and order details when you place an order, or when you ask us to post you something, such as your Insider card.\n- Reviews you choose to submit.\n- Basic device and usage information, such as browser type and pages visited, to keep the site working and understand what is popular.",
     },
     {
       heading: "Why we use it",
@@ -113,6 +113,10 @@ const TERMS: DefaultLegalPage = {
     {
       heading: "Coupons and offers",
       body: "Coupons and offers have their own conditions, such as an expiry date or minimum order value. Each coupon can be used only as described, cannot be exchanged for cash, and we may withdraw an offer at any time.",
+    },
+    {
+      heading: "Insider codes",
+      body: "If you joined the Insiders list, you get a personal Insider code. It is yours alone: it only works when you are signed in with the email or phone number you joined with, and it cannot be shared, sold or exchanged for cash. The code does not expire, but the discount it gives may change over time, and some offers may not combine with it. We may withdraw a code if it is misused.",
     },
     {
       heading: "Reviews",

@@ -1,8 +1,7 @@
 /**
  * Vendor-abstraction interface for the payment gateway (docs/ARCHITECTURE.md).
- * No adapter exists yet, the gateway itself is still an open decision
- * (docs/OPEN_DECISIONS.md: Razorpay is the leading candidate, not confirmed).
- * Do not implement a concrete adapter until that decision is made.
+ * Razorpay was chosen on 2026-11-09 (docs/COMMERCE_BUILD_PLAN.md); its
+ * adapter is RazorpayProvider in ./razorpay.ts.
  */
 export interface PaymentProvider {
   createPaymentIntent(input: {

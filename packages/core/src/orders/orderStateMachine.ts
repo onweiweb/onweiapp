@@ -12,7 +12,8 @@ const ALLOWED_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   OUT_FOR_DELIVERY: ["DELIVERED"],
   DELIVERED: ["RETURN_REQUESTED"],
   CANCELLED: ["REFUNDED"],
-  RETURN_REQUESTED: ["RETURNED"],
+  // Back to DELIVERED when every return on the order was rejected.
+  RETURN_REQUESTED: ["RETURNED", "DELIVERED"],
   RETURNED: ["REFUNDED"],
   REFUNDED: [],
 };

@@ -33,6 +33,7 @@ export class ResendEmailSender implements EmailSender {
         subject: email.subject,
         html: email.html,
         text: email.text,
+        ...(email.headers ? { headers: email.headers } : {}),
         ...(this.replyTo ? { reply_to: this.replyTo } : {}),
       }),
     });
