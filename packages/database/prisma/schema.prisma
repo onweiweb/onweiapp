@@ -1008,8 +1008,29 @@ model WaitlistEntry {
   codeEmailedAt      DateTime?
   codeEmailClaimedAt DateTime?
   cardAddress        InsiderCardAddress?
+  // The printed card this person's code is on, if any (see InsiderCode).
+  printedCard        InsiderCode?
 
   @@index([submittedAt])
+}
+
+// One row per printed Insider card. Codes are made ahead of a print run so
+// cards can be printed before anyone owns them; a new signup takes the
+// lowest free card. WaitlistEntry.insiderCode stays the code checkout reads.
+// A card is free only while waitlistEntryId and assignedAt are both null: a
+// deleted member's card keeps assignedAt and is never handed out again,
+// because it may already be in the post.
+model InsiderCode {
+  id              String         @id @default(cuid())
+  code            String         @unique
+  // Printed small on the card so staff can find it in the stack.
+  cardNumber      Int            @unique
+  waitlistEntryId String?        @unique
+  waitlistEntry   WaitlistEntry? @relation(fields: [waitlistEntryId], references: [id], onDelete: SetNull)
+  assignedAt      DateTime?
+  createdAt       DateTime       @default(now())
+
+  @@index([assignedAt, cardNumber])
 }
 
 // Onwei Insider discount settings. One row ("singleton"). The percentage

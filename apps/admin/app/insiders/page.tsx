@@ -1,6 +1,9 @@
 import {
   getInsiderDefaultPercent,
   getInsiderOverview,
+  getPrintedCardOverview,
+  LOW_FREE_CARDS,
+  PRINT_RUN_SIZE,
   istDateOf,
   istLastDayOf,
   listCardAddresses,
@@ -27,6 +30,7 @@ import {
   CreateCodesButton,
   DefaultPercentForm,
   EmailSender,
+  FillCardsButton,
   PostedToggle,
   TierActions,
   TierForm,
@@ -36,6 +40,7 @@ const TABS = [
   { id: "overview", label: "Overview" },
   { id: "discount", label: "Discount" },
   { id: "addresses", label: "Card addresses" },
+  { id: "cards", label: "Printed cards" },
   { id: "email", label: "Email" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -91,6 +96,7 @@ export default async function InsidersPage({
         />
       ) : null}
       {tab === "email" ? <EmailTab canManage={canManage} /> : null}
+      {tab === "cards" ? <PrintedCardsTab canManage={canManage} /> : null}
     </main>
   );
 }
@@ -289,6 +295,7 @@ async function AddressesTab({
               <AdminTableHeaderCell>Address</AdminTableHeaderCell>
               <AdminTableHeaderCell>Phone</AdminTableHeaderCell>
               <AdminTableHeaderCell>Code</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Card no.</AdminTableHeaderCell>
               <AdminTableHeaderCell>Status</AdminTableHeaderCell>
               {canManage ? (
                 <AdminTableHeaderCell>{""}</AdminTableHeaderCell>
@@ -305,6 +312,9 @@ async function AddressesTab({
                   </AdminTableCell>
                   <AdminTableCell>{row.phone}</AdminTableCell>
                   <AdminTableCell>{row.insiderCode ?? "-"}</AdminTableCell>
+                  <AdminTableCell>
+                    {row.cardNumber ?? "Not printed"}
+                  </AdminTableCell>
                   <AdminTableCell>
                     <AdminBadge tone={row.postedAt ? "success" : "pending"}>
                       {row.postedAt
@@ -384,6 +394,97 @@ async function EmailTab({ canManage }: { canManage: boolean }) {
           <p className="text-sm">
             Ask someone who can manage the waitlist to send these.
           </p>
+        )}
+      </AdminCard>
+    </div>
+  );
+}
+
+async function PrintedCardsTab({ canManage }: { canManage: boolean }) {
+  const cards = await getPrintedCardOverview();
+  const notSetUp = cards.printed === 0;
+  const toAdd = Math.max(
+    PRINT_RUN_SIZE - cards.printed,
+    cards.membersWithoutCard,
+  );
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Stat
+          label="Cards made"
+          value={cards.printed}
+          hint="One code per printed card"
+        />
+        <Stat label="Given to an Insider" value={cards.given} />
+        <Stat
+          label="Free"
+          value={cards.free}
+          hint="The next people to join get these, lowest number first"
+        />
+        <Stat
+          label="Insiders with no printed card"
+          value={cards.membersWithoutCard}
+          hint="Their code isn't on a card yet"
+        />
+      </div>
+
+      {!notSetUp && cards.free < LOW_FREE_CARDS ? (
+        <AdminCard>
+          <p className="text-sm text-onwei-blue">
+            {cards.free === 0
+              ? "Every printed card has been given out. "
+              : `Only ${cards.free} free ${cards.free === 1 ? "card is" : "cards are"} left. `}
+            New Insiders after that still get a code, but it won&apos;t be on a
+            printed card until you top up and print more.
+          </p>
+        </AdminCard>
+      ) : null}
+
+      <AdminCard className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold text-onwei-blue">
+          {notSetUp ? "Set up the cards" : "Top up"}
+        </h2>
+        <p className="text-sm text-onwei-blue/70">
+          {notSetUp
+            ? `Makes ${PRINT_RUN_SIZE} card codes in all. Everyone who already has a code gets a card number first (earliest signups first), the rest are free codes for people who join later. Existing codes don't change.`
+            : `Brings the total back up to ${PRINT_RUN_SIZE} and gives a card number to any Insider whose code isn't on a card yet. Cards already made never change.`}
+        </p>
+        {cards.retired > 0 ? (
+          <p className="text-xs text-onwei-blue/60">
+            {cards.retired}{" "}
+            {cards.retired === 1 ? "card belongs" : "cards belong"} to people
+            who were removed from the waitlist. Those cards are never given to
+            anyone else.
+          </p>
+        ) : null}
+        {canManage ? (
+          <FillCardsButton toAdd={toAdd} firstTime={notSetUp} />
+        ) : (
+          <p className="text-sm text-onwei-blue/70">
+            Ask someone who can manage the waitlist to set up the cards.
+          </p>
+        )}
+      </AdminCard>
+
+      <AdminCard className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold text-onwei-blue">
+          List for the printer
+        </h2>
+        <p className="text-sm text-onwei-blue/70">
+          A spreadsheet with each card&apos;s number, its code and the link the
+          QR code opens (the Onwei website, tagged so scans show up under
+          Visitors). No names or addresses are in it. Ask the printer for a
+          proof of a few cards first and check the codes against the list.
+        </p>
+        {notSetUp ? (
+          <p className="text-sm text-onwei-blue/70">Set up the cards first.</p>
+        ) : (
+          <a href="/api/insiders/printed-cards/export" className="self-start">
+            <AdminButton type="button" variant="secondary">
+              Download list for the printer (CSV)
+            </AdminButton>
+          </a>
         )}
       </AdminCard>
     </div>

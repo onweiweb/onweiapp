@@ -1,6 +1,7 @@
 import { prisma } from "@onwei/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { saveCardAddress, setCardPosted } from "./cardAddress";
+import { fillInsiderCodePool, takeFreePrintedCode } from "./codePool";
 import { assignInsiderCode } from "./insiderCode";
 import {
   claimInsiderEmailBatch,
@@ -27,12 +28,13 @@ describe.skipIf(!process.env.DATABASE_URL)(
     const entryIds: string[] = [];
     const tierIds: string[] = [];
     let staffUserId: string;
+    const startedAt = new Date();
 
     async function makeEntry(): Promise<string> {
       const row = await prisma.waitlistEntry.create({
         data: {
           fullName: "Test Insider",
-          email: `${tag}-${entryIds.length}@example.test`,
+          email: `${tag}-${crypto.randomUUID()}@example.test`,
           phone: fakePhone(),
           consentVersion: "test",
           // Far past, so these rows never fall inside a real tier.
@@ -47,7 +49,54 @@ describe.skipIf(!process.env.DATABASE_URL)(
       staffUserId = (await prisma.staffUser.findFirstOrThrow()).id;
     });
 
+    // Test cards use negative numbers: they sort before real cards (so the
+    // tests take them first) and never move the "highest card" a fill
+    // numbers from.
+    const testCardIds: string[] = [];
+    // Real dev cards a test entry took, handed back afterwards.
+    const touchedCardIds = new Set<string>();
+
+    // Each batch is numbered below the last, so the newest test cards are
+    // always the lowest free cards.
+    let nextTestCard = -1_000_000;
+    async function makeTestCards(count: number): Promise<void> {
+      nextTestCard -= 100;
+      for (let i = 0; i < count; i++) {
+        const row = await prisma.insiderCode.create({
+          data: {
+            code: `${tag}-card-${testCardIds.length}`,
+            cardNumber: nextTestCard + i,
+          },
+        });
+        testCardIds.push(row.id);
+      }
+    }
+
+    async function rememberCardsOf(ids: string[]): Promise<void> {
+      const cards = await prisma.insiderCode.findMany({
+        where: { waitlistEntryId: { in: ids } },
+        select: { id: true },
+      });
+      for (const card of cards) touchedCardIds.add(card.id);
+    }
+
     afterAll(async () => {
+      await rememberCardsOf(entryIds);
+      await prisma.insiderCode.deleteMany({
+        where: { id: { in: testCardIds } },
+      });
+      const realTouched = [...touchedCardIds].filter(
+        (id) => !testCardIds.includes(id),
+      );
+      // Cards made during the tests (a fill adding test entries) are
+      // removed; real cards a test entry took go back to free.
+      await prisma.insiderCode.deleteMany({
+        where: { id: { in: realTouched }, createdAt: { gte: startedAt } },
+      });
+      await prisma.insiderCode.updateMany({
+        where: { id: { in: realTouched } },
+        data: { waitlistEntryId: null, assignedAt: null },
+      });
       await prisma.waitlistEntry.deleteMany({
         where: { id: { in: entryIds } },
       });
@@ -73,6 +122,79 @@ describe.skipIf(!process.env.DATABASE_URL)(
         calls++ === 0 ? digits : digits === 9999 ? 1000 : digits + 1,
       );
       expect(codeB).not.toBe(codeA);
+    });
+
+    it("gives a new member the lowest free printed card", async () => {
+      await makeTestCards(1);
+      const card = await prisma.insiderCode.findUniqueOrThrow({
+        where: { id: testCardIds[testCardIds.length - 1] },
+      });
+      const id = await makeEntry();
+      expect(await assignInsiderCode(id)).toBe(card.code);
+      const after = await prisma.insiderCode.findUniqueOrThrow({
+        where: { id: card.id },
+      });
+      expect(after.waitlistEntryId).toBe(id);
+      expect(after.assignedAt).not.toBeNull();
+      // A member with a code never takes a second card.
+      expect(await takeFreePrintedCode(id)).toBeNull();
+    });
+
+    it("never gives two members the same card at once", async () => {
+      await makeTestCards(10);
+      const ids = await Promise.all(
+        Array.from({ length: 10 }, () => makeEntry()),
+      );
+      const codes = await Promise.all(ids.map((id) => assignInsiderCode(id)));
+      expect(new Set(codes).size).toBe(10);
+      const cards = await prisma.insiderCode.findMany({
+        where: { waitlistEntryId: { in: ids } },
+      });
+      expect(cards).toHaveLength(10);
+      for (const card of cards) touchedCardIds.add(card.id);
+    });
+
+    it("never hands out a deleted member's card again", async () => {
+      await makeTestCards(1);
+      const cardId = testCardIds[testCardIds.length - 1]!;
+      const id = await makeEntry();
+      await assignInsiderCode(id);
+      await prisma.waitlistEntry.delete({ where: { id } });
+      entryIds.splice(entryIds.indexOf(id), 1);
+      const card = await prisma.insiderCode.findUniqueOrThrow({
+        where: { id: cardId },
+      });
+      expect(card.waitlistEntryId).toBeNull();
+      expect(card.assignedAt).not.toBeNull();
+
+      const next = await makeEntry();
+      await assignInsiderCode(next);
+      const nextCard = await prisma.insiderCode.findUnique({
+        where: { waitlistEntryId: next },
+      });
+      expect(nextCard?.id).not.toBe(cardId);
+      if (nextCard) touchedCardIds.add(nextCard.id);
+    });
+
+    it("adds members without a card, and a second fill adds nothing", async () => {
+      // An entry whose code came before printed cards existed.
+      const id = await makeEntry();
+      await prisma.waitlistEntry.update({
+        where: { id },
+        data: { insiderCode: `${tag}-old` },
+      });
+      const first = await fillInsiderCodePool({ staffUserId, target: 0 });
+      expect(first.addedForMembers).toBeGreaterThanOrEqual(1);
+      expect(first.addedFree).toBe(0);
+      const card = await prisma.insiderCode.findUniqueOrThrow({
+        where: { waitlistEntryId: id },
+      });
+      expect(card.code).toBe(`${tag}-old`);
+      expect(card.cardNumber).toBeGreaterThan(0);
+      touchedCardIds.add(card.id);
+
+      const second = await fillInsiderCodePool({ staffUserId, target: 0 });
+      expect(second.addedForMembers + second.addedFree).toBe(0);
     });
 
     it("claims a member once, even when two sends race", async () => {

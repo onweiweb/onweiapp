@@ -84,6 +84,11 @@ and when (needed to demonstrably show consent under the DPDP Act, see
 `docs/SECURITY_AND_DPDP.md`). `DataSubjectRequest` tracks access/erasure/
 correction requests, also a DPDP requirement once a customer asks for one.
 
+**Printed Insider cards.** `InsiderCode` holds one row per printed card (`code`, `cardNumber`, optional
+`waitlistEntryId`, `assignedAt`), made ahead of a print run so cards exist before anyone owns them. A new waitlist
+signup takes the lowest free card. A card whose member is deleted keeps `assignedAt` (owner set to null) and is never
+reused. Settings-like data, no personal fields of its own. See `docs/COMMERCE_BUILD_PLAN.md` ("Printed Insider cards").
+
 **Waitlist attribution.** `WaitlistEntry` also records where a signup came from:
 `utmSource`, `utmMedium`, `utmCampaign`, `utmContent`, `referrerHost` (all cleaned to
 short slugs by `sanitizeAttribution`), and an approximate `country`, `region`, `city`

@@ -1,5 +1,6 @@
 import { randomInt } from "node:crypto";
 import { Prisma, prisma } from "@onwei/database";
+import { codeTakenByPool, takeFreePrintedCode } from "./codePool";
 
 /**
  * Onwei Insider codes: "WEI" + 4 digits, as printed in the client's Insider
@@ -43,7 +44,9 @@ function isUniqueViolation(error: unknown): boolean {
 
 /**
  * Gives one waitlist entry a code if it has none. Safe to call twice: an
- * entry that already has a code keeps it. Returns the entry's code.
+ * entry that already has a code keeps it. Returns the entry's code. Takes
+ * the next free printed card first (codePool.ts); only when every printed
+ * card is taken does it make a random code with no card.
  */
 export async function assignInsiderCode(
   waitlistEntryId: string,
@@ -56,8 +59,17 @@ export async function assignInsiderCode(
     });
     if (existing.insiderCode) return existing.insiderCode;
 
+    if (attempt === 0) {
+      const printed = await takeFreePrintedCode(waitlistEntryId);
+      if (printed) return printed;
+      // No free card, or another caller set a code first: loop re-reads.
+      continue;
+    }
+
     const code = generateInsiderCode(random);
     if (await codeTakenByCoupon(code)) continue;
+    // Free printed codes are reserved for their cards.
+    if (await codeTakenByPool(code)) continue;
 
     try {
       // Compare-and-set on "still has no code", so two callers racing on the

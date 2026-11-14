@@ -4,6 +4,7 @@ import {
   isInsiderCodeFormat,
   normalizeCode,
 } from "./insiderCode";
+import { insiderCardQrLink, planPoolFill } from "./codePool";
 import { createInsiderLinkToken, verifyInsiderLinkToken } from "./insiderLink";
 import {
   findTierFor,
@@ -127,5 +128,109 @@ describe("insider links", () => {
   it("refuses to run without a real secret", () => {
     expect(() => createInsiderLinkToken("address", "e", undefined)).toThrow();
     expect(() => createInsiderLinkToken("address", "e", "short")).toThrow();
+  });
+});
+
+describe("printed card pool", () => {
+  // Steps through 1000..9999 in order, so tests are repeatable.
+  function counter(start = 1000) {
+    let n = start;
+    return () => n++;
+  }
+
+  it("fills an empty pool to the target, members first, numbered 1..N", () => {
+    const plan = planPoolFill({
+      target: 500,
+      poolSize: 0,
+      maxCardNumber: 0,
+      unpooledMembers: [
+        { id: "a", code: "WEI5000" },
+        { id: "b", code: "WEI5001" },
+      ],
+      takenCodes: new Set(["WEI5000", "WEI5001"]),
+      random: counter(),
+    });
+    expect(plan.target).toBe(500);
+    expect(
+      plan.memberRows.map((r) => [r.waitlistEntryId, r.cardNumber]),
+    ).toEqual([
+      ["a", 1],
+      ["b", 2],
+    ]);
+    expect(plan.freeRows).toHaveLength(498);
+    const numbers = [...plan.memberRows, ...plan.freeRows].map(
+      (r) => r.cardNumber,
+    );
+    expect(numbers).toEqual(Array.from({ length: 500 }, (_, i) => i + 1));
+    const codes = new Set(
+      [...plan.memberRows, ...plan.freeRows].map((r) => r.code),
+    );
+    expect(codes.size).toBe(500);
+  });
+
+  it("never reuses a code that is taken", () => {
+    const plan = planPoolFill({
+      target: 3,
+      poolSize: 0,
+      maxCardNumber: 0,
+      unpooledMembers: [],
+      takenCodes: new Set(["WEI1000", "WEI1001"]),
+      random: counter(),
+    });
+    expect(plan.freeRows.map((r) => r.code)).toEqual([
+      "WEI1002",
+      "WEI1003",
+      "WEI1004",
+    ]);
+  });
+
+  it("adds nothing to a full pool", () => {
+    const plan = planPoolFill({
+      target: 500,
+      poolSize: 500,
+      maxCardNumber: 500,
+      unpooledMembers: [],
+      takenCodes: new Set(),
+    });
+    expect(plan.memberRows).toHaveLength(0);
+    expect(plan.freeRows).toHaveLength(0);
+  });
+
+  it("numbers a top-up after the highest card", () => {
+    const plan = planPoolFill({
+      target: 500,
+      poolSize: 498,
+      maxCardNumber: 498,
+      unpooledMembers: [{ id: "late", code: "WEI9000" }],
+      takenCodes: new Set(["WEI9000"]),
+      random: counter(),
+    });
+    expect(plan.memberRows[0]?.cardNumber).toBe(499);
+    expect(plan.freeRows.map((r) => r.cardNumber)).toEqual([500]);
+  });
+
+  it("raises the target when more members need a card than it allows", () => {
+    const members = Array.from({ length: 6 }, (_, i) => ({
+      id: `m${i}`,
+      code: `WEI${2000 + i}`,
+    }));
+    const plan = planPoolFill({
+      target: 5,
+      poolSize: 0,
+      maxCardNumber: 0,
+      unpooledMembers: members,
+      takenCodes: new Set(members.map((m) => m.code)),
+    });
+    expect(plan.target).toBe(6);
+    expect(plan.memberRows).toHaveLength(6);
+    expect(plan.freeRows).toHaveLength(0);
+  });
+
+  it("tags the card QR link", () => {
+    const url = new URL(insiderCardQrLink("https://www.onwei.in"));
+    expect(url.origin).toBe("https://www.onwei.in");
+    expect(url.searchParams.get("utm_source")).toBe("insider-card");
+    expect(url.searchParams.get("utm_medium")).toBe("print");
+    expect(url.searchParams.get("utm_campaign")).toBe("insider-cards");
   });
 });

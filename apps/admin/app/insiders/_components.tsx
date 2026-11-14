@@ -262,6 +262,61 @@ export function CreateCodesButton({ missing }: { missing: number }) {
   );
 }
 
+export function FillCardsButton({
+  toAdd,
+  firstTime,
+}: {
+  toAdd: number;
+  firstTime: boolean;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [busy, setBusy] = useState(false);
+
+  async function run() {
+    const ok = await confirm({
+      title: firstTime ? "Set up the printed cards?" : "Top up the cards?",
+      message: `This makes ${toAdd} new card ${toAdd === 1 ? "code" : "codes"}. Once a card is made it can't be changed or removed, so only do this when you're ready to print.`,
+      confirmLabel: firstTime ? "Set up cards" : "Top up",
+    });
+    if (!ok) return;
+    setBusy(true);
+    const result = await send("/api/insiders/printed-cards/fill", "POST");
+    setBusy(false);
+    if (!result.ok) {
+      toast(result.error ?? "That didn't work. Try again.", "error");
+      return;
+    }
+    const added =
+      Number(result.addedForMembers ?? 0) + Number(result.addedFree ?? 0);
+    toast(
+      added === 0
+        ? "Nothing to add, the cards are already set up."
+        : `Made ${added} card codes.`,
+      "success",
+    );
+    router.refresh();
+  }
+
+  return (
+    <AdminButton
+      type="button"
+      onClick={run}
+      disabled={busy || toAdd === 0}
+      className="self-start"
+    >
+      {busy
+        ? "Making codes..."
+        : toAdd === 0
+          ? "Nothing to add"
+          : firstTime
+            ? `Set up ${toAdd} cards`
+            : `Add ${toAdd} cards`}
+    </AdminButton>
+  );
+}
+
 export function PostedToggle({ id, posted }: { id: string; posted: boolean }) {
   const router = useRouter();
   const toast = useToast();

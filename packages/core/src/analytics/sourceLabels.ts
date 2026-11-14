@@ -19,6 +19,7 @@ const UTM_NAMES: Record<string, string> = {
   google: "Google",
   youtube: "YouTube",
   "founder-outreach": "Founder outreach",
+  "insider-card": "Printed Insider card",
   other: "Other",
 };
 
@@ -28,6 +29,7 @@ const MEDIUM_NAMES: Record<string, string> = {
   social: "post or message",
   message: "message",
   link: "link",
+  print: "QR code",
 };
 
 function titleCase(value: string): string {

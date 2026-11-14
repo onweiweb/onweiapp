@@ -292,11 +292,15 @@ marquee, refund permission, Insider tiers), Insider email send (100 a day), Phas
 sign-in is refused on live prod until then), Phase H pre-order (needs answers in section 14a), and unplanned gaps
 (shipped/delivered/refund emails, PIN autofill). GST invoicing, delivery partner and CRM are still not started.
 Local test data: dev waitlist entry and Insider code WEI6615 for the owner's own email; test orders ONW1001 to ONW1006.
-Contact Us (2026-11-09, local, not pushed): `/contact` from Figma 1189:6006 / 1189:6203, reusing SiteHeader, FaqSection
+Contact Us (2026-11-09, pushed 8030251, prod migrated): `/contact` from Figma 1189:6006 / 1189:6203, reusing SiteHeader, FaqSection
 (new `expandAfter` for in-place "view all"), InstagramGrid, SiteFooter, shared `formStyles.ts` and `SocialIcons.tsx`.
 Messages are saved (`ContactMessage`), emailed to the support address with the sender as reply-to, and handled in admin
-Messages (`customer:view`). Contact details live on `SiteSetting` (admin Settings). Two migrations
-(`20261110120000_contact_us`, `20261110120100_contact_address_lines`) need the prod migration before the push.
+Messages (`customer:view`). Contact details live on `SiteSetting` (admin Settings). Migrations
+`20261110120000_contact_us` and `20261110120100_contact_address_lines`. Any new `SiteSetting` column must be migrated on
+prod before the push: `getSiteSetting` reads the whole row and the waitlist gate calls it on every request.
+Printed Insider cards (2026-11-15, local, not pushed): 500 pre-made codes in `InsiderCode`, new signups take the next free
+card, admin Insiders "Printed cards" tab (set up, printer CSV). Migration `20261114204559_insider_code_pool` needs the
+prod migration before the push. Details in `docs/COMMERCE_BUILD_PLAN.md` ("Printed Insider cards").
 
 **Latest (2026-10-21):** Blogs page and admin blog editor, admin overhaul (speed, nav, shared kit), waitlist blog switch,
 blog analytics, product delete and redesigned product pages are pushed (up to f34223b). The backup product image work

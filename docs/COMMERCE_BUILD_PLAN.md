@@ -246,6 +246,30 @@ Before launch (all after the phases, as agreed):
 - Admin: submitted addresses, CSV export for posting, "Mark card posted". New permission `insiders:view`.
 - Design: `apps/web` page, needs Figma or an approved layout (ground rule 8).
 
+### Printed Insider cards (added 2026-11-15)
+
+Owner decisions: one print run of 500 cards that includes every existing code; generic design, code only, no names;
+a free card goes to the next person who joins the waitlist (no online claim, no staff assign); the QR opens the website
+tagged `utm_source=insider-card`, `utm_medium=print`, `utm_campaign=insider-cards` (no secret, since a code only works
+for its owner anyway).
+
+- Table `InsiderCode` (migration `20261114204559_insider_code_pool`): one row per card, `code`, `cardNumber` (printed
+  small on the card so staff can find it), optional owner, `assignedAt`. `WaitlistEntry.insiderCode` stays the code
+  checkout reads.
+- Core `packages/core/src/insiders/codePool.ts`. `fillInsiderCodePool` gives members who have a code a card number
+  first (oldest signup first), then adds random free codes up to 500. Safe to press twice, one fill at a time
+  (advisory lock), audit logged. `takeFreePrintedCode` hands out the lowest free card with `FOR UPDATE SKIP LOCKED`.
+  `assignInsiderCode` tries it first and falls back to a random code with no card when every card is taken.
+- A card is free only while it has no owner and no `assignedAt`. A removed member's card keeps `assignedAt` and is
+  never given to anyone else, because it may already be in the post.
+- Admin Insiders, "Printed cards" tab: counts, a low-stock warning under 25, "Set up 500 cards" / "Add N cards"
+  (`waitlist:manage`), and "Download list for the printer" (card number, code, QR link, no personal data, `?from=N`
+  for a reprint). Card addresses tab and CSV show the card number to post.
+- Prod rollout: migrate prod, push, then press "Set up 500 cards" on prod admin, download the list and send it to the
+  printer. Ask for a proof of a few cards first.
+- Dev note: DB integration tests that create and delete waitlist rows can use up dev cards (they show as "removed").
+  Prod never runs those tests.
+
 ### Consent check (done 2026-11-09, legal defaults updated the same day)
 
 - Waitlist checkbox reads "I agree to Onwei contacting me about the launch and accept the Privacy Policy". The default

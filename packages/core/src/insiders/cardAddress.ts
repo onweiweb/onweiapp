@@ -159,6 +159,8 @@ export async function saveCardAddress(
 export interface CardAddressListRow extends CardAddressView {
   id: string;
   insiderCode: string | null;
+  /** Number of the printed card to post, if their code is on one. */
+  cardNumber: number | null;
   email: string;
   submittedAt: Date;
 }
@@ -182,7 +184,13 @@ export async function listCardAddresses(input: {
       take: input.pageSize + 1,
       orderBy: [{ submittedAt: "asc" }, { id: "asc" }],
       include: {
-        waitlistEntry: { select: { insiderCode: true, email: true } },
+        waitlistEntry: {
+          select: {
+            insiderCode: true,
+            email: true,
+            printedCard: { select: { cardNumber: true } },
+          },
+        },
       },
     }),
     prisma.insiderCardAddress.count({ where }),
@@ -200,6 +208,7 @@ export async function listCardAddresses(input: {
       postedAt: row.postedAt,
       submittedAt: row.submittedAt,
       insiderCode: row.waitlistEntry.insiderCode,
+      cardNumber: row.waitlistEntry.printedCard?.cardNumber ?? null,
       email: row.waitlistEntry.email,
     })),
     hasNext: rows.length > input.pageSize,

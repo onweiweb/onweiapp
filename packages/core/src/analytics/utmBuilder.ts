@@ -42,6 +42,12 @@ export const UTM_CHANNELS: readonly UtmChannel[] = [
     utmMedium: "message",
   },
   {
+    id: "insider-card",
+    label: "QR code on the printed Insider card",
+    utmSource: "insider-card",
+    utmMedium: "print",
+  },
+  {
     id: "other",
     label: "Somewhere else",
     utmSource: "other",

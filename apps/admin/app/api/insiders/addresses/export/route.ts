@@ -1,12 +1,6 @@
 import { listAllCardAddresses } from "@onwei/core";
 import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
-
-function cell(value: string | null | undefined): string {
-  const text = value ?? "";
-  // Quote everything; neutralise spreadsheet formulas (=, +, -, @).
-  const safe = /^[=+\-@]/.test(text) ? `'${text}` : text;
-  return `"${safe.replace(/"/g, '""')}"`;
-}
+import { toCsv } from "../../../../_lib/csv";
 
 // Addresses still to post, ready for a courier sheet. ?all=1 includes posted.
 export const GET = defineAdminRoute(
@@ -23,11 +17,13 @@ export const GET = defineAdminRoute(
       "State",
       "PIN code",
       "Insider code",
+      "Card number",
       "Shared on",
       "Posted on",
     ];
-    const lines = rows.map((row) =>
-      [
+    const csv = toCsv([
+      header,
+      ...rows.map((row) => [
         row.fullName,
         row.phone,
         row.line1,
@@ -36,14 +32,12 @@ export const GET = defineAdminRoute(
         row.state,
         row.postalCode,
         row.insiderCode,
+        row.cardNumber,
         row.submittedAt.toISOString().slice(0, 10),
         row.postedAt ? row.postedAt.toISOString().slice(0, 10) : "",
-      ]
-        .map(cell)
-        .join(","),
-    );
-    const csv = [header.map(cell).join(","), ...lines].join("\r\n");
-    return new Response(`﻿${csv}`, {
+      ]),
+    ]);
+    return new Response(csv, {
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
         "Content-Disposition": `attachment; filename="insider-card-addresses-${new Date().toISOString().slice(0, 10)}.csv"`,
