@@ -333,6 +333,9 @@ export {
   releaseInsiderEmailClaim,
   logInsiderEmailRun,
   unsubscribeWaitlistEntry,
+  listInsiderEmailStatus,
+  type InsiderEmailStatus,
+  type InsiderEmailListRow,
   type InsiderOverview,
   type InsiderEmailRecipient,
 } from "./insiders/insiderEmails";

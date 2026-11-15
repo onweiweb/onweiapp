@@ -6,6 +6,7 @@ import { assignInsiderCode } from "./insiderCode";
 import {
   claimInsiderEmailBatch,
   claimInsiderEmailFor,
+  listInsiderEmailStatus,
   markInsiderEmailSent,
   releaseInsiderEmailClaim,
   unsubscribeWaitlistEntry,
@@ -246,6 +247,45 @@ describe.skipIf(!process.env.DATABASE_URL)(
 
       await markInsiderEmailSent(id);
       expect(await claimInsiderEmailFor(id)).toBeNull();
+    });
+
+    it("lists each member's Insider email status", async () => {
+      const noCode = await makeEntry();
+      const waiting = await makeEntry();
+      await assignInsiderCode(waiting);
+      const sent = await makeEntry();
+      await assignInsiderCode(sent);
+      await markInsiderEmailSent(sent);
+      const gone = await makeEntry();
+      await assignInsiderCode(gone);
+      await unsubscribeWaitlistEntry(gone);
+
+      // Test rows are dated 2001, so they come first in the oldest-first lists.
+      const all = await listInsiderEmailStatus({
+        page: 1,
+        pageSize: 500,
+        show: "all",
+      });
+      const status = new Map(all.rows.map((r) => [r.id, r.status]));
+      expect(status.get(noCode)).toBe("NO_CODE");
+      expect(status.get(waiting)).toBe("WAITING");
+      expect(status.get(sent)).toBe("SENT");
+      expect(status.get(gone)).toBe("UNSUBSCRIBED");
+
+      const notSent = await listInsiderEmailStatus({
+        page: 1,
+        pageSize: 500,
+        show: "notSent",
+      });
+      expect(notSent.rows.some((r) => r.id === sent)).toBe(false);
+      expect(notSent.rows.some((r) => r.id === waiting)).toBe(true);
+
+      const sentList = await listInsiderEmailStatus({
+        page: 1,
+        pageSize: 1,
+        show: "sent",
+      });
+      expect(sentList.rows[0]?.id).toBe(sent);
     });
 
     it("skips unsubscribed members", async () => {

@@ -167,6 +167,85 @@ export async function logInsiderEmailRun(
   });
 }
 
+export type InsiderEmailStatus =
+  "SENT" | "SENDING" | "WAITING" | "UNSUBSCRIBED" | "NO_CODE";
+
+export interface InsiderEmailListRow {
+  id: string;
+  fullName: string;
+  email: string;
+  insiderCode: string | null;
+  joinedAt: Date;
+  emailedAt: Date | null;
+  status: InsiderEmailStatus;
+}
+
+/**
+ * Everyone on the waitlist with where they are with the Insider code email,
+ * for the admin "Email" tab. "notSent" lists the not-yet-sent oldest first
+ * (the order the send button works through); "sent" lists the latest sends
+ * first.
+ */
+export async function listInsiderEmailStatus(input: {
+  page: number;
+  pageSize: number;
+  show: "notSent" | "sent" | "all";
+  now?: Date;
+}): Promise<{ rows: InsiderEmailListRow[]; hasNext: boolean; total: number }> {
+  const now = input.now ?? new Date();
+  const staleBefore = new Date(now.getTime() - STALE_CLAIM_MS);
+  const where =
+    input.show === "sent"
+      ? { codeEmailedAt: { not: null } }
+      : input.show === "notSent"
+        ? { codeEmailedAt: null }
+        : {};
+  const skip = (Math.max(input.page, 1) - 1) * input.pageSize;
+  const [rows, total] = await Promise.all([
+    prisma.waitlistEntry.findMany({
+      where,
+      skip,
+      take: input.pageSize + 1,
+      orderBy:
+        input.show === "sent"
+          ? [{ codeEmailedAt: "desc" }, { id: "asc" }]
+          : [{ submittedAt: "asc" }, { id: "asc" }],
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        insiderCode: true,
+        submittedAt: true,
+        codeEmailedAt: true,
+        codeEmailClaimedAt: true,
+        unsubscribedAt: true,
+      },
+    }),
+    prisma.waitlistEntry.count({ where }),
+  ]);
+  return {
+    rows: rows.slice(0, input.pageSize).map((row) => ({
+      id: row.id,
+      fullName: row.fullName,
+      email: row.email,
+      insiderCode: row.insiderCode,
+      joinedAt: row.submittedAt,
+      emailedAt: row.codeEmailedAt,
+      status: row.codeEmailedAt
+        ? "SENT"
+        : row.unsubscribedAt
+          ? "UNSUBSCRIBED"
+          : !row.insiderCode
+            ? "NO_CODE"
+            : row.codeEmailClaimedAt && row.codeEmailClaimedAt >= staleBefore
+              ? "SENDING"
+              : "WAITING",
+    })),
+    hasNext: rows.length > input.pageSize,
+    total,
+  };
+}
+
 /** One-click unsubscribe from the Insider email footer. */
 export async function unsubscribeWaitlistEntry(
   entryId: string,

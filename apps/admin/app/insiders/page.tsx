@@ -7,6 +7,8 @@ import {
   istDateOf,
   istLastDayOf,
   listCardAddresses,
+  listInsiderEmailStatus,
+  type InsiderEmailStatus,
   listInsiderTiers,
 } from "@onwei/core";
 import { hasPermission } from "@onwei/auth";
@@ -95,7 +97,17 @@ export default async function InsidersPage({
           }
         />
       ) : null}
-      {tab === "email" ? <EmailTab canManage={canManage} /> : null}
+      {tab === "email" ? (
+        <EmailTab
+          canManage={canManage}
+          page={parsePage(params.page)}
+          show={
+            params.show === "sent" || params.show === "all"
+              ? params.show
+              : "notSent"
+          }
+        />
+      ) : null}
       {tab === "cards" ? <PrintedCardsTab canManage={canManage} /> : null}
     </main>
   );
@@ -346,8 +358,36 @@ async function AddressesTab({
   );
 }
 
-async function EmailTab({ canManage }: { canManage: boolean }) {
-  const overview = await getInsiderOverview();
+const EMAIL_SHOW_OPTIONS = [
+  { id: "notSent", label: "Not sent yet" },
+  { id: "sent", label: "Sent" },
+  { id: "all", label: "Everyone" },
+] as const;
+
+const EMAIL_STATUS: Record<
+  InsiderEmailStatus,
+  { label: string; tone: "pending" | "active" | "success" | "problem" }
+> = {
+  SENT: { label: "Sent", tone: "success" },
+  SENDING: { label: "Sending now", tone: "active" },
+  WAITING: { label: "Waiting", tone: "pending" },
+  UNSUBSCRIBED: { label: "Unsubscribed", tone: "problem" },
+  NO_CODE: { label: "No code yet", tone: "problem" },
+};
+
+async function EmailTab({
+  canManage,
+  page,
+  show,
+}: {
+  canManage: boolean;
+  page: number;
+  show: "notSent" | "sent" | "all";
+}) {
+  const [overview, list] = await Promise.all([
+    getInsiderOverview(),
+    listInsiderEmailStatus({ page, pageSize: PAGE_SIZE, show }),
+  ]);
   const missing = overview.members - overview.withCode;
   const fromSakshi = Boolean(process.env.INSIDER_EMAIL_FROM);
   const live = Boolean(process.env.RESEND_API_KEY);
@@ -361,8 +401,9 @@ async function EmailTab({ canManage }: { canManage: boolean }) {
         <p className="text-sm text-onwei-blue/80">
           Each Insider gets their own code and a private link to share their
           address for the Insider card. Nobody gets it twice, and people who
-          unsubscribed are skipped. New signups are added to the count below, so
-          press send again later to reach them.
+          unsubscribed are skipped. New signups get it on their own right after
+          they join. Anyone it couldn&apos;t reach then stays in the &ldquo;Not
+          sent yet&rdquo; list below for this button.
         </p>
         <ul className="list-inside list-disc text-sm text-onwei-blue/80">
           <li>{overview.toEmail} waiting for the email</li>
@@ -396,6 +437,76 @@ async function EmailTab({ canManage }: { canManage: boolean }) {
           </p>
         )}
       </AdminCard>
+
+      <div className="flex flex-wrap gap-2">
+        {EMAIL_SHOW_OPTIONS.map((option) => (
+          <a
+            key={option.id}
+            href={`/insiders?tab=email&show=${option.id}`}
+            className={`rounded-full px-3 py-1 text-sm ${
+              option.id === show
+                ? "bg-onwei-blue text-onwei-beige"
+                : "border border-onwei-blue/30 text-onwei-blue"
+            }`}
+          >
+            {option.label}
+          </a>
+        ))}
+      </div>
+      {list.rows.length === 0 ? (
+        <EmptyState
+          title={
+            show === "sent"
+              ? "No emails sent yet"
+              : show === "notSent"
+                ? "Everyone has had the email"
+                : "Nobody on the waitlist yet"
+          }
+          description={
+            show === "notSent"
+              ? "New Insiders get it right after they join."
+              : "People show up here once they join the waitlist."
+          }
+        />
+      ) : (
+        <>
+          <p className="text-sm text-onwei-blue/70">
+            {list.total} in this list
+          </p>
+          <AdminTable>
+            <AdminTableHead>
+              <AdminTableHeaderCell>Name</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Email</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Code</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Joined</AdminTableHeaderCell>
+              <AdminTableHeaderCell>Insider email</AdminTableHeaderCell>
+            </AdminTableHead>
+            <tbody>
+              {list.rows.map((row) => (
+                <AdminTableRow key={row.id}>
+                  <AdminTableCell>{row.fullName}</AdminTableCell>
+                  <AdminTableCell>{row.email}</AdminTableCell>
+                  <AdminTableCell>{row.insiderCode ?? "-"}</AdminTableCell>
+                  <AdminTableCell>{istDateOf(row.joinedAt)}</AdminTableCell>
+                  <AdminTableCell>
+                    <AdminBadge tone={EMAIL_STATUS[row.status].tone}>
+                      {row.status === "SENT" && row.emailedAt
+                        ? `Sent ${istDateOf(row.emailedAt)}`
+                        : EMAIL_STATUS[row.status].label}
+                    </AdminBadge>
+                  </AdminTableCell>
+                </AdminTableRow>
+              ))}
+            </tbody>
+          </AdminTable>
+        </>
+      )}
+      <AdminPager
+        pathname="/insiders"
+        page={page}
+        hasNext={list.hasNext}
+        params={{ tab: "email", show }}
+      />
     </div>
   );
 }
