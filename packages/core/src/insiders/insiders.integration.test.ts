@@ -5,6 +5,7 @@ import { fillInsiderCodePool, takeFreePrintedCode } from "./codePool";
 import { assignInsiderCode } from "./insiderCode";
 import {
   claimInsiderEmailBatch,
+  claimInsiderEmailFor,
   markInsiderEmailSent,
   releaseInsiderEmailClaim,
   unsubscribeWaitlistEntry,
@@ -124,18 +125,27 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(codeB).not.toBe(codeA);
     });
 
-    it("gives a new member the lowest free printed card", async () => {
+    it("gives a new member a free printed card", async () => {
+      // Another test file may take this card first; any free card will do.
       await makeTestCards(1);
-      const card = await prisma.insiderCode.findUniqueOrThrow({
-        where: { id: testCardIds[testCardIds.length - 1] },
-      });
       const id = await makeEntry();
-      expect(await assignInsiderCode(id)).toBe(card.code);
-      const after = await prisma.insiderCode.findUniqueOrThrow({
-        where: { id: card.id },
+      const code = await assignInsiderCode(id);
+      const card = await prisma.insiderCode.findUniqueOrThrow({
+        where: { waitlistEntryId: id },
       });
-      expect(after.waitlistEntryId).toBe(id);
-      expect(after.assignedAt).not.toBeNull();
+      touchedCardIds.add(card.id);
+      expect(card.code).toBe(code);
+      expect(card.assignedAt).not.toBeNull();
+      // Nothing lower than their card was still free when they took it.
+      const lowerFree = await prisma.insiderCode.count({
+        where: {
+          cardNumber: { lt: card.cardNumber },
+          waitlistEntryId: null,
+          assignedAt: null,
+          id: { notIn: testCardIds },
+        },
+      });
+      expect(lowerFree).toBe(0);
       // A member with a code never takes a second card.
       expect(await takeFreePrintedCode(id)).toBeNull();
     });
@@ -220,6 +230,22 @@ describe.skipIf(!process.env.DATABASE_URL)(
       for (const r of [...one, ...two, ...again, ...afterSent]) {
         if (!entryIds.includes(r.id)) await releaseInsiderEmailClaim(r.id);
       }
+    });
+
+    it("claims one new member for the email right after they join", async () => {
+      const id = await makeEntry();
+      expect(await claimInsiderEmailFor(id)).toBeNull(); // no code yet
+      const code = await assignInsiderCode(id);
+      const [one, two] = await Promise.all([
+        claimInsiderEmailFor(id),
+        claimInsiderEmailFor(id),
+      ]);
+      const claimed = [one, two].filter(Boolean);
+      expect(claimed).toHaveLength(1);
+      expect(claimed[0]?.insiderCode).toBe(code);
+
+      await markInsiderEmailSent(id);
+      expect(await claimInsiderEmailFor(id)).toBeNull();
     });
 
     it("skips unsubscribed members", async () => {

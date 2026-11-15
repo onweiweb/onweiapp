@@ -109,6 +109,37 @@ export async function claimInsiderEmailBatch(
   return claimed;
 }
 
+/**
+ * Claims one member for the Insider email, the same rules as a batch (has a
+ * code, not unsubscribed, not sent, not being sent right now). Used to send
+ * the email straight after someone joins. Returns null if they can't have it.
+ */
+export async function claimInsiderEmailFor(
+  entryId: string,
+  now: Date = new Date(),
+): Promise<InsiderEmailRecipient | null> {
+  const staleBefore = new Date(now.getTime() - STALE_CLAIM_MS);
+  const result = await prisma.waitlistEntry.updateMany({
+    where: {
+      id: entryId,
+      insiderCode: { not: null },
+      codeEmailedAt: null,
+      unsubscribedAt: null,
+      OR: [
+        { codeEmailClaimedAt: null },
+        { codeEmailClaimedAt: { lt: staleBefore } },
+      ],
+    },
+    data: { codeEmailClaimedAt: now },
+  });
+  if (result.count !== 1) return null;
+  const row = await prisma.waitlistEntry.findUniqueOrThrow({
+    where: { id: entryId },
+    select: { id: true, fullName: true, email: true, insiderCode: true },
+  });
+  return { ...row, insiderCode: row.insiderCode! };
+}
+
 export async function markInsiderEmailSent(entryId: string): Promise<void> {
   await prisma.waitlistEntry.update({
     where: { id: entryId },

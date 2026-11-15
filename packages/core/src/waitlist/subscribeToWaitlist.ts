@@ -73,5 +73,11 @@ export async function subscribeToWaitlist(
     console.error("[waitlist] insider code assignment failed", error);
   }
 
-  return { ok: true, alreadyJoined: false, fullName, email };
+  return {
+    ok: true,
+    alreadyJoined: false,
+    entryId: created.id,
+    fullName,
+    email,
+  };
 }

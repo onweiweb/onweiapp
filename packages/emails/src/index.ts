@@ -10,6 +10,7 @@ export {
   ConsoleEmailSender,
   ResendEmailSender,
   createEmailSender,
+  createInsiderEmailSender,
   sendEmailSafely,
 } from "./sender/emailSender";
 export type { EmailSender } from "./sender/emailSender";

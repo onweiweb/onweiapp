@@ -5,7 +5,11 @@ import {
   normalizeCode,
 } from "./insiderCode";
 import { insiderCardQrLink, planPoolFill } from "./codePool";
-import { createInsiderLinkToken, verifyInsiderLinkToken } from "./insiderLink";
+import {
+  createInsiderLinkToken,
+  insiderEmailLinks,
+  verifyInsiderLinkToken,
+} from "./insiderLink";
 import {
   findTierFor,
   istDateOf,
@@ -232,5 +236,26 @@ describe("printed card pool", () => {
     expect(url.searchParams.get("utm_source")).toBe("insider-card");
     expect(url.searchParams.get("utm_medium")).toBe("print");
     expect(url.searchParams.get("utm_campaign")).toBe("insider-cards");
+  });
+});
+
+describe("insider email links", () => {
+  it("builds signed address and unsubscribe links", () => {
+    const links = insiderEmailLinks("entry1", "https://www.onwei.in/", SECRET);
+    const address = new URL(links.addressUrl);
+    expect(address.pathname).toBe("/insider/address");
+    expect(
+      verifyInsiderLinkToken("address", address.searchParams.get("t")!, SECRET),
+    ).toEqual({ ok: true, entryId: "entry1" });
+    expect(new URL(links.unsubscribeUrl).pathname).toBe("/insider/unsubscribe");
+    expect(new URL(links.oneClickUnsubscribeUrl).pathname).toBe(
+      "/api/insider/unsubscribe",
+    );
+  });
+
+  it("refuses to build links without a secret", () => {
+    expect(() =>
+      insiderEmailLinks("entry1", "https://www.onwei.in", undefined),
+    ).toThrow();
   });
 });

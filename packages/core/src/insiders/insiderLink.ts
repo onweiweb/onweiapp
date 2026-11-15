@@ -74,3 +74,29 @@ export function verifyInsiderLinkToken(
   if (expires * 1000 < now.getTime()) return { ok: false, reason: "EXPIRED" };
   return { ok: true, entryId };
 }
+
+export interface InsiderEmailLinks {
+  addressUrl: string;
+  unsubscribeUrl: string;
+  oneClickUnsubscribeUrl: string;
+}
+
+/** The private links in a member's Insider email. Throws without a secret. */
+export function insiderEmailLinks(
+  entryId: string,
+  siteUrl: string,
+  secret: string | undefined,
+): InsiderEmailLinks {
+  const base = siteUrl.replace(/\/$/, "");
+  const address = encodeURIComponent(
+    createInsiderLinkToken("address", entryId, secret),
+  );
+  const unsubscribe = encodeURIComponent(
+    createInsiderLinkToken("unsubscribe", entryId, secret),
+  );
+  return {
+    addressUrl: `${base}/insider/address?t=${address}`,
+    unsubscribeUrl: `${base}/insider/unsubscribe?t=${unsubscribe}`,
+    oneClickUnsubscribeUrl: `${base}/api/insider/unsubscribe?t=${unsubscribe}`,
+  };
+}

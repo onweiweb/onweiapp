@@ -306,6 +306,8 @@ export {
 export {
   createInsiderLinkToken,
   verifyInsiderLinkToken,
+  insiderEmailLinks,
+  type InsiderEmailLinks,
   type InsiderLinkPurpose,
   type VerifyInsiderLinkResult,
 } from "./insiders/insiderLink";
@@ -326,6 +328,7 @@ export {
 export {
   getInsiderOverview,
   claimInsiderEmailBatch,
+  claimInsiderEmailFor,
   markInsiderEmailSent,
   releaseInsiderEmailClaim,
   logInsiderEmailRun,

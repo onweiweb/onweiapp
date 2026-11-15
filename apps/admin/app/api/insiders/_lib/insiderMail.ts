@@ -1,10 +1,7 @@
+import { insiderEmailLinks, type InsiderEmailRecipient } from "@onwei/core";
 import {
-  createInsiderLinkToken,
-  type InsiderEmailRecipient,
-} from "@onwei/core";
-import {
-  ResendEmailSender,
   createEmailSender,
+  createInsiderEmailSender,
   renderInsiderCodeEmail,
   type EmailSender,
 } from "@onwei/emails";
@@ -21,35 +18,17 @@ export function webUrl(): string {
  * the normal sender. Without RESEND_API_KEY it only logs to the console.
  */
 export function insiderSender(): EmailSender {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.INSIDER_EMAIL_FROM;
-  if (apiKey && from) {
-    return new ResendEmailSender(
-      apiKey,
-      from,
-      process.env.INSIDER_EMAIL_REPLY_TO ?? process.env.EMAIL_REPLY_TO,
-    );
-  }
-  return createEmailSender();
+  return createInsiderEmailSender() ?? createEmailSender();
 }
 
 export function renderFor(
   recipient: Pick<InsiderEmailRecipient, "id" | "fullName" | "insiderCode">,
 ) {
-  const secret = process.env.INSIDER_LINK_SECRET;
   const base = webUrl();
-  const addressToken = createInsiderLinkToken("address", recipient.id, secret);
-  const unsubscribeToken = createInsiderLinkToken(
-    "unsubscribe",
-    recipient.id,
-    secret,
-  );
   return renderInsiderCodeEmail({
     fullName: recipient.fullName,
     code: recipient.insiderCode,
     siteUrl: base,
-    addressUrl: `${base}/insider/address?t=${encodeURIComponent(addressToken)}`,
-    unsubscribeUrl: `${base}/insider/unsubscribe?t=${encodeURIComponent(unsubscribeToken)}`,
-    oneClickUnsubscribeUrl: `${base}/api/insider/unsubscribe?t=${encodeURIComponent(unsubscribeToken)}`,
+    ...insiderEmailLinks(recipient.id, base, process.env.INSIDER_LINK_SECRET),
   });
 }

@@ -11,6 +11,7 @@ import {
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { invalidInput } from "../_lib/invalidInput";
+import { sendInsiderCodeEmailNow } from "../_lib/insiderCodeEmail";
 import { sendWelcomeEmailInBackground } from "../_lib/sendWelcomeEmail";
 import { renderWaitlistWelcomeEmail } from "@onwei/emails";
 
@@ -76,15 +77,20 @@ export async function POST(request: Request) {
   }
 
   if (!result.alreadyJoined) {
-    const { fullName, email } = result;
-    sendWelcomeEmailInBackground(email, async () => {
-      const settings = await getSiteSetting().catch(() => null);
-      return renderWaitlistWelcomeEmail({
-        fullName,
-        siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
-        instagramUrl: settings?.instagramUrl ?? null,
-      });
-    });
+    const { entryId, fullName, email } = result;
+    // Two emails: the welcome, then the Insider code email from Sakshi.
+    sendWelcomeEmailInBackground(
+      email,
+      async () => {
+        const settings = await getSiteSetting().catch(() => null);
+        return renderWaitlistWelcomeEmail({
+          fullName,
+          siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+          instagramUrl: settings?.instagramUrl ?? null,
+        });
+      },
+      () => sendInsiderCodeEmailNow(entryId),
+    );
   }
 
   return NextResponse.json({ ok: true, alreadyJoined: result.alreadyJoined });

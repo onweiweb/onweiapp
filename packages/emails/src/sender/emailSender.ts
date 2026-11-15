@@ -56,6 +56,24 @@ export function createEmailSender(
 }
 
 /**
+ * The sender for the Insider code email (from Sakshi). Null when
+ * INSIDER_EMAIL_FROM or RESEND_API_KEY is missing, so callers can decide
+ * whether to fall back or skip.
+ */
+export function createInsiderEmailSender(
+  env: Record<string, string | undefined> = process.env,
+): EmailSender | null {
+  const apiKey = env.RESEND_API_KEY;
+  const from = env.INSIDER_EMAIL_FROM;
+  if (!apiKey || !from) return null;
+  return new ResendEmailSender(
+    apiKey,
+    from,
+    env.INSIDER_EMAIL_REPLY_TO ?? env.EMAIL_REPLY_TO,
+  );
+}
+
+/**
  * Welcome mail is a courtesy, never a reason to fail a signup. Logs and
  * swallows any send error. Returns whether the send succeeded.
  */
