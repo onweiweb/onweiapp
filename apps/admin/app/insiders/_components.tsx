@@ -392,6 +392,8 @@ export function EmailSender({ toEmail }: { toEmail: number }) {
     setSending(true);
     let sent = 0;
     let failed = 0;
+    let whatsappSent = 0;
+    let whatsappFailed = 0;
     setProgress({ sent, failed });
     while (sent < howMany) {
       const result = await send("/api/insiders/email/send", "POST", {
@@ -406,17 +408,23 @@ export function EmailSender({ toEmail }: { toEmail: number }) {
       }
       sent += Number(result.sent);
       failed += Number(result.failed);
+      whatsappSent += Number(result.whatsappSent ?? 0);
+      whatsappFailed += Number(result.whatsappFailed ?? 0);
       setProgress({ sent, failed });
       // Stop when nobody is left, or a whole batch failed (provider problem,
       // often the day's limit).
       if (Number(result.remaining) === 0 || Number(result.sent) === 0) break;
     }
     setSending(false);
+    const whatsappNote =
+      whatsappSent + whatsappFailed > 0
+        ? ` WhatsApp: ${whatsappSent} sent${whatsappFailed > 0 ? `, ${whatsappFailed} didn't go out (see WhatsApp page)` : ""}.`
+        : "";
     toast(
-      failed > 0
+      (failed > 0
         ? `Sent ${sent}. ${failed} didn't go out (the day's limit may be reached); they'll go with the next send.`
-        : `Sent ${sent} emails.`,
-      failed > 0 ? "error" : "success",
+        : `Sent ${sent} emails.`) + whatsappNote,
+      failed > 0 || whatsappFailed > 0 ? "error" : "success",
     );
     router.refresh();
   }

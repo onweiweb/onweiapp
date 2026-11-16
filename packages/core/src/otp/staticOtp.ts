@@ -1,5 +1,7 @@
 /**
- * SMS and WhatsApp sign-in codes are static until real providers are wired
+ * WhatsApp sign-in codes are real once the Gupshup sign-in template is set up
+ * and switched on in admin (`whatsappReady`). SMS, and WhatsApp before that,
+ * use a static code until real providers are wired
  * (docs/COMMERCE_BUILD_PLAN.md section 7). A static code lets anyone who
  * knows it sign in as any phone number, so:
  * - it only comes from the OTP_STATIC_CODE env var (never in git or the UI),
@@ -7,14 +9,22 @@
  *   reports itself unavailable until a provider is added).
  */
 export type PhoneOtpMode =
-  { mode: "static"; code: string } | { mode: "unavailable" };
+  | { mode: "whatsapp" }
+  | { mode: "static"; code: string }
+  | { mode: "unavailable" };
 
 const CODE = /^\d{6}$/;
 
 export function phoneOtpMode(input: {
   env: Record<string, string | undefined>;
   siteMode: string;
+  channel?: "SMS" | "WHATSAPP";
+  /** Gupshup connected and the sign-in template switched on. */
+  whatsappReady?: boolean;
 }): PhoneOtpMode {
+  if (input.channel === "WHATSAPP" && input.whatsappReady) {
+    return { mode: "whatsapp" };
+  }
   const code = input.env.OTP_STATIC_CODE?.trim();
   if (!code || !CODE.test(code)) return { mode: "unavailable" };
   const production =

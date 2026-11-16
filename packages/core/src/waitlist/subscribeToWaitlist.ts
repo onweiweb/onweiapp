@@ -79,5 +79,6 @@ export async function subscribeToWaitlist(
     entryId: created.id,
     fullName,
     email,
+    phone,
   };
 }

@@ -405,7 +405,8 @@ Insider discount. So:
   hidden) and in dev and preview, it works.
 - Email codes are real from day one, so launch can go ahead with email sign-in even if SMS and WhatsApp are not ready.
   Phone sign-in is hidden at launch until a real provider is wired.
-- Phase G replaces the static code with real providers (section 13).
+- Phase G replaces the static code with real providers (section 13). WhatsApp is built (Gupshup, 2026-11-16) and takes
+  over once its sign-in template is switched on in admin. SMS still waits for DLT.
 
 ---
 
@@ -595,9 +596,40 @@ Either way:
 
 ## 13. SMS and WhatsApp providers (last phase)
 
-- SMS in India needs DLT registration (business, sender id, each template). Usually 1 to 2 weeks.
+- SMS in India needs DLT registration (business, sender id, each template). Usually 1 to 2 weeks. Not started, SMS still
+  uses the static code.
 - WhatsApp needs Meta Business verification, a number not used in the WhatsApp app, an approved authentication template.
-- One provider for both (MSG91 or Gupshup) keeps it simple. Starting registration early removes the wait later.
+
+### WhatsApp through Gupshup (built 2026-11-16)
+
+Owner picked Gupshup. Code in `packages/core/src/messaging/whatsapp/`, admin page `/whatsapp` (Settings group).
+
+- **Messages are rows, not env vars.** `WhatsAppTemplate` holds one row per kind of message (`WhatsAppPurpose`):
+  Gupshup template ID (not Meta's), name, language, the ordered values to fill in (`{{1}}`, `{{2}}`, ..., picked from a
+  fixed list per message in `purposes.ts`, repeats allowed), header (none, text, image with an uploaded link), the
+  approved text for reference, and on/off. Off by default. Saving writes an audit entry. A new kind of message is a new
+  enum value, an entry in `purposes.ts` and a call site.
+- **The three messages:**
+  1. `SIGN_IN_CODE` (Authentication, Copy code button, no image): real random codes for WhatsApp sign-in and "add phone"
+     in My Account. Once on, WhatsApp sign-in works on the live site (`phoneOtpMode` mode `whatsapp`). If the send
+     fails the shopper sees "couldn't send on WhatsApp, use email". Off or not connected: the old static-code rules.
+  2. `WAITLIST_JOINED` (Utility, image header): right after a waitlist signup, in the background next to the welcome
+     email.
+  3. `INSIDER_CODE` (Marketing, image header, "Share my address" dynamic URL button whose value is the signed address
+     token): sent with each Insider email when staff press send on Insiders > Email, to every member with a phone
+     (owner's decision 2026-11-16, old members included). A WhatsApp failure never undoes the email.
+- **Connection (env, web and admin):** `GUPSHUP_API_KEY`, `GUPSHUP_APP_NAME`, `GUPSHUP_SOURCE_NUMBER`; web also
+  `GUPSHUP_WEBHOOK_TOKEN`.
+- **Send log:** `WhatsAppMessage` per send (purpose, phone, waitlist entry or customer, Gupshup message id, status,
+  failure reason, times). Never the sign-in code or the address token. Admin shows 7-day counts only.
+- **Webhook:** `POST /api/webhooks/gupshup/<GUPSHUP_WEBHOOK_TOKEN>` (Gupshup format v2, unsigned, so the token in the
+  path is checked in constant time; 404 on mismatch). Delivery updates move a message forward only (compare-and-set,
+  a late "sent" never overwrites "read"). A reply of STOP or UNSUBSCRIBE adds the number to `WhatsAppOptOut`, which
+  blocks waitlist and Insider messages but not sign-in codes the person asks for. Other replies are ignored.
+- **To confirm on the first live test:** how Gupshup wants the Copy code button and the URL button values in `params`
+  (the admin value list can repeat or reorder values, so a fix needs no code change).
+- **Consent:** the waitlist box now reads "...contacting me about the launch by email and WhatsApp...", and new entries
+  store `consentVersion` as `waitlist-v2:<privacy version>`.
 
 ## 14. Figma inventory (checked 2026-11-09)
 

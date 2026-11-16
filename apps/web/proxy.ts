@@ -16,6 +16,9 @@ const ALWAYS_ALLOWED_PREFIXES = [
   // Razorpay's server-to-server webhook (signature checked in the route) and
   // the scheduled clean-up of unpaid orders (CRON_SECRET checked).
   "/api/payments/razorpay/webhook",
+  // Gupshup WhatsApp delivery updates and replies (secret token checked in
+  // the route).
+  "/api/webhooks/gupshup",
   "/api/cron/release-orders",
   // Analytics events (rewritten to PostHog in next.config.ts), must never
   // be redirected to the waitlist page.

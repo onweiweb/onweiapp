@@ -38,6 +38,7 @@ model Customer {
   consentLogs       ConsentLog[]
   dataRequests      DataSubjectRequest[]
   couponRedemptions CouponRedemption[]
+  whatsAppMessages  WhatsAppMessage[]
 }
 
 enum CustomerStatus {
@@ -1010,6 +1011,7 @@ model WaitlistEntry {
   cardAddress        InsiderCardAddress?
   // The printed card this person's code is on, if any (see InsiderCode).
   printedCard        InsiderCode?
+  whatsAppMessages   WhatsAppMessage[]
 
   @@index([submittedAt])
 }
@@ -1217,4 +1219,83 @@ model AnalyticsEvent {
   createdAt  DateTime @default(now())
 
   @@index([eventType, createdAt])
+}
+
+// WhatsApp through Gupshup (docs/COMMERCE_BUILD_PLAN.md, Phase G). One row
+// per kind of message. The template itself is approved by Meta in Gupshup;
+// staff paste its id here in admin and switch it on. Off by default.
+enum WhatsAppPurpose {
+  SIGN_IN_CODE
+  WAITLIST_JOINED
+  INSIDER_CODE
+}
+
+enum WhatsAppHeader {
+  NONE
+  TEXT
+  IMAGE
+}
+
+enum WhatsAppStatus {
+  SENDING
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+model WhatsAppTemplate {
+  id                String          @id @default(cuid())
+  purpose           WhatsAppPurpose @unique
+  // Gupshup's own template id (not Meta's numeric one).
+  gupshupTemplateId String          @default("")
+  templateName      String          @default("")
+  language          String          @default("en")
+  // Ordered variable keys, from the purpose's allowed list
+  // (packages/core/src/messaging/whatsapp/purposes.ts).
+  variables         String[]
+  headerType        WhatsAppHeader  @default(NONE)
+  // Public image sent with each message when headerType is IMAGE.
+  headerImageUrl    String?
+  // The approved body text, for the admin preview only.
+  previewText       String          @default("")
+  isActive          Boolean         @default(false)
+  updatedById       String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+}
+
+// Send log. Holds no sign-in codes and no private link tokens. Delivery
+// updates from the Gupshup webhook move the status forward.
+model WhatsAppMessage {
+  id                String          @id @default(cuid())
+  purpose           WhatsAppPurpose
+  // E.164, e.g. +919876543210
+  phone             String
+  waitlistEntryId   String?
+  waitlistEntry     WaitlistEntry?  @relation(fields: [waitlistEntryId], references: [id], onDelete: SetNull)
+  customerId        String?
+  customer          Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  providerMessageId String?         @unique
+  status            WhatsAppStatus  @default(SENDING)
+  failureReason     String?
+  createdAt         DateTime        @default(now())
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  readAt            DateTime?
+  failedAt          DateTime?
+
+  @@index([purpose, createdAt])
+  @@index([status])
+  @@index([waitlistEntryId])
+  @@index([customerId])
+}
+
+// Numbers that replied STOP. Every message except sign-in codes checks this.
+model WhatsAppOptOut {
+  // E.164
+  phone     String   @id
+  // "reply_stop" or "staff"
+  source    String
+  createdAt DateTime @default(now())
 }

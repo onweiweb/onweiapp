@@ -89,6 +89,12 @@ correction requests, also a DPDP requirement once a customer asks for one.
 signup takes the lowest free card. A card whose member is deleted keeps `assignedAt` (owner set to null) and is never
 reused. Settings-like data, no personal fields of its own. See `docs/COMMERCE_BUILD_PLAN.md` ("Printed Insider cards").
 
+**WhatsApp (Gupshup).** `WhatsAppTemplate` (one row per `WhatsAppPurpose`: Gupshup template ID, ordered variable
+keys, header type and image link, on/off; audit-logged), `WhatsAppMessage` (send log: purpose, E.164 phone, optional
+`waitlistEntryId` / `customerId` with `onDelete: SetNull`, unique `providerMessageId`, status moved forward by the
+webhook, failure reason; never stores the sign-in code or private link tokens) and `WhatsAppOptOut` (phone that
+replied STOP). Migration `20261116120000_whatsapp_messaging` (additive). See `docs/COMMERCE_BUILD_PLAN.md` section 13.
+
 **Waitlist attribution.** `WaitlistEntry` also records where a signup came from:
 `utmSource`, `utmMedium`, `utmCampaign`, `utmContent`, `referrerHost` (all cleaned to
 short slugs by `sanitizeAttribution`), and an approximate `country`, `region`, `city`

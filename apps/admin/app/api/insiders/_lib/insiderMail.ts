@@ -1,4 +1,10 @@
-import { insiderEmailLinks, type InsiderEmailRecipient } from "@onwei/core";
+import {
+  createInsiderLinkToken,
+  firstNameOf,
+  insiderEmailLinks,
+  sendWhatsApp,
+  type InsiderEmailRecipient,
+} from "@onwei/core";
 import {
   createEmailSender,
   createInsiderEmailSender,
@@ -31,4 +37,39 @@ export function renderFor(
     siteUrl: base,
     ...insiderEmailLinks(recipient.id, base, process.env.INSIDER_LINK_SECRET),
   });
+}
+
+/**
+ * The Insider WhatsApp (code plus the private address link as the button),
+ * sent right after that member's email. Skipped when the template is off,
+ * the member has no phone or replied STOP. Never throws.
+ */
+export async function sendInsiderWhatsApp(
+  recipient: Pick<
+    InsiderEmailRecipient,
+    "id" | "fullName" | "phone" | "insiderCode"
+  >,
+): Promise<"sent" | "failed" | "skipped"> {
+  if (!recipient.phone) return "skipped";
+  let addressToken: string;
+  try {
+    addressToken = createInsiderLinkToken(
+      "address",
+      recipient.id,
+      process.env.INSIDER_LINK_SECRET,
+    );
+  } catch {
+    return "skipped";
+  }
+  const result = await sendWhatsApp({
+    purpose: "INSIDER_CODE",
+    phone: recipient.phone,
+    values: {
+      firstName: firstNameOf(recipient.fullName),
+      insiderCode: recipient.insiderCode,
+      addressToken,
+    },
+    waitlistEntryId: recipient.id,
+  });
+  return result.status;
 }

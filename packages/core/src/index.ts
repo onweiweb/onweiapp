@@ -499,3 +499,4 @@ export {
   type ContactValidation,
   type ContactMessageRow,
 } from "./contact/contactMessages";
+export * from "./messaging/whatsapp";

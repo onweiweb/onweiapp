@@ -8,7 +8,11 @@ import {
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
-import { insiderSender, renderFor } from "../../_lib/insiderMail";
+import {
+  insiderSender,
+  renderFor,
+  sendInsiderWhatsApp,
+} from "../../_lib/insiderMail";
 
 // One small batch per request, so a long send never hits the request time
 // limit. The admin page calls this again until nothing is left.
@@ -46,16 +50,22 @@ export const POST = defineAdminRoute(
     const batch = await claimInsiderEmailBatch(Math.min(BATCH_SIZE, body.max));
     let sent = 0;
     let failed = 0;
+    // The Insider WhatsApp goes with each email that went out. Its result
+    // never undoes the email (see sendInsiderWhatsApp).
+    const whatsapp = { sent: 0, failed: 0, skipped: 0 };
     for (const recipient of batch) {
+      let emailed = false;
       try {
         await sender.send(recipient.email, renderFor(recipient));
         await markInsiderEmailSent(recipient.id);
         sent++;
+        emailed = true;
       } catch (error) {
         console.error("[insiders] send failed", recipient.id, error);
         await releaseInsiderEmailClaim(recipient.id);
         failed++;
       }
+      if (emailed) whatsapp[await sendInsiderWhatsApp(recipient)]++;
       await new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
     }
 
@@ -66,6 +76,13 @@ export const POST = defineAdminRoute(
       );
     }
     const { toEmail } = await getInsiderOverview();
-    return NextResponse.json({ ok: true, sent, failed, remaining: toEmail });
+    return NextResponse.json({
+      ok: true,
+      sent,
+      failed,
+      remaining: toEmail,
+      whatsappSent: whatsapp.sent,
+      whatsappFailed: whatsapp.failed,
+    });
   },
 );

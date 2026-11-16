@@ -279,7 +279,7 @@ export function WaitlistForm({
         <ConsentCheckbox
           checked={consent}
           onChange={setConsent}
-          lead="I agree to Onwei contacting me about the launch and accept the"
+          lead="I agree to Onwei contacting me about the launch by email and WhatsApp, and accept the"
           links={["privacy"]}
         />
 

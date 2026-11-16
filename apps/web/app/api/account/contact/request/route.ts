@@ -4,7 +4,6 @@ import {
   getSiteSetting,
   isValidEmail,
   parseJsonBody,
-  phoneOtpMode,
   requestOtpChallenge,
   validatePhone,
 } from "@onwei/core";
@@ -12,6 +11,7 @@ import { createEmailSender, renderOtpEmail } from "@onwei/emails";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { invalidInput } from "../../../_lib/invalidInput";
+import { phoneCodeMode, sendWhatsAppCode } from "../../../_lib/phoneCode";
 import { customerIdFrom } from "../../../_lib/requestAuth";
 
 // Adding a missing email or phone to an account: a code to the new contact
@@ -35,6 +35,7 @@ export async function POST(request: Request) {
   const setting = await getSiteSetting();
   let identifier = parsed.data.identifier;
   let fixedCode: string | undefined;
+  let viaWhatsApp = false;
   if (channel === "EMAIL") {
     identifier = identifier.toLowerCase();
     if (!isValidEmail(identifier))
@@ -52,13 +53,14 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     identifier = phone.e164;
-    const mode = phoneOtpMode({ env: process.env, siteMode: setting.siteMode });
+    const mode = await phoneCodeMode(channel, setting.siteMode);
     if (mode.mode === "unavailable")
       return NextResponse.json(
         { ok: false, reason: "PHONE_UNAVAILABLE" },
         { status: 400 },
       );
-    fixedCode = mode.code;
+    if (mode.mode === "static") fixedCode = mode.code;
+    else viaWhatsApp = true;
   }
   const ip = getClientIp(request);
   if (!(await checkOtpRateLimit(identifier, ip)).allowed) {
@@ -84,6 +86,12 @@ export async function POST(request: Request) {
         { status: 502 },
       );
     }
+  }
+  if (viaWhatsApp && !(await sendWhatsAppCode(identifier, code, customerId))) {
+    return NextResponse.json(
+      { ok: false, reason: "WHATSAPP_SEND_FAILED" },
+      { status: 502 },
+    );
   }
   return NextResponse.json({ ok: true, identifier, resendAfterSeconds: 30 });
 }

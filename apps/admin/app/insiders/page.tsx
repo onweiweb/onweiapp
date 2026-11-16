@@ -403,7 +403,8 @@ async function EmailTab({
           address for the Insider card. Nobody gets it twice, and people who
           unsubscribed are skipped. New signups are not emailed on their own:
           they wait in the &ldquo;Not sent yet&rdquo; list below until someone
-          presses this button.
+          presses this button. When the Insider WhatsApp is switched on (see the
+          WhatsApp page), everyone emailed also gets it on WhatsApp.
         </p>
         <ul className="list-inside list-disc text-sm text-onwei-blue/80">
           <li>{overview.toEmail} waiting for the email</li>

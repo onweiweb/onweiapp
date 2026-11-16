@@ -45,7 +45,10 @@ so this plan treats them as Phase 1 requirements, not a later add-on.
 - Public forms use an unticked, required checkbox (`apps/web/app/_components/ConsentCheckbox.tsx`).
   A "by submitting you agree" line is not valid consent under DPDP or GDPR. The API routes
   reject a missing flag with `CONSENT_REQUIRED`, so the checkbox cannot be bypassed.
-  - Waitlist: stores `WaitlistEntry.consentVersion` and `ipAddress`.
+  - Waitlist: stores `WaitlistEntry.consentVersion` and `ipAddress`. From 2026-11-16 the box names email and
+    WhatsApp and the version is stored as `waitlist-v2:<privacy version>`. Earlier entries agreed to "contacting me
+    about the launch" without naming WhatsApp; the owner decided on 2026-11-16 that they also get the Insider WhatsApp.
+    Every non-sign-in WhatsApp says "Reply STOP", and a STOP reply is honoured (`WhatsAppOptOut`).
   - Newsletter: stores `NewsletterSubscriber.consentVersion`, `consentedAt`, `ipAddress`. Rows
     from before 2026-10-02 and staff-added rows have no proof of consent.
   - Login: writes `ConsentLog` rows (`TERMS_OF_SERVICE`, `PRIVACY_POLICY`) when the customer
@@ -74,6 +77,11 @@ can come later once volume justifies it.
   tied to an identity to be useful in aggregate.
 
 ## Third-party data flows
+
+- Gupshup (WhatsApp): gets the phone number and the message values (first name, Insider code, sign-in code, address
+  link token). Our send log (`WhatsAppMessage`) keeps the phone and delivery status, no codes or tokens, and is cut
+  loose from the member or customer (`SetNull`) when they are deleted. Delete the log rows for that phone as part of a
+  data request.
 
 Every external processor (payment gateway, SMS/email OTP provider, any
 reviews-aggregation service) is a place personal data leaves the app. Each

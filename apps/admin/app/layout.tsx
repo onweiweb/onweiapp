@@ -89,6 +89,7 @@ const NAV_GROUPS = [
       { label: "Staff", href: "/staff", icon: "UserCog" },
       { label: "Roles", href: "/roles", icon: "ShieldCheck" },
       { label: "Site settings", href: "/settings", icon: "Settings" },
+      { label: "WhatsApp", href: "/whatsapp", icon: "MessageCircle" },
       { label: "Audit log", href: "/audit-log", icon: "ScrollText" },
       { label: "Data requests", href: "/dsr", icon: "FileSearch" },
     ],

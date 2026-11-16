@@ -298,9 +298,13 @@ Messages are saved (`ContactMessage`), emailed to the support address with the s
 Messages (`customer:view`). Contact details live on `SiteSetting` (admin Settings). Migrations
 `20261110120000_contact_us` and `20261110120100_contact_address_lines`. Any new `SiteSetting` column must be migrated on
 prod before the push: `getSiteSetting` reads the whole row and the waitlist gate calls it on every request.
-Printed Insider cards (2026-11-15, local, not pushed): 500 pre-made codes in `InsiderCode`, new signups take the next free
-card, admin Insiders "Printed cards" tab (set up, printer CSV). Migration `20261114204559_insider_code_pool` needs the
-prod migration before the push. Details in `docs/COMMERCE_BUILD_PLAN.md` ("Printed Insider cards").
+Printed Insider cards (2026-11-15, pushed 85af9e4, prod migrated): 500 pre-made codes in `InsiderCode`, new signups take
+the next free card, admin Insiders "Printed cards" tab (set up, printer CSV). The Insider email is sent only from admin
+(the automatic send at signup was removed 2026-11-16, 6d13cf6). Details in `docs/COMMERCE_BUILD_PLAN.md`.
+WhatsApp through Gupshup (2026-11-16, local, not pushed): templates managed in admin `/whatsapp` (DB rows, off by default),
+real WhatsApp sign-in codes, waitlist-joined message, Insider WhatsApp sent with the Insider email, Gupshup webhook for
+delivery and STOP, waitlist consent names WhatsApp. Migration `20261116120000_whatsapp_messaging` needs the prod
+migration before the push. Details in `docs/COMMERCE_BUILD_PLAN.md` section 13.
 
 **Latest (2026-10-21):** Blogs page and admin blog editor, admin overhaul (speed, nav, shared kit), waitlist blog switch,
 blog analytics, product delete and redesigned product pages are pushed (up to f34223b). The backup product image work

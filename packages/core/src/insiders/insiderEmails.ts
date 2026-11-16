@@ -61,6 +61,8 @@ export interface InsiderEmailRecipient {
   id: string;
   fullName: string;
   email: string;
+  /** E.164, for the Insider WhatsApp sent with the email. */
+  phone: string;
   insiderCode: string;
 }
 
@@ -86,7 +88,13 @@ export async function claimInsiderEmailBatch(
     },
     orderBy: { submittedAt: "asc" },
     take: limit,
-    select: { id: true, fullName: true, email: true, insiderCode: true },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      phone: true,
+      insiderCode: true,
+    },
   });
 
   const claimed: InsiderEmailRecipient[] = [];

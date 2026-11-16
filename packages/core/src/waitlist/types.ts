@@ -31,6 +31,8 @@ export type SubscribeToWaitlistResult =
       entryId: string;
       fullName: string;
       email: string;
+      /** E.164 */
+      phone: string;
     }
   | { ok: false; reason: SubscribeToWaitlistFailureReason };
 

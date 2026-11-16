@@ -4,6 +4,8 @@ import {
   getClientIp,
   readGeoHeaders,
   sanitizeAttribution,
+  firstNameOf,
+  sendWhatsApp,
   getCurrentConsentVersion,
   parseJsonBody,
   subscribeToWaitlist,
@@ -11,12 +13,17 @@ import {
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { invalidInput } from "../_lib/invalidInput";
-import { sendWelcomeEmailInBackground } from "../_lib/sendWelcomeEmail";
+import {
+  runInBackground,
+  sendWelcomeEmailInBackground,
+} from "../_lib/sendWelcomeEmail";
 import { renderWaitlistWelcomeEmail } from "@onwei/emails";
 
 // Shape only. Whether a name/email/phone is acceptable is decided by
 // subscribeToWaitlist, which answers with the INVALID_* reasons the form
 // already maps to copy.
+const WAITLIST_CONSENT_WORDING = "waitlist-v2";
+
 const bodySchema = z.object({
   fullName: z.string().default(""),
   email: z.string().default(""),
@@ -62,7 +69,9 @@ export async function POST(request: Request) {
     phone: body.phone,
     movementFlex: body.movementFlex,
     source: "coming_soon_page",
-    consentVersion: await getCurrentConsentVersion(["privacy"]),
+    // The prefix records which checkbox wording they agreed to
+    // (v2 names email and WhatsApp, see WaitlistForm).
+    consentVersion: `${WAITLIST_CONSENT_WORDING}:${await getCurrentConsentVersion(["privacy"])}`,
     ipAddress: ip,
     attribution: sanitizeAttribution(body.attribution),
     geo: readGeoHeaders(request.headers),
@@ -76,8 +85,17 @@ export async function POST(request: Request) {
   }
 
   if (!result.alreadyJoined) {
-    const { fullName, email } = result;
-    // Only the welcome email. The Insider code email is sent from admin.
+    const { entryId, fullName, email, phone } = result;
+    // The welcome email, plus the "you're on the waitlist" WhatsApp when its
+    // template is on in admin. The Insider code email is sent from admin.
+    runInBackground(() =>
+      sendWhatsApp({
+        purpose: "WAITLIST_JOINED",
+        phone,
+        values: { firstName: firstNameOf(fullName) },
+        waitlistEntryId: entryId,
+      }),
+    );
     sendWelcomeEmailInBackground(email, async () => {
       const settings = await getSiteSetting().catch(() => null);
       return renderWaitlistWelcomeEmail({

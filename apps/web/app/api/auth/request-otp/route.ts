@@ -4,7 +4,6 @@ import {
   getSiteSetting,
   isValidEmail,
   parseJsonBody,
-  phoneOtpMode,
   requestOtpChallenge,
   validatePhone,
 } from "@onwei/core";
@@ -12,10 +11,12 @@ import { createEmailSender, renderOtpEmail } from "@onwei/emails";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { invalidInput } from "../../_lib/invalidInput";
+import { phoneCodeMode, sendWhatsAppCode } from "../../_lib/phoneCode";
 
-// Sign-in codes. Email: a real code by email (Resend). SMS and WhatsApp:
-// a static code from OTP_STATIC_CODE until real providers are added, refused
-// on the live production site (packages/core/src/otp/staticOtp.ts).
+// Sign-in codes. Email: a real code by email (Resend). WhatsApp: a real code
+// through Gupshup once its sign-in template is on in admin. SMS (and WhatsApp
+// before that): a static code from OTP_STATIC_CODE, refused on the live
+// production site (packages/core/src/otp/staticOtp.ts).
 
 const bodySchema = z.object({
   identifier: z.string().trim().min(1).max(254),
@@ -53,15 +54,17 @@ export async function POST(request: Request) {
   }
 
   let fixedCode: string | undefined;
+  let viaWhatsApp = false;
   if (channel !== "EMAIL") {
-    const mode = phoneOtpMode({ env: process.env, siteMode: setting.siteMode });
+    const mode = await phoneCodeMode(channel, setting.siteMode);
     if (mode.mode === "unavailable") {
       return NextResponse.json(
         { ok: false, reason: "PHONE_UNAVAILABLE" },
         { status: 400 },
       );
     }
-    fixedCode = mode.code;
+    if (mode.mode === "static") fixedCode = mode.code;
+    else viaWhatsApp = true;
   }
 
   const requestIp = getClientIp(request);
@@ -98,7 +101,13 @@ export async function POST(request: Request) {
       );
     }
   }
-  // SMS and WhatsApp: the code is the static one, nothing is sent yet.
+  if (viaWhatsApp && !(await sendWhatsAppCode(identifier, code))) {
+    return NextResponse.json(
+      { ok: false, reason: "WHATSAPP_SEND_FAILED" },
+      { status: 502 },
+    );
+  }
+  // Static code (SMS, or WhatsApp before it is set up): nothing is sent.
 
   return NextResponse.json({
     ok: true,
