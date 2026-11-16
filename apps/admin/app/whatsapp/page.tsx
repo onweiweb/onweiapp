@@ -20,6 +20,21 @@ import {
 } from "../_components/ui";
 import { requirePageSession } from "../_lib/requirePageSession";
 import { WhatsAppRowActions } from "./_components";
+import { cachedGupshupTemplates } from "./_gupshup";
+
+/** What Gupshup says about a saved template's approval at Meta. */
+function approvalOf(
+  templateId: string,
+  list: Awaited<ReturnType<typeof cachedGupshupTemplates>>,
+): string | null {
+  if (!templateId) return null;
+  if (!list.ok) return "Approval: couldn't check Gupshup";
+  const found = list.templates.find((t) => t.id === templateId);
+  if (!found) return "Approval: not found in Gupshup";
+  if (found.status === "APPROVED") return "Approved by WhatsApp";
+  if (found.status === "PENDING") return "Waiting for WhatsApp approval";
+  return `WhatsApp: ${found.status.toLowerCase()}${found.reason ? ` (${found.reason})` : ""}`;
+}
 
 const STATS_DAYS = 7;
 
@@ -40,10 +55,11 @@ function statusOf(template: WhatsAppTemplateView): {
 export default async function WhatsAppPage() {
   const staff = await requirePageSession("settings:view");
   const canManage = hasPermission(staff.permissions, "settings:manage");
-  const [templates, stats, optOuts] = await Promise.all([
+  const [templates, stats, optOuts, gupshupList] = await Promise.all([
     listWhatsAppTemplates(),
     getWhatsAppStats(STATS_DAYS),
     countWhatsAppOptOuts(),
+    cachedGupshupTemplates(),
   ]);
   const missing = missingGupshupSettings();
   const webhookReady = Boolean(process.env.GUPSHUP_WEBHOOK_TOKEN?.trim());
@@ -52,7 +68,7 @@ export default async function WhatsAppPage() {
     <main className="flex flex-col gap-6">
       <PageHeader
         title="WhatsApp"
-        description="Messages Onwei sends on WhatsApp through Gupshup. Each needs a template approved in Gupshup, its ID here, a test, then the switch on."
+        description="Messages Onwei sends on WhatsApp through Gupshup. For each one, pick its template from Gupshup, send a test, then switch it on once WhatsApp has approved it."
       />
 
       <AdminCard className="flex flex-wrap items-center gap-x-4 gap-y-2 py-4 text-sm text-onwei-blue/80">
@@ -97,6 +113,11 @@ export default async function WhatsAppPage() {
                 </AdminTableCell>
                 <AdminTableCell>
                   <AdminBadge tone={status.tone}>{status.label}</AdminBadge>
+                  {approvalOf(template.gupshupTemplateId, gupshupList) ? (
+                    <p className="mt-1 text-xs text-onwei-blue/60">
+                      {approvalOf(template.gupshupTemplateId, gupshupList)}
+                    </p>
+                  ) : null}
                 </AdminTableCell>
                 <AdminTableCell>
                   <p>

@@ -3,6 +3,7 @@
 import type { WhatsAppPurposeInfo, WhatsAppTemplateView } from "@onwei/core";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { GupshupPicker } from "./_picker";
 import {
   AdminButton,
   AdminDialog,
@@ -115,10 +116,18 @@ function WhatsAppTemplateForm({
 
   return (
     <form onSubmit={save} className="flex flex-col gap-4">
+      {canManage ? (
+        <GupshupPicker
+          info={info}
+          currentId={values.gupshupTemplateId}
+          currentImageUrl={values.headerImageUrl}
+          onPick={(picked) => setValues((v) => ({ ...v, ...picked }))}
+        />
+      ) : null}
       <div className="grid gap-4 desk:grid-cols-2">
         <Field
           label="Gupshup template ID"
-          hint="The long ID on the template's page in Gupshup, not the Facebook one."
+          hint="Filled in when you pick a template above. The long Gupshup ID, not the Facebook one."
         >
           <AdminInput
             value={values.gupshupTemplateId}
@@ -254,7 +263,7 @@ function WhatsAppTemplateForm({
 
       <Field
         label="Message text (for reference)"
-        hint="Paste the approved text from Gupshup so staff can see what customers get. It doesn't change the message."
+        hint="Filled in from Gupshup when you pick a template, so staff can see what customers get. It doesn't change the message."
       >
         <AdminTextarea
           rows={4}

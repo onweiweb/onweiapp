@@ -42,3 +42,4 @@ export {
   type WhatsAppPurposeStats,
   type WhatsAppTemplateView,
 } from "./templates";
+export * from "./gupshupTemplates";

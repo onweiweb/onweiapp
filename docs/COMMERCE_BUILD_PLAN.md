@@ -88,6 +88,17 @@ Before the bulk send (blockers):
 5. **Legal text** pasted into admin Legal pages on prod (section 4).
 6. After deploy: Insiders, Overview, "Create missing codes"; then a test send to yourself; then send.
 
+### 2026-11-17: WhatsApp templates picked from Gupshup (local, not pushed)
+
+Admin WhatsApp > Edit has "Pick from Gupshup": lists the app's templates live (`GET
+https://api.gupshup.io/wa/app/<GUPSHUP_APP_ID>/template`, header `apikey`, confirmed on the live account) and fills in
+ID, name, language, header, the approved text and the value order (body values, then button values: sign-in
+code, code; Insider first name, code, address token). Image templates prefill Gupshup's public sample image. Video
+headers can't be sent yet and are flagged. Sign-in codes need an Authentication template; the other two accept Utility
+or Marketing (Meta moved our waitlist templates to Marketing). The WhatsApp table shows each saved template's approval
+status (cached 60s), and saving with "Send this message" on is refused while Gupshup shows it as not approved. New env
+`GUPSHUP_APP_ID` (admin; not secret) must be added on the admin Vercel project.
+
 ### 2026-11-17: Insider email "Send to chosen Insiders" (local, not pushed)
 
 Admin Insiders > Email has "Send to chosen Insiders" next to the test send: search by name, email or code, pick up to 10,
