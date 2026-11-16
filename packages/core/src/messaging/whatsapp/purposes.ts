@@ -42,8 +42,9 @@ export const WHATSAPP_PURPOSES: Record<WhatsAppPurpose, WhatsAppPurposeInfo> = {
   },
   WAITLIST_JOINED: {
     purpose: "WAITLIST_JOINED",
-    title: "Joined the waitlist",
-    whenSent: "Right after someone joins the waitlist.",
+    title: "Welcome to Insiders",
+    whenSent:
+      "Right after someone signs up as an Insider (the waitlist form before launch, the Insiders page after).",
     category: "Utility",
     variables: [{ key: "firstName", label: "First name", sample: "Priya" }],
     respectsOptOut: true,

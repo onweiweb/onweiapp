@@ -65,6 +65,27 @@ describe("WaitlistForm consent", () => {
       (fetchMock.mock.calls[0]?.[1] as { body: string }).body,
     );
     expect(sent.consent).toBe(true);
+    expect(sent.source).toBe("coming_soon_page");
+  });
+
+  it("on /insiders, drops the launch wording and tags the source", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue({ json: async () => ({ ok: true }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<WaitlistForm place="insiders" />);
+    expect(
+      screen.getByText(/contacting me by email and WhatsApp/i),
+    ).toBeTruthy();
+    expect(screen.queryByText(/about the launch/i)).toBeNull();
+
+    fillAndSubmit();
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+    const sent = JSON.parse(
+      (fetchMock.mock.calls[0]?.[1] as { body: string }).body,
+    );
+    expect(sent.source).toBe("insiders_page");
   });
 });
 

@@ -137,6 +137,9 @@ read before assuming something that looks broken is a missing asset.
   `EmptyState`, form fields use `Field`, link-looking buttons use `LinkButton`. No `neutral-*` classes, raw `<table>`s or
   raw inputs, use the kit in `apps/admin/app/_components/ui`.
 - Confirmations and success or error messages go through `useConfirm()` and `useToast()`, never `window.confirm` or `alert`.
+  A form or detail that doesn't need its own page opens in `AdminDialog` (native `<dialog>`, in the kit).
+- Waitlist signups and Insiders are the same people. Admin calls them Insiders (Insiders > Members, `/waitlist` redirects);
+  the storefront says "waitlist" only on the pre-launch page.
 - Get the signed-in staff member with `getCurrentStaff()` (`app/_lib/session.ts`) or `requirePageSession()`. Both share one
   cached lookup per request, do not add new per-page staff or permission queries.
 - Pages with sections use URL tabs (`AdminTabLinks`, `?tab=`) and load only the open tab's data. A page has no `loading.tsx` of
@@ -303,7 +306,8 @@ the next free card, admin Insiders "Printed cards" tab (set up, printer CSV). Th
 (the automatic send at signup was removed 2026-11-16, 6d13cf6). Details in `docs/COMMERCE_BUILD_PLAN.md`.
 WhatsApp through Gupshup (2026-11-16, local, not pushed): templates managed in admin `/whatsapp` (DB rows, off by default),
 real WhatsApp sign-in codes, waitlist-joined message, Insider WhatsApp sent with the Insider email, Gupshup webhook for
-delivery and STOP, waitlist consent names WhatsApp. Migration `20261116120000_whatsapp_messaging` needs the prod
+delivery and STOP, waitlist consent names WhatsApp. Pushed ce3d290, prod migrated. Then (local): compact WhatsApp page with
+popups, Waitlist merged into Insiders > Members, `/insiders` signup page behind every "find your wei" link. Migration `20261116120000_whatsapp_messaging` needs the prod
 migration before the push. Details in `docs/COMMERCE_BUILD_PLAN.md` section 13.
 
 **Latest (2026-10-21):** Blogs page and admin blog editor, admin overhaul (speed, nav, shared kit), waitlist blog switch,

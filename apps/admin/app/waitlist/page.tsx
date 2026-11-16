@@ -1,141 +1,15 @@
-import { describeSource, listWaitlistEntries } from "@onwei/core";
-import { requirePageSession } from "../_lib/requirePageSession";
-import { parsePage } from "../_lib/pagination";
-import {
-  AdminBadge,
-  AdminButton,
-  AdminInput,
-  AdminPager,
-  AdminTable,
-  AdminTableCell,
-  AdminTableHead,
-  AdminTableHeaderCell,
-  AdminTableRow,
-  PageHeader,
-} from "../_components/ui";
+import { redirect } from "next/navigation";
 
+// The Waitlist page is now Insiders > Members. Old links and bookmarks land
+// there, keeping a search or page number.
 export default async function WaitlistPage({
   searchParams,
 }: {
   searchParams: Promise<{ page?: string; q?: string }>;
 }) {
-  await requirePageSession("waitlist:view");
-  const { page: pageParam, q } = await searchParams;
-  const page = parsePage(pageParam);
-
-  const { entries, hasNext, firstSerial, total } = await listWaitlistEntries({
-    page,
-    search: q,
-  });
-
-  return (
-    <main className="flex flex-col gap-6">
-      <PageHeader
-        title="Waitlist"
-        description="People who signed up before launch."
-        actions={
-          <>
-            <p className="text-sm text-onwei-blue/70">
-              {q ? `${total} matching` : `${total} in total`}
-            </p>
-            <a href="/api/waitlist/export">
-              <AdminButton type="button" variant="secondary">
-                Export as CSV
-              </AdminButton>
-            </a>
-          </>
-        }
-      />
-
-      <form method="get" className="flex items-end gap-3">
-        <label className="flex flex-col gap-1.5 text-sm">
-          Search by name, email, phone or Insider code
-          <AdminInput
-            type="search"
-            name="q"
-            defaultValue={q}
-            placeholder="e.g. priya@example.com"
-            className="w-72"
-          />
-        </label>
-        <AdminButton type="submit" variant="secondary">
-          Search
-        </AdminButton>
-      </form>
-
-      {entries.length === 0 ? (
-        <p className="text-onwei-blue/70">
-          {q
-            ? "No one on the waitlist matches that search."
-            : "No one has joined the waitlist yet, they'll show up here once someone signs up."}
-        </p>
-      ) : (
-        <>
-          <AdminTable>
-            <AdminTableHead>
-              <AdminTableHeaderCell>No.</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Name</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Insider code</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Email</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Phone</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Movement flex</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Came from</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Location</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Status</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Joined</AdminTableHeaderCell>
-            </AdminTableHead>
-            <tbody>
-              {entries.map((entry, index) => (
-                <AdminTableRow key={entry.id}>
-                  <AdminTableCell>{firstSerial - index}</AdminTableCell>
-                  <AdminTableCell>{entry.fullName}</AdminTableCell>
-                  <AdminTableCell>
-                    {entry.insiderCode ? (
-                      <span className="font-mono font-semibold tracking-wider">
-                        {entry.insiderCode}
-                      </span>
-                    ) : (
-                      <span className="text-onwei-blue/50">Not yet</span>
-                    )}
-                    {entry.codeEmailedAt ? (
-                      <span className="block text-xs text-onwei-blue/60">
-                        Emailed
-                      </span>
-                    ) : null}
-                  </AdminTableCell>
-                  <AdminTableCell>{entry.email}</AdminTableCell>
-                  <AdminTableCell>{entry.phone}</AdminTableCell>
-                  <AdminTableCell>{entry.movementFlex ?? "-"}</AdminTableCell>
-                  <AdminTableCell>
-                    {describeSource(entry)}
-                    {entry.utmCampaign ? ` (${entry.utmCampaign})` : ""}
-                  </AdminTableCell>
-                  <AdminTableCell>
-                    {[entry.city, entry.country].filter(Boolean).join(", ") ||
-                      "-"}
-                  </AdminTableCell>
-                  <AdminTableCell>
-                    <AdminBadge
-                      tone={entry.unsubscribedAt ? "problem" : "success"}
-                    >
-                      {entry.unsubscribedAt ? "Unsubscribed" : "On the list"}
-                    </AdminBadge>
-                  </AdminTableCell>
-                  <AdminTableCell>
-                    {entry.submittedAt.toLocaleDateString()}
-                  </AdminTableCell>
-                </AdminTableRow>
-              ))}
-            </tbody>
-          </AdminTable>
-        </>
-      )}
-      <AdminPager
-        pathname="/waitlist"
-        page={page}
-        hasNext={hasNext}
-        params={q ? { q } : {}}
-      />
-    </main>
-  );
+  const { page, q } = await searchParams;
+  const params = new URLSearchParams({ tab: "members" });
+  if (q) params.set("q", q);
+  if (page) params.set("page", page);
+  redirect(`/insiders?${params.toString()}`);
 }

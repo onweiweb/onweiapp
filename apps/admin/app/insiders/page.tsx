@@ -37,8 +37,10 @@ import {
   TierActions,
   TierForm,
 } from "./_components";
+import { MembersTab } from "./_members";
 
 const TABS = [
+  { id: "members", label: "Members" },
   { id: "overview", label: "Overview" },
   { id: "discount", label: "Discount" },
   { id: "addresses", label: "Card addresses" },
@@ -68,22 +70,30 @@ function Stat({
 export default async function InsidersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; page?: string; show?: string }>;
+  searchParams: Promise<{
+    tab?: string;
+    page?: string;
+    show?: string;
+    q?: string;
+  }>;
 }) {
   const staff = await requirePageSession("waitlist:view");
   const canManage = hasPermission(staff.permissions, "waitlist:manage");
   const params = await searchParams;
   const tab: TabId = TABS.some((t) => t.id === params.tab)
     ? (params.tab as TabId)
-    : "overview";
+    : "members";
 
   return (
     <main className="flex flex-col gap-6">
       <PageHeader
         title="Insiders"
-        description="Everyone on the waitlist is an Onwei Insider with a personal, lifetime discount code. Set the discount, email the codes, and post the Insider cards."
+        description="Everyone who signs up is an Onwei Insider with a personal, lifetime discount code. See who joined, set the discount, email the codes, and post the Insider cards."
       />
       <AdminTabLinks basePath="/insiders" tabs={TABS} active={tab} />
+      {tab === "members" ? (
+        <MembersTab page={parsePage(params.page)} q={params.q} />
+      ) : null}
       {tab === "overview" ? <OverviewTab canManage={canManage} /> : null}
       {tab === "discount" ? <DiscountTab canManage={canManage} /> : null}
       {tab === "addresses" ? (
@@ -139,7 +149,7 @@ async function OverviewTab({ canManage }: { canManage: boolean }) {
             codes existed and {missing === 1 ? "has" : "have"} no code yet.
             {canManage
               ? ""
-              : " Ask someone who can manage the waitlist to create them."}
+              : " Ask someone who can manage Insiders to create them."}
           </p>
           {canManage ? <CreateCodesButton missing={missing} /> : null}
         </AdminCard>
@@ -434,7 +444,7 @@ async function EmailTab({
           <EmailSender toEmail={overview.toEmail} />
         ) : (
           <p className="text-sm">
-            Ask someone who can manage the waitlist to send these.
+            Ask someone who can manage Insiders to send these.
           </p>
         )}
       </AdminCard>
@@ -461,12 +471,12 @@ async function EmailTab({
               ? "No emails sent yet"
               : show === "notSent"
                 ? "Everyone has had the email"
-                : "Nobody on the waitlist yet"
+                : "No Insiders yet"
           }
           description={
             show === "notSent"
               ? "New Insiders show up here until someone sends the email."
-              : "People show up here once they join the waitlist."
+              : "People show up here once they sign up."
           }
         />
       ) : (
@@ -566,7 +576,7 @@ async function PrintedCardsTab({ canManage }: { canManage: boolean }) {
           <p className="text-xs text-onwei-blue/60">
             {cards.retired}{" "}
             {cards.retired === 1 ? "card belongs" : "cards belong"} to people
-            who were removed from the waitlist. Those cards are never given to
+            who were removed from Insiders. Those cards are never given to
             anyone else.
           </p>
         ) : null}
@@ -574,7 +584,7 @@ async function PrintedCardsTab({ canManage }: { canManage: boolean }) {
           <FillCardsButton toAdd={toAdd} firstTime={notSetUp} />
         ) : (
           <p className="text-sm text-onwei-blue/70">
-            Ask someone who can manage the waitlist to set up the cards.
+            Ask someone who can manage Insiders to set up the cards.
           </p>
         )}
       </AdminCard>

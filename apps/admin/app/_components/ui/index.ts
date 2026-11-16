@@ -8,6 +8,7 @@ export { PageHeader } from "./PageHeader";
 export { AdminBadge } from "./AdminBadge";
 export { AdminButton } from "./AdminButton";
 export { AdminCard } from "./AdminCard";
+export { AdminDialog } from "./AdminDialog";
 export { AdminPager } from "./AdminPager";
 export { AdminInput, AdminSelect, AdminTextarea } from "./AdminInput";
 export { AdminSlider } from "./AdminSlider";

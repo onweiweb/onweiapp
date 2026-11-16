@@ -12,7 +12,7 @@ const FOOTER_COLUMNS = [
       { label: "Pilates", href: "/collection/pilates" },
       { label: "Bestsellers", href: "/collection/all" },
       // Desktop frame only (758:2584), the mobile Shop column has three.
-      { label: "Find Your Wei", href: "#", desktopOnly: true },
+      { label: "Find Your Wei", href: "/insiders", desktopOnly: true },
     ],
   },
   {

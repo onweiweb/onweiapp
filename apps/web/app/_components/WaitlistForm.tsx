@@ -45,8 +45,11 @@ const EMAIL_SHAPE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 // The movement-flex slider is decorative/fun, not required to submit.
 export function WaitlistForm({
   instagramUrl = null,
+  place = "waitlist",
 }: {
   instagramUrl?: string | null;
+  /** "insiders" is the /insiders page after launch: same form, Insider wording. */
+  place?: "waitlist" | "insiders";
 }) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -103,6 +106,7 @@ export function WaitlistForm({
           movementFlex,
           consent,
           company,
+          source: place === "insiders" ? "insiders_page" : "coming_soon_page",
           attribution: getFirstTouch(),
         }),
       });
@@ -279,7 +283,11 @@ export function WaitlistForm({
         <ConsentCheckbox
           checked={consent}
           onChange={setConsent}
-          lead="I agree to Onwei contacting me about the launch by email and WhatsApp, and accept the"
+          lead={
+            place === "insiders"
+              ? "I agree to Onwei contacting me by email and WhatsApp, and accept the"
+              : "I agree to Onwei contacting me about the launch by email and WhatsApp, and accept the"
+          }
           links={["privacy"]}
         />
 
@@ -302,8 +310,13 @@ export function WaitlistForm({
           }
         >
           {status === "success" &&
-            "You're on the list, welcome to the warm up."}
-          {status === "already" && "You're already on the list."}
+            (place === "insiders"
+              ? "Welcome to Onwei Insiders. Watch your inbox for your code."
+              : "You're on the list, welcome to the warm up.")}
+          {status === "already" &&
+            (place === "insiders"
+              ? "You're already an Onwei Insider."
+              : "You're already on the list.")}
           {status === "error" && error}
         </p>
       </form>

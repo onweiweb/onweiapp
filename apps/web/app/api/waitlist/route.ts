@@ -22,7 +22,13 @@ import { renderWaitlistWelcomeEmail } from "@onwei/emails";
 // Shape only. Whether a name/email/phone is acceptable is decided by
 // subscribeToWaitlist, which answers with the INVALID_* reasons the form
 // already maps to copy.
-const WAITLIST_CONSENT_WORDING = "waitlist-v2";
+// Which checkbox wording the person agreed to, stored as the consentVersion
+// prefix. Both name email and WhatsApp; the /insiders page drops "about the
+// launch" (see WaitlistForm).
+const CONSENT_WORDING = {
+  coming_soon_page: "waitlist-v2",
+  insiders_page: "insiders-v1",
+} as const;
 
 const bodySchema = z.object({
   fullName: z.string().default(""),
@@ -32,6 +38,8 @@ const bodySchema = z.object({
   // Honeypot, a real visitor never fills this hidden field. Present and
   // non-empty means a bot; pretend success without creating a row.
   company: z.string().optional(),
+  // Which page the form was on: the waitlist page before launch, /insiders after.
+  source: z.enum(["coming_soon_page", "insiders_page"]).optional(),
   // Ticked consent checkbox. Required, enforced below.
   consent: z.boolean().optional(),
   // Where they came from (UTM values, referrer). Untrusted, cleaned below.
@@ -68,10 +76,8 @@ export async function POST(request: Request) {
     email: body.email,
     phone: body.phone,
     movementFlex: body.movementFlex,
-    source: "coming_soon_page",
-    // The prefix records which checkbox wording they agreed to
-    // (v2 names email and WhatsApp, see WaitlistForm).
-    consentVersion: `${WAITLIST_CONSENT_WORDING}:${await getCurrentConsentVersion(["privacy"])}`,
+    source: body.source ?? "coming_soon_page",
+    consentVersion: `${CONSENT_WORDING[body.source ?? "coming_soon_page"]}:${await getCurrentConsentVersion(["privacy"])}`,
     ipAddress: ip,
     attribution: sanitizeAttribution(body.attribution),
     geo: readGeoHeaders(request.headers),

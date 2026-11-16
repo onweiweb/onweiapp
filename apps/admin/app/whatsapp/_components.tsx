@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {
   AdminButton,
+  AdminDialog,
   AdminInput,
   AdminSelect,
   AdminTextarea,
@@ -38,14 +39,16 @@ async function postJson(url: string, method: string, body: unknown) {
   }) as { ok: boolean; error?: string; url?: string };
 }
 
-export function WhatsAppTemplateForm({
+function WhatsAppTemplateForm({
   info,
   initial,
   canManage,
+  onDone,
 }: {
   info: WhatsAppPurposeInfo;
   initial: WhatsAppTemplateView;
   canManage: boolean;
+  onDone: () => void;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -53,8 +56,6 @@ export function WhatsAppTemplateForm({
   const [baseline, setBaseline] = useState(() => JSON.stringify(pick(initial)));
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [testPhone, setTestPhone] = useState("");
-  const [testing, setTesting] = useState(false);
   const dirty = JSON.stringify(values) !== baseline;
   const labelFor = (key: string) =>
     info.variables.find((v) => v.key === key)?.label ?? key;
@@ -85,6 +86,7 @@ export function WhatsAppTemplateForm({
     setBaseline(JSON.stringify(values));
     toast("Saved.", "success");
     router.refresh();
+    onDone();
   }
 
   async function upload(file: File) {
@@ -107,22 +109,6 @@ export function WhatsAppTemplateForm({
     }
     set("headerImageUrl", data.url);
     toast("Image uploaded. Save to use it.", "success");
-  }
-
-  async function sendTest() {
-    setTesting(true);
-    const result = await postJson("/api/whatsapp/test", "POST", {
-      purpose: initial.purpose,
-      phone: testPhone,
-    });
-    setTesting(false);
-    toast(
-      result.ok
-        ? "Test sent. Check WhatsApp on that phone."
-        : (result.error ?? "The test didn't send."),
-      result.ok ? "success" : "error",
-    );
-    if (result.ok) router.refresh();
   }
 
   const disabled = !canManage || saving;
@@ -295,31 +281,13 @@ export function WhatsAppTemplateForm({
       </div>
 
       {canManage ? (
-        <div className="flex flex-wrap items-end gap-3">
+        <div className="flex justify-end gap-2">
+          <AdminButton type="button" variant="secondary" onClick={onDone}>
+            Cancel
+          </AdminButton>
           <AdminButton type="submit" disabled={!dirty || saving}>
             {saving ? "Saving..." : "Save"}
           </AdminButton>
-          <Field label="Send a test to" className="w-56">
-            <AdminInput
-              value={testPhone}
-              onChange={(e) => setTestPhone(e.target.value)}
-              placeholder="98765 43210"
-              inputMode="tel"
-            />
-          </Field>
-          <AdminButton
-            type="button"
-            variant="secondary"
-            onClick={sendTest}
-            disabled={testing || !testPhone.trim() || dirty}
-          >
-            {testing ? "Sending..." : "Send test"}
-          </AdminButton>
-          {dirty ? (
-            <span className="text-xs text-onwei-blue/70">
-              Save first, the test uses the saved settings.
-            </span>
-          ) : null}
         </div>
       ) : (
         <p className="text-xs text-onwei-blue/70">
@@ -327,5 +295,129 @@ export function WhatsAppTemplateForm({
         </p>
       )}
     </form>
+  );
+}
+
+function TestSendForm({
+  purpose,
+  onDone,
+}: {
+  purpose: WhatsAppTemplateView["purpose"];
+  onDone: () => void;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const [phone, setPhone] = useState("");
+  const [sending, setSending] = useState(false);
+
+  async function send(event: React.FormEvent) {
+    event.preventDefault();
+    setSending(true);
+    const result = await postJson("/api/whatsapp/test", "POST", {
+      purpose,
+      phone,
+    });
+    setSending(false);
+    if (!result.ok) {
+      toast(result.error ?? "The test didn't send.", "error");
+      return;
+    }
+    toast("Test sent. Check WhatsApp on that phone.", "success");
+    router.refresh();
+    onDone();
+  }
+
+  return (
+    <form onSubmit={send} className="flex flex-col gap-4">
+      <Field
+        label="Phone number"
+        hint="Uses sample values (name Priya, code 482913 or WEI4821). Works even while the message is switched off."
+      >
+        <AdminInput
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          placeholder="98765 43210"
+          inputMode="tel"
+          autoFocus
+        />
+      </Field>
+      <div className="flex justify-end gap-2">
+        <AdminButton type="button" variant="secondary" onClick={onDone}>
+          Cancel
+        </AdminButton>
+        <AdminButton type="submit" disabled={sending || !phone.trim()}>
+          {sending ? "Sending..." : "Send test"}
+        </AdminButton>
+      </div>
+    </form>
+  );
+}
+
+/** The Edit and Send test buttons on each row, each opening a popup. */
+export function WhatsAppRowActions({
+  info,
+  template,
+  canManage,
+}: {
+  info: WhatsAppPurposeInfo;
+  template: WhatsAppTemplateView;
+  canManage: boolean;
+}) {
+  const [open, setOpen] = useState<"edit" | "test" | null>(null);
+  const close = () => setOpen(null);
+  return (
+    <div className="flex flex-wrap justify-end gap-2">
+      <AdminButton
+        type="button"
+        variant="secondary"
+        onClick={() => setOpen("edit")}
+      >
+        {canManage ? "Edit" : "View"}
+      </AdminButton>
+      {canManage ? (
+        <AdminButton
+          type="button"
+          variant="secondary"
+          onClick={() => setOpen("test")}
+          disabled={!template.gupshupTemplateId}
+          title={
+            template.gupshupTemplateId
+              ? undefined
+              : "Save the Gupshup template ID first"
+          }
+        >
+          Send test
+        </AdminButton>
+      ) : null}
+
+      <AdminDialog
+        open={open === "edit"}
+        onClose={close}
+        size="lg"
+        title={info.title}
+        description={
+          <>
+            {info.whenSent} Approve it in Gupshup under the{" "}
+            <strong>{info.category}</strong> category.
+          </>
+        }
+      >
+        <WhatsAppTemplateForm
+          info={info}
+          initial={template}
+          canManage={canManage}
+          onDone={close}
+        />
+      </AdminDialog>
+
+      <AdminDialog
+        open={open === "test"}
+        onClose={close}
+        size="sm"
+        title={`Test: ${info.title}`}
+      >
+        <TestSendForm purpose={template.purpose} onDone={close} />
+      </AdminDialog>
+    </div>
   );
 }

@@ -613,8 +613,8 @@ Owner picked Gupshup. Code in `packages/core/src/messaging/whatsapp/`, admin pag
   1. `SIGN_IN_CODE` (Authentication, Copy code button, no image): real random codes for WhatsApp sign-in and "add phone"
      in My Account. Once on, WhatsApp sign-in works on the live site (`phoneOtpMode` mode `whatsapp`). If the send
      fails the shopper sees "couldn't send on WhatsApp, use email". Off or not connected: the old static-code rules.
-  2. `WAITLIST_JOINED` (Utility, image header): right after a waitlist signup, in the background next to the welcome
-     email.
+  2. `WAITLIST_JOINED`, shown in admin as "Welcome to Insiders" (Utility, image header): right after a signup (the
+     waitlist page before launch, `/insiders` after), in the background next to the welcome email.
   3. `INSIDER_CODE` (Marketing, image header, "Share my address" dynamic URL button whose value is the signed address
      token): sent with each Insider email when staff press send on Insiders > Email, to every member with a phone
      (owner's decision 2026-11-16, old members included). A WhatsApp failure never undoes the email.
@@ -628,6 +628,14 @@ Owner picked Gupshup. Code in `packages/core/src/messaging/whatsapp/`, admin pag
   blocks waitlist and Insider messages but not sign-in codes the person asks for. Other replies are ignored.
 - **To confirm on the first live test:** how Gupshup wants the Copy code button and the URL button values in `params`
   (the admin value list can repeat or reorder values, so a fix needs no code change).
+- **Admin page (compacted 2026-11-16):** one table row per message (status On, Off or Needs setup, 7-day counts), Edit
+  and Send test open popups (`AdminDialog`).
+- **Insiders signup after launch (2026-11-16):** every "find your wei" and "insiders" link (header, mobile menu, footer,
+  homepage section) opens `/insiders`: SiteHeader, the same "join onwei insiders" section as the waitlist page
+  (`InsidersJoinSection`), SiteFooter. No Figma frame; owner approved this basic layout. Same API, `source:
+insiders_page`, consent wording without "about the launch" stored as `insiders-v1:<privacy version>`. Gated to
+  `/ontheway` while the site is in waitlist mode. The collection page's "Start Quiz" button is a separate, unbuilt quiz.
+- **Admin naming:** the Waitlist page is now Insiders > Members (`/waitlist` redirects). Admin copy says Insiders.
 - **Consent:** the waitlist box now reads "...contacting me about the launch by email and WhatsApp...", and new entries
   store `consentVersion` as `waitlist-v2:<privacy version>`.
 

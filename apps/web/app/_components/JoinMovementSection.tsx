@@ -10,7 +10,7 @@ export function JoinMovementSection({
   // Figma's mobile frame (761:5152) says "move with onwei" where the
   // Homepage desktop frame says "find your wei".
   mobileButtonLabel = "Move With Onwei",
-  buttonHref = "#",
+  buttonHref = "/insiders",
 }: {
   buttonLabel?: string;
   mobileButtonLabel?: string;

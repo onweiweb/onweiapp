@@ -15,10 +15,10 @@ const NAV_LINKS = {
     { label: "our story", href: "/about" },
     {
       label: "find your wei",
-      href: "#",
+      href: "/insiders",
       // Figma (node 758:2264) pins "insiders" as a small script tag over
       // the top right of this link.
-      tag: { label: "insiders", href: "#" },
+      tag: { label: "insiders", href: "/insiders" },
     },
   ],
   inner: [
@@ -26,10 +26,9 @@ const NAV_LINKS = {
     { label: "Pickleball", href: "/collection/pickleball" },
     { label: "Pilates", href: "/collection/pilates" },
     { label: "About Us", href: "/about" },
-    { label: "insiders", href: "#" },
-    // Figma shows this fifth nav item with no destination screen in the
-    // file, no route exists yet, so it is a placeholder anchor.
-    { label: "find your wei", href: "#" },
+    { label: "insiders", href: "/insiders" },
+    // Owner (2026-11-16): "find your wei" opens the Insiders signup page.
+    { label: "find your wei", href: "/insiders" },
   ],
   // About Us (760:4505): four links, no insiders, and a wordmark logo with
   // "own your effort" beside it (see `aboutVariant` below).

@@ -216,10 +216,10 @@ export default async function DashboardPage() {
                 href="/categories"
               />
               <Stat
-                label="On the waitlist"
+                label="Insiders"
                 value={waitlist.active}
                 note={`${waitlist.joinedLast7Days} joined this week, ${waitlist.unsubscribed} unsubscribed`}
-                href="/waitlist"
+                href="/insiders?tab=members"
               />
               <Suspense fallback={<VisitorsCard visitors={undefined} />}>
                 <VisitorsThisWeek />

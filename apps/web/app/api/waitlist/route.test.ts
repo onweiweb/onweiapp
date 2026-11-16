@@ -47,6 +47,23 @@ describe.skipIf(!process.env.DATABASE_URL)(
       ).toBeNull();
     });
 
+    it("records the /insiders page as the source and its consent wording", async () => {
+      const { POST } = await import("./route");
+      const body = fixtureBody({ source: "insiders_page" });
+      const response = await POST(
+        new Request("http://localhost/api/waitlist", {
+          method: "POST",
+          body: JSON.stringify(body),
+        }),
+      );
+      expect(response.status).toBe(200);
+      const row = await prisma.waitlistEntry.findUniqueOrThrow({
+        where: { email: body.email },
+      });
+      expect(row.source).toBe("insiders_page");
+      expect(row.consentVersion).toMatch(/^insiders-v1:/);
+    });
+
     it("returns 200 and creates a row on the happy path", async () => {
       const { POST } = await import("./route");
       const body = fixtureBody();
