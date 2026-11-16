@@ -88,6 +88,16 @@ Before the bulk send (blockers):
 5. **Legal text** pasted into admin Legal pages on prod (section 4).
 6. After deploy: Insiders, Overview, "Create missing codes"; then a test send to yourself; then send.
 
+### 2026-11-16: Insider email, letter version (local)
+
+The first Insider emails went to Gmail Promotions. The client redesigned it as a letter (PDFs
+"Onwei_InsiderEmail_letter" desktop and mobile): short banner, code pill, plain "Share your delivery address here" text
+link instead of a big button, signature, P.S. asking to drag it to Primary. Built in
+`packages/emails/src/templates/insiderCodeEmail.ts` with assets drawn in-house from existing brand art in
+`apps/web/public/images/email/`: `insider-letter-header.png`, `insider-gift.png`, `insider-signature.png` (Summer Mood,
+as an image because mail apps can't load it), `insider-stamp.png`. `insider-card.png` is no longer used. The unsubscribe
+footer stays (not in the PDF) for the opt-out and the one-click header.
+
 ### 2026-11-09 (later): Phases B to F built locally (not pushed)
 
 Owner asked to build every phase now, designs for missing screens in the existing style, legal text applied directly,
