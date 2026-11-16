@@ -34,12 +34,16 @@ export async function listWaitlistEntries(
       take: pageSize + 1,
       where,
       orderBy: [{ submittedAt: "desc" }, { id: "desc" }],
+      include: { cardAddress: { select: { id: true } } },
     }),
     prisma.waitlistEntry.count({ where }),
   ]);
 
   return {
-    entries: fetched.slice(0, pageSize),
+    entries: fetched.slice(0, pageSize).map(({ cardAddress, ...entry }) => ({
+      ...entry,
+      hasCardAddress: Boolean(cardAddress),
+    })),
     hasNext: fetched.length > pageSize,
     firstSerial: total - skip,
     total,

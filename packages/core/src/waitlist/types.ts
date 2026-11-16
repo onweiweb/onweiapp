@@ -56,6 +56,8 @@ export interface WaitlistEntrySummary {
   /** Personal Onwei Insider code, null until assigned. */
   insiderCode: string | null;
   codeEmailedAt: Date | null;
+  /** Whether they have shared an address for the Insider card. */
+  hasCardAddress: boolean;
 }
 
 export interface ListWaitlistEntriesInput {

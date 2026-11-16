@@ -88,7 +88,15 @@ Before the bulk send (blockers):
 5. **Legal text** pasted into admin Legal pages on prod (section 4).
 6. After deploy: Insiders, Overview, "Create missing codes"; then a test send to yourself; then send.
 
-### 2026-11-17: WhatsApp message log (local, not pushed)
+### 2026-11-17: Copy address link in Insiders > Members (local, not pushed)
+
+While WhatsApp templates wait for approval, staff send address forms by hand. Members has an "Address link" column:
+Copy link (the member's private `/insider/address` link, `insiderAddressUrl`) and Copy message (ready-to-paste WhatsApp
+text, `insiderShareMessage`), plus "Address shared" or "No address yet" (`hasCardAddress` from `listWaitlistEntries`).
+Members without a code show "Give them a code first". Each copy is a fresh 90-day token for the same member, so every
+link (email, WhatsApp, copied) opens the one saved address. No schema change.
+
+### 2026-11-17: WhatsApp message log (pushed c1f178e)
 
 Admin WhatsApp has tabs Messages and Log (`?tab=log`). The log lists every `WhatsAppMessage`, newest first, 50 a page,
 filtered by message, status and number ending, with the name (Insider or customer), masked number (`maskPhone`), status

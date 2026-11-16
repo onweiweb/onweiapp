@@ -100,3 +100,28 @@ export function insiderEmailLinks(
     oneClickUnsubscribeUrl: `${base}/api/insider/unsubscribe?t=${unsubscribe}`,
   };
 }
+
+/**
+ * A member's private address link on its own, for staff to copy from admin
+ * and send by hand. Same form as the email link: whichever link they open,
+ * they see the one address saved for them. Throws without a secret.
+ */
+export function insiderAddressUrl(
+  entryId: string,
+  siteUrl: string,
+  secret: string | undefined,
+): string {
+  const token = encodeURIComponent(
+    createInsiderLinkToken("address", entryId, secret),
+  );
+  return `${siteUrl.replace(/\/$/, "")}/insider/address?t=${token}`;
+}
+
+/** Ready-to-paste WhatsApp text with the member's code and address link. */
+export function insiderShareMessage(input: {
+  firstName: string;
+  insiderCode: string;
+  addressUrl: string;
+}): string {
+  return `Hi ${input.firstName}, your Onwei Insider code is ${input.insiderCode}. Share your address for your Insider card here: ${input.addressUrl}`;
+}

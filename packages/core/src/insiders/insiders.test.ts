@@ -7,7 +7,9 @@ import {
 import { insiderCardQrLink, planPoolFill } from "./codePool";
 import {
   createInsiderLinkToken,
+  insiderAddressUrl,
   insiderEmailLinks,
+  insiderShareMessage,
   verifyInsiderLinkToken,
 } from "./insiderLink";
 import {
@@ -257,5 +259,36 @@ describe("insider email links", () => {
     expect(() =>
       insiderEmailLinks("entry1", "https://www.onwei.in", undefined),
     ).toThrow();
+    expect(() =>
+      insiderAddressUrl("entry1", "https://www.onwei.in", undefined),
+    ).toThrow();
+  });
+
+  it("builds the address link staff copy from admin", () => {
+    const url = new URL(
+      insiderAddressUrl("entry1", "https://www.onwei.in/", SECRET),
+    );
+    expect(url.origin + url.pathname).toBe(
+      "https://www.onwei.in/insider/address",
+    );
+    expect(
+      verifyInsiderLinkToken("address", url.searchParams.get("t")!, SECRET),
+    ).toEqual({ ok: true, entryId: "entry1" });
+    // An address token can't unsubscribe anyone.
+    expect(
+      verifyInsiderLinkToken("unsubscribe", url.searchParams.get("t")!, SECRET),
+    ).toEqual({ ok: false, reason: "INVALID" });
+  });
+
+  it("writes the message to paste into WhatsApp", () => {
+    expect(
+      insiderShareMessage({
+        firstName: "Priya",
+        insiderCode: "WEI4821",
+        addressUrl: "https://www.onwei.in/insider/address?t=x",
+      }),
+    ).toBe(
+      "Hi Priya, your Onwei Insider code is WEI4821. Share your address for your Insider card here: https://www.onwei.in/insider/address?t=x",
+    );
   });
 });

@@ -321,6 +321,8 @@ export {
   createInsiderLinkToken,
   verifyInsiderLinkToken,
   insiderEmailLinks,
+  insiderAddressUrl,
+  insiderShareMessage,
   type InsiderEmailLinks,
   type InsiderLinkPurpose,
   type VerifyInsiderLinkResult,
