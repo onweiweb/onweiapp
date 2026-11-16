@@ -36,12 +36,30 @@ export default async function ReviewsPage({
     ...pageWindow(page),
   });
   const { rows: reviews, hasNext } = trimPage(fetched);
+  const waiting = await prisma.review.count({ where: { isApproved: false } });
 
   return (
     <main className="flex flex-col gap-6">
       <PageHeader
         title="Reviews"
-        description="Approve or hide reviews before they show on the site."
+        description={
+          <>
+            Approve or hide reviews before they show on the site. Shoppers can
+            write one from the homepage, category pages and product pages.
+            {waiting > 0 ? (
+              <>
+                {" "}
+                <Link
+                  href="/reviews?isApproved=false"
+                  className="font-semibold underline"
+                >
+                  {waiting} waiting for approval
+                </Link>
+                .
+              </>
+            ) : null}
+          </>
+        }
         actions={
           <>
             <div className="flex items-center gap-2">
@@ -87,6 +105,12 @@ export default async function ReviewsPage({
                     <p className="font-medium">{review.title}</p>
                   ) : null}
                   <p className="text-onwei-blue/70">{review.body}</p>
+                  <p className="mt-1 text-xs text-onwei-blue/60">
+                    {review.authorDisplay ?? "No name"}
+                    {review.isVerifiedPurchase
+                      ? " · bought and received it"
+                      : ""}
+                  </p>
                 </AdminTableCell>
                 <AdminTableCell>
                   {REVIEW_SOURCE_LABELS[review.source]}

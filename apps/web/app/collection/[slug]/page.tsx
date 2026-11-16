@@ -8,6 +8,9 @@ import {
   cachedListActiveProductsByCategorySlug as listActiveProductsByCategorySlug,
   cachedListInstagramPhotos as listInstagramPhotos,
   cachedListSurfaceReviews as listSurfaceReviews,
+  cachedListApprovedReviews as listApprovedReviews,
+  cachedListCategoryComparison as listCategoryComparison,
+  cachedListValueProps as listValueProps,
 } from "../../../lib/cachedCatalog";
 import {
   buildCategoryMetadata,
@@ -30,6 +33,12 @@ import { JoinMovementSection } from "@/_components/JoinMovementSection";
 import { InstagramGrid } from "@/_components/InstagramGrid";
 import { ScrollCarousel } from "@/_components/ScrollCarousel";
 import { CtaLink } from "@/_components/CtaLink";
+import { ValueProps } from "@/_components/ValueProps";
+import { ComparisonTable } from "@/_components/ComparisonTable";
+import { ReviewList } from "@/_components/ReviewList";
+import { WriteReviewButton } from "@/_components/WriteReviewButton";
+import { MoversHeading } from "@/_components/MoversHeading";
+import { getSiteSetting } from "@onwei/core";
 
 // Figma (file kGG2vJdbqU6b1d1xmIhRwG, frame 760:3829 "Collection") mocks up
 // one page that stacks a heading+grid block per category under a shared
@@ -245,10 +254,38 @@ export default async function CollectionPage({
     (section) => section.products.length > 0,
   );
 
-  const [wallReviews, instagramPhotos] = await Promise.all([
-    listSurfaceReviews({ surface: "HOME_WALL" }),
+  const isAll = slug === "all";
+  const categoryProducts = categorySections.flatMap(
+    (section) => section.products,
+  );
+  const reviewProducts = categoryProducts.map((product) => ({
+    id: product.id,
+    name: product.name,
+  }));
+  const [
+    wallReviews,
+    instagramPhotos,
+    valueProps,
+    comparison,
+    categoryReviews,
+    settings,
+  ] = await Promise.all([
+    isAll ? listSurfaceReviews({ surface: "HOME_WALL" }) : Promise.resolve([]),
     listInstagramPhotos(),
+    isAll ? Promise.resolve([]) : listValueProps(),
+    isAll ? Promise.resolve([]) : listCategoryComparison(slug),
+    isAll || categoryProducts.length === 0
+      ? Promise.resolve([])
+      : listApprovedReviews({
+          targetType: "PRODUCT",
+          productIds: categoryProducts.map((product) => product.id),
+          limit: 6,
+        }),
+    getSiteSetting(),
   ]);
+  const banner = isAll
+    ? null
+    : (categorySections[0]?.category.imageUrl ?? null);
 
   const breadcrumbName =
     slug === "all" ? "Shop All" : (categorySections[0]?.category.name ?? slug);
@@ -274,80 +311,100 @@ export default async function CollectionPage({
         />
         <SiteHeader nav="inner" />
 
-        <section className="relative flex flex-col items-center bg-onwei-green px-6 pb-14 pt-[5.5rem] desk:px-14 desk:pb-14 desk:pt-8">
-          {/* Desktop (node 760:3874): every illustration is absolute to the
+        {banner ? (
+          // Client feedback 2026-11-16: Pickleball and Pilates get their own
+          // banner image or GIF (admin Categories), unoptimized so a GIF
+          // keeps moving. No banner falls back to the illustrated header.
+          <section className="relative w-full bg-onwei-green">
+            <h1 className="sr-only">{breadcrumbName}</h1>
+            <div className="relative aspect-[390/260] w-full desk:aspect-[1440/420]">
+              <Image
+                src={banner}
+                alt={`${breadcrumbName} at Onwei`}
+                fill
+                priority
+                unoptimized
+                sizes="100vw"
+                className="object-cover"
+              />
+            </div>
+          </section>
+        ) : (
+          <section className="relative flex flex-col items-center bg-onwei-green px-6 pb-14 pt-[5.5rem] desk:px-14 desk:pb-14 desk:pt-8">
+            {/* Desktop (node 760:3874): every illustration is absolute to the
             section, x measured from the centre line so it holds at any
             width, y from the top (px / 16). Mobile has no Figma frame, so
             it keeps a scaled adaptation. */}
-          <Image
-            src="/images/collection/illustration-weightlifter.svg"
-            alt=""
-            width={99}
-            height={98}
-            aria-hidden
-            className="pointer-events-none absolute left-6 top-6 origin-top-left scale-75 desk:left-[calc(50%-26.125rem)] desk:top-[2.2106rem] desk:scale-100"
-          />
-          {/* Figma node 760:4191, straddles the boundary with the category
+            <Image
+              src="/images/collection/illustration-weightlifter.svg"
+              alt=""
+              width={99}
+              height={98}
+              aria-hidden
+              className="pointer-events-none absolute left-6 top-6 origin-top-left scale-75 desk:left-[calc(50%-26.125rem)] desk:top-[2.2106rem] desk:scale-100"
+            />
+            {/* Figma node 760:4191, straddles the boundary with the category
             nav below it, same overlap pattern as JoinMovementSection's
             illustration straddling above its section. */}
-          <Image
-            src="/images/collection/illustration-pilates-hero.svg"
-            alt=""
-            width={167}
-            height={65}
-            aria-hidden
-            className="pointer-events-none absolute bottom-[-1.5rem] right-4 origin-bottom-right scale-75 desk:bottom-auto desk:left-[calc(50%+19.1875rem)] desk:right-auto desk:top-40 desk:origin-center desk:scale-100"
-          />
-          <Image
-            src="/images/collection/squiggle-shop.svg"
-            alt=""
-            width={46}
-            height={36}
-            aria-hidden
-            className="pointer-events-none absolute left-[calc(50%-11.5625rem)] top-[1.3356rem] hidden desk:block"
-          />
-          <Image
-            src="/images/collection/arrow-curl.svg"
-            alt=""
-            width={86}
-            height={55}
-            aria-hidden
-            className="pointer-events-none absolute left-[calc(50%+16.75rem)] top-[3.5856rem] hidden desk:block"
-          />
-          <div className="relative flex w-full max-w-[90rem] flex-col items-center gap-6 text-center desk:max-w-[39.9375rem]">
             <Image
-              src="/images/collection/oval-all.svg"
+              src="/images/collection/illustration-pilates-hero.svg"
               alt=""
-              width={141}
-              height={61}
+              width={167}
+              height={65}
               aria-hidden
-              className="pointer-events-none absolute left-[20.7813rem] top-[0.4606rem] hidden desk:block"
+              className="pointer-events-none absolute bottom-[-1.5rem] right-4 origin-bottom-right scale-75 desk:bottom-auto desk:left-[calc(50%+19.1875rem)] desk:right-auto desk:top-40 desk:origin-center desk:scale-100"
             />
-            <h1 className="relative inline-block font-display text-[3rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[4rem]">
+            <Image
+              src="/images/collection/squiggle-shop.svg"
+              alt=""
+              width={46}
+              height={36}
+              aria-hidden
+              className="pointer-events-none absolute left-[calc(50%-11.5625rem)] top-[1.3356rem] hidden desk:block"
+            />
+            <Image
+              src="/images/collection/arrow-curl.svg"
+              alt=""
+              width={86}
+              height={55}
+              aria-hidden
+              className="pointer-events-none absolute left-[calc(50%+16.75rem)] top-[3.5856rem] hidden desk:block"
+            />
+            <div className="relative flex w-full max-w-[90rem] flex-col items-center gap-6 text-center desk:max-w-[39.9375rem]">
               <Image
-                src="/images/collection/squiggle-shop.svg"
+                src="/images/collection/oval-all.svg"
                 alt=""
-                width={46}
-                height={36}
+                width={141}
+                height={61}
                 aria-hidden
-                className="pointer-events-none absolute -left-12 top-0 origin-top-left scale-75 desk:hidden"
+                className="pointer-events-none absolute left-[20.7813rem] top-[0.4606rem] hidden desk:block"
               />
-              Shop all
-              <Image
-                src="/images/collection/arrow-curl.svg"
-                alt=""
-                width={86}
-                height={55}
-                aria-hidden
-                className="pointer-events-none absolute -right-[4.5rem] top-2 origin-top-left scale-75 desk:hidden"
-              />
-            </h1>
-            <p className="max-w-[30.25rem] font-grotesk text-body text-onwei-blue">
-              Shop our range of goods for pickleball or pilates and be a part of
-              our community!
-            </p>
-          </div>
-        </section>
+              <h1 className="relative inline-block font-display text-[3rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[4rem]">
+                <Image
+                  src="/images/collection/squiggle-shop.svg"
+                  alt=""
+                  width={46}
+                  height={36}
+                  aria-hidden
+                  className="pointer-events-none absolute -left-12 top-0 origin-top-left scale-75 desk:hidden"
+                />
+                Shop all
+                <Image
+                  src="/images/collection/arrow-curl.svg"
+                  alt=""
+                  width={86}
+                  height={55}
+                  aria-hidden
+                  className="pointer-events-none absolute -right-[4.5rem] top-2 origin-top-left scale-75 desk:hidden"
+                />
+              </h1>
+              <p className="max-w-[30.25rem] font-grotesk text-body text-onwei-blue">
+                Shop our range of goods for pickleball or pilates and be a part
+                of our community!
+              </p>
+            </div>
+          </section>
+        )}
 
         <nav
           aria-label="Category"
@@ -404,39 +461,64 @@ export default async function CollectionPage({
           </div>
         </section>
 
-        <section className="flex flex-col items-center bg-onwei-white px-6 pb-24 desk:px-14 desk:pb-[1.875rem] desk:pt-20">
-          <div className="relative aspect-[1328/645] w-full max-w-[83rem] overflow-hidden rounded-[1.875rem]">
-            <Image
-              src="/images/collection/video-poster.png"
-              alt="Athlete in motion on court"
-              fill
-              sizes="(min-width: 1328px) 1328px, 100vw"
-              className="object-cover"
+        {isAll ? (
+          <>
+            <section className="flex flex-col items-center bg-onwei-white px-6 pb-24 desk:px-14 desk:pb-[1.875rem] desk:pt-20">
+              <div className="relative aspect-[1328/645] w-full max-w-[83rem] overflow-hidden rounded-[1.875rem]">
+                <Image
+                  src="/images/collection/video-poster.png"
+                  alt="Athlete in motion on court"
+                  fill
+                  sizes="(min-width: 1328px) 1328px, 100vw"
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Image
+                    src="/images/showcase/play-pause.svg"
+                    alt="Play video"
+                    width={98}
+                    height={114}
+                  />
+                </div>
+              </div>
+            </section>
+
+            <FindYourWeiSection />
+
+            <ReviewWall
+              reviews={wallReviews}
+              heading={<MoversHeading count={settings.moversCount} />}
+              writeReview={
+                <WriteReviewButton
+                  products={reviewProducts}
+                  className="bg-onwei-green text-onwei-blue"
+                />
+              }
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Image
-                src="/images/showcase/play-pause.svg"
-                alt="Play video"
-                width={98}
-                height={114}
-              />
-            </div>
-          </div>
-        </section>
-
-        <FindYourWeiSection />
-
-        <ReviewWall
-          reviews={wallReviews}
-          heading={
-            <>
-              Chosen by 1000+
-              <br />
-              everyday movers
-            </>
-          }
-          shareLabel="share your on wei routine and get rewarded"
-        />
+          </>
+        ) : (
+          // Client feedback 2026-11-16: category pages close like the
+          // product page, brand points, the comparison table and this
+          // category's reviews, then Join the Movement.
+          <>
+            <section className="flex flex-col items-center bg-onwei-green px-3 pb-14 pt-14 desk:px-14 desk:py-[4.5rem]">
+              <div className="flex w-full max-w-[90rem] flex-col gap-6 desk:flex-row">
+                <ValueProps items={valueProps} row />
+              </div>
+            </section>
+            <ComparisonTable products={comparison} />
+            <ReviewList
+              reviews={categoryReviews}
+              heading="What athletes are saying"
+              writeReview={
+                <WriteReviewButton
+                  products={reviewProducts}
+                  className="bg-onwei-blue text-onwei-white desk:w-[13.9375rem]"
+                />
+              }
+            />
+          </>
+        )}
 
         <JoinMovementSection buttonLabel="Move With Onwei" />
 

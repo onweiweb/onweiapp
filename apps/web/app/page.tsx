@@ -24,10 +24,20 @@ import { InstagramGrid } from "@/_components/InstagramGrid";
 import { ReviewWall } from "@/_components/ReviewWall";
 import { JoinMovementSection } from "@/_components/JoinMovementSection";
 import { ScrollCarousel } from "@/_components/ScrollCarousel";
+import { ScrollReveal } from "@/_components/ScrollReveal";
+import { YouTubeVideo } from "@/_components/YouTubeVideo";
 import { TrackedLink } from "@/_components/TrackedLink";
 import { StarRow } from "@/_components/StarRow";
 import { CtaLink } from "@/_components/CtaLink";
 import { formatArticleDate } from "../lib/formatDate";
+import { getSiteSetting, youtubeEmbedUrl, youtubeVideoId } from "@onwei/core";
+import { WriteReviewButton } from "@/_components/WriteReviewButton";
+import { MoversHeading } from "@/_components/MoversHeading";
+
+function videoEmbed(link: string | null): string | null {
+  const id = youtubeVideoId(link);
+  return id ? youtubeEmbedUrl(id) : null;
+}
 
 function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
   return (
@@ -52,6 +62,15 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
             className="object-cover desk:!top-[-13.72%] desk:!h-[173.8%]"
           />
           <div className="absolute inset-0 bg-black/30" />
+          {/* Client feedback 2026-11-16: the stamp on this banner too. */}
+          <Image
+            src="/images/hero/badge-stamp.svg"
+            alt=""
+            width={70}
+            height={70}
+            aria-hidden
+            className="absolute right-[8.06%] top-[5.78%] h-[3.4125rem] w-[3.6563rem] desk:bottom-[81.59%] desk:left-[81.35%] desk:right-[6.92%] desk:top-[6.94%] desk:h-auto desk:w-auto"
+          />
           <div className="relative flex flex-col gap-[1.125rem] desk:gap-8">
             <h1 className="font-display text-[2.75rem] font-bold uppercase leading-[0.9] text-onwei-beige desk:text-display-xl">
               Made for <br className="desk:hidden" />
@@ -110,8 +129,9 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
         </div>
 
         {/* Mobile frame (node 761:4814), same treatment: badge stamp top
-            right, underline under "own way", arrow and script bottom right. */}
-        <div className="relative flex h-[29.6875rem] w-full flex-col justify-end gap-6 overflow-hidden rounded-[1.25rem] px-6 py-24 desk:h-[39.6875rem] desk:gap-8 desk:rounded-[1.875rem] desk:px-14">
+            right, underline under "own way", arrow and script bottom right.
+            Client feedback 2026-11-16: Pilates comes first (order-first). */}
+        <div className="relative order-first flex h-[29.6875rem] w-full flex-col justify-end gap-6 overflow-hidden rounded-[1.25rem] px-6 py-24 desk:h-[39.6875rem] desk:gap-8 desk:rounded-[1.875rem] desk:px-14">
           <Image
             src="/images/hero/pilates-bg.png"
             alt="Rolled yoga mat with an Onwei stamp"
@@ -194,66 +214,68 @@ function HeroSection({ marqueeItems }: { marqueeItems: string[] }) {
 }
 
 function ShowcaseSection({
-  marqueeItems,
   valueProps,
+  desktopVideoUrl,
+  mobileVideoUrl,
 }: {
-  marqueeItems: string[];
   valueProps: ValuePropItem[];
+  desktopVideoUrl: string | null;
+  mobileVideoUrl: string | null;
 }) {
+  // Client feedback 2026-11-16: heading on mobile too, desktop video 16:9
+  // with the three cards in a row under it, mobile video 9:16 with the
+  // cards sliding in one by one as you scroll, and no marquee here (the
+  // banners already have one).
   return (
-    <section className="flex flex-col items-center bg-onwei-green px-3 pb-3 pt-14 desk:px-14 desk:pb-20 desk:pt-0">
-      <div className="flex w-full max-w-[90rem] flex-col gap-12">
-        {/* Desktop (node 758:2309): the arrow and "at your pace" are
-            absolute beside the heading (x 597 and 656 from its left), mobile
-            keeps them inline. */}
-        <div className="relative flex flex-wrap items-center gap-3 max-desk:hidden">
-          <p className="font-display text-display-md font-bold uppercase leading-[0.9] text-onwei-blue">
-            Designed to Move.
-          </p>
-          <Image
-            src="/images/showcase/arrow-rotate.svg"
-            alt=""
-            width={22}
-            height={48}
-            aria-hidden
-            className="absolute left-[37.34rem] top-[-0.789rem] hidden -rotate-90 desk:block"
-          />
-          <span className="absolute left-[41.03rem] top-[0.46rem] hidden whitespace-nowrap font-script text-script-md uppercase leading-none text-onwei-blue desk:block">
-            at your pace
+    <section className="flex flex-col items-center bg-onwei-green px-3 pb-14 pt-14 desk:px-14 desk:pb-20 desk:pt-20">
+      <div className="flex w-full max-w-[90rem] flex-col gap-8 desk:gap-12">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 desk:justify-start">
+          <h2 className="text-center font-display text-[2.25rem] font-bold uppercase leading-[0.9] text-onwei-blue desk:text-left desk:text-display-md">
+            Designed to Move and Play.
+          </h2>
+          <span className="flex items-center gap-2">
+            <Image
+              src="/images/showcase/arrow-rotate.svg"
+              alt=""
+              width={22}
+              height={48}
+              aria-hidden
+              className="h-[2.25rem] w-auto -rotate-90 desk:h-[3rem]"
+            />
+            <span className="whitespace-nowrap font-script text-[1.25rem] uppercase leading-none text-onwei-blue desk:text-script-md">
+              at your pace
+            </span>
           </span>
         </div>
 
-        <div className="flex flex-col gap-6 desk:flex-row desk:gap-12">
-          {/* The video column is as tall as the card stack and the video
-              sticks inside it while the cards scroll past (Figma 758:2313). */}
-          <div className="desk:w-[51.5rem] desk:shrink-0">
-            <div className="relative h-[26.25rem] w-full overflow-hidden rounded-[1.875rem] desk:sticky desk:top-32 desk:h-[40.375rem]">
-              <Image
-                src="/images/showcase/video-poster.png"
-                alt="Rolled yoga mat, paused video preview"
-                fill
-                sizes="((min-width: 768px)) 58vw, 100vw"
-                className="object-cover"
-              />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Image
-                  src="/images/showcase/play-pause.svg"
-                  alt="Play video"
-                  width={98}
-                  height={114}
-                  className="h-[4.4375rem] w-[3.8125rem] desk:h-[7.125rem] desk:w-[6.125rem]"
-                />
-              </div>
-            </div>
-          </div>
+        <YouTubeVideo
+          embedUrl={desktopVideoUrl ?? mobileVideoUrl}
+          poster="/images/showcase/video-poster.png"
+          posterAlt="Rolled yoga mat, video preview"
+          title="Designed to Move and Play"
+          sizes="(min-width: 1440px) 1328px, 92vw"
+          className="aspect-video rounded-[1.875rem] max-desk:hidden"
+        />
+        <YouTubeVideo
+          embedUrl={mobileVideoUrl ?? desktopVideoUrl}
+          poster="/images/showcase/video-poster.png"
+          posterAlt="Rolled yoga mat, video preview"
+          title="Designed to Move and Play"
+          sizes="90vw"
+          className="mx-auto aspect-[9/16] max-w-[22rem] rounded-[1.25rem] desk:hidden"
+        />
 
-          <div className="flex flex-1 flex-col gap-6">
-            <ValueProps items={valueProps} stacked />
-          </div>
-        </div>
-
-        <div className="max-desk:hidden">
-          <MarqueeBar items={marqueeItems} />
+        <div className="flex flex-col gap-6 overflow-hidden desk:flex-row">
+          {valueProps.map((prop, index) => (
+            <ScrollReveal
+              key={prop.title}
+              variant="slide-in"
+              delay={index * 0.08}
+              className="flex flex-1"
+            >
+              <ValueProps items={[prop]} row />
+            </ScrollReveal>
+          ))}
         </div>
       </div>
     </section>
@@ -417,20 +439,13 @@ function AboutSection() {
           </p>
           <div className="flex w-full max-w-[20.3125rem] flex-col gap-6 desk:max-w-none">
             {/* Mobile (761:4854) and desktop (758:2361) tell it in
-                different words, so both are kept. */}
+                different words, so both are kept. Client feedback
+                2026-11-16: mobile stops after "...and everything else." so
+                the button sits higher. */}
             <p className="font-grotesk text-body text-onwei-white desk:hidden">
               Onwei is for people who don&apos;t live in one lane - people
               constantly in motion between work, wellness, play, and everything
               else.
-              <br />
-              <br />
-              We design elevated sports and fitness essentials for those who
-              show up, no matter how busy life gets.
-              <br />
-              <br />
-              Thoughtfully designed for consistency, comfort, and everyday use -
-              because we believe progress isn&apos;t achieved in one intense
-              session. It&apos;s built over time.
             </p>
             <p className="max-w-[30.25rem] font-grotesk text-body text-onwei-white max-desk:hidden">
               Serious doesn&apos;t just mean intense. It means you show up,
@@ -604,20 +619,20 @@ export default async function HomePage() {
     heroTestimonial,
     wallReviews,
     heroMarqueeItems,
-    showcaseMarqueeItems,
     valueProps,
     instagramPhotos,
     articles,
+    settings,
   ] = await Promise.all([
     listActiveProductsByCategorySlug("pickleball"),
     listActiveProductsByCategorySlug("pilates"),
     listSurfaceReviews({ surface: "HOME_HERO" }),
     listSurfaceReviews({ surface: "HOME_WALL" }),
     listMarqueeItems("HOME_HERO"),
-    listMarqueeItems("HOME_SHOWCASE"),
     listValueProps(),
     listInstagramPhotos(),
     listPublishedArticles(3),
+    getSiteSetting(),
   ]);
   // Figma draws two states of this row, "pickle ball" picked (758:2325) and
   // the second tab picked (758:2632). Each tab shows its own category's
@@ -649,31 +664,33 @@ export default async function HomePage() {
     },
   ];
 
+  const reviewProducts = [
+    ...(pilatesCollection?.products ?? []),
+    ...(pickleballCollection?.products ?? []),
+  ].map((product) => ({ id: product.id, name: product.name }));
+
   return (
     <main>
       <SiteHeader />
       <HeroSection marqueeItems={heroMarqueeItems} />
-      <ShowcaseSection
-        marqueeItems={showcaseMarqueeItems}
-        valueProps={valueProps}
-      />
-      <ShopTabs tabs={shopTabs} />
+      {/* Client feedback 2026-11-16: About right after the banners, then the
+          products, then reviews, then the video. */}
       <AboutSection />
-      {/* Mobile frame (761:5063) has its own marquee strip between About and
-          Reviews, desktop does not. It reuses the Showcase strip items,
-          which the mobile layout no longer shows in its own section. */}
-      <div className="bg-onwei-white px-3 pb-6 pt-3 desk:hidden">
-        <MarqueeBar items={showcaseMarqueeItems} />
-      </div>
+      <ShopTabs tabs={shopTabs} />
       <ReviewWall
         reviews={wallReviews}
-        heading={
-          <>
-            Chosen by 1000+
-            <br />
-            everyday movers
-          </>
+        heading={<MoversHeading count={settings.moversCount} />}
+        writeReview={
+          <WriteReviewButton
+            products={reviewProducts}
+            className="bg-onwei-green text-onwei-blue"
+          />
         }
+      />
+      <ShowcaseSection
+        valueProps={valueProps}
+        desktopVideoUrl={videoEmbed(settings.homeVideoDesktopUrl)}
+        mobileVideoUrl={videoEmbed(settings.homeVideoMobileUrl)}
       />
       <JoinMovementSection />
       <JournalSection articles={articles} />

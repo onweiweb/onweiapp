@@ -28,6 +28,11 @@ export interface SiteSettingSummary {
   contactAddress: string | null;
   contactPhone: string | null;
   contactEmail: string | null;
+  // Reviews heading "Chosen by N+ everyday movers"; null shows no number.
+  moversCount: number | null;
+  // Homepage video, YouTube links (desktop 16:9, mobile 9:16 Short).
+  homeVideoDesktopUrl: string | null;
+  homeVideoMobileUrl: string | null;
 }
 
 let cached: { value: SiteSettingSummary; expiresAt: number } | null = null;
@@ -46,6 +51,9 @@ function toSummary(row: {
   contactAddress: string | null;
   contactPhone: string | null;
   contactEmail: string | null;
+  moversCount: number | null;
+  homeVideoDesktopUrl: string | null;
+  homeVideoMobileUrl: string | null;
 }): SiteSettingSummary {
   return {
     siteMode: row.siteMode,
@@ -61,6 +69,9 @@ function toSummary(row: {
     contactAddress: row.contactAddress,
     contactPhone: row.contactPhone,
     contactEmail: row.contactEmail,
+    moversCount: row.moversCount,
+    homeVideoDesktopUrl: row.homeVideoDesktopUrl,
+    homeVideoMobileUrl: row.homeVideoMobileUrl,
   };
 }
 
@@ -102,6 +113,9 @@ export interface UpdateSiteSettingInput {
   contactAddress?: string | null;
   contactPhone?: string | null;
   contactEmail?: string | null;
+  moversCount?: number | null;
+  homeVideoDesktopUrl?: string | null;
+  homeVideoMobileUrl?: string | null;
 }
 
 export async function updateSiteSetting(
@@ -128,6 +142,9 @@ export async function updateSiteSetting(
       contactAddress: input.contactAddress,
       contactPhone: input.contactPhone,
       contactEmail: input.contactEmail,
+      moversCount: input.moversCount,
+      homeVideoDesktopUrl: input.homeVideoDesktopUrl,
+      homeVideoMobileUrl: input.homeVideoMobileUrl,
       updatedByStaffId: actor.staffUserId,
     },
   });

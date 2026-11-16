@@ -13,13 +13,10 @@ const NAV_LINKS = {
     { label: "Pickleball", href: "/collection/pickleball" },
     { label: "Pilates", href: "/collection/pilates" },
     { label: "our story", href: "/about" },
-    {
-      label: "find your wei",
-      href: "/insiders",
-      // Figma (node 758:2264) pins "insiders" as a small script tag over
-      // the top right of this link.
-      tag: { label: "insiders", href: "/insiders" },
-    },
+    // Client feedback 2026-11-16: "find your wei" is off the nav for now,
+    // "insiders" stays as a plain link (Figma 758:2264 had it as a tag over
+    // "find your wei").
+    { label: "insiders", href: "/insiders" },
   ],
   inner: [
     { label: "Shop All", href: "/collection/all" },
@@ -27,8 +24,6 @@ const NAV_LINKS = {
     { label: "Pilates", href: "/collection/pilates" },
     { label: "About Us", href: "/about" },
     { label: "insiders", href: "/insiders" },
-    // Owner (2026-11-16): "find your wei" opens the Insiders signup page.
-    { label: "find your wei", href: "/insiders" },
   ],
   // About Us (760:4505): four links, no insiders, and a wordmark logo with
   // "own your effort" beside it (see `aboutVariant` below).
@@ -198,14 +193,6 @@ export function SiteHeader({
                 >
                   {link.label}
                 </Link>
-                {"tag" in link ? (
-                  <Link
-                    href={link.tag.href}
-                    className={`absolute -top-[0.8938rem] left-[6.025rem] whitespace-nowrap font-script text-[length:max(0.875rem,11px)] uppercase leading-none ${accent}`}
-                  >
-                    {link.tag.label}
-                  </Link>
-                ) : null}
               </li>
             ))}
           </ul>

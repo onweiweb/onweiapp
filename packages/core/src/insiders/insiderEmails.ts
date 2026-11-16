@@ -235,3 +235,109 @@ export async function unsubscribeWaitlistEntry(
   const exists = await prisma.waitlistEntry.count({ where: { id: entryId } });
   return exists === 1;
 }
+
+/** One Insider in the "Send to chosen Insiders" picker. */
+export interface InsiderPickRow {
+  id: string;
+  fullName: string;
+  email: string;
+  insiderCode: string | null;
+  hasPhone: boolean;
+  emailedAt: Date | null;
+  /** Why they can't be picked, or null when they can. */
+  blocked: "UNSUBSCRIBED" | "NO_CODE" | null;
+}
+
+const PICK_SELECT = {
+  id: true,
+  fullName: true,
+  email: true,
+  phone: true,
+  insiderCode: true,
+  codeEmailedAt: true,
+  unsubscribedAt: true,
+} as const;
+
+function toPickRow(row: {
+  id: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  insiderCode: string | null;
+  codeEmailedAt: Date | null;
+  unsubscribedAt: Date | null;
+}): InsiderPickRow {
+  return {
+    id: row.id,
+    fullName: row.fullName,
+    email: row.email,
+    insiderCode: row.insiderCode,
+    hasPhone: Boolean(row.phone),
+    emailedAt: row.codeEmailedAt,
+    blocked: row.unsubscribedAt
+      ? "UNSUBSCRIBED"
+      : !row.insiderCode
+        ? "NO_CODE"
+        : null,
+  };
+}
+
+/** Up to 10 Insiders matching a name, email or code, newest first. */
+export async function searchInsiderRecipients(
+  query: string,
+): Promise<InsiderPickRow[]> {
+  const q = query.trim();
+  if (q.length < 2) return [];
+  const rows = await prisma.waitlistEntry.findMany({
+    where: {
+      OR: [
+        { fullName: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { insiderCode: { contains: q, mode: "insensitive" } },
+      ],
+    },
+    orderBy: { submittedAt: "desc" },
+    take: 10,
+    select: PICK_SELECT,
+  });
+  return rows.map(toPickRow);
+}
+
+/**
+ * Reloads chosen Insiders on the server before a send, so a stale page can't
+ * email the wrong people. Returns who can be sent to, and who was skipped.
+ */
+export async function getInsiderRecipients(ids: string[]): Promise<{
+  recipients: (InsiderEmailRecipient & { alreadyEmailed: boolean })[];
+  skipped: number;
+}> {
+  const unique = [...new Set(ids)];
+  const rows = await prisma.waitlistEntry.findMany({
+    where: { id: { in: unique } },
+    select: PICK_SELECT,
+  });
+  const recipients = rows
+    .filter((row) => row.insiderCode && !row.unsubscribedAt)
+    .map((row) => ({
+      id: row.id,
+      fullName: row.fullName,
+      email: row.email,
+      phone: row.phone,
+      insiderCode: row.insiderCode!,
+      alreadyEmailed: row.codeEmailedAt !== null,
+    }));
+  return { recipients, skipped: unique.length - recipients.length };
+}
+
+export async function logInsiderSelectedSend(
+  result: { sent: number; failed: number; ids: string[] },
+  actor: AuditActor,
+): Promise<void> {
+  await writeAuditLog({
+    staffUserId: actor.staffUserId,
+    action: "insider.email.send_selected",
+    entityType: "WaitlistEntry",
+    entityId: "selected",
+    afterState: result,
+  });
+}

@@ -708,22 +708,29 @@ enum RedemptionStatus {
 // ---------------------------------------------------------------------------
 
 model Review {
-  id            String       @id @default(cuid())
-  targetType    ReviewTarget
-  productId     String?
-  product       Product?     @relation(fields: [productId], references: [id])
-  customerId    String?
-  customer      Customer?    @relation(fields: [customerId], references: [id])
-  source        ReviewSource
-  rating        Int
-  title         String?
-  body          String
-  authorDisplay String?
-  isApproved    Boolean      @default(false)
-  submittedAt   DateTime     @default(now())
-  approvedAt    DateTime?
-  approvedBy    String?
-  externalRef   String? // source URL/ID for imported reviews, dedup + traceability
+  id                 String       @id @default(cuid())
+  targetType         ReviewTarget
+  productId          String?
+  product            Product?     @relation(fields: [productId], references: [id])
+  customerId         String?
+  customer           Customer?    @relation(fields: [customerId], references: [id])
+  source             ReviewSource
+  rating             Int
+  title              String?
+  body               String
+  authorDisplay      String?
+  isApproved         Boolean      @default(false)
+  submittedAt        DateTime     @default(now())
+  approvedAt         DateTime?
+  approvedBy         String?
+  externalRef        String? // source URL/ID for imported reviews, dedup + traceability
+  // Site submissions ("Write a review"): the writer's email, never shown on
+  // the storefront, and whether it matched a delivered order for the product.
+  email              String?
+  isVerifiedPurchase Boolean      @default(false)
+  // Proof of consent for the email (privacy policy version, when).
+  consentVersion     String?
+  ipAddress          String?
 
   placements ReviewPlacement[]
 
@@ -896,6 +903,12 @@ model SiteSetting {
   contactAddress          String?
   contactPhone            String?
   contactEmail            String?
+  // Reviews heading "Chosen by N+ everyday movers". Null shows no number.
+  moversCount             Int?
+  // Homepage "Designed to Move and Play" video, YouTube links. Desktop is
+  // 16:9, mobile a 9:16 Short. Null shows the poster with no play button.
+  homeVideoDesktopUrl     String?
+  homeVideoMobileUrl      String?
   updatedAt               DateTime @updatedAt
   updatedByStaffId        String?
 }
@@ -1298,4 +1311,23 @@ model WhatsAppOptOut {
   // "reply_stop" or "staff"
   source    String
   createdAt DateTime @default(now())
+}
+
+// "Events and Insider offers" block on the storefront /insiders page,
+// managed in admin Insiders > Page updates. Not customer data.
+model InsiderUpdate {
+  id          String    @id @default(cuid())
+  title       String
+  body        String
+  eventDate   DateTime?
+  imageUrl    String?
+  linkUrl     String?
+  linkLabel   String?
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  updatedById String?
+
+  @@index([isActive, sortOrder])
 }

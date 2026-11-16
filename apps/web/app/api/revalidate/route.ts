@@ -58,7 +58,15 @@ export async function POST(request: Request) {
     // cache), so drop this process's copy and rebuild the pages that show
     // them. Without this, a switch flipped in admin took up to ~45s to show.
     clearSiteSettingCache();
-    for (const path of ["/ontheway", "/about", "/journal", "/contact"]) {
+    revalidatePath("/collection/[slug]", "page");
+    for (const path of [
+      "/",
+      "/insiders",
+      "/ontheway",
+      "/about",
+      "/journal",
+      "/contact",
+    ]) {
       revalidatePath(path);
     }
     revalidatePath("/journal/[slug]", "page");

@@ -75,6 +75,9 @@ export interface ReviewListItem {
   body: string;
   authorDisplay: string | null;
   submittedAt: Date;
+  /** Show the "Verified" label: staff-entered and imported reviews, or a
+   * site review whose email matched a delivered order for the product. */
+  verified: boolean;
 }
 
 export interface ReviewSummary {

@@ -88,6 +88,33 @@ Before the bulk send (blockers):
 5. **Legal text** pasted into admin Legal pages on prod (section 4).
 6. After deploy: Insiders, Overview, "Create missing codes"; then a test send to yourself; then send.
 
+### 2026-11-17: Insider email "Send to chosen Insiders" (local, not pushed)
+
+Admin Insiders > Email has "Send to chosen Insiders" next to the test send: search by name, email or code, pick up to 10,
+send their real email (and Insider WhatsApp). They are marked as sent so the bulk send skips them; re-sending to someone
+already emailed needs a second confirmation (`resend: true`, otherwise 409). Unsubscribed people and people with no
+code can't be picked. Routes `GET /api/insiders/email/recipients`, `POST /api/insiders/email/selected`; audit action
+`insider.email.send_selected`. No schema change. Counts towards the 100 emails a day (no live counter exists).
+
+### 2026-11-17: Client feedback round "Pilates to come on top" (local, not pushed)
+
+- Homepage: Pilates banner first, stamp on both banners; order is banners, About (mobile trimmed to the first
+  paragraph), Shop our gear (new "Seriously fun fitness gear for everyday movers." statement), reviews, "Designed to Move
+  and Play" (16:9 desktop, 9:16 mobile, YouTube links in admin Settings > Homepage, cards slide in one by one), Join
+  the Movement. Showcase and extra mobile marquees removed. "find your wei" off the header and mobile menu (footer keeps it).
+- Reviews: "Write a review" popup (homepage, category pages, product pages), anyone with a valid email, saved
+  unapproved (`Review.source = SITE`, email kept private, `isVerifiedPurchase` when the email has a delivered order for
+  that product), approved in admin Reviews. `POST /api/reviews`: 3 an hour per IP, hidden bot field, consent recorded.
+  "Verified" label now shows only for staff-entered or imported reviews and verified site reviews.
+- Reviews heading number: admin Settings > Homepage "Number of happy movers" (`SiteSetting.moversCount`), empty shows
+  "Chosen by everyday movers".
+- Category pages: banner image or GIF from admin Categories (`Category.imageUrl`); below the products, value props,
+  comparison table (`listCategoryComparison`) and that category's reviews, then Join the Movement. Shop All unchanged.
+- /insiders: "Events and Insider offers" from admin Insiders > Page updates (`InsiderUpdate`). Post-launch signups still
+  get a code; their discount comes from the date tiers in Insiders > Discount (owner's call).
+- Migration `20261117120000_reviews_home_video_insider_updates` adds SiteSetting columns, so prod must be migrated BEFORE
+  the push. Third value-prop card copy ("Designed to Show Up") is admin content: change it on prod in Content.
+
 ### 2026-11-16: Insider email, letter version (local)
 
 The first Insider emails went to Gmail Promotions. The client redesigned it as a letter (PDFs

@@ -96,13 +96,17 @@ export type { ProductSitemapEntry } from "./catalog/listAllActiveProductSlugsFor
 export {
   listApprovedReviews,
   summarizeReviews,
+  toReviewListItem,
 } from "./catalog/listApprovedReviews";
 export {
   DEFAULT_SURFACE_LIMITS,
   listSurfaceReviews,
   resolveSurfaceLimit,
 } from "./catalog/listSurfaceReviews";
-export { listComparableProducts } from "./catalog/listComparableProducts";
+export {
+  listCategoryComparison,
+  listComparableProducts,
+} from "./catalog/listComparableProducts";
 export { listFaqs } from "./catalog/listFaqs";
 export { listFeaturedProducts } from "./catalog/listFeaturedProducts";
 export { listRelatedProducts } from "./catalog/listRelatedProducts";
@@ -171,6 +175,15 @@ export {
   rejectReview,
 } from "./reviews/review";
 export {
+  REVIEW_LIMITS,
+  checkReviewRateLimit,
+  checkSiteReview,
+  hasDeliveredOrderFor,
+  submitSiteReview,
+  _resetReviewRateLimiterForTests,
+} from "./reviews/submitReview";
+export type { SiteReviewError, SiteReviewInput } from "./reviews/submitReview";
+export {
   removeReviewPlacement,
   reorderReviewPlacements,
   setReviewPlacement,
@@ -191,6 +204,7 @@ export type {
   UpdateSiteSettingInput,
 } from "./settings/siteSetting";
 export { isValidEmail } from "./validation/email";
+export { youtubeEmbedUrl, youtubeVideoId } from "./validation/youtube";
 export { validatePhone } from "./validation/phone";
 export type { PhoneValidationResult } from "./validation/phone";
 export {
@@ -337,6 +351,10 @@ export {
   type InsiderEmailListRow,
   type InsiderOverview,
   type InsiderEmailRecipient,
+  type InsiderPickRow,
+  getInsiderRecipients,
+  logInsiderSelectedSend,
+  searchInsiderRecipients,
 } from "./insiders/insiderEmails";
 export {
   RAZORPAY_MIN_AMOUNT_PAISE,
@@ -500,3 +518,16 @@ export {
   type ContactMessageRow,
 } from "./contact/contactMessages";
 export * from "./messaging/whatsapp";
+export {
+  checkInsiderUpdate,
+  deleteInsiderUpdate,
+  isAllowedUpdateLink,
+  listActiveInsiderUpdates,
+  listInsiderUpdates,
+  saveInsiderUpdate,
+} from "./insiders/insiderUpdates";
+export type {
+  InsiderUpdateError,
+  InsiderUpdateInput,
+  InsiderUpdateItem,
+} from "./insiders/insiderUpdates";

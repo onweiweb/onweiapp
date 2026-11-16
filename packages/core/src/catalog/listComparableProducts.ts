@@ -70,3 +70,50 @@ export async function listComparableProducts(
   }
   return comparable;
 }
+
+/**
+ * Category page "Pick what fits you" table (client feedback 2026-11-16):
+ * the first product in the category that has comparable siblings, plus up
+ * to two of them. Empty when nothing in the category lines up (the table
+ * then hides itself).
+ */
+export async function listCategoryComparison(
+  categorySlug: string,
+  limit = 3,
+): Promise<ComparisonProduct[]> {
+  const anchors = await prisma.product.findMany({
+    where: {
+      category: { slug: categorySlug },
+      status: "ACTIVE",
+      deletedAt: null,
+    },
+    orderBy: { createdAt: "asc" },
+    take: 5,
+    include: {
+      images: { orderBy: { sortOrder: "asc" }, take: 1 },
+      variants: {
+        where: { status: "ACTIVE" },
+        orderBy: { price: "asc" },
+        take: 1,
+      },
+    },
+  });
+  for (const anchor of anchors) {
+    const specs = mapSpecs(anchor.specs);
+    const variant = anchor.variants[0];
+    if (specs.length === 0 || !variant) continue;
+    const siblings = await listComparableProducts(anchor.id, limit - 1);
+    if (siblings.length === 0) continue;
+    return [
+      {
+        slug: anchor.slug,
+        name: anchor.name,
+        priceMinorUnits: toMinorUnits(variant.price),
+        imageUrl: anchor.images[0]?.url ?? null,
+        specs,
+      },
+      ...siblings,
+    ];
+  }
+  return [];
+}

@@ -916,8 +916,8 @@ const VALUE_PROPS = [
     illustrationUrl: "/images/showcase/value-prop-3.svg",
     width: 170,
     height: 67,
-    title: "Designed to Belong",
-    body: "Products you'll feel good using, carrying and coming back to every day.",
+    title: "Designed to Show Up",
+    body: "Products you'll feel good using and carrying, for solo sessions or to move with your gang.",
   },
 ] as const;
 

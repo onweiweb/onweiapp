@@ -9,7 +9,14 @@ const bodySchema = z.object({
   name: z.string().trim().optional(),
   slug: z.string().trim().optional(),
   parentId: z.string().nullable().optional(),
-  imageUrl: z.string().nullable().optional(),
+  // Page banner, an uploaded file's https link (or null to remove it).
+  imageUrl: z
+    .string()
+    .refine((value) => value.startsWith("https://"), {
+      error: "Upload the banner again, that link doesn't look right.",
+    })
+    .nullable()
+    .optional(),
   isActive: z.boolean().optional(),
   sortOrder: z.number().optional(),
   metaTitle: z.string().nullable().optional(),

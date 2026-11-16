@@ -6,6 +6,8 @@ import {
   listActiveCategories,
   listActiveProductsByCategorySlug,
   listAllActiveProductSlugsForSitemap,
+  listApprovedReviews,
+  listCategoryComparison,
   listComparableProducts,
   listFaqs,
   listInstagramPhotos,
@@ -50,6 +52,18 @@ export const cachedListActiveProductsByCategorySlug = unstable_cache(
 export const cachedListComparableProducts = unstable_cache(
   listComparableProducts,
   ["catalog:listComparableProducts"],
+  { revalidate: REVALIDATE_SECONDS, tags: TAGS },
+);
+
+export const cachedListCategoryComparison = unstable_cache(
+  listCategoryComparison,
+  ["catalog:listCategoryComparison"],
+  { revalidate: REVALIDATE_SECONDS, tags: TAGS },
+);
+
+export const cachedListApprovedReviews = unstable_cache(
+  listApprovedReviews,
+  ["catalog:listApprovedReviews"],
   { revalidate: REVALIDATE_SECONDS, tags: TAGS },
 );
 

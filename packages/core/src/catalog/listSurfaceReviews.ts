@@ -1,6 +1,6 @@
 import { prisma } from "@onwei/database";
 import type { ReviewSurface } from "@onwei/database";
-import { listApprovedReviews } from "./listApprovedReviews";
+import { listApprovedReviews, toReviewListItem } from "./listApprovedReviews";
 import type { ReviewListItem } from "./types";
 
 export const DEFAULT_SURFACE_LIMITS: Record<ReviewSurface, number> = {
@@ -59,14 +59,7 @@ export async function listSurfaceReviews(options: {
   });
 
   if (placements.length > 0) {
-    return placements.map(({ review }) => ({
-      id: review.id,
-      rating: review.rating,
-      title: review.title,
-      body: review.body,
-      authorDisplay: review.authorDisplay,
-      submittedAt: review.submittedAt,
-    }));
+    return placements.map(({ review }) => toReviewListItem(review));
   }
 
   return listApprovedReviews({

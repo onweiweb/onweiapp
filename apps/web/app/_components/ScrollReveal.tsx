@@ -14,6 +14,7 @@ const VARIANTS = {
   "fade-up": { opacity: 0, y: "1.5rem" },
   fade: { opacity: 0 },
   "scale-in": { opacity: 0, scale: 0.96, y: "0.75rem" },
+  "slide-in": { opacity: 0, x: "4rem" },
 } as const;
 
 // Shared reveal-on-scroll wrapper so this isn't hand-rolled in every section
@@ -44,7 +45,7 @@ export function ScrollReveal({
     <MotionTag
       className={className}
       initial={reduceMotion ? false : VARIANTS[variant]}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      whileInView={{ opacity: 1, x: 0, y: 0, scale: 1 }}
       viewport={{ once: true, amount: 0.15, margin: "0px 0px -8% 0px" }}
       transition={{ duration: 0.7, ease: EASE, delay }}
     >

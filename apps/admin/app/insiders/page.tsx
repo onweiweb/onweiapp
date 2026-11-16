@@ -10,6 +10,7 @@ import {
   listInsiderEmailStatus,
   type InsiderEmailStatus,
   listInsiderTiers,
+  listInsiderUpdates,
 } from "@onwei/core";
 import { hasPermission } from "@onwei/auth";
 import { requirePageSession } from "../_lib/requirePageSession";
@@ -38,6 +39,7 @@ import {
   TierForm,
 } from "./_components";
 import { MembersTab } from "./_members";
+import { AddUpdateButton, UpdateActions, toUpdateRow } from "./_updates";
 
 const TABS = [
   { id: "members", label: "Members" },
@@ -46,6 +48,7 @@ const TABS = [
   { id: "addresses", label: "Card addresses" },
   { id: "cards", label: "Printed cards" },
   { id: "email", label: "Email" },
+  { id: "updates", label: "Page updates" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
 
@@ -119,6 +122,7 @@ export default async function InsidersPage({
         />
       ) : null}
       {tab === "cards" ? <PrintedCardsTab canManage={canManage} /> : null}
+      {tab === "updates" ? <UpdatesTab canManage={canManage} /> : null}
     </main>
   );
 }
@@ -610,5 +614,77 @@ async function PrintedCardsTab({ canManage }: { canManage: boolean }) {
         )}
       </AdminCard>
     </div>
+  );
+}
+
+const UPDATE_DATE = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  timeZone: "Asia/Kolkata",
+});
+
+/** Events and offers shown on the storefront /insiders page. */
+async function UpdatesTab({ canManage }: { canManage: boolean }) {
+  const updates = await listInsiderUpdates();
+  return (
+    <AdminCard className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-lg font-semibold text-onwei-blue">
+            Events and Insider offers
+          </h2>
+          <p className="text-sm text-onwei-blue/70">
+            Shown on onwei.in/insiders under the signup form, in the order
+            below. Switched-off updates stay here but don&apos;t show.
+          </p>
+        </div>
+        {canManage ? <AddUpdateButton /> : null}
+      </div>
+      {updates.length === 0 ? (
+        <EmptyState
+          title="No updates yet"
+          description="Add an event or an offer and it shows on the Insiders page. With none, that section is hidden."
+        />
+      ) : (
+        <AdminTable>
+          <AdminTableHead>
+            <AdminTableHeaderCell>Update</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Date</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Showing</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Order</AdminTableHeaderCell>
+            {canManage ? <AdminTableHeaderCell> </AdminTableHeaderCell> : null}
+          </AdminTableHead>
+          <tbody>
+            {updates.map((update) => (
+              <AdminTableRow key={update.id}>
+                <AdminTableCell>
+                  <p className="font-medium">{update.title}</p>
+                  <p className="line-clamp-1 text-xs text-onwei-blue/60">
+                    {update.body}
+                  </p>
+                </AdminTableCell>
+                <AdminTableCell>
+                  {update.eventDate
+                    ? UPDATE_DATE.format(update.eventDate)
+                    : "-"}
+                </AdminTableCell>
+                <AdminTableCell>
+                  <AdminBadge tone={update.isActive ? "success" : "pending"}>
+                    {update.isActive ? "On" : "Off"}
+                  </AdminBadge>
+                </AdminTableCell>
+                <AdminTableCell>{update.sortOrder}</AdminTableCell>
+                {canManage ? (
+                  <AdminTableCell>
+                    <UpdateActions update={toUpdateRow(update)} />
+                  </AdminTableCell>
+                ) : null}
+              </AdminTableRow>
+            ))}
+          </tbody>
+        </AdminTable>
+      )}
+    </AdminCard>
   );
 }

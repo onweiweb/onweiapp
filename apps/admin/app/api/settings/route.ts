@@ -1,4 +1,4 @@
-import { isValidEmail, updateSiteSetting } from "@onwei/core";
+import { isValidEmail, updateSiteSetting, youtubeVideoId } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { defineAdminRoute } from "../_lib/defineAdminRoute";
@@ -24,6 +24,18 @@ const linkField = z
     },
     { error: URL_MESSAGE },
   )
+  .optional();
+
+// Homepage video: must be a YouTube video link (watch, youtu.be or Shorts).
+const youtubeField = z
+  .string()
+  .trim()
+  .nullable()
+  .refine((value) => !value || youtubeVideoId(value) !== null, {
+    error:
+      "Paste a YouTube video link, like https://youtu.be/... or a Shorts link.",
+  })
+  .transform((value) => value || null)
   .optional();
 
 const bodySchema = z.object({
@@ -54,6 +66,15 @@ const bodySchema = z.object({
       error: "That support email doesn't look right.",
     })
     .optional(),
+  moversCount: z
+    .number()
+    .int({ error: "Use a whole number." })
+    .min(1, { error: "Use a number above 0, or leave it empty." })
+    .max(10_000_000)
+    .nullable()
+    .optional(),
+  homeVideoDesktopUrl: youtubeField,
+  homeVideoMobileUrl: youtubeField,
 });
 
 export const PATCH = defineAdminRoute(

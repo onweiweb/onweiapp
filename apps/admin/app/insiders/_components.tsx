@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ChooseInsidersButton } from "./_chooseInsiders";
 import {
   AdminButton,
   AdminCard,
@@ -440,6 +441,7 @@ export function EmailSender({ toEmail }: { toEmail: number }) {
         >
           {testing ? "Sending test..." : "Send me a test first"}
         </AdminButton>
+        <ChooseInsidersButton disabled={testing || sending} />
         <Field
           label="How many to send now"
           hint="100 a day on the free email plan. Sign-in codes count too."

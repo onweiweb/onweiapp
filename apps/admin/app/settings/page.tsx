@@ -4,6 +4,7 @@ import { hasPermission } from "@onwei/auth";
 import { StoreSettingsForm } from "../_components/StoreSettingsForm";
 import { requirePageSession } from "../_lib/requirePageSession";
 import { SiteSettingForm } from "../_components/SiteSettingForm";
+import { HomepageSettingsForm } from "../_components/HomepageSettingsForm";
 
 const TABS = [
   { id: "site", label: "Site" },
@@ -69,6 +70,14 @@ export default async function SettingsPage({
         initialContactAddress={setting.contactAddress ?? ""}
         initialContactPhone={setting.contactPhone ?? ""}
         initialContactEmail={setting.contactEmail ?? ""}
+      />
+      <HomepageSettingsForm
+        canManage={hasPermission(staff.permissions, "settings:manage")}
+        initial={{
+          moversCount: setting.moversCount ? String(setting.moversCount) : "",
+          homeVideoDesktopUrl: setting.homeVideoDesktopUrl ?? "",
+          homeVideoMobileUrl: setting.homeVideoMobileUrl ?? "",
+        }}
       />
     </main>
   );

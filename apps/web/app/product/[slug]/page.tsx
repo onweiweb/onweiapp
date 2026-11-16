@@ -1,3 +1,4 @@
+import { WriteReviewButton } from "@/_components/WriteReviewButton";
 import type { Metadata } from "next";
 import { TrackView } from "@/_components/TrackView";
 import { notFound, permanentRedirect } from "next/navigation";
@@ -264,7 +265,16 @@ export default async function ProductPage({
 
       <ComparisonTable products={comparisonProducts} />
 
-      <ReviewList reviews={reviews} heading="What athletes are saying" />
+      <ReviewList
+        reviews={reviews}
+        heading="What athletes are saying"
+        writeReview={
+          <WriteReviewButton
+            productId={product.id}
+            className="bg-onwei-blue text-onwei-white desk:w-[13.9375rem]"
+          />
+        }
+      />
 
       <RelatedProducts products={relatedProducts} />
 

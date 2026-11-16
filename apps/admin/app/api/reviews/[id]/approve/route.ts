@@ -1,6 +1,7 @@
 import { approveReview } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
+import { triggerCatalogRevalidate } from "../../../_lib/triggerCatalogRevalidate";
 
 export const POST = defineAdminRoute<never, { id: string }>(
   { permission: "review:moderate" },
@@ -9,6 +10,7 @@ export const POST = defineAdminRoute<never, { id: string }>(
       const review = await approveReview(params.id, {
         staffUserId: staff.staffUserId,
       });
+      await triggerCatalogRevalidate();
       return NextResponse.json({ ok: true, review });
     } catch (error) {
       console.error(error);

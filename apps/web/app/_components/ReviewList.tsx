@@ -15,9 +15,11 @@ function ReviewRow({ review }: { review: ReviewListItem }) {
           <p className="w-full text-[1.25rem] uppercase">
             {review.authorDisplay ?? "Onwei Customer"}
           </p>
-          <p className="w-full text-[length:max(0.875rem,11px)] leading-[1.3]">
-            Verified Buyer
-          </p>
+          {review.verified ? (
+            <p className="w-full text-[length:max(0.875rem,11px)] leading-[1.3]">
+              Verified Buyer
+            </p>
+          ) : null}
         </div>
         <div className="flex gap-0">
           {Array.from({ length: review.rating }).map((_, index) => (
@@ -50,12 +52,16 @@ export function ReviewList({
   reviews,
   heading,
   max = 3,
+  writeReview,
 }: {
   reviews: ReviewListItem[];
   heading: string;
   max?: number;
+  /** The "Write a review" button; with it the section shows even before
+   * the first review. */
+  writeReview?: React.ReactNode;
 }) {
-  if (reviews.length === 0) return null;
+  if (reviews.length === 0 && !writeReview) return null;
   return (
     <section className="flex flex-col items-center bg-onwei-green px-3 py-14 desk:px-14 desk:py-[4.5rem]">
       <div className="flex w-full max-w-[90rem] flex-col items-center gap-10">
@@ -63,24 +69,26 @@ export function ReviewList({
           <p className="font-display text-[2.5rem] font-bold uppercase leading-[0.9] text-onwei-blue desk:w-[33.3125rem] desk:text-display-md">
             {heading}
           </p>
-          <CtaLink
-            href="#"
-            className="bg-onwei-blue text-onwei-white desk:w-[13.9375rem]"
-          >
-            write a review
-          </CtaLink>
+          {writeReview}
         </div>
+        {reviews.length === 0 ? (
+          <p className="w-full font-grotesk text-body text-onwei-blue">
+            No reviews here yet. Tried it? Be the first to write one.
+          </p>
+        ) : null}
         <div className="flex w-full flex-col gap-6">
           {reviews.slice(0, max).map((review) => (
             <ReviewRow key={review.id} review={review} />
           ))}
         </div>
-        <CtaLink
-          href="#"
-          className="bg-onwei-blue text-onwei-white desk:w-[13.9375rem]"
-        >
-          view all
-        </CtaLink>
+        {reviews.length > max ? (
+          <CtaLink
+            href="#"
+            className="bg-onwei-blue text-onwei-white desk:w-[13.9375rem]"
+          >
+            view all
+          </CtaLink>
+        ) : null}
       </div>
     </section>
   );

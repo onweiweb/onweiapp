@@ -24,9 +24,17 @@ export function ShopTabs({ tabs }: { tabs: readonly ShopTab[] }) {
     <>
       <section className="flex items-end justify-center bg-onwei-white px-3 pb-0 pt-12 desk:px-14 desk:pb-12 desk:pt-[4.5rem]">
         <div className="flex w-full max-w-[90rem] flex-col items-center gap-3 desk:flex-row desk:flex-wrap desk:items-end desk:justify-between desk:gap-8">
-          <p className="font-display text-[2.5rem] font-bold uppercase leading-[0.9] text-onwei-blue desk:text-display-md">
-            shop our gear
-          </p>
+          {/* Client feedback 2026-11-16: a positioning statement before the
+              product slider, "Shop our gear" in body text over a bold line. */}
+          <div className="flex flex-col items-center gap-3 text-center text-onwei-blue desk:items-start desk:text-left">
+            <p className="font-grotesk text-[length:max(1rem,13px)] desk:text-[1.25rem]">
+              Shop our gear
+            </p>
+            <h2 className="font-display text-[2rem] font-bold uppercase leading-[0.95] desk:text-display-md">
+              Seriously fun fitness gear
+              <br className="max-desk:hidden" /> for everyday movers.
+            </h2>
+          </div>
           <div role="tablist" className="flex items-start gap-8">
             {tabs.map((tab) => {
               const active = tab.key === activeKey;

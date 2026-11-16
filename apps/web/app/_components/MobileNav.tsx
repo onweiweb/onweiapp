@@ -15,7 +15,7 @@ const NAV_LINKS = [
   { label: "Pickleball", href: "/collection/pickleball" },
   { label: "Pilates", href: "/collection/pilates" },
   { label: "our story", href: "/about" },
-  { label: "find your wei", href: "/insiders" },
+  { label: "insiders", href: "/insiders" },
 ] as const;
 
 export function MobileNav({ inverted = false }: { inverted?: boolean }) {
