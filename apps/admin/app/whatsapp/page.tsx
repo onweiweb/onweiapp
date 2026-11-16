@@ -1,5 +1,8 @@
+import Link from "next/link";
 import {
+  WHATSAPP_PURPOSES,
   WHATSAPP_PURPOSE_LIST,
+  listWhatsAppMessages,
   countWhatsAppOptOuts,
   getWhatsAppStats,
   listWhatsAppTemplates,
@@ -9,7 +12,13 @@ import {
 import { hasPermission } from "@onwei/auth";
 import {
   AdminBadge,
+  AdminButton,
   AdminCard,
+  AdminInput,
+  AdminPager,
+  AdminSelect,
+  AdminTabLinks,
+  EmptyState,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
@@ -19,6 +28,8 @@ import {
   type StatusTone,
 } from "../_components/ui";
 import { requirePageSession } from "../_lib/requirePageSession";
+import { PAGE_SIZE, parsePage } from "../_lib/pagination";
+import type { WhatsAppPurpose, WhatsAppStatus } from "@onwei/database";
 import { WhatsAppRowActions } from "./_components";
 import { cachedGupshupTemplates } from "./_gupshup";
 
@@ -52,8 +63,69 @@ function statusOf(template: WhatsAppTemplateView): {
     : { label: "Off", tone: "pending" };
 }
 
-export default async function WhatsAppPage() {
+const TABS = [
+  { id: "messages", label: "Messages" },
+  { id: "log", label: "Log" },
+] as const;
+
+const STATUS_INFO: Record<WhatsAppStatus, { label: string; tone: StatusTone }> =
+  {
+    SENDING: { label: "Sending", tone: "pending" },
+    SENT: { label: "Sent", tone: "active" },
+    DELIVERED: { label: "Delivered", tone: "success" },
+    READ: { label: "Read", tone: "success" },
+    FAILED: { label: "Failed", tone: "problem" },
+  };
+
+const WHEN = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  hour: "numeric",
+  minute: "2-digit",
+  timeZone: "Asia/Kolkata",
+});
+
+/** "after 4s", "after 3 min", "after 2 h". */
+function after(from: Date, to: Date | null): string | null {
+  if (!to) return null;
+  const seconds = Math.max(
+    0,
+    Math.round((to.getTime() - from.getTime()) / 1000),
+  );
+  if (seconds < 60) return `after ${seconds}s`;
+  if (seconds < 3600) return `after ${Math.round(seconds / 60)} min`;
+  if (seconds < 172800) return `after ${Math.round(seconds / 3600)} h`;
+  return `after ${Math.round(seconds / 86400)} days`;
+}
+
+type SearchParams = {
+  tab?: string;
+  page?: string;
+  purpose?: string;
+  status?: string;
+  phone?: string;
+};
+
+export default async function WhatsAppPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
   const staff = await requirePageSession("settings:view");
+  const params = await searchParams;
+  const tab = params.tab === "log" ? "log" : "messages";
+  if (tab === "log") {
+    return (
+      <main className="flex flex-col gap-6">
+        <PageHeader
+          title="WhatsApp"
+          description="Every WhatsApp message Onwei sent and how far it got. Numbers are partly hidden."
+        />
+        <AdminTabLinks basePath="/whatsapp" tabs={TABS} active={tab} />
+        <LogTab params={params} />
+      </main>
+    );
+  }
   const canManage = hasPermission(staff.permissions, "settings:manage");
   const [templates, stats, optOuts, gupshupList] = await Promise.all([
     listWhatsAppTemplates(),
@@ -70,6 +142,7 @@ export default async function WhatsAppPage() {
         title="WhatsApp"
         description="Messages Onwei sends on WhatsApp through Gupshup. For each one, pick its template from Gupshup, send a test, then switch it on once WhatsApp has approved it."
       />
+      <AdminTabLinks basePath="/whatsapp" tabs={TABS} active={tab} />
 
       <AdminCard className="flex flex-wrap items-center gap-x-4 gap-y-2 py-4 text-sm text-onwei-blue/80">
         {missing.length === 0 ? (
@@ -126,7 +199,13 @@ export default async function WhatsAppPage() {
                   </p>
                   {stat.topFailures[0] ? (
                     <p className="text-xs text-onwei-blue/60">
-                      Most common problem: {stat.topFailures[0].reason}
+                      Most common problem: {stat.topFailures[0].reason}.{" "}
+                      <Link
+                        href={`/whatsapp?tab=log&status=FAILED&purpose=${info.purpose}`}
+                        className="underline"
+                      >
+                        See them in the log
+                      </Link>
                     </p>
                   ) : null}
                 </AdminTableCell>
@@ -143,5 +222,144 @@ export default async function WhatsAppPage() {
         </tbody>
       </AdminTable>
     </main>
+  );
+}
+
+async function LogTab({ params }: { params: SearchParams }) {
+  const page = parsePage(params.page);
+  const purpose =
+    params.purpose && params.purpose in WHATSAPP_PURPOSES
+      ? (params.purpose as WhatsAppPurpose)
+      : undefined;
+  const status =
+    params.status && params.status in STATUS_INFO
+      ? (params.status as WhatsAppStatus)
+      : undefined;
+  const phone = (params.phone ?? "").replace(/\D/g, "").slice(-10);
+  const { rows, hasNext } = await listWhatsAppMessages({
+    page,
+    pageSize: PAGE_SIZE,
+    purpose,
+    status,
+    phoneEnding: phone || undefined,
+  });
+
+  return (
+    <div className="flex flex-col gap-4">
+      <AdminCard className="flex flex-col gap-3 py-4">
+        <form className="flex flex-wrap items-end gap-3">
+          <input type="hidden" name="tab" value="log" />
+          <label className="flex flex-col gap-1 text-sm">
+            Message
+            <AdminSelect name="purpose" defaultValue={purpose ?? ""}>
+              <option value="">All messages</option>
+              {WHATSAPP_PURPOSE_LIST.map((info) => (
+                <option key={info.purpose} value={info.purpose}>
+                  {info.title}
+                </option>
+              ))}
+            </AdminSelect>
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            Status
+            <AdminSelect name="status" defaultValue={status ?? ""}>
+              <option value="">Any status</option>
+              {Object.entries(STATUS_INFO).map(([key, info]) => (
+                <option key={key} value={key}>
+                  {info.label}
+                </option>
+              ))}
+            </AdminSelect>
+          </label>
+          <label className="flex flex-col gap-1 text-sm">
+            Number ends with
+            <AdminInput
+              name="phone"
+              defaultValue={phone}
+              inputMode="numeric"
+              placeholder="e.g. 3210"
+              className="w-36"
+            />
+          </label>
+          <AdminButton type="submit" variant="secondary">
+            Filter
+          </AdminButton>
+        </form>
+        <p className="text-xs text-onwei-blue/70">
+          <strong>Sending</strong>: being handed to Gupshup.{" "}
+          <strong>Sent</strong>: Gupshup accepted it. <strong>Delivered</strong>
+          : it reached the phone. <strong>Read</strong>: they opened it.{" "}
+          <strong>Failed</strong>: it didn&apos;t go out, the reason is
+          WhatsApp&apos;s own. Stuck on Sent for hours usually means the phone
+          is off, or delivery updates aren&apos;t reaching us.
+        </p>
+      </AdminCard>
+
+      {rows.length === 0 ? (
+        <EmptyState
+          title="No messages here"
+          description={
+            purpose || status || phone
+              ? "Nothing matches these filters."
+              : "Once Onwei sends a WhatsApp, it shows up here."
+          }
+        />
+      ) : (
+        <AdminTable>
+          <AdminTableHead>
+            <AdminTableHeaderCell>When</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Message</AdminTableHeaderCell>
+            <AdminTableHeaderCell>To</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Status</AdminTableHeaderCell>
+          </AdminTableHead>
+          <tbody>
+            {rows.map((row) => {
+              const info = STATUS_INFO[row.status];
+              const timing =
+                row.status === "READ"
+                  ? after(row.createdAt, row.readAt)
+                  : row.status === "DELIVERED"
+                    ? after(row.createdAt, row.deliveredAt)
+                    : row.status === "FAILED"
+                      ? after(row.createdAt, row.failedAt)
+                      : null;
+              return (
+                <AdminTableRow key={row.id}>
+                  <AdminTableCell className="whitespace-nowrap">
+                    {WHEN.format(row.createdAt)}
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    {WHATSAPP_PURPOSES[row.purpose].title}
+                  </AdminTableCell>
+                  <AdminTableCell>
+                    <p>{row.name ?? "Test send or not linked"}</p>
+                    <p className="text-xs text-onwei-blue/60">{row.phone}</p>
+                  </AdminTableCell>
+                  <AdminTableCell className="max-w-sm">
+                    <AdminBadge tone={info.tone}>{info.label}</AdminBadge>
+                    {timing ? (
+                      <span className="ml-2 text-xs text-onwei-blue/60">
+                        {timing}
+                      </span>
+                    ) : null}
+                    {row.failureReason ? (
+                      <p className="mt-1 text-xs text-onwei-blue/70">
+                        {row.failureReason}
+                      </p>
+                    ) : null}
+                  </AdminTableCell>
+                </AdminTableRow>
+              );
+            })}
+          </tbody>
+        </AdminTable>
+      )}
+      <AdminPager
+        pathname="/whatsapp"
+        page={page}
+        hasNext={hasNext}
+        params={{ tab: "log", purpose, status, phone: phone || undefined }}
+      />
+    </div>
   );
 }

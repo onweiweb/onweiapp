@@ -88,6 +88,15 @@ Before the bulk send (blockers):
 5. **Legal text** pasted into admin Legal pages on prod (section 4).
 6. After deploy: Insiders, Overview, "Create missing codes"; then a test send to yourself; then send.
 
+### 2026-11-17: WhatsApp message log (local, not pushed)
+
+Admin WhatsApp has tabs Messages and Log (`?tab=log`). The log lists every `WhatsAppMessage`, newest first, 50 a page,
+filtered by message, status and number ending, with the name (Insider or customer), masked number (`maskPhone`), status
+badge, time to deliver/read/fail and WhatsApp's failure reason. "Most common problem" on the Messages tab links to the
+failed rows. Core `listWhatsAppMessages`. No schema change. "Message Sending failed as template did not match" is
+WhatsApp's error relayed by Gupshup's webhook, usually a template that isn't approved yet, or values or header that
+don't match it.
+
 ### 2026-11-17: WhatsApp templates picked from Gupshup (local, not pushed)
 
 Admin WhatsApp > Edit has "Pick from Gupshup": lists the app's templates live (`GET
