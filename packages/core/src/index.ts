@@ -328,7 +328,6 @@ export {
 export {
   getInsiderOverview,
   claimInsiderEmailBatch,
-  claimInsiderEmailFor,
   markInsiderEmailSent,
   releaseInsiderEmailClaim,
   logInsiderEmailRun,

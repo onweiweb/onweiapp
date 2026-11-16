@@ -5,7 +5,6 @@ import { fillInsiderCodePool, takeFreePrintedCode } from "./codePool";
 import { assignInsiderCode } from "./insiderCode";
 import {
   claimInsiderEmailBatch,
-  claimInsiderEmailFor,
   listInsiderEmailStatus,
   markInsiderEmailSent,
   releaseInsiderEmailClaim,
@@ -231,22 +230,6 @@ describe.skipIf(!process.env.DATABASE_URL)(
       for (const r of [...one, ...two, ...again, ...afterSent]) {
         if (!entryIds.includes(r.id)) await releaseInsiderEmailClaim(r.id);
       }
-    });
-
-    it("claims one new member for the email right after they join", async () => {
-      const id = await makeEntry();
-      expect(await claimInsiderEmailFor(id)).toBeNull(); // no code yet
-      const code = await assignInsiderCode(id);
-      const [one, two] = await Promise.all([
-        claimInsiderEmailFor(id),
-        claimInsiderEmailFor(id),
-      ]);
-      const claimed = [one, two].filter(Boolean);
-      expect(claimed).toHaveLength(1);
-      expect(claimed[0]?.insiderCode).toBe(code);
-
-      await markInsiderEmailSent(id);
-      expect(await claimInsiderEmailFor(id)).toBeNull();
     });
 
     it("lists each member's Insider email status", async () => {

@@ -237,11 +237,9 @@ Before launch (all after the phases, as agreed):
   3. Sends in small batches. Each member records when it was sent, so pressing again only reaches people who missed it.
      A failed send is retried, never duplicated.
 - Every email is logged (`EmailMessage`, see `docs/EMAIL_PLAN.md`). Audit log entry for the bulk send.
-- **New members (added 2026-11-15, owner request):** the Insider code email goes out right after signup, after the
-  welcome email, from the same Sakshi sender (`apps/web/app/api/_lib/insiderCodeEmail.ts`, claim with
-  `claimInsiderEmailFor`). Needs `INSIDER_EMAIL_FROM` and `INSIDER_EMAIL_REPLY_TO` on the web Vercel project too. If they
-  are missing or the send fails, the member stays on the admin "Email" list for a manual send. Each signup now uses 2 of
-  the Resend free plan's 100 emails a day.
+- **New members:** only the welcome email goes out at signup. The automatic Insider code email (added 2026-11-15) was
+  removed on 2026-11-16 at the owner's request. New Insiders wait on the admin "Email" list ("Not sent yet") until staff
+  press send. Each signup uses 1 of the Resend free plan's 100 emails a day.
 
 ### "Share your address" (physical card)
 

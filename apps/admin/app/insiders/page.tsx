@@ -401,9 +401,9 @@ async function EmailTab({
         <p className="text-sm text-onwei-blue/80">
           Each Insider gets their own code and a private link to share their
           address for the Insider card. Nobody gets it twice, and people who
-          unsubscribed are skipped. New signups get it on their own right after
-          they join. Anyone it couldn&apos;t reach then stays in the &ldquo;Not
-          sent yet&rdquo; list below for this button.
+          unsubscribed are skipped. New signups are not emailed on their own:
+          they wait in the &ldquo;Not sent yet&rdquo; list below until someone
+          presses this button.
         </p>
         <ul className="list-inside list-disc text-sm text-onwei-blue/80">
           <li>{overview.toEmail} waiting for the email</li>
@@ -464,7 +464,7 @@ async function EmailTab({
           }
           description={
             show === "notSent"
-              ? "New Insiders get it right after they join."
+              ? "New Insiders show up here until someone sends the email."
               : "People show up here once they join the waitlist."
           }
         />
