@@ -4,6 +4,7 @@ export {
   buildTemplateParams,
   firstNameOf,
   isAllowedVariable,
+  type TemplatePurpose,
   type WhatsAppPurposeInfo,
   type WhatsAppVariable,
 } from "./purposes";
@@ -16,6 +17,7 @@ export {
   type GupshupConfig,
 } from "./gupshupClient";
 export {
+  deliverTemplate,
   isOptedOut,
   sendWhatsApp,
   signInParams,
@@ -45,3 +47,4 @@ export {
 } from "./templates";
 export * from "./gupshupTemplates";
 export * from "./messageLog";
+export * from "./campaign";

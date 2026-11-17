@@ -1,4 +1,4 @@
-import type { WhatsAppPurpose } from "@onwei/database";
+import type { TemplatePurpose } from "./purposes";
 import { GUPSHUP_TIMEOUT_MS } from "./gupshupClient";
 import { WHATSAPP_PURPOSES } from "./purposes";
 
@@ -161,7 +161,7 @@ export async function listGupshupTemplates(
  * the final category and has moved some of ours between the two).
  */
 export function categoryFits(
-  purpose: WhatsAppPurpose,
+  purpose: TemplatePurpose,
   category: string,
 ): boolean {
   const upper = category.toUpperCase();
@@ -176,7 +176,7 @@ export function categoryFits(
  * button values, in the usual order for that message. Staff can change it.
  */
 export function suggestTemplateValues(
-  purpose: WhatsAppPurpose,
+  purpose: TemplatePurpose,
   template: Pick<GupshupTemplateSummary, "bodyValues" | "buttonValues">,
 ): string[] {
   const keys = WHATSAPP_PURPOSES[purpose].variables.map((v) => v.key);

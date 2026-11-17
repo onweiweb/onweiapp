@@ -3,8 +3,8 @@ import {
   listGupshupTemplates,
   suggestTemplateValues,
   WHATSAPP_PURPOSES,
+  type TemplatePurpose,
 } from "@onwei/core";
-import type { WhatsAppPurpose } from "@onwei/database";
 import { NextResponse } from "next/server";
 import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 import { GUPSHUP_LIST_ERRORS } from "../../../../whatsapp/_gupshup";
@@ -18,7 +18,7 @@ export const GET = defineAdminRoute(
     const asked = new URL(request.url).searchParams.get("purpose") ?? "";
     const purpose = (
       asked in WHATSAPP_PURPOSES ? asked : null
-    ) as WhatsAppPurpose | null;
+    ) as TemplatePurpose | null;
     const result = await listGupshupTemplates();
     if (!result.ok) {
       return NextResponse.json(

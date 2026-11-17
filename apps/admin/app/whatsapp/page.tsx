@@ -214,7 +214,8 @@ export default async function WhatsAppPage({
 async function LogTab({ params }: { params: SearchParams }) {
   const page = parsePage(params.page);
   const purpose =
-    params.purpose && params.purpose in WHATSAPP_PURPOSES
+    params.purpose &&
+    (params.purpose in WHATSAPP_PURPOSES || params.purpose === "CAMPAIGN")
       ? (params.purpose as WhatsAppPurpose)
       : undefined;
   const status =
@@ -244,6 +245,7 @@ async function LogTab({ params }: { params: SearchParams }) {
                   {info.title}
                 </option>
               ))}
+              <option value="CAMPAIGN">Sent from Insiders</option>
             </AdminSelect>
           </label>
           <label className="flex flex-col gap-1 text-sm">
@@ -315,7 +317,9 @@ async function LogTab({ params }: { params: SearchParams }) {
                     {WHEN.format(row.createdAt)}
                   </AdminTableCell>
                   <AdminTableCell>
-                    {WHATSAPP_PURPOSES[row.purpose].title}
+                    {row.purpose === "CAMPAIGN"
+                      ? `Insiders send: ${row.templateName ?? "template"}`
+                      : WHATSAPP_PURPOSES[row.purpose].title}
                   </AdminTableCell>
                   <AdminTableCell>
                     <p>{row.name ?? "Test send or not linked"}</p>

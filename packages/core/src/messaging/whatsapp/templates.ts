@@ -5,10 +5,14 @@ import {
   type WhatsAppStatus,
 } from "@onwei/database";
 import { writeAuditLog } from "../../admin/auditLog";
-import { WHATSAPP_PURPOSES, isAllowedVariable } from "./purposes";
+import {
+  WHATSAPP_PURPOSES,
+  isAllowedVariable,
+  type TemplatePurpose,
+} from "./purposes";
 
 export interface WhatsAppTemplateView {
-  purpose: WhatsAppPurpose;
+  purpose: TemplatePurpose;
   gupshupTemplateId: string;
   templateName: string;
   language: string;
@@ -44,7 +48,7 @@ export async function listWhatsAppTemplates(): Promise<WhatsAppTemplateView[]> {
 }
 
 export interface SaveWhatsAppTemplateInput {
-  purpose: WhatsAppPurpose;
+  purpose: TemplatePurpose;
   gupshupTemplateId: string;
   templateName: string;
   language: string;

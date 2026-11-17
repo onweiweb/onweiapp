@@ -4,10 +4,14 @@ import {
   sendGupshupTemplate,
   type GupshupConfig,
 } from "./gupshupClient";
-import { WHATSAPP_PURPOSES, buildTemplateParams } from "./purposes";
+import {
+  WHATSAPP_PURPOSES,
+  buildTemplateParams,
+  type TemplatePurpose,
+} from "./purposes";
 
 export interface SendWhatsAppInput {
-  purpose: WhatsAppPurpose;
+  purpose: TemplatePurpose;
   /** E.164 */
   phone: string;
   values: Record<string, string | undefined>;
@@ -60,7 +64,7 @@ export function templateReady(template: TemplateRow | null): boolean {
 
 /** True when this kind of message would actually go out right now. */
 export async function whatsAppAvailableFor(
-  purpose: WhatsAppPurpose,
+  purpose: TemplatePurpose,
   config: GupshupConfig | null = readGupshupConfig(),
 ): Promise<boolean> {
   if (!config) return false;
@@ -113,50 +117,91 @@ export async function sendWhatsApp(
     );
     if (!params) return { status: "skipped", reason: "MISSING_VALUE" };
 
-    const log = await prisma.whatsAppMessage.create({
-      data: {
+    return await deliverTemplate(
+      {
         purpose: input.purpose,
         phone: input.phone,
-        waitlistEntryId: input.waitlistEntryId,
-        customerId: input.customerId,
-      },
-      select: { id: true },
-    });
-
-    const result = await sendGupshupTemplate(
-      config,
-      {
-        phone: input.phone,
         templateId: template.gupshupTemplateId.trim(),
+        templateName: template.templateName.trim() || null,
         params,
         imageUrl:
           template.headerType === "IMAGE" && info.allowsImage
             ? template.headerImageUrl
             : null,
+        waitlistEntryId: input.waitlistEntryId,
+        customerId: input.customerId,
       },
+      config,
       options.fetchImpl,
     );
-
-    const now = new Date();
-    if (result.ok) {
-      await prisma.whatsAppMessage.update({
-        where: { id: log.id },
-        data: {
-          status: "SENT",
-          sentAt: now,
-          providerMessageId: result.messageId,
-        },
-      });
-      return { status: "sent", messageId: result.messageId };
-    }
-    await prisma.whatsAppMessage.update({
-      where: { id: log.id },
-      data: { status: "FAILED", failedAt: now, failureReason: result.reason },
-    });
-    console.error("[whatsapp] send failed", input.purpose, result.reason);
-    return { status: "failed", reason: result.reason };
   } catch (error) {
     console.error("[whatsapp] send error", input.purpose, error);
     return { status: "failed", reason: "Unexpected error" };
   }
+}
+
+export interface DeliverTemplateInput {
+  purpose: WhatsAppPurpose;
+  /** E.164 */
+  phone: string;
+  templateId: string;
+  templateName: string | null;
+  params: string[];
+  imageUrl?: string | null;
+  waitlistEntryId?: string;
+  customerId?: string;
+  campaignId?: string;
+}
+
+/**
+ * Logs one message as sending, asks Gupshup to send it, then marks it sent
+ * or failed. Shared by the automatic messages and staff campaigns. The log
+ * holds no params (they can carry codes and private link tokens).
+ */
+export async function deliverTemplate(
+  input: DeliverTemplateInput,
+  config: GupshupConfig,
+  fetchImpl?: typeof fetch,
+): Promise<Exclude<SendWhatsAppResult, { status: "skipped" }>> {
+  const log = await prisma.whatsAppMessage.create({
+    data: {
+      purpose: input.purpose,
+      phone: input.phone,
+      templateName: input.templateName,
+      waitlistEntryId: input.waitlistEntryId,
+      customerId: input.customerId,
+      campaignId: input.campaignId,
+    },
+    select: { id: true },
+  });
+
+  const result = await sendGupshupTemplate(
+    config,
+    {
+      phone: input.phone,
+      templateId: input.templateId,
+      params: input.params,
+      imageUrl: input.imageUrl ?? null,
+    },
+    fetchImpl,
+  );
+
+  const now = new Date();
+  if (result.ok) {
+    await prisma.whatsAppMessage.update({
+      where: { id: log.id },
+      data: {
+        status: "SENT",
+        sentAt: now,
+        providerMessageId: result.messageId,
+      },
+    });
+    return { status: "sent", messageId: result.messageId };
+  }
+  await prisma.whatsAppMessage.update({
+    where: { id: log.id },
+    data: { status: "FAILED", failedAt: now, failureReason: result.reason },
+  });
+  console.error("[whatsapp] send failed", input.purpose, result.reason);
+  return { status: "failed", reason: result.reason };
 }

@@ -39,6 +39,7 @@ import {
   TierForm,
 } from "./_components";
 import { MembersTab } from "./_members";
+import { WHATSAPP_VIEWS, WhatsAppTab, type WhatsAppView } from "./_whatsapp";
 import { toUpdateRow } from "./_updateRow";
 import { AddUpdateButton, UpdateActions } from "./_updates";
 
@@ -49,6 +50,7 @@ const TABS = [
   { id: "addresses", label: "Card addresses" },
   { id: "cards", label: "Printed cards" },
   { id: "email", label: "Email" },
+  { id: "whatsapp", label: "WhatsApp" },
   { id: "updates", label: "Page updates" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -79,6 +81,9 @@ export default async function InsidersPage({
     page?: string;
     show?: string;
     q?: string;
+    view?: string;
+    campaign?: string;
+    status?: string;
   }>;
 }) {
   const staff = await requirePageSession("waitlist:view");
@@ -120,6 +125,19 @@ export default async function InsidersPage({
               ? params.show
               : "notSent"
           }
+        />
+      ) : null}
+      {tab === "whatsapp" ? (
+        <WhatsAppTab
+          canManage={canManage}
+          view={
+            WHATSAPP_VIEWS.includes(params.view as WhatsAppView)
+              ? (params.view as WhatsAppView)
+              : "send"
+          }
+          page={parsePage(params.page)}
+          campaign={params.campaign?.slice(0, 64)}
+          status={params.status}
         />
       ) : null}
       {tab === "cards" ? <PrintedCardsTab canManage={canManage} /> : null}

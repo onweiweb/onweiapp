@@ -1242,6 +1242,8 @@ enum WhatsAppPurpose {
   SIGN_IN_CODE
   WAITLIST_JOINED
   INSIDER_CODE
+  // Sent by staff from Insiders > WhatsApp, with any approved template.
+  CAMPAIGN
 }
 
 enum WhatsAppHeader {
@@ -1282,18 +1284,22 @@ model WhatsAppTemplate {
 // Send log. Holds no sign-in codes and no private link tokens. Delivery
 // updates from the Gupshup webhook move the status forward.
 model WhatsAppMessage {
-  id                String          @id @default(cuid())
+  id                String            @id @default(cuid())
   purpose           WhatsAppPurpose
   // E.164, e.g. +919876543210
   phone             String
   waitlistEntryId   String?
-  waitlistEntry     WaitlistEntry?  @relation(fields: [waitlistEntryId], references: [id], onDelete: SetNull)
+  waitlistEntry     WaitlistEntry?    @relation(fields: [waitlistEntryId], references: [id], onDelete: SetNull)
   customerId        String?
-  customer          Customer?       @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  providerMessageId String?         @unique
-  status            WhatsAppStatus  @default(SENDING)
+  customer          Customer?         @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  providerMessageId String?           @unique
+  // Gupshup template name, so repeat sends of the same template can be found.
+  templateName      String?
+  campaignId        String?
+  campaign          WhatsAppCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  status            WhatsAppStatus    @default(SENDING)
   failureReason     String?
-  createdAt         DateTime        @default(now())
+  createdAt         DateTime          @default(now())
   sentAt            DateTime?
   deliveredAt       DateTime?
   readAt            DateTime?
@@ -1303,6 +1309,33 @@ model WhatsAppMessage {
   @@index([status])
   @@index([waitlistEntryId])
   @@index([customerId])
+  @@index([campaignId, status])
+  @@index([templateName])
+}
+
+// One send from Insiders > WhatsApp: the template staff picked, what went in
+// each blank, and who it was meant for. Messages link back to it. Holds no
+// codes or private link tokens, only which kind of value filled each blank.
+model WhatsAppCampaign {
+  id                String            @id @default(cuid())
+  gupshupTemplateId String
+  templateName      String
+  category          String
+  language          String            @default("en")
+  // The approved body text with {{n}} blanks, for the log.
+  bodyText          String            @default("")
+  // One entry per blank, in Gupshup order: { kind, text? } (see core
+  // messaging/whatsapp/campaign.ts).
+  fill              Json
+  headerImageUrl    String?
+  // Plain description of who it was for, e.g. "No address shared yet".
+  audienceLabel     String
+  plannedCount      Int
+  createdById       String?
+  createdAt         DateTime          @default(now())
+  messages          WhatsAppMessage[]
+
+  @@index([createdAt])
 }
 
 // Numbers that replied STOP. Every message except sign-in codes checks this.

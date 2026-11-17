@@ -14,8 +14,11 @@ export interface WhatsAppVariable {
   sample: string;
 }
 
+/** Messages with one fixed template each. Campaigns pick any template. */
+export type TemplatePurpose = Exclude<WhatsAppPurpose, "CAMPAIGN">;
+
 export interface WhatsAppPurposeInfo {
-  purpose: WhatsAppPurpose;
+  purpose: TemplatePurpose;
   /** Admin card title. */
   title: string;
   /** Admin help text: when it is sent. */
@@ -29,7 +32,7 @@ export interface WhatsAppPurposeInfo {
   allowsImage: boolean;
 }
 
-export const WHATSAPP_PURPOSES: Record<WhatsAppPurpose, WhatsAppPurposeInfo> = {
+export const WHATSAPP_PURPOSES: Record<TemplatePurpose, WhatsAppPurposeInfo> = {
   SIGN_IN_CODE: {
     purpose: "SIGN_IN_CODE",
     title: "Sign-in code",
@@ -55,7 +58,7 @@ export const WHATSAPP_PURPOSES: Record<WhatsAppPurpose, WhatsAppPurposeInfo> = {
     title: "Insider code and address link",
     whenSent:
       "With the Insider email, when staff press send on Insiders > Email. Only members with a phone number.",
-    category: "Marketing",
+    category: "Utility",
     variables: [
       { key: "firstName", label: "First name", sample: "Priya" },
       { key: "insiderCode", label: "Insider code", sample: "WEI4821" },
@@ -73,7 +76,7 @@ export const WHATSAPP_PURPOSES: Record<WhatsAppPurpose, WhatsAppPurposeInfo> = {
 export const WHATSAPP_PURPOSE_LIST = Object.values(WHATSAPP_PURPOSES);
 
 export function isAllowedVariable(
-  purpose: WhatsAppPurpose,
+  purpose: TemplatePurpose,
   key: string,
 ): boolean {
   return WHATSAPP_PURPOSES[purpose].variables.some((v) => v.key === key);

@@ -21,6 +21,7 @@ export function maskPhone(phone: string): string {
 export interface WhatsAppLogRow {
   id: string;
   purpose: WhatsAppPurpose;
+  templateName: string | null;
   /** Masked number. */
   phone: string;
   /** Insider or customer name, null for a test send. */
@@ -38,6 +39,9 @@ export interface WhatsAppLogFilter {
   page: number;
   pageSize: number;
   purpose?: WhatsAppPurpose;
+  /** Any of these kinds (ignored when `purpose` is set). */
+  purposes?: WhatsAppPurpose[];
+  campaignId?: string;
   status?: WhatsAppStatus;
   /** Last digits of the number, 3 to 10 digits. */
   phoneEnding?: string;
@@ -49,7 +53,12 @@ export async function listWhatsAppMessages(
   const ending = (filter.phoneEnding ?? "").replace(/\D/g, "").slice(-10);
   const rows = await prisma.whatsAppMessage.findMany({
     where: {
-      ...(filter.purpose ? { purpose: filter.purpose } : {}),
+      ...(filter.purpose
+        ? { purpose: filter.purpose }
+        : filter.purposes
+          ? { purpose: { in: filter.purposes } }
+          : {}),
+      ...(filter.campaignId ? { campaignId: filter.campaignId } : {}),
       ...(filter.status ? { status: filter.status } : {}),
       ...(ending.length >= 3 ? { phone: { endsWith: ending } } : {}),
     },
@@ -59,6 +68,7 @@ export async function listWhatsAppMessages(
     select: {
       id: true,
       purpose: true,
+      templateName: true,
       phone: true,
       status: true,
       failureReason: true,
@@ -75,6 +85,7 @@ export async function listWhatsAppMessages(
     rows: rows.slice(0, filter.pageSize).map((row) => ({
       id: row.id,
       purpose: row.purpose,
+      templateName: row.templateName,
       phone: maskPhone(row.phone),
       name: row.waitlistEntry?.fullName ?? row.customer?.name ?? null,
       status: row.status,

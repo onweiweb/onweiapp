@@ -716,6 +716,18 @@ insiders_page`, consent wording without "about the launch" stored as `insiders-v
 - **Admin naming:** the Waitlist page is now Insiders > Members (`/waitlist` redirects). Admin copy says Insiders.
 - **Consent:** the waitlist box now reads "...contacting me about the launch by email and WhatsApp...", and new entries
   store `consentVersion` as `waitlist-v2:<privacy version>`.
+- **Insiders > WhatsApp sends (2026-11-19, local):** staff pick any approved Utility or Marketing template from Gupshup,
+  choose what fills each blank (first name, full name, Insider code, address form link, the end of a button link, or
+  fixed text), pick a group (all, no address yet, address shared, joined between dates, hand-picked), see counts of who
+  is left out (STOP, unsubscribed, no code, already got this template, with an opt-in to send again), send a test with
+  sample values, then send. The page sends in batches of 20 with a progress bar and a Stop button; every member is
+  checked again on the server before their message goes. `WhatsAppCampaign` stores the template, which kind of value
+  filled each blank (never the values) and who it was for; `WhatsAppMessage` gets `campaignId` and `templateName`
+  (purpose `CAMPAIGN`). Logs: "Sent messages" (per send, delivered and read bar, per person with status filter) and
+  "Automatic messages" (welcome and Insider code). Code in `packages/core/src/messaging/whatsapp/campaign.ts`
+  (browser-safe parts in `campaignFill.ts`, imported as `@onwei/core/campaign-fill`), routes under
+  `apps/admin/app/api/insiders/whatsapp/`. Migration `20261119120000_whatsapp_campaigns` (owner runs on prod before the
+  push). The Insider code message is now labelled Utility in admin.
 
 ## 14. Figma inventory (checked 2026-11-09)
 
