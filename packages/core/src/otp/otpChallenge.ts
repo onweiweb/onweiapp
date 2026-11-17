@@ -4,7 +4,7 @@ import { prisma } from "@onwei/database";
 
 // Must match packages/emails' renderOtpEmail, which hardcodes "expires in 10
 // minutes" in its copy.
-const OTP_EXPIRY_MINUTES = 10;
+export const OTP_EXPIRY_MINUTES = 10;
 
 export interface RequestOtpInput {
   identifier: string;

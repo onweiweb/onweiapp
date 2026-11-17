@@ -72,6 +72,8 @@ export const SIGN_IN_ERRORS: Record<string, string> = {
     "Signing in by phone isn't available yet. Use your email instead.",
   RATE_LIMITED: "Too many codes asked for. Wait a few minutes and try again.",
   SEND_FAILED: "We couldn't send the code. Try again in a moment.",
+  SMS_SEND_FAILED:
+    "We couldn't send the text. Try again, or use WhatsApp or your email instead.",
   WHATSAPP_SEND_FAILED:
     "We couldn't send the code on WhatsApp. Try again, or use your email instead.",
   CONSENT_REQUIRED: "Tick the box to agree to our Terms and Privacy Policy.",

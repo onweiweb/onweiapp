@@ -11,7 +11,11 @@ import { createEmailSender, renderOtpEmail } from "@onwei/emails";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { invalidInput } from "../../../_lib/invalidInput";
-import { phoneCodeMode, sendWhatsAppCode } from "../../../_lib/phoneCode";
+import {
+  phoneCodeMode,
+  sendSmsSignInCode,
+  sendWhatsAppCode,
+} from "../../../_lib/phoneCode";
 import { customerIdFrom } from "../../../_lib/requestAuth";
 
 // Adding a missing email or phone to an account: a code to the new contact
@@ -36,6 +40,7 @@ export async function POST(request: Request) {
   let identifier = parsed.data.identifier;
   let fixedCode: string | undefined;
   let viaWhatsApp = false;
+  let viaSms = false;
   if (channel === "EMAIL") {
     identifier = identifier.toLowerCase();
     if (!isValidEmail(identifier))
@@ -60,6 +65,7 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     if (mode.mode === "static") fixedCode = mode.code;
+    else if (mode.mode === "sms") viaSms = true;
     else viaWhatsApp = true;
   }
   const ip = getClientIp(request);
@@ -86,6 +92,12 @@ export async function POST(request: Request) {
         { status: 502 },
       );
     }
+  }
+  if (viaSms && !(await sendSmsSignInCode(identifier, code, customerId))) {
+    return NextResponse.json(
+      { ok: false, reason: "SMS_SEND_FAILED" },
+      { status: 502 },
+    );
   }
   if (viaWhatsApp && !(await sendWhatsAppCode(identifier, code, customerId))) {
     return NextResponse.json(

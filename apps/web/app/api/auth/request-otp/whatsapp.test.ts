@@ -8,6 +8,7 @@ const sendWhatsAppCode = vi.fn(async () => true);
 
 vi.mock("../../_lib/phoneCode", () => ({
   phoneCodeMode: async () => ({ mode: "whatsapp" }),
+  sendSmsSignInCode: vi.fn(),
   sendWhatsAppCode,
 }));
 

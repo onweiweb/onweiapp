@@ -18,6 +18,7 @@ export {
 export {
   isOptedOut,
   sendWhatsApp,
+  signInParams,
   templateReady,
   whatsAppAvailableFor,
   type SendWhatsAppInput,

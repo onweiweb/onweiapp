@@ -157,6 +157,7 @@ export { approveReturn } from "./returns/approveReturn";
 export { rejectReturn } from "./returns/rejectReturn";
 export type { ResolveReturnInput } from "./returns/types";
 export {
+  OTP_EXPIRY_MINUTES,
   requestOtpChallenge,
   verifyOtpAndAuthenticate,
   verifyOtpChallenge,
@@ -520,6 +521,7 @@ export {
   type ContactMessageRow,
 } from "./contact/contactMessages";
 export * from "./messaging/whatsapp";
+export * from "./messaging/sms";
 export {
   checkInsiderUpdate,
   deleteInsiderUpdate,

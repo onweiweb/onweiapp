@@ -32,6 +32,21 @@ type TemplateRow = NonNullable<
   Awaited<ReturnType<typeof prisma.whatsAppTemplate.findUnique>>
 >;
 
+/**
+ * WhatsApp sign-in (authentication) templates always carry the code twice:
+ * in the text and in the Copy code button. If only one value was set up,
+ * the button got nothing and WhatsApp refused the send ("must be exactly 6
+ * numeric digits"), so the code is repeated for the button.
+ */
+export function signInParams(
+  purpose: WhatsAppPurpose,
+  params: string[] | null,
+): string[] | null {
+  if (!params || purpose !== "SIGN_IN_CODE") return params;
+  if (params.length === 1) return [params[0]!, params[0]!];
+  return params;
+}
+
 /** A template can send when it is on, has an id, and has its image if it needs one. */
 export function templateReady(template: TemplateRow | null): boolean {
   if (!template || !template.isActive || !template.gupshupTemplateId.trim()) {
@@ -92,7 +107,10 @@ export async function sendWhatsApp(
       return { status: "skipped", reason: "OPTED_OUT" };
     }
 
-    const params = buildTemplateParams(template.variables, input.values);
+    const params = signInParams(
+      input.purpose,
+      buildTemplateParams(template.variables, input.values),
+    );
     if (!params) return { status: "skipped", reason: "MISSING_VALUE" };
 
     const log = await prisma.whatsAppMessage.create({

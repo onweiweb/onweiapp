@@ -7,6 +7,7 @@ import {
   sendGupshupTemplate,
 } from "./gupshupClient";
 import { buildTemplateParams, firstNameOf } from "./purposes";
+import { signInParams } from "./send";
 import { checkWhatsAppTemplate } from "./templates";
 import {
   isStopReply,
@@ -39,6 +40,19 @@ describe("WhatsApp template values", () => {
   it("sends nothing when a value is missing", () => {
     expect(buildTemplateParams(["firstName"], { firstName: " " })).toBeNull();
     expect(buildTemplateParams(["insiderCode"], {})).toBeNull();
+  });
+
+  it("repeats the sign-in code for the Copy code button", () => {
+    expect(signInParams("SIGN_IN_CODE", ["482913"])).toEqual([
+      "482913",
+      "482913",
+    ]);
+    expect(signInParams("SIGN_IN_CODE", ["482913", "482913"])).toEqual([
+      "482913",
+      "482913",
+    ]);
+    expect(signInParams("WAITLIST_JOINED", ["Priya"])).toEqual(["Priya"]);
+    expect(signInParams("SIGN_IN_CODE", null)).toBeNull();
   });
 
   it("uses the first word of the name", () => {
@@ -171,6 +185,17 @@ describe("Gupshup webhook", () => {
         payload: { code: 1002, reason: "Number does not exist on WhatsApp" },
       },
     });
+    expect(
+      parseGupshupEvent({
+        type: "message-event",
+        timestamp: 1,
+        payload: {
+          id: "m-3",
+          type: "failed",
+          payload: { reason: "null, (#1009) Bad code" },
+        },
+      }),
+    ).toMatchObject({ failureReason: "(#1009) Bad code" });
     expect(failed).toMatchObject({
       kind: "status",
       status: "FAILED",

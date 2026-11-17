@@ -39,6 +39,7 @@ model Customer {
   dataRequests      DataSubjectRequest[]
   couponRedemptions CouponRedemption[]
   whatsAppMessages  WhatsAppMessage[]
+  smsMessages       SmsMessage[]
 }
 
 enum CustomerStatus {
@@ -1330,4 +1331,38 @@ model InsiderUpdate {
   updatedById String?
 
   @@index([isActive, sortOrder])
+}
+
+// Text messages (SMS) sent through MSG91. Only sign-in codes for now. The
+// code itself is never stored. Delivery updates arrive on the MSG91 webhook
+// and match on providerRequestId.
+enum SmsPurpose {
+  SIGN_IN_CODE
+}
+
+enum SmsStatus {
+  SENDING
+  SENT
+  DELIVERED
+  FAILED
+}
+
+model SmsMessage {
+  id                String     @id @default(cuid())
+  purpose           SmsPurpose
+  // E.164, e.g. +919876543210
+  phone             String
+  customerId        String?
+  customer          Customer?  @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  providerRequestId String?    @unique
+  status            SmsStatus  @default(SENDING)
+  failureReason     String?
+  createdAt         DateTime   @default(now())
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  failedAt          DateTime?
+
+  @@index([purpose, createdAt])
+  @@index([status])
+  @@index([customerId])
 }

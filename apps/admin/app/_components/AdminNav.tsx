@@ -28,6 +28,7 @@ import {
   Scale,
   Inbox,
   MessageCircle,
+  Smartphone,
   type LucideIcon,
 } from "lucide-react";
 
@@ -57,6 +58,7 @@ const ICONS = {
   Scale,
   Inbox,
   MessageCircle,
+  Smartphone,
 } satisfies Record<string, LucideIcon>;
 
 export type AdminNavIconName = keyof typeof ICONS;

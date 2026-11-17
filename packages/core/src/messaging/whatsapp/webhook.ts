@@ -57,7 +57,8 @@ export function parseGupshupEvent(body: unknown): GupshupEvent {
       (id): id is string => Boolean(id),
     );
     if (ids.length === 0) return { kind: "ignored" };
-    const reason = str(inner.reason);
+    // Gupshup puts Meta's empty error title first: "null, (#1009) ...".
+    const reason = str(inner.reason)?.replace(/^null,\s*/i, "");
     return {
       kind: "status",
       ids,

@@ -29,6 +29,7 @@ import {
 } from "../_components/ui";
 import { requirePageSession } from "../_lib/requirePageSession";
 import { PAGE_SIZE, parsePage } from "../_lib/pagination";
+import { MESSAGE_WHEN as WHEN, after } from "../_lib/messageTiming";
 import type { WhatsAppPurpose, WhatsAppStatus } from "@onwei/database";
 import { WhatsAppRowActions } from "./_components";
 import { cachedGupshupTemplates } from "./_gupshup";
@@ -48,6 +49,11 @@ function approvalOf(
 }
 
 const STATS_DAYS = 7;
+
+/** Older rows kept Gupshup's "null, " in front of WhatsApp's reason. */
+function cleanReason(reason: string): string {
+  return reason.replace(/^null,\s*/i, "");
+}
 
 function statusOf(template: WhatsAppTemplateView): {
   label: string;
@@ -76,27 +82,6 @@ const STATUS_INFO: Record<WhatsAppStatus, { label: string; tone: StatusTone }> =
     READ: { label: "Read", tone: "success" },
     FAILED: { label: "Failed", tone: "problem" },
   };
-
-const WHEN = new Intl.DateTimeFormat("en-IN", {
-  day: "numeric",
-  month: "short",
-  hour: "numeric",
-  minute: "2-digit",
-  timeZone: "Asia/Kolkata",
-});
-
-/** "after 4s", "after 3 min", "after 2 h". */
-function after(from: Date, to: Date | null): string | null {
-  if (!to) return null;
-  const seconds = Math.max(
-    0,
-    Math.round((to.getTime() - from.getTime()) / 1000),
-  );
-  if (seconds < 60) return `after ${seconds}s`;
-  if (seconds < 3600) return `after ${Math.round(seconds / 60)} min`;
-  if (seconds < 172800) return `after ${Math.round(seconds / 3600)} h`;
-  return `after ${Math.round(seconds / 86400)} days`;
-}
 
 type SearchParams = {
   tab?: string;
@@ -198,8 +183,9 @@ export default async function WhatsAppPage({
                     {stat.byStatus.FAILED} failed
                   </p>
                   {stat.topFailures[0] ? (
-                    <p className="text-xs text-onwei-blue/60">
-                      Most common problem: {stat.topFailures[0].reason}.{" "}
+                    <p className="max-w-md whitespace-normal text-xs text-onwei-blue/60">
+                      Most common problem:{" "}
+                      {cleanReason(stat.topFailures[0].reason)}.{" "}
                       <Link
                         href={`/whatsapp?tab=log&status=FAILED&purpose=${info.purpose}`}
                         className="underline"
@@ -343,8 +329,8 @@ async function LogTab({ params }: { params: SearchParams }) {
                       </span>
                     ) : null}
                     {row.failureReason ? (
-                      <p className="mt-1 text-xs text-onwei-blue/70">
-                        {row.failureReason}
+                      <p className="mt-1 max-w-sm whitespace-normal text-xs text-onwei-blue/70">
+                        {cleanReason(row.failureReason)}
                       </p>
                     ) : null}
                   </AdminTableCell>

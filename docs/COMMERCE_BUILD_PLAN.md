@@ -88,7 +88,20 @@ Before the bulk send (blockers):
 5. **Legal text** pasted into admin Legal pages on prod (section 4).
 6. After deploy: Insiders, Overview, "Create missing codes"; then a test send to yourself; then send.
 
-### 2026-11-17: Copy address link in Insiders > Members (local, not pushed)
+### 2026-11-18: SMS sign-in codes through MSG91, and the SMS log (local, not pushed)
+
+Onwei makes and checks the code; MSG91 SendOTP only delivers it (`packages/core/src/messaging/sms`: POST
+`control.msg91.com/api/v5/otp`, `authkey` header, `template_id`, `mobile`, `otp`, `otp_expiry` in the query, 10s timeout).
+`phoneOtpMode` returns `sms` once `MSG91_AUTH_KEY` and `MSG91_OTP_TEMPLATE_ID` are set (web only), so SMS works on the live
+site from then on; before that it stays refused on live prod. Sign-in and My Account phone codes both use it; a failed send
+shows `SMS_SEND_FAILED` ("try WhatsApp or email"). Every send is logged in `SmsMessage` (no code kept), delivery reports
+arrive at `/api/webhooks/msg91/<MSG91_WEBHOOK_TOKEN>` (MSG91 > OTP > Webhook, "On Report Received", JSON, status 1
+delivered, 2 and rejected or blocked codes failed). Admin "Text messages" (`/sms`, `settings:view`): 30-day counts, most
+common problem, log with status and number filters, masked numbers. Migration `20261118120000_sms_messages` (new table
+only) must be run on prod before the push. Verify the request format and the request id match on the first live send:
+MSG91's docs site would not load in full while building.
+
+### 2026-11-17: Copy address link in Insiders > Members (pushed fbf5b48)
 
 While WhatsApp templates wait for approval, staff send address forms by hand. Members has an "Address link" column:
 Copy link (the member's private `/insider/address` link, `insiderAddressUrl`) and Copy message (ready-to-paste WhatsApp
