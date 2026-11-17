@@ -39,7 +39,8 @@ import {
   TierForm,
 } from "./_components";
 import { MembersTab } from "./_members";
-import { AddUpdateButton, UpdateActions, toUpdateRow } from "./_updates";
+import { toUpdateRow } from "./_updateRow";
+import { AddUpdateButton, UpdateActions } from "./_updates";
 
 const TABS = [
   { id: "members", label: "Members" },
