@@ -1,9 +1,11 @@
 name: CI
 
+# Manual only (Actions > CI > Run workflow). It needs DATABASE_URL and
+# DIRECT_URL repo secrets pointing at a scratch DB before it can pass; until
+# then it failed on every push and emailed each time. Lint, typecheck and
+# tests already run in the local pre-commit check, and Vercel builds both apps.
 on:
-  push:
-    branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   build:
