@@ -1,10 +1,12 @@
 import {
   CAMPAIGN_FILL_LABELS,
   getCampaign,
+  getInsiderWhatsAppStats,
   listCampaigns,
   listWhatsAppMessages,
   WHATSAPP_PURPOSES,
   type CampaignCounts,
+  type InsiderWhatsAppStats,
   type WhatsAppLogRow,
 } from "@onwei/core";
 import type { WhatsAppStatus } from "@onwei/database";
@@ -29,6 +31,21 @@ import { WhatsAppSender } from "./_whatsappSend";
  * see each send and how far every message got, and the automatic Insider
  * messages (welcome, code with the email).
  */
+
+export const WHATSAPP_RANGES = ["7d", "30d", "all"] as const;
+export type WhatsAppRange = (typeof WHATSAPP_RANGES)[number];
+
+const RANGE_LABELS: Record<WhatsAppRange, string> = {
+  "7d": "Last 7 days",
+  "30d": "Last 30 days",
+  all: "All time",
+};
+
+const RANGE_DAYS: Record<WhatsAppRange, number | null> = {
+  "7d": 7,
+  "30d": 30,
+  all: null,
+};
 
 export const WHATSAPP_VIEWS = ["send", "log", "auto"] as const;
 export type WhatsAppView = (typeof WHATSAPP_VIEWS)[number];
@@ -216,6 +233,190 @@ function StatusFilter({
         </a>
       ))}
     </div>
+  );
+}
+
+function percent(n: number, of: number): string {
+  if (of === 0) return "";
+  return `${Math.round((n / of) * 100)}%`;
+}
+
+function NumberTile({
+  label,
+  value,
+  of,
+  hint,
+}: {
+  label: string;
+  value: number;
+  of?: number;
+  hint: string;
+}) {
+  return (
+    <div className="rounded-[20px] bg-onwei-beige/60 p-4">
+      <p className="text-sm text-onwei-blue/70">{label}</p>
+      <p className="mt-1 flex items-baseline gap-2">
+        <span className="text-2xl font-semibold text-onwei-blue">
+          {value.toLocaleString("en-IN")}
+        </span>
+        {of !== undefined && of > 0 ? (
+          <span className="text-sm text-onwei-blue/70">
+            {percent(value, of)}
+          </span>
+        ) : null}
+      </p>
+      <p className="mt-1 text-xs text-onwei-blue/60">{hint}</p>
+    </div>
+  );
+}
+
+const PURPOSE_ROWS: {
+  key: keyof InsiderWhatsAppStats["byPurpose"];
+  label: string;
+}[] = [
+  { key: "CAMPAIGN", label: "Sent from New message" },
+  { key: "WAITLIST_JOINED", label: "Welcome message (automatic)" },
+  { key: "INSIDER_CODE", label: "Insider code message (automatic)" },
+];
+
+async function WhatsAppNumbers({
+  range,
+  view,
+}: {
+  range: WhatsAppRange;
+  view: WhatsAppView;
+}) {
+  const days = RANGE_DAYS[range];
+  const stats = await getInsiderWhatsAppStats({
+    days: days ?? undefined,
+  });
+  const { all } = stats;
+  const delivered = all.DELIVERED + all.READ;
+  const waiting = all.SENT + all.SENDING;
+  return (
+    <AdminCard>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-onwei-blue">
+            How Insider WhatsApps are doing
+          </h2>
+          <div className="flex flex-wrap gap-2">
+            {WHATSAPP_RANGES.map((r) => (
+              <a
+                key={r}
+                href={`/insiders?tab=whatsapp&view=${view}&range=${r}`}
+                className={`rounded-full px-3 py-1 text-sm ${
+                  r === range
+                    ? "bg-onwei-blue text-onwei-beige"
+                    : "border border-onwei-blue/30 text-onwei-blue"
+                }`}
+              >
+                {RANGE_LABELS[r]}
+              </a>
+            ))}
+          </div>
+        </div>
+        {all.total === 0 ? (
+          <p className="text-sm text-onwei-blue/70">
+            No Insider WhatsApps in this period yet.
+          </p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+              <NumberTile
+                label="Sent"
+                value={all.total}
+                hint="Every message we tried to send"
+              />
+              <NumberTile
+                label="Delivered"
+                value={delivered}
+                of={all.total}
+                hint="Reached the phone (includes read)"
+              />
+              <NumberTile
+                label="Read"
+                value={all.READ}
+                of={all.total}
+                hint="Opened, if the person has read receipts on"
+              />
+              <NumberTile
+                label="Not delivered yet"
+                value={waiting}
+                of={all.total}
+                hint="Phone off or no update from WhatsApp yet"
+              />
+              <NumberTile
+                label="Failed"
+                value={all.FAILED}
+                of={all.total}
+                hint="WhatsApp could not deliver it"
+              />
+            </div>
+            <AdminTable>
+              <AdminTableHead>
+                <AdminTableHeaderCell>Message</AdminTableHeaderCell>
+                <AdminTableHeaderCell>Sent</AdminTableHeaderCell>
+                <AdminTableHeaderCell>Delivered</AdminTableHeaderCell>
+                <AdminTableHeaderCell>Read</AdminTableHeaderCell>
+                <AdminTableHeaderCell>Failed</AdminTableHeaderCell>
+              </AdminTableHead>
+              <tbody>
+                {PURPOSE_ROWS.map(({ key, label }) => {
+                  const c = stats.byPurpose[key];
+                  const d = c.DELIVERED + c.READ;
+                  return (
+                    <AdminTableRow key={key}>
+                      <AdminTableCell>{label}</AdminTableCell>
+                      <AdminTableCell>
+                        {c.total.toLocaleString("en-IN")}
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        {d.toLocaleString("en-IN")}{" "}
+                        <span className="text-onwei-blue/60">
+                          {percent(d, c.total)}
+                        </span>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        {c.READ.toLocaleString("en-IN")}{" "}
+                        <span className="text-onwei-blue/60">
+                          {percent(c.READ, c.total)}
+                        </span>
+                      </AdminTableCell>
+                      <AdminTableCell>
+                        {c.FAILED.toLocaleString("en-IN")}{" "}
+                        <span className="text-onwei-blue/60">
+                          {percent(c.FAILED, c.total)}
+                        </span>
+                      </AdminTableCell>
+                    </AdminTableRow>
+                  );
+                })}
+              </tbody>
+            </AdminTable>
+            {stats.topFailures.length > 0 ? (
+              <div>
+                <p className="mb-1 text-sm font-semibold text-onwei-blue">
+                  Most common reasons for failing
+                </p>
+                <ul className="flex flex-col gap-1 text-sm text-onwei-blue">
+                  {stats.topFailures.map((f) => (
+                    <li key={f.reason} className="flex gap-2">
+                      <span className="shrink-0 font-semibold">
+                        {f.count.toLocaleString("en-IN")}
+                      </span>
+                      <span className="break-words text-onwei-blue/80">
+                        {f.reason}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
+    </AdminCard>
   );
 }
 
@@ -417,8 +618,10 @@ export function WhatsAppTab({
   page,
   campaign,
   status,
+  range = "30d",
 }: {
   canManage: boolean;
+  range?: WhatsAppRange;
   view: WhatsAppView;
   page: number;
   campaign?: string;
@@ -429,6 +632,9 @@ export function WhatsAppTab({
   return (
     <div className="flex flex-col gap-5">
       <ViewLinks active={view} />
+      {view !== "send" && !campaign ? (
+        <WhatsAppNumbers range={range} view={view} />
+      ) : null}
       {view === "send" ? (
         canManage ? (
           <WhatsAppSender canManage={canManage} />

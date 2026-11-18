@@ -39,7 +39,13 @@ import {
   TierForm,
 } from "./_components";
 import { MembersTab } from "./_members";
-import { WHATSAPP_VIEWS, WhatsAppTab, type WhatsAppView } from "./_whatsapp";
+import {
+  WHATSAPP_RANGES,
+  WHATSAPP_VIEWS,
+  WhatsAppTab,
+  type WhatsAppRange,
+  type WhatsAppView,
+} from "./_whatsapp";
 import { toUpdateRow } from "./_updateRow";
 import { AddUpdateButton, UpdateActions } from "./_updates";
 
@@ -84,6 +90,7 @@ export default async function InsidersPage({
     view?: string;
     campaign?: string;
     status?: string;
+    range?: string;
   }>;
 }) {
   const staff = await requirePageSession("waitlist:view");
@@ -138,6 +145,11 @@ export default async function InsidersPage({
           page={parsePage(params.page)}
           campaign={params.campaign?.slice(0, 64)}
           status={params.status}
+          range={
+            WHATSAPP_RANGES.includes(params.range as WhatsAppRange)
+              ? (params.range as WhatsAppRange)
+              : "30d"
+          }
         />
       ) : null}
       {tab === "cards" ? <PrintedCardsTab canManage={canManage} /> : null}

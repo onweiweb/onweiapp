@@ -1,6 +1,11 @@
 import { prisma } from "@onwei/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { createCampaign, planCampaign, sendCampaignBatch } from "./campaign";
+import {
+  createCampaign,
+  getInsiderWhatsAppStats,
+  planCampaign,
+  sendCampaignBatch,
+} from "./campaign";
 
 const config = {
   apiKey: "test-key",
@@ -141,6 +146,37 @@ describe.skipIf(!process.env.DATABASE_URL)(
         allowRepeat: true,
       });
       expect(repeat).toMatchObject({ repeats: 1, ids: [ids[0]] });
+    });
+    it("counts Insider WhatsApps by status and lists failure reasons", async () => {
+      const since = new Date(Date.now() - 1000);
+      const before = await getInsiderWhatsAppStats({ since });
+      await prisma.whatsAppMessage.createMany({
+        data: [
+          { purpose: "CAMPAIGN", phone: phones[0]!, status: "READ" },
+          {
+            purpose: "WAITLIST_JOINED",
+            phone: phones[0]!,
+            status: "DELIVERED",
+          },
+          {
+            purpose: "INSIDER_CODE",
+            phone: phones[0]!,
+            status: "FAILED",
+            failureReason: `Test failure ${tag}`,
+          },
+        ],
+      });
+      const after = await getInsiderWhatsAppStats({ since });
+      expect(after.all.total - before.all.total).toBe(3);
+      expect(after.all.READ - before.all.READ).toBe(1);
+      expect(after.all.FAILED - before.all.FAILED).toBe(1);
+      expect(
+        after.byPurpose.WAITLIST_JOINED.DELIVERED -
+          before.byPurpose.WAITLIST_JOINED.DELIVERED,
+      ).toBe(1);
+      expect(after.topFailures.map((f) => f.reason)).toContain(
+        `Test failure ${tag}`,
+      );
     });
   },
 );

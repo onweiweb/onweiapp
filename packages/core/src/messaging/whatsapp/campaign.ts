@@ -517,3 +517,74 @@ export async function getCampaign(id: string): Promise<CampaignDetail | null> {
     headerImageUrl: row.headerImageUrl,
   };
 }
+
+/** WhatsApps that belong to Insiders: sends from admin plus the automatic ones. */
+export const INSIDER_WHATSAPP_PURPOSES = [
+  "CAMPAIGN",
+  "WAITLIST_JOINED",
+  "INSIDER_CODE",
+] as const;
+export type InsiderWhatsAppPurpose = (typeof INSIDER_WHATSAPP_PURPOSES)[number];
+
+export interface InsiderWhatsAppStats {
+  all: CampaignCounts;
+  byPurpose: Record<InsiderWhatsAppPurpose, CampaignCounts>;
+  topFailures: { reason: string; count: number }[];
+}
+
+/**
+ * Totals for Insider WhatsApps sent since `since`, or in the last `days` days.
+ * All time when neither is given.
+ */
+export async function getInsiderWhatsAppStats(
+  input: { since?: Date; days?: number } = {},
+): Promise<InsiderWhatsAppStats> {
+  const since =
+    input.since ??
+    (input.days ? new Date(Date.now() - input.days * 86_400_000) : undefined);
+  const where: Prisma.WhatsAppMessageWhereInput = {
+    purpose: { in: [...INSIDER_WHATSAPP_PURPOSES] },
+    ...(since ? { createdAt: { gte: since } } : {}),
+  };
+  const [grouped, failures] = await Promise.all([
+    prisma.whatsAppMessage.groupBy({
+      by: ["purpose", "status"],
+      where,
+      _count: { _all: true },
+    }),
+    prisma.whatsAppMessage.groupBy({
+      by: ["failureReason"],
+      where: { ...where, status: "FAILED" },
+      _count: { _all: true },
+      orderBy: { _count: { failureReason: "desc" } },
+      take: 5,
+    }),
+  ]);
+  const all = emptyCounts();
+  const byPurpose = {
+    CAMPAIGN: emptyCounts(),
+    WAITLIST_JOINED: emptyCounts(),
+    INSIDER_CODE: emptyCounts(),
+  };
+  for (const g of grouped) {
+    const n = g._count._all;
+    all[g.status] += n;
+    all.total += n;
+    const bucket = byPurpose[g.purpose as InsiderWhatsAppPurpose];
+    bucket[g.status] += n;
+    bucket.total += n;
+  }
+  const merged = new Map<string, number>();
+  for (const f of failures) {
+    const reason = f.failureReason?.trim() || "No reason given";
+    merged.set(reason, (merged.get(reason) ?? 0) + f._count._all);
+  }
+  return {
+    all,
+    byPurpose,
+    topFailures: [...merged]
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 3),
+  };
+}
