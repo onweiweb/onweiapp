@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Archivo, IBM_Plex_Mono, Inter, Raleway } from "next/font/google";
+import { Archivo, Google_Sans, IBM_Plex_Mono, Raleway } from "next/font/google";
 import Image from "next/image";
 import { AdminNav } from "./_components/AdminNav";
 import { SignOutButton } from "./_components/SignOutButton";
@@ -22,11 +22,12 @@ const archivo = Archivo({
   display: "swap",
 });
 
-// Body text. The storefront's mono font was hard to read in dense admin
-// tables and forms; it stays for codes and numbers (`font-mono`).
-const inter = Inter({
+// Body text: Google Sans (as in the Google Cloud console), light and easy
+// to read in dense tables and forms. The storefront's mono font stays for
+// codes and numbers (`font-mono`).
+const googleSans = Google_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-body",
   display: "swap",
 });
 
@@ -115,7 +116,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${raleway.variable} ${archivo.variable} ${inter.variable} ${ibmPlexMono.variable}`}
+      className={`${raleway.variable} ${archivo.variable} ${googleSans.variable} ${ibmPlexMono.variable}`}
     >
       <body className="min-h-screen bg-onwei-beige font-grotesk text-onwei-blue">
         <AdminFeedbackProvider>

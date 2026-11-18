@@ -127,14 +127,15 @@ function NavLinks({ groups }: { groups: readonly AdminNavGroup[] }) {
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors ${
+                title={item.label}
+                className={`flex min-w-0 items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm transition-colors ${
                   active
                     ? "bg-onwei-beige/15 font-medium text-onwei-white"
                     : "text-onwei-beige/80 hover:bg-onwei-beige/10 hover:text-onwei-white"
                 }`}
               >
                 <Icon size={15} aria-hidden className="shrink-0" />
-                {item.label}
+                <span className="min-w-0 truncate">{item.label}</span>
                 <PendingSpinner />
               </Link>
             );

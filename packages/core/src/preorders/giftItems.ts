@@ -1,12 +1,16 @@
+import { toMinorUnits } from "../catalog/helpers";
 import { prisma } from "@onwei/database";
 import { variantLabelOf } from "../commerce/variantLabel";
 
 export interface GiftableItem {
   /** The product size and colour (variant) id. */
   id: string;
+  productId: string;
   name: string;
   stock: number;
   giftOnly: boolean;
+  /** The item's price in paise: what a mystery box or gift is worth. */
+  value: number;
 }
 
 /**
@@ -26,6 +30,7 @@ export async function listGiftableItems(): Promise<GiftableItem[]> {
       const label = variantLabelOf(variant.attributes);
       return {
         id: variant.id,
+        productId: variant.productId,
         name: label
           ? `${variant.product.name} (${label})`
           : variant.product.name,
@@ -35,6 +40,7 @@ export async function listGiftableItems(): Promise<GiftableItem[]> {
           0,
         ),
         giftOnly: variant.product.giftOnly,
+        value: toMinorUnits(variant.price),
       };
     })
     .sort(

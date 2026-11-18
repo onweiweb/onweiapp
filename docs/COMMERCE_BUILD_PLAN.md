@@ -850,6 +850,13 @@ Built (2026-11-18, local, not pushed). Migrations `20261120120000_preorders_and_
 - Figma copy typos fixed: "and and" to "and", "wont" to "won't". The pre-order marquee (Design page 1233:3238) is not on
   Dev Ready and was not built. Lap names, percentages and gift names come from admin, so the site shows 15/10/8%.
 - Gifts: the tier's mystery box is one per item; the Insider gift is one per pre-order.
+- **Pre-order journey table (2026-11-19, local):** admin Pre-order tab shows tiers like the owner's sheet: tier and
+  dates, days, discount, mystery box (with its worth, the gift product's price), and "Insiders get" worked out from the
+  Insider discount tab (`insiderExtraText`, browser-safe at `@onwei/core/preorder-text`). Insider gift sits under the
+  table with its worth. "What a customer pays" prices one product per tier for everyone and Insiders, delivery, paid
+  now and balance (`previewPreorderJourney`, same engine as checkout, uses the unsaved form; `POST /api/preorders/preview`).
+  The Insider extra stays on the Insider discount tab (owner, 2026-11-19). Referral gifts are a separate program for
+  anyone, built later, not tied to pre-orders. No schema change.
 - Pre-order mode on the normal bag (fix 2026-11-18, after the owner reached the normal checkout at full price): in
   PREORDERS mode `getCartView` returns `preorderOnly` and `canCheckout: false`, each line says if it is `reservable`.
   The bag drawer shows "Reserve this" per pre-order item and a note instead of Checkout; `/checkout` shows "Pre-orders

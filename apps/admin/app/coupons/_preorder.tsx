@@ -1,10 +1,13 @@
 import {
   formatCurrency,
+  getInsiderDefaultPercent,
+  getInsiderStackMode,
   getPreorderCampaignForAdmin,
   getPreorderOverview,
   getSiteSetting,
   istDateOf,
   listGiftableItems,
+  listInsiderTiers,
   tierState,
   type PreorderCampaignInput,
 } from "@onwei/core";
@@ -41,7 +44,7 @@ export async function PreorderTab({
   canManage: boolean;
   canAskBalance: boolean;
 }) {
-  const [campaign, products, gifts, site] = await Promise.all([
+  const [campaign, products, gifts, site, insiderTerms] = await Promise.all([
     getPreorderCampaignForAdmin(),
     prisma.product.findMany({
       where: { deletedAt: null, giftOnly: false },
@@ -50,6 +53,15 @@ export async function PreorderTab({
     }),
     listGiftableItems(),
     getSiteSetting(),
+    Promise.all([
+      getInsiderDefaultPercent(),
+      getInsiderStackMode(),
+      listInsiderTiers(),
+    ]).then(([percent, mode, tiers]) => ({
+      percent,
+      mode,
+      hasDatedTiers: tiers.length > 0,
+    })),
   ]);
   const overview = campaign ? await getPreorderOverview(campaign.id) : null;
   const initial: PreorderCampaignInput = campaign
@@ -210,6 +222,7 @@ export async function PreorderTab({
         initial={initial}
         products={products}
         gifts={gifts}
+        insiderTerms={insiderTerms}
         canManage={canManage}
       />
     </div>

@@ -20,9 +20,9 @@
   --color-onwei-white: #ffffff;
 
   --font-display: var(--font-archivo), sans-serif;
-  /* Admin body text is Inter (easier to read in dense tables than the
-     storefront mono); `font-mono` stays IBM Plex Mono for codes. */
-  --font-grotesk: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  /* Admin body text is Google Sans (easier to read in dense tables than
+     the storefront mono); `font-mono` stays IBM Plex Mono for codes. */
+  --font-grotesk: var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-cta: var(--font-raleway), sans-serif;
 }
 

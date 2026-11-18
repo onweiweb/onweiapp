@@ -5,6 +5,7 @@ export * from "./reserve";
 export * from "./balance";
 export * from "./report";
 export * from "./checker";
+export * from "./journey";
 export * from "./notify";
 export * from "./rateLimit";
 export * from "./storefront";

@@ -23,7 +23,7 @@ export function AdminTableHeaderCell({
 }: {
   children: React.ReactNode;
 }) {
-  return <th className="px-3 py-2 text-[11px] font-semibold">{children}</th>;
+  return <th className="px-3 py-2 text-[11px] font-medium">{children}</th>;
 }
 
 export function AdminTableRow({ children }: { children: React.ReactNode }) {

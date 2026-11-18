@@ -16,6 +16,8 @@ import {
   setCartQuantity,
 } from "../commerce/cart";
 import { updateSiteSetting } from "../settings/siteSetting";
+import { listGiftableItems } from "./giftItems";
+import { previewPreorderJourney } from "./journey";
 import {
   canStartPreorderMode,
   getStorefront,
@@ -429,6 +431,30 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(q.quote.gifts).toMatchObject([
         { variantId: boxVariantId, quantity: 2, reason: "Tier 1 mystery box" },
       ]);
+    });
+
+    it("previews each tier's price for everyone and for Insiders", async () => {
+      const preview = await previewPreorderJourney({
+        variantId,
+        tiers: [
+          { label: "Tier 1", percent: 15 },
+          { label: "Tier 2", percent: 10 },
+        ],
+        reservePerItem: 90000,
+      });
+      expect(preview?.price).toBe(400000);
+      const [one, two] = preview!.tiers;
+      expect(one!.everyone.total).toBeLessThan(two!.everyone.total);
+      expect(one!.insider.total).toBeLessThanOrEqual(one!.everyone.total);
+      expect(one!.everyone.reserveTotal).toBe(90000);
+      expect(one!.everyone.balanceDue).toBe(one!.everyone.total - 90000);
+    });
+
+    it("gives every gift option its value", async () => {
+      const box = (await listGiftableItems()).find(
+        (g) => g.id === boxVariantId,
+      );
+      expect(box?.value).toBe(100000);
     });
 
     it("reserves, holds stock first come first served, then takes the balance", async () => {
