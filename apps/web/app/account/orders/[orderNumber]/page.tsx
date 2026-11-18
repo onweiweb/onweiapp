@@ -220,7 +220,11 @@ export default async function OrderPage({
             totalLabel={
               order.paymentMethod === "COD"
                 ? "To pay on delivery"
-                : "Total paid"
+                : order.preorder && order.preorder.stage !== "PAID"
+                  ? order.preorder.stage === "PAYING_RESERVE"
+                    ? "Reserve due"
+                    : "Reserve paid"
+                  : "Total paid"
             }
           />
         </div>

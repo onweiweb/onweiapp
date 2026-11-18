@@ -159,12 +159,16 @@ export function OrderDetailsCard({
             <p className={label}>Payment</p>
             <p className={text}>
               {order.paymentLabel}
-              <br />
-              {order.paymentMethod === "COD"
-                ? `${rupees(order.total)} to pay on delivery`
-                : order.awaitingPayment || order.status === "PENDING"
-                  ? "Not paid"
-                  : `${rupees(order.total)} paid`}
+              {order.awaitingPayment || order.status === "PENDING" ? null : (
+                <>
+                  <br />
+                  {order.paymentMethod === "COD"
+                    ? `${rupees(order.total)} to pay on delivery`
+                    : order.preorder && order.preorder.stage !== "PAID"
+                      ? `${rupees(order.preorder.reserveTotal)} reserve paid`
+                      : `${rupees(order.total)} paid`}
+                </>
+              )}
             </p>
           </div>
         </div>
@@ -253,12 +257,32 @@ export function OrderSummaryCard({
           <dd>Included</dd>
         </div>
       </dl>
+      {order.preorder ? (
+        <dl className="flex flex-col gap-1.5 border-t border-onwei-blue pt-3">
+          <div className={row}>
+            <dt>Order total</dt>
+            <dd>{rupees(order.total)}</dd>
+          </div>
+          <div className={row}>
+            <dt>
+              {order.preorder.stage === "PAID"
+                ? "Balance paid"
+                : "Balance when your order is ready"}
+            </dt>
+            <dd>{rupees(order.preorder.balanceDue)}</dd>
+          </div>
+        </dl>
+      ) : null}
       <div className="flex items-center justify-between border-t border-onwei-blue pt-3">
         <span className="font-display text-[length:max(1rem,13px)] font-bold">
           {totalLabel}
         </span>
         <span className="font-display text-[length:max(1.375rem,18px)] font-bold">
-          {rupees(order.total)}
+          {rupees(
+            order.preorder && order.preorder.stage !== "PAID"
+              ? order.preorder.reserveTotal
+              : order.total,
+          )}
         </span>
       </div>
     </Card>

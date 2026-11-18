@@ -52,7 +52,9 @@ export default async function CheckoutFailedPage({
   const minutesLeft = order.holdExpiresAt
     ? minutesUntil(order.holdExpiresAt)
     : null;
-  const codOffered = codAllowedFor(settings, order.total - order.codFee);
+  const preorder = order.preorder !== null;
+  const codOffered =
+    !preorder && codAllowedFor(settings, order.total - order.codFee);
   return (
     <CheckoutShell>
       <div className="grid grid-cols-1 gap-8 desk:grid-cols-[1fr_27.5rem] desk:gap-14">
@@ -85,7 +87,9 @@ export default async function CheckoutFailedPage({
             </span>
             {held && minutesLeft
               ? `We're holding your items for ${minutesLeft} more minute${minutesLeft === 1 ? "" : "s"}.`
-              : "The hold on your items has ended, but your bag is saved. Start again to check out."}
+              : preorder
+                ? "The hold has ended. Start again from the product to reserve it."
+                : "The hold on your items has ended, but your bag is saved. Start again to check out."}
           </p>
           {reason ? null : (
             <Card>
@@ -109,7 +113,11 @@ export default async function CheckoutFailedPage({
             <RetryPayment
               orderNumber={order.orderNumber}
               primaryLabel="Try payment again"
-              secondary={{ label: "Use another method", href: "/checkout" }}
+              secondary={
+                preorder
+                  ? { label: "See pre-orders", href: "/collection/all" }
+                  : { label: "Use another method", href: "/checkout" }
+              }
               prefill={{
                 name: order.address?.fullName,
                 email: order.contactEmail,
@@ -118,7 +126,7 @@ export default async function CheckoutFailedPage({
             />
           ) : (
             <Link
-              href="/checkout"
+              href={preorder ? "/collection/all" : "/checkout"}
               className="flex h-12 w-fit items-center justify-center rounded-full bg-onwei-blue px-7 font-grotesk text-[length:max(0.8125rem,11px)] uppercase tracking-[0.04em] text-onwei-beige"
             >
               Start again
@@ -133,9 +141,11 @@ export default async function CheckoutFailedPage({
               {settings.codFee > 0 ? ` (adds ${rupees(settings.codFee)})` : ""}
             </Link>
           ) : null}
-          <p className="font-grotesk text-[length:max(0.75rem,11px)]">
-            Your bag&apos;s saved, so you won&apos;t lose anything.
-          </p>
+          {preorder ? null : (
+            <p className="font-grotesk text-[length:max(0.75rem,11px)]">
+              Your bag&apos;s saved, so you won&apos;t lose anything.
+            </p>
+          )}
           <HelpCard
             title="Still not working?"
             body="Get in touch and we'll help you complete your order."
@@ -144,8 +154,8 @@ export default async function CheckoutFailedPage({
         <div className="desk:self-start">
           <OrderSummaryCard
             order={order}
-            badge="Not paid"
-            totalLabel="Amount due"
+            badge={preorder ? "Reserve not paid" : "Not paid"}
+            totalLabel={preorder ? "Reserve due" : "Amount due"}
           />
         </div>
       </div>

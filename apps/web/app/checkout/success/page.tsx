@@ -125,7 +125,7 @@ export default async function CheckoutSuccessPage({
               order.paymentMethod === "COD"
                 ? "To pay on delivery"
                 : reserved
-                  ? "Total (reserve paid)"
+                  ? "Reserve paid"
                   : "Total paid"
             }
           />

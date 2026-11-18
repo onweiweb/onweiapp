@@ -30,6 +30,7 @@ export default async function CheckoutAbandonedPage({
   if (order.status !== "PENDING" && order.status !== "CANCELLED") {
     redirect(`/checkout/success?order=${order.orderNumber}`);
   }
+  const preorder = order.preorder !== null;
   return (
     <CheckoutShell>
       <div className="grid grid-cols-1 gap-8 desk:grid-cols-[1fr_27.5rem] desk:gap-14">
@@ -40,8 +41,9 @@ export default async function CheckoutAbandonedPage({
             You left something behind.
           </h1>
           <p className="font-grotesk text-[length:max(0.9375rem,13px)] leading-[1.6]">
-            Your bag&apos;s saved, just how you left it. Pick up where you
-            stopped and check out in a couple of taps.
+            {preorder
+              ? "Your pre-order isn't reserved yet. Pay the reserve to keep your spot at this lap's price."
+              : "Your bag's saved, just how you left it. Pick up where you stopped and check out in a couple of taps."}
           </p>
           <p className="flex items-center gap-3 rounded-full bg-onwei-blue px-5 py-3 font-grotesk text-[length:max(0.8125rem,11px)] text-onwei-beige">
             <span
@@ -52,14 +54,19 @@ export default async function CheckoutAbandonedPage({
             </span>
             {order.awaitingPayment
               ? "We're holding your items for a few minutes. After that they go back on sale."
-              : "Items in your bag aren't reserved until you complete checkout."}
+              : preorder
+                ? "The hold has ended. Start again from the product to reserve it."
+                : "Items in your bag aren't reserved until you complete checkout."}
           </p>
           <CheckoutSteps current={2} />
           <OrderDetailsCard order={order} title="Your details" />
           <RetryPayment
             orderNumber={order.orderNumber}
-            primaryLabel="Complete checkout"
-            secondary={{ label: "Continue shopping", href: "/collection/all" }}
+            primaryLabel={preorder ? "Pay the reserve" : "Complete checkout"}
+            secondary={{
+              label: preorder ? "See pre-orders" : "Continue shopping",
+              href: "/collection/all",
+            }}
             prefill={{
               name: order.address?.fullName,
               email: order.contactEmail,
@@ -74,8 +81,8 @@ export default async function CheckoutAbandonedPage({
         <div className="desk:self-start">
           <OrderSummaryCard
             order={order}
-            badge="In your cart"
-            totalLabel="Total"
+            badge={preorder ? "Pre-order" : "In your cart"}
+            totalLabel={preorder ? "Pay now to reserve" : "Total"}
           />
         </div>
       </div>
