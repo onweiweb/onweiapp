@@ -194,7 +194,7 @@ export default async function ProductPage({
                 ))}
               </div>
 
-              <ProductVariantPicker />
+              <ProductVariantPicker productId={product.id} />
 
               {product.playCharacteristics ? (
                 <PlayCharacteristics

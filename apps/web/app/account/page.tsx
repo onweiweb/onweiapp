@@ -5,6 +5,7 @@ import {
   INDIAN_STATES,
   getAccountSummary,
   listAddresses,
+  listCustomerCredits,
   listCustomerOrders,
 } from "@onwei/core";
 import { ProductImage } from "@/_components/ProductImage";
@@ -51,6 +52,12 @@ export default async function AccountPage({
   const { tab: tabParam } = await searchParams;
   const tab = TABS.some((t) => t.id === tabParam) ? tabParam! : "orders";
   const first = account.name?.split(/\s+/)[0];
+  const credits = await listCustomerCredits({
+    email: account.emailVerified
+      ? (account.email?.toLowerCase() ?? null)
+      : null,
+    phone: account.phoneVerified ? account.phone : null,
+  });
 
   return (
     <CheckoutShell header="site">
@@ -89,6 +96,35 @@ export default async function AccountPage({
               {account.insider.code}
             </p>
           </div>
+        ) : null}
+
+        {credits.length ? (
+          <Card className="flex flex-col gap-3">
+            <h2 className="font-display text-[length:max(1.125rem,14px)] font-bold">
+              My credits
+            </h2>
+            <ul className="flex flex-col gap-2">
+              {credits.map((c) => (
+                <li
+                  key={c.code}
+                  className="flex flex-wrap items-center justify-between gap-2 font-grotesk text-[length:max(0.8125rem,11px)]"
+                >
+                  <span>
+                    <strong className="tracking-[0.1em]">{c.code}</strong>
+                    {c.description ? ` · ${c.description}` : ""}
+                  </span>
+                  <span>
+                    {rupees(c.left)} left
+                    {c.endsAt ? `, until ${DATE.format(c.endsAt)}` : ""}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p className="font-grotesk text-[length:max(0.75rem,11px)]">
+              Type the code at checkout. Anything you don&apos;t use stays for
+              next time.
+            </p>
+          </Card>
         ) : null}
 
         <nav aria-label="Account sections" className="flex gap-2">

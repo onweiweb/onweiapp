@@ -20,6 +20,7 @@ import {
   OrderSummaryCard,
 } from "../../../checkout/_components/ResultParts";
 import { RetryPayment } from "../../../checkout/_components/RetryPayment";
+import { PreorderPanel } from "./PreorderPanel";
 import { ReturnForm } from "./ReturnForm";
 
 export const metadata: Metadata = {
@@ -84,15 +85,31 @@ export default async function OrderPage({
             <RetryPayment
               orderNumber={order.orderNumber}
               primaryLabel="Complete payment"
-              secondary={{ label: "Back to bag", href: "/checkout" }}
+              secondary={
+                order.preorder
+                  ? { label: "Back to shop", href: "/collection/all" }
+                  : { label: "Back to bag", href: "/checkout" }
+              }
               prefill={{
                 name: order.address?.fullName,
                 email: order.contactEmail,
                 contact: order.address?.phone,
               }}
             />
-          ) : order.status !== "CANCELLED" ? (
+          ) : order.status !== "CANCELLED" && order.status !== "RESERVED" ? (
             <OrderProgress status={order.status} />
+          ) : null}
+
+          {order.preorder && order.preorder.stage !== "PAYING_RESERVE" ? (
+            <PreorderPanel
+              orderNumber={order.orderNumber}
+              info={order.preorder}
+              prefill={{
+                name: order.address?.fullName,
+                email: order.contactEmail,
+                contact: order.address?.phone,
+              }}
+            />
           ) : null}
 
           {order.trackingNumber ? (
@@ -120,8 +137,13 @@ export default async function OrderPage({
                     {item.quantity}
                   </span>
                   <span className="text-onwei-blue/70">
-                    {item.returnBlockedReason &&
+                    {item.isFree
+                      ? `Free${item.freeReason ? `, ${item.freeReason}` : ""}`
+                      : null}
+                    {!item.isFree &&
+                    item.returnBlockedReason &&
                     order.status !== "PENDING" &&
+                    order.status !== "RESERVED" &&
                     order.status !== "CANCELLED"
                       ? RETURN_BLOCKED_LABELS[item.returnBlockedReason]
                       : ""}

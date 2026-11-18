@@ -1,5 +1,6 @@
 import { prisma, type Prisma } from "@onwei/database";
 import { toMinorUnits } from "../catalog/helpers";
+import { variantLabelOf } from "./variantLabel";
 import { validateDiscountRuleConfig } from "../discounts/discountRuleConfig";
 import { isInsiderCodeFormat, normalizeCode } from "../insiders/insiderCode";
 import type { DiscountGive, PricingCoupon } from "../pricing/engine";
@@ -37,7 +38,7 @@ export interface CodeCheck {
 
 const CODE_PATTERN = /^[A-Z0-9-]{3,30}$/;
 
-const couponInclude = {
+export const couponInclude = {
   rules: { orderBy: [{ priority: "desc" }, { id: "asc" }] },
 } satisfies Prisma.CouponInclude;
 
@@ -45,7 +46,52 @@ type CouponWithRules = Prisma.CouponGetPayload<{
   include: typeof couponInclude;
 }>;
 
-function giveFrom(coupon: CouponWithRules): DiscountGive | null {
+/** What a free item coupon gives: price, name and whether it's in stock. */
+export interface FreeItemInfo {
+  value: number;
+  itemLabel: string;
+  available: boolean;
+}
+
+/** Looks up the free items of these coupons in one query. */
+export async function loadFreeItemInfo(
+  coupons: readonly { rules: { type: string; config: Prisma.JsonValue }[] }[],
+): Promise<Map<string, FreeItemInfo>> {
+  const ids = new Set<string>();
+  for (const coupon of coupons) {
+    const rule = coupon.rules[0];
+    if (rule?.type !== "FREE_ITEM") continue;
+    const id = (rule.config as { variantId?: unknown } | null)?.variantId;
+    if (typeof id === "string") ids.add(id);
+  }
+  const out = new Map<string, FreeItemInfo>();
+  if (ids.size === 0) return out;
+  const variants = await prisma.productVariant.findMany({
+    where: { id: { in: [...ids] } },
+    include: { inventory: true, product: { select: { name: true } } },
+  });
+  for (const variant of variants) {
+    const stock = variant.inventory.reduce(
+      (sum, row) =>
+        sum + Math.max(0, row.quantityOnHand - row.quantityReserved),
+      0,
+    );
+    const label = variantLabelOf(variant.attributes);
+    out.set(variant.id, {
+      value: toMinorUnits(variant.price),
+      itemLabel: label
+        ? `${variant.product.name} (${label})`
+        : variant.product.name,
+      available: stock > 0,
+    });
+  }
+  return out;
+}
+
+function giveFrom(
+  coupon: CouponWithRules,
+  freeItems?: Map<string, FreeItemInfo>,
+): DiscountGive | null {
   const rule = coupon.rules[0];
   if (!rule) return null;
   const checked = validateDiscountRuleConfig(rule.type, rule.config);
@@ -74,6 +120,19 @@ function giveFrom(coupon: CouponWithRules): DiscountGive | null {
       };
     case "FREE_SHIPPING":
       return { type: "FREE_SHIPPING" };
+    case "FREE_ITEM": {
+      const variantId = String(config.variantId);
+      const info = freeItems?.get(variantId);
+      if (!info) return null;
+      return {
+        type: "FREE_ITEM",
+        variantId,
+        quantity: Number(config.quantity),
+        value: info.value,
+        itemLabel: info.itemLabel,
+        available: info.available,
+      };
+    }
   }
 }
 
@@ -90,15 +149,26 @@ export function describeGive(give: DiscountGive): string {
       return "Spend more, save more";
     case "FREE_SHIPPING":
       return "Free delivery";
+    case "FREE_ITEM":
+      return give.quantity > 1
+        ? `${give.quantity} free ${give.itemLabel}`
+        : `Free ${give.itemLabel}`;
   }
 }
 
 export function toPricingCoupon(
   coupon: CouponWithRules,
   source: "code" | "auto",
+  freeItems?: Map<string, FreeItemInfo>,
+  /** Personal credit: paise still left on it. */
+  creditLeft?: number,
 ): PricingCoupon | null {
-  const give = giveFrom(coupon);
+  let give = giveFrom(coupon, freeItems);
   if (!give) return null;
+  if (coupon.kind === "CREDIT" && give.type === "FLAT") {
+    if (creditLeft === undefined || creditLeft <= 0) return null;
+    give = { type: "FLAT", amount: Math.min(give.amount, creditLeft) };
+  }
   return {
     id: coupon.id,
     code: coupon.code.toUpperCase(),
@@ -116,8 +186,9 @@ export function toPricingCoupon(
       : null,
     minItems: coupon.minItems,
     combinableWithCoupons: coupon.combinableWithCoupons,
-    combinableWithInsider: coupon.combinableWithInsider,
     prepaidOnly: coupon.prepaidOnly,
+    appliesTo: coupon.appliesTo,
+    isCredit: coupon.kind === "CREDIT",
     priority: coupon.priority,
     createdAt: coupon.createdAt.getTime(),
     source,
@@ -140,6 +211,27 @@ export async function countCouponUses(couponId: string): Promise<number> {
   return prisma.couponRedemption.count({
     where: { couponId, status: COUNTED },
   });
+}
+
+/**
+ * What is left on a personal credit: its amount minus what orders have used
+ * (held for an unpaid order, or paid). A leftover stays for the next order.
+ */
+export async function creditLeftOn(
+  coupon: Pick<CouponWithRules, "id" | "rules">,
+): Promise<number> {
+  const rule = coupon.rules[0];
+  const amount = Math.round(
+    Number((rule?.config as { amount?: unknown } | null)?.amount ?? 0) * 100,
+  );
+  const used = await prisma.couponRedemption.aggregate({
+    where: { couponId: coupon.id, status: COUNTED },
+    _sum: { discountAmount: true },
+  });
+  const spent = used._sum.discountAmount
+    ? toMinorUnits(used._sum.discountAmount)
+    : 0;
+  return Math.max(0, amount - spent);
 }
 
 export async function countCouponUsesBy(
@@ -258,7 +350,12 @@ export async function resolveCoupons(input: {
     const problem =
       (await audienceProblem(coupon, input.identity, input.insider)) ??
       (await usageProblem(coupon, input.identity));
-    const pricing = toPricingCoupon(coupon, "code");
+    const pricing = toPricingCoupon(
+      coupon,
+      "code",
+      await loadFreeItemInfo([coupon]),
+      coupon.kind === "CREDIT" ? await creditLeftOn(coupon) : undefined,
+    );
     if (problem || !pricing) {
       checks.push({ code, problem: problem ?? "NOT_VALID" });
       continue;
@@ -279,11 +376,12 @@ export async function resolveCoupons(input: {
     orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
     take: 20,
   });
+  const autoFreeItems = await loadFreeItemInfo(autos);
   for (const coupon of autos) {
     if (coupons.some((c) => c.id === coupon.id)) continue;
     if (await audienceProblem(coupon, input.identity, input.insider)) continue;
     if (await usageProblem(coupon, input.identity)) continue;
-    const pricing = toPricingCoupon(coupon, "auto");
+    const pricing = toPricingCoupon(coupon, "auto", autoFreeItems);
     if (pricing) coupons.push(pricing);
   }
 

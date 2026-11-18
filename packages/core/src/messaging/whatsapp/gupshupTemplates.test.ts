@@ -6,6 +6,8 @@ import {
   parseGupshupTemplates,
   readGupshupAppId,
   suggestTemplateValues,
+  templateFitFor,
+  templateFitMessage,
 } from "./gupshupTemplates";
 
 // Shapes copied from the live Gupshup response (2026-11-17), text shortened.
@@ -176,5 +178,60 @@ describe("listGupshupTemplates", () => {
         throw new TypeError("fetch failed");
       }),
     ).toEqual({ ok: false, reason: "UNAVAILABLE" });
+  });
+});
+
+describe("templateFitFor", () => {
+  const ok = {
+    status: "APPROVED",
+    category: "UTILITY",
+    header: "IMAGE" as const,
+  };
+
+  it("accepts an approved template in the right category", () => {
+    expect(templateFitFor("INSIDER_CODE", ok)).toBe("OK");
+    expect(
+      templateFitFor("INSIDER_CODE", { ...ok, category: "MARKETING" }),
+    ).toBe("OK");
+    expect(
+      templateFitFor("SIGN_IN_CODE", {
+        ...ok,
+        category: "AUTHENTICATION",
+        header: "NONE",
+      }),
+    ).toBe("OK");
+  });
+
+  it("says why a template can't be used", () => {
+    expect(templateFitFor("INSIDER_CODE", { ...ok, status: "PENDING" })).toBe(
+      "NOT_APPROVED",
+    );
+    expect(templateFitFor("INSIDER_CODE", { ...ok, status: "REJECTED" })).toBe(
+      "NOT_APPROVED",
+    );
+    expect(templateFitFor("SIGN_IN_CODE", { ...ok, header: "NONE" })).toBe(
+      "WRONG_CATEGORY",
+    );
+    expect(
+      templateFitFor("INSIDER_CODE", { ...ok, header: "UNSUPPORTED" }),
+    ).toBe("UNSUPPORTED_HEADER");
+    expect(templateFitFor("PREORDER_CREDIT", ok)).toBe("IMAGE_NOT_ALLOWED");
+  });
+
+  it("explains it in plain words", () => {
+    const t = {
+      status: "PENDING",
+      category: "MARKETING",
+      templateType: "VIDEO",
+    };
+    expect(templateFitMessage("INSIDER_CODE", t, "NOT_APPROVED")).toMatch(
+      /hasn't approved/,
+    );
+    expect(templateFitMessage("SIGN_IN_CODE", t, "WRONG_CATEGORY")).toMatch(
+      /authentication/,
+    );
+    expect(templateFitMessage("INSIDER_CODE", t, "UNSUPPORTED_HEADER")).toMatch(
+      /video/,
+    );
   });
 });

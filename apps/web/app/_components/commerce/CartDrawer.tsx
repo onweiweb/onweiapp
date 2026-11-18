@@ -379,7 +379,37 @@ function Totals() {
   );
 }
 
-function EmptyCart({ onClose }: { onClose: () => void }) {
+function EmptyCart({
+  onClose,
+  preorderOnly,
+}: {
+  onClose: () => void;
+  preorderOnly: boolean;
+}) {
+  if (preorderOnly) {
+    // Pre-order mode: the bag is closed until launch (it is emptied when
+    // pre-orders start), items are reserved one at a time instead.
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center">
+        <h2 className="font-display text-[length:max(2.5rem,30px)] font-bold uppercase leading-[0.95] text-onwei-blue">
+          Pre-orders
+          <br />
+          are on
+        </h2>
+        <p className="max-w-[22rem] font-grotesk text-[length:max(0.875rem,12px)] text-onwei-blue">
+          The bag opens at launch. Until then, reserve what you like from its
+          product page.
+        </p>
+        <Link
+          href="/collection/all"
+          onClick={onClose}
+          className="rounded-full bg-onwei-blue px-6 py-3 font-grotesk text-[length:max(0.8125rem,11px)] uppercase text-onwei-beige"
+        >
+          See what&apos;s on pre-order
+        </Link>
+      </div>
+    );
+  }
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center">
       <div className="relative">
@@ -501,7 +531,10 @@ export function CartDrawer() {
         ) : null}
 
         {empty ? (
-          <EmptyCart onClose={close} />
+          <EmptyCart
+            onClose={close}
+            preorderOnly={Boolean(cart?.preorderOnly)}
+          />
         ) : (
           <>
             <div className="flex-1 overflow-y-auto">

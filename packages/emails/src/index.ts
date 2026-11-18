@@ -21,3 +21,13 @@ export {
 export type { OrderEmailInput } from "./templates/orderEmails";
 export { renderContactAlertEmail } from "./templates/contactEmails";
 export type { ContactAlertInput } from "./templates/contactEmails";
+export {
+  renderPreorderReservedEmail,
+  renderPreorderBalanceEmail,
+  renderPreorderCreditEmail,
+  rupeesText,
+} from "./templates/preorderEmails";
+export type {
+  PreorderEmailInput,
+  PreorderCreditEmailInput,
+} from "./templates/preorderEmails";

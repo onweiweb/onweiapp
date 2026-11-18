@@ -2,6 +2,7 @@ import {
   Prisma,
   prisma,
   type CouponAudience,
+  type CouponOrderKind,
   type CouponScope,
   type DiscountType,
 } from "@onwei/database";
@@ -38,7 +39,8 @@ export interface CouponDraft {
     | { type: "FLAT"; amount: number }
     | { type: "BUY_X_GET_Y"; buyQty: number; getQty: number }
     | { type: "TIERED"; tiers: { minSubtotal: number; percent: number }[] }
-    | { type: "FREE_SHIPPING" };
+    | { type: "FREE_SHIPPING" }
+    | { type: "FREE_ITEM"; variantId: string; quantity: number };
   /** Rupees, null for no maximum. */
   maxDiscount: number | null;
   scope: CouponScope;
@@ -57,9 +59,10 @@ export interface CouponDraft {
   endsAt: string | null;
   autoApply: boolean;
   combinableWithCoupons: boolean;
-  combinableWithInsider: boolean;
   prepaidOnly: boolean;
   priority: number;
+  /** Normal orders, pre-orders or both. */
+  appliesTo: CouponOrderKind;
 }
 
 export type DraftErrors = Partial<
@@ -145,6 +148,17 @@ export function validateCouponDraft(draft: CouponDraft): DraftErrors {
     } else if (new Set(values).size !== values.length)
       errors.giveValue = "Each step needs a different cart value.";
   }
+  if (
+    give.type === "FREE_ITEM" &&
+    (!give.variantId ||
+      !(
+        Number.isInteger(give.quantity) &&
+        give.quantity >= 1 &&
+        give.quantity <= 5
+      ))
+  ) {
+    errors.giveValue = "Pick the item to give, and give 1 to 5.";
+  }
   if (draft.maxDiscount !== null && !(draft.maxDiscount > 0))
     errors.maxDiscount =
       "Leave it empty for no maximum, or enter an amount above ₹0.";
@@ -208,6 +222,11 @@ function ruleFor(give: CouponDraft["give"]): {
       };
     case "FREE_SHIPPING":
       return { type: "FREE_SHIPPING", config: {} };
+    case "FREE_ITEM":
+      return {
+        type: "FREE_ITEM",
+        config: { variantId: give.variantId, quantity: give.quantity },
+      };
   }
 }
 
@@ -220,8 +239,8 @@ const LOCKED_FIELDS = [
   "productIds",
   "excludeSaleItems",
   "combinableWithCoupons",
-  "combinableWithInsider",
   "prepaidOnly",
+  "appliesTo",
 ] as const;
 
 export async function couponUseCount(
@@ -258,6 +277,17 @@ export async function saveCoupon(
       ok: false,
       errors: { code: "Another coupon already uses this code." },
     };
+  if (draft.give.type === "FREE_ITEM") {
+    const item = await prisma.productVariant.findUnique({
+      where: { id: draft.give.variantId },
+      select: { id: true },
+    });
+    if (!item)
+      return {
+        ok: false,
+        errors: { giveValue: "That item no longer exists. Pick another." },
+      };
+  }
 
   let before: Awaited<ReturnType<typeof loadCouponDraft>> = null;
   if (couponId) {
@@ -300,7 +330,8 @@ export async function saveCoupon(
     maxDiscount:
       draft.maxDiscount === null ||
       draft.give.type === "FLAT" ||
-      draft.give.type === "FREE_SHIPPING"
+      draft.give.type === "FREE_SHIPPING" ||
+      draft.give.type === "FREE_ITEM"
         ? null
         : new Prisma.Decimal(draft.maxDiscount),
     scope: draft.scope,
@@ -312,9 +343,9 @@ export async function saveCoupon(
     minItems: draft.minItems,
     autoApply: draft.autoApply,
     combinableWithCoupons: draft.combinableWithCoupons,
-    combinableWithInsider: draft.combinableWithInsider,
     prepaidOnly: draft.prepaidOnly,
     priority: draft.priority,
+    appliesTo: draft.appliesTo,
   };
   const rule = ruleFor(draft.give);
 
@@ -381,6 +412,12 @@ export async function loadCouponDraft(couponId: string): Promise<{
       tiers: (config.tiers as { minSubtotal: number; percent: number }[]) ?? [],
     };
   if (rule?.type === "FREE_SHIPPING") give = { type: "FREE_SHIPPING" };
+  if (rule?.type === "FREE_ITEM")
+    give = {
+      type: "FREE_ITEM",
+      variantId: String(config.variantId ?? ""),
+      quantity: Number(config.quantity ?? 1),
+    };
   const uses = await couponUseCount(couponId);
   return {
     locked: uses.confirmed + uses.held > 0,
@@ -405,9 +442,9 @@ export async function loadCouponDraft(couponId: string): Promise<{
       endsAt: dateToIstLocal(coupon.endsAt),
       autoApply: coupon.autoApply,
       combinableWithCoupons: coupon.combinableWithCoupons,
-      combinableWithInsider: coupon.combinableWithInsider,
       prepaidOnly: coupon.prepaidOnly,
       priority: coupon.priority,
+      appliesTo: coupon.appliesTo,
     },
   };
 }
@@ -500,11 +537,16 @@ export async function deleteCoupon(
 
 export type CouponState = "LIVE" | "SCHEDULED" | "ENDED" | "OFF" | "USED_UP";
 
+/** The filter pills on the coupon list. */
+export type CouponGroup = "CODE" | "AUTO" | "FREE_ITEM" | "CREDIT";
+
 export interface CouponListRow {
   id: string;
   code: string;
   summary: string;
   state: CouponState;
+  group: CouponGroup;
+  appliesTo: CouponOrderKind;
   isActive: boolean;
   autoApply: boolean;
   uses: number;
@@ -534,14 +576,28 @@ export async function listCouponsForAdmin(): Promise<CouponListRow[]> {
     else if (coupon.startsAt && coupon.startsAt > now) state = "SCHEDULED";
     else if (coupon.usageLimit !== null && uses >= coupon.usageLimit)
       state = "USED_UP";
-    const pricing = draftToPricing({
-      give: giveFromRule(coupon.rules[0]?.type, coupon.rules[0]?.config),
-    } as Pick<CouponDraft, "give">);
+    const give = giveFromRule(coupon.rules[0]?.type, coupon.rules[0]?.config);
+    const pricing = draftToPricing({ give } as Pick<CouponDraft, "give">);
+    const group: CouponGroup =
+      coupon.kind === "CREDIT"
+        ? "CREDIT"
+        : give.type === "FREE_ITEM"
+          ? "FREE_ITEM"
+          : coupon.autoApply
+            ? "AUTO"
+            : "CODE";
     return {
       id: coupon.id,
       code: coupon.code.toUpperCase(),
-      summary: pricing ? describeGive(pricing) : "No discount set",
+      summary:
+        give.type === "FREE_ITEM"
+          ? `Free item (${give.quantity})`
+          : pricing
+            ? describeGive(pricing)
+            : "No discount set",
       state,
+      group,
+      appliesTo: coupon.appliesTo,
       isActive: coupon.isActive,
       autoApply: coupon.autoApply,
       uses,
@@ -575,6 +631,12 @@ function giveFromRule(
       };
     case "FREE_SHIPPING":
       return { type: "FREE_SHIPPING" };
+    case "FREE_ITEM":
+      return {
+        type: "FREE_ITEM",
+        variantId: String(c.variantId ?? ""),
+        quantity: Number(c.quantity ?? 1),
+      };
     default:
       return { type: "PERCENTAGE", percent: Number(c.percentage ?? 0) };
   }
@@ -599,6 +661,15 @@ function draftToPricing(draft: Pick<CouponDraft, "give">): DiscountGive | null {
       };
     case "FREE_SHIPPING":
       return give;
+    case "FREE_ITEM":
+      return {
+        type: "FREE_ITEM",
+        variantId: give.variantId,
+        quantity: give.quantity,
+        value: 0,
+        itemLabel: "item",
+        available: true,
+      };
   }
 }
 
@@ -641,7 +712,6 @@ export function previewCoupon(
         : Math.round(draft.minOrderValue * 100),
     minItems: draft.minItems,
     combinableWithCoupons: true,
-    combinableWithInsider: true,
     prepaidOnly: false,
     priority: 0,
     createdAt: 0,
@@ -650,6 +720,7 @@ export function previewCoupon(
   const result = priceCart({
     lines,
     insider: null,
+    insiderMode: "ADD",
     coupons: [coupon],
     paymentMethod: null,
     shipping,

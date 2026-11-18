@@ -21,6 +21,11 @@ export const couponDraftSchema = z.object({
         .max(5),
     }),
     z.object({ type: z.literal("FREE_SHIPPING") }),
+    z.object({
+      type: z.literal("FREE_ITEM"),
+      variantId: z.string().max(64),
+      quantity: z.number(),
+    }),
   ]),
   maxDiscount: optionalNumber,
   scope: z.enum(["CART", "CATEGORIES", "PRODUCTS"]),
@@ -37,7 +42,7 @@ export const couponDraftSchema = z.object({
   endsAt: z.string().max(20).nullable(),
   autoApply: z.boolean(),
   combinableWithCoupons: z.boolean(),
-  combinableWithInsider: z.boolean(),
   prepaidOnly: z.boolean(),
   priority: z.number(),
+  appliesTo: z.enum(["ORDERS", "PREORDERS", "BOTH"]),
 });

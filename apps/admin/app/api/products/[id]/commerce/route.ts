@@ -7,6 +7,7 @@ const bodySchema = z.object({
   isReturnable: z.boolean(),
   hsnCode: z.string().max(12).nullable(),
   gstRate: z.number().nullable(),
+  giftOnly: z.boolean().optional(),
 });
 
 export const PATCH = defineAdminRoute<typeof bodySchema, { id: string }>(

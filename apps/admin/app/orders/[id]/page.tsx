@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { hasPermission } from "@onwei/auth";
 import {
@@ -14,6 +15,7 @@ import {
   RETURN_STATUS_LABELS,
 } from "../../_lib/orderStatusLabels";
 import { OrderStatusForm } from "../../_components/OrderStatusForm";
+import { CancelPreorderForm } from "../../_components/CancelPreorderForm";
 import {
   CancelOrderForm,
   RefundForm,
@@ -126,7 +128,53 @@ export default async function OrderDetailPage({
         </AdminCard>
       ) : null}
 
-      {canUpdate && simpleNext.length > 0 && order.status !== "PENDING" ? (
+      {order.kind === "PREORDER" ? (
+        <AdminCard className="flex flex-col gap-3">
+          <Heading>Pre-order</Heading>
+          <dl className="grid gap-2 text-sm sm:grid-cols-2">
+            <div>
+              <dt className="text-onwei-blue/60">Tier</dt>
+              <dd>{order.preorderTierLabel ?? "-"}</dd>
+            </div>
+            <div>
+              <dt className="text-onwei-blue/60">Paid now (reserve)</dt>
+              <dd>{money(order.reserveTotal ?? 0)}</dd>
+            </div>
+            <div>
+              <dt className="text-onwei-blue/60">Balance</dt>
+              <dd>
+                {money(order.balanceDue ?? 0)}
+                {order.balancePaidAt
+                  ? " (paid)"
+                  : order.balanceRequestedAt
+                    ? ` (asked ${order.balanceRequestedAt.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}, ${order.balanceReminderCount} reminder${order.balanceReminderCount === 1 ? "" : "s"})`
+                    : " (waiting for stock)"}
+              </dd>
+            </div>
+            {order.creditCouponId ? (
+              <div>
+                <dt className="text-onwei-blue/60">Kept as credit</dt>
+                <dd>
+                  <Link
+                    className="underline"
+                    href={`/coupons/${order.creditCouponId}`}
+                  >
+                    See the credit code
+                  </Link>
+                </dd>
+              </div>
+            ) : null}
+          </dl>
+          {order.status === "RESERVED" && canUpdate ? (
+            <CancelPreorderForm orderId={order.id} canRefund={canRefund} />
+          ) : null}
+        </AdminCard>
+      ) : null}
+
+      {canUpdate &&
+      simpleNext.length > 0 &&
+      order.status !== "PENDING" &&
+      order.status !== "RESERVED" ? (
         <AdminCard>
           <Heading>Move to the next step</Heading>
           <OrderStatusForm

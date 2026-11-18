@@ -7,7 +7,10 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { invalidInput } from "../../_lib/invalidInput";
 import { customerIdFrom, razorpayConfig } from "../../_lib/requestAuth";
-import { sendOrderEmailsInBackground } from "../../_lib/orderEmails";
+import {
+  sendOrderEmailsInBackground,
+  sendPreorderMessageInBackground,
+} from "../../_lib/orderEmails";
 
 // Razorpay checkout's success handler posts here. The signature proves the
 // payment belongs to our order; the amount and status come from Razorpay
@@ -79,6 +82,8 @@ export async function POST(request: Request) {
   }
   if (result.status === "CONFIRMED")
     sendOrderEmailsInBackground(result.orderId);
+  if (result.status === "RESERVED")
+    sendPreorderMessageInBackground(result.orderId, { type: "RESERVED" });
   return NextResponse.json({
     ok: true,
     status: result.status,

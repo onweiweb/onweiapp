@@ -15,7 +15,7 @@ export async function listAllActiveProductSlugsForSitemap(): Promise<
   ProductSitemapEntry[]
 > {
   return prisma.product.findMany({
-    where: { status: "ACTIVE", deletedAt: null },
+    where: { status: "ACTIVE", deletedAt: null, giftOnly: false },
     select: { slug: true, updatedAt: true },
     orderBy: { createdAt: "desc" },
   });

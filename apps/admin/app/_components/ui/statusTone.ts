@@ -9,6 +9,7 @@ export type StatusTone = "pending" | "active" | "success" | "problem";
 export function orderStatusTone(
   status:
     | "PENDING"
+    | "RESERVED"
     | "CONFIRMED"
     | "PACKED"
     | "SHIPPED"
@@ -23,6 +24,7 @@ export function orderStatusTone(
     case "PENDING":
     case "RETURN_REQUESTED":
       return "pending";
+    case "RESERVED":
     case "CONFIRMED":
     case "PACKED":
     case "SHIPPED":

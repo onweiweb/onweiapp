@@ -33,6 +33,13 @@ export interface AnalyticsEvents {
   order_placed: { payment_method: "RAZORPAY" | "COD"; total: number };
   payment_failed: { reason: string };
 
+  // Pre-order events.
+  preorder_reserve_clicked: { product_slug: string; variant_id: string };
+  preorder_popup_shown: { tier: string };
+  preorder_banner_clicked: { tier: string };
+  preorder_reserved: { tier: string; reserve: number; total: number };
+  preorder_balance_paid: { order_number: string };
+
   // Blog events.
   blog_card_clicked: {
     post_slug: string;

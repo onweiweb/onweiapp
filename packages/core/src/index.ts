@@ -88,7 +88,10 @@ export {
   toMinorUnits,
 } from "./catalog/helpers";
 export type { ProductSort } from "./catalog/helpers";
-export { listActiveCategories } from "./catalog/listActiveCategories";
+export {
+  listActiveCategories,
+  listHiddenCategorySlugs,
+} from "./catalog/listActiveCategories";
 export { listActiveProductsByCategorySlug } from "./catalog/listActiveProductsByCategorySlug";
 export { listAllActiveProducts } from "./catalog/listAllActiveProducts";
 export { listAllActiveProductSlugsForSitemap } from "./catalog/listAllActiveProductSlugsForSitemap";
@@ -314,6 +317,9 @@ export {
   createInsiderTier,
   updateInsiderTier,
   deleteInsiderTier,
+  getInsiderStackMode,
+  updateInsiderStackMode,
+  type InsiderStackMode,
   type InsiderTierSummary,
   type InsiderTierInput,
   type InsiderTierResult,
@@ -417,6 +423,8 @@ export {
   applyCartCode,
   mergeGuestCart,
   getCartView,
+  shopIsPreorderOnly,
+  emptyAllCarts,
   loadCartContext,
   variantLabelOf,
   type CartOwner,
@@ -459,6 +467,7 @@ export {
   type OrderListItem,
   type OrderDetail,
   type OrderDetailItem,
+  type OrderPreorderInfo,
 } from "./commerce/account";
 export {
   requestReturn,
@@ -488,6 +497,7 @@ export {
   type SaveCouponResult,
   type CouponListRow,
   type CouponState,
+  type CouponGroup,
 } from "./commerce/couponBuilder";
 export {
   shipOrder,
@@ -535,3 +545,4 @@ export type {
   InsiderUpdateInput,
   InsiderUpdateItem,
 } from "./insiders/insiderUpdates";
+export * from "./preorders";

@@ -1,7 +1,7 @@
 import {
-  categoryFits,
   listGupshupTemplates,
   suggestTemplateValues,
+  templateFitFor,
   WHATSAPP_PURPOSES,
   type TemplatePurpose,
 } from "@onwei/core";
@@ -9,16 +9,21 @@ import { NextResponse } from "next/server";
 import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
 import { GUPSHUP_LIST_ERRORS } from "../../../../whatsapp/_gupshup";
 
-// Templates for the "Pick from Gupshup" list in the WhatsApp edit popup.
-// Asked fresh each time the popup opens, so a just-approved template shows.
-// Only template details go to the browser, never the key.
+// Templates for the "Choose template" popup on the WhatsApp page. Only
+// approved templates that fit the message are listed; the rest are counted so
+// the popup can say how many are still waiting. Asked fresh each time the
+// popup opens, so a just-approved template shows. Never sends the key.
 export const GET = defineAdminRoute(
   { permission: "settings:manage" },
   async ({ request }) => {
     const asked = new URL(request.url).searchParams.get("purpose") ?? "";
-    const purpose = (
-      asked in WHATSAPP_PURPOSES ? asked : null
-    ) as TemplatePurpose | null;
+    if (!(asked in WHATSAPP_PURPOSES)) {
+      return NextResponse.json(
+        { ok: false, error: "Say which message the template is for." },
+        { status: 400 },
+      );
+    }
+    const purpose = asked as TemplatePurpose;
     const result = await listGupshupTemplates();
     if (!result.ok) {
       return NextResponse.json(
@@ -26,13 +31,17 @@ export const GET = defineAdminRoute(
         { status: result.reason === "UNAVAILABLE" ? 502 : 400 },
       );
     }
-    // With a message type, each template says whether it fits and the value
-    // order to fill in, so the browser needs no catalog code.
-    const templates = result.templates.map((template) => ({
-      ...template,
-      fits: purpose ? categoryFits(purpose, template.category) : true,
-      suggestedValues: purpose ? suggestTemplateValues(purpose, template) : [],
-    }));
-    return NextResponse.json({ ok: true, templates });
+    const templates = result.templates
+      .filter((t) => templateFitFor(purpose, t) === "OK")
+      .map((t) => ({
+        ...t,
+        suggestedValues: suggestTemplateValues(purpose, t),
+      }));
+    const waiting = result.templates.filter(
+      (t) =>
+        t.status === "PENDING" &&
+        templateFitFor(purpose, { ...t, status: "APPROVED" }) === "OK",
+    ).length;
+    return NextResponse.json({ ok: true, templates, waiting });
   },
 );

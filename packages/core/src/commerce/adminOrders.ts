@@ -322,6 +322,8 @@ export async function updateProductCommerce(
     isReturnable: boolean;
     hsnCode: string | null;
     gstRate: number | null;
+    /** Missing keeps it as it is. */
+    giftOnly?: boolean;
   },
   actor: AuditActor,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -337,17 +339,28 @@ export async function updateProductCommerce(
   await prisma.$transaction(async (tx) => {
     const before = await tx.product.findUniqueOrThrow({
       where: { id: productId },
-      select: { isReturnable: true, hsnCode: true, gstRate: true },
+      select: {
+        isReturnable: true,
+        hsnCode: true,
+        gstRate: true,
+        giftOnly: true,
+      },
     });
     const after = await tx.product.update({
       where: { id: productId },
       data: {
+        ...(input.giftOnly === undefined ? {} : { giftOnly: input.giftOnly }),
         isReturnable: input.isReturnable,
         hsnCode: hsn,
         gstRate:
           input.gstRate === null ? null : new Prisma.Decimal(input.gstRate),
       },
-      select: { isReturnable: true, hsnCode: true, gstRate: true },
+      select: {
+        isReturnable: true,
+        hsnCode: true,
+        gstRate: true,
+        giftOnly: true,
+      },
     });
     await writeAuditLog(
       {

@@ -1,5 +1,5 @@
 import { prisma, type Prisma } from "@onwei/database";
-import { mapAttributes, mapVariant } from "../catalog/mapProduct";
+import { mapVariant } from "../catalog/mapProduct";
 import type { ProductVariantDTO } from "../catalog/types";
 import { toMinorUnits } from "../catalog/helpers";
 import { normalizeCode, isInsiderCodeFormat } from "../insiders/insiderCode";
@@ -17,6 +17,11 @@ import {
   type InsiderStatus,
 } from "./customerIdentity";
 import { getStoreSettings, type StoreSettings } from "./storeSettings";
+import { getStorefront } from "../preorders/storefront";
+import {
+  getInsiderStackMode,
+  type InsiderStackMode,
+} from "../insiders/insiderTiers";
 
 /** Who the cart belongs to: a signed-in customer, or a guest cookie. */
 export interface CartOwner {
@@ -49,9 +54,8 @@ const cartInclude = {
 type CartWithItems = Prisma.CartGetPayload<{ include: typeof cartInclude }>;
 type CartItemRow = CartWithItems["items"][number];
 
-export function variantLabelOf(attributes: unknown): string {
-  return Object.values(mapAttributes(attributes)).join(" / ");
-}
+export { variantLabelOf } from "./variantLabel";
+import { variantLabelOf } from "./variantLabel";
 
 function available(item: CartItemRow["productVariant"]): number {
   return item.inventory.reduce(
@@ -64,8 +68,33 @@ function sellable(variant: CartItemRow["productVariant"]): boolean {
   return (
     variant.status === "ACTIVE" &&
     variant.product.status === "ACTIVE" &&
-    variant.product.deletedAt === null
+    variant.product.deletedAt === null &&
+    !variant.product.giftOnly
   );
+}
+
+/**
+ * In pre-order mode only pre-order products can be bought, through the
+ * pre-order checkout. The normal cart opens when the site goes live.
+ */
+export async function shopIsPreorderOnly(): Promise<boolean> {
+  return (await getStorefront()).preorderMode;
+}
+
+/**
+ * Empties every bag (signed-in and guest). Run when the site switches to
+ * pre-order mode, so nobody carries normal-shop items into pre-orders.
+ * Codes typed into a bag go too. Returns how many lines were removed.
+ */
+export async function emptyAllCarts(
+  tx: Prisma.TransactionClient = prisma,
+): Promise<number> {
+  const removed = await tx.cartItem.deleteMany({});
+  await tx.cart.updateMany({
+    where: { NOT: { couponCodes: { isEmpty: true } } },
+    data: { couponCodes: [] },
+  });
+  return removed.count;
 }
 
 function leadImage(variant: CartItemRow["productVariant"]): string | null {
@@ -117,7 +146,8 @@ export type CartActionResult =
   | { ok: true; quantity?: number; limited?: boolean }
   | {
       ok: false;
-      reason: "NOT_AVAILABLE" | "OUT_OF_STOCK" | "INVALID_QUANTITY";
+      reason:
+        "NOT_AVAILABLE" | "OUT_OF_STOCK" | "INVALID_QUANTITY" | "PREORDER_ONLY";
     };
 
 /** Adds to a line (or creates it), capped by stock and the per-line limit. */
@@ -129,6 +159,7 @@ export async function addToCart(
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_PER_LINE) {
     return { ok: false, reason: "INVALID_QUANTITY" };
   }
+  if (await shopIsPreorderOnly()) return { ok: false, reason: "PREORDER_ONLY" };
   const variant = await prisma.productVariant.findUnique({
     where: { id: variantId },
     include: { inventory: true, product: true },
@@ -137,7 +168,8 @@ export async function addToCart(
     !variant ||
     variant.status !== "ACTIVE" ||
     variant.product.status !== "ACTIVE" ||
-    variant.product.deletedAt
+    variant.product.deletedAt ||
+    variant.product.giftOnly
   ) {
     return { ok: false, reason: "NOT_AVAILABLE" };
   }
@@ -180,6 +212,7 @@ export async function setCartQuantity(
     });
     return { ok: true, quantity: 0 };
   }
+  if (await shopIsPreorderOnly()) return { ok: false, reason: "PREORDER_ONLY" };
   const item = cart.items.find((row) => row.productVariantId === variantId);
   if (!item) return addToCart(owner, variantId, quantity);
   const stock = available(item.productVariant);
@@ -318,23 +351,30 @@ export interface CartView {
   signedIn: boolean;
   /** Nothing in the cart stops checkout. */
   canCheckout: boolean;
+  /**
+   * The site is in pre-order mode: the bag is kept for launch but can't be
+   * checked out; pre-order items are reserved one by one instead.
+   */
+  preorderOnly: boolean;
 }
 
 export interface CartContext {
   identity: CustomerIdentity | null;
   insider: InsiderStatus | null;
   settings: StoreSettings;
+  insiderMode: InsiderStackMode;
 }
 
 export async function loadCartContext(owner: CartOwner): Promise<CartContext> {
-  const [identity, settings] = await Promise.all([
+  const [identity, settings, insiderMode] = await Promise.all([
     owner.customerId
       ? getCustomerIdentity(owner.customerId)
       : Promise.resolve(null),
     getStoreSettings(),
+    getInsiderStackMode(),
   ]);
   const insider = identity ? await getInsiderStatus(identity) : null;
-  return { identity, insider, settings };
+  return { identity, insider, settings, insiderMode };
 }
 
 /**
@@ -349,11 +389,14 @@ export async function getCartView(
     context?: CartContext;
   } = {},
 ): Promise<CartView> {
-  const [context, cart] = await Promise.all([
+  const [context, cart, preorderOnly] = await Promise.all([
     options.context ? Promise.resolve(options.context) : loadCartContext(owner),
     findCart(owner),
+    shopIsPreorderOnly(),
   ]);
-  const items = cart?.items ?? [];
+  // In pre-order mode the bag is closed: anything left from before shows
+  // nothing (bags are emptied when the mode is switched on).
+  const items = preorderOnly ? [] : (cart?.items ?? []);
 
   const lines: CartLineView[] = [];
   for (const item of items) {
@@ -421,6 +464,8 @@ export async function getCartView(
       insiderOn && context.insider
         ? { percent: context.insider.percent }
         : null,
+    insiderMode: context.insiderMode,
+    orderKind: "STANDARD",
     coupons: resolved.coupons,
     paymentMethod: options.paymentMethod ?? null,
     shipping: {
@@ -491,7 +536,10 @@ export async function getCartView(
       : null,
     signedIn: Boolean(context.identity),
     canCheckout:
-      priceable.length > 0 && lines.every((line) => line.issue === null),
+      !preorderOnly &&
+      priceable.length > 0 &&
+      lines.every((line) => line.issue === null),
+    preorderOnly,
   };
 }
 
@@ -601,8 +649,14 @@ export async function quickAddProduct(
   owner: CartOwner,
   productId: string,
 ): Promise<CartActionResult | QuickAddChoice> {
+  if (await shopIsPreorderOnly()) return { ok: false, reason: "PREORDER_ONLY" };
   const product = await prisma.product.findFirst({
-    where: { id: productId, status: "ACTIVE", deletedAt: null },
+    where: {
+      id: productId,
+      status: "ACTIVE",
+      deletedAt: null,
+      giftOnly: false,
+    },
     include: {
       variants: { where: { status: "ACTIVE" }, include: { inventory: true } },
     },

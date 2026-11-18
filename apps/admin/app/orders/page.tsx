@@ -23,10 +23,12 @@ const STATUS_OPTIONS = Object.keys(ORDER_STATUS_LABELS) as OrderStatus[];
 export default async function OrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; page?: string }>;
+  searchParams: Promise<{ status?: string; page?: string; kind?: string }>;
 }) {
   await requirePageSession("order:view");
-  const { status, page: pageParam } = await searchParams;
+  const { status, page: pageParam, kind } = await searchParams;
+  const kindFilter =
+    kind === "PREORDER" || kind === "STANDARD" ? kind : undefined;
   const page = parsePage(pageParam);
   const statusFilter = STATUS_OPTIONS.includes(status as OrderStatus)
     ? (status as OrderStatus)
@@ -36,6 +38,7 @@ export default async function OrdersPage({
     where: {
       deletedAt: null,
       ...(statusFilter ? { status: statusFilter } : {}),
+      ...(kindFilter ? { kind: kindFilter } : {}),
     },
     include: { customer: true },
     orderBy: [{ placedAt: "desc" }, { id: "desc" }],
@@ -51,6 +54,11 @@ export default async function OrdersPage({
         actions={
           <>
             <form className="flex items-center gap-2">
+              <AdminSelect name="kind" defaultValue={kindFilter ?? ""}>
+                <option value="">All orders</option>
+                <option value="STANDARD">Normal orders</option>
+                <option value="PREORDER">Pre-orders</option>
+              </AdminSelect>
               <AdminSelect name="status" defaultValue={statusFilter ?? ""}>
                 <option value="">All statuses</option>
                 {STATUS_OPTIONS.map((option) => (
@@ -92,6 +100,14 @@ export default async function OrdersPage({
                   >
                     {order.orderNumber}
                   </Link>
+                  {order.kind === "PREORDER" ? (
+                    <span className="block text-xs text-onwei-blue/60">
+                      Pre-order
+                      {order.preorderTierLabel
+                        ? `, ${order.preorderTierLabel}`
+                        : ""}
+                    </span>
+                  ) : null}
                 </AdminTableCell>
                 <AdminTableCell>
                   {order.customer.name ??
@@ -121,7 +137,7 @@ export default async function OrdersPage({
         pathname="/orders"
         page={page}
         hasNext={hasNext}
-        params={{ status: statusFilter }}
+        params={{ status: statusFilter, kind: kindFilter }}
       />
     </main>
   );

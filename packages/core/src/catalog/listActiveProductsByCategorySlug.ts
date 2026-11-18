@@ -1,5 +1,6 @@
 import { prisma } from "@onwei/database";
 import { mapToListItem } from "./mapProduct";
+import { storefrontProductWhere } from "../preorders/storefront";
 import { sortProductList } from "./helpers";
 import type { ProductSort } from "./helpers";
 import type { CategorySummary, ProductListItem } from "./types";
@@ -20,7 +21,7 @@ export async function listActiveProductsByCategorySlug(
   if (!category) return null;
 
   const products = await prisma.product.findMany({
-    where: { categoryId: category.id, status: "ACTIVE", deletedAt: null },
+    where: { ...(await storefrontProductWhere()), categoryId: category.id },
     orderBy: { createdAt: "desc" },
     include: {
       images: { orderBy: { sortOrder: "asc" } },

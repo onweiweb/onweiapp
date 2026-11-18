@@ -11,7 +11,7 @@ export async function getActiveProductBySlug(
   slug: string,
 ): Promise<ProductDetail | null> {
   const product = await prisma.product.findFirst({
-    where: { slug, status: "ACTIVE", deletedAt: null },
+    where: { slug, status: "ACTIVE", deletedAt: null, giftOnly: false },
     include: {
       category: true,
       images: { orderBy: { sortOrder: "asc" } },

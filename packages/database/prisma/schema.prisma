@@ -215,6 +215,9 @@ model Product {
   // must be true). Prices are GST inclusive; gstRate (percent, e.g. 5 or 18)
   // is used to work out the tax part of each order line for invoices.
   isReturnable Boolean  @default(true)
+  // Gift only: kept in stock and given away free (pre-order mystery boxes,
+  // the Insider gift, free item coupons), never shown or sold on the site.
+  giftOnly     Boolean  @default(false)
   hsnCode      String?
   gstRate      Decimal? @db.Decimal(5, 2)
 
@@ -418,6 +421,23 @@ model Order {
   // Set when something needs a person (e.g. paid after the hold expired).
   needsAttention          String?
 
+  // Pre-orders (docs/COMMERCE_BUILD_PLAN.md section 14a). A pre-order is
+  // RESERVED once the reserve is paid and CONFIRMED once the balance is paid.
+  // `total` is the full price; reserveTotal is paid first, balanceDue later.
+  kind                   OrderKind         @default(STANDARD)
+  preorderCampaignId     String?
+  preorderCampaign       PreorderCampaign? @relation(fields: [preorderCampaignId], references: [id])
+  preorderTierLabel      String?
+  reserveTotal           Decimal?          @db.Decimal(10, 2)
+  balanceDue             Decimal?          @db.Decimal(10, 2)
+  balanceRazorpayOrderId String?           @unique
+  balanceRequestedAt     DateTime?
+  balanceRemindedAt      DateTime?
+  balanceReminderCount   Int               @default(0)
+  balancePaidAt          DateTime?
+  // Personal coupon made from the reserve when a pre-order is cancelled.
+  creditCouponId         String?
+
   items             OrderItem[]
   statusHistory     OrderStatusHistory[]
   payments          Payment[]
@@ -428,6 +448,12 @@ model Order {
 
   @@index([customerId])
   @@index([status, reservationExpiresAt])
+  @@index([kind, status])
+}
+
+enum OrderKind {
+  STANDARD
+  PREORDER
 }
 
 enum PaymentMethod {
@@ -453,6 +479,7 @@ model OrderDiscount {
 enum OrderDiscountKind {
   INSIDER
   COUPON
+  PREORDER
 }
 
 model Refund {
@@ -486,6 +513,8 @@ enum RefundStatus {
 
 enum OrderStatus {
   PENDING
+  // Pre-order: the reserve is paid, waiting for stock and the balance.
+  RESERVED
   CONFIRMED
   PACKED
   SHIPPED
@@ -520,6 +549,10 @@ model OrderItem {
   wasOnSale        Boolean        @default(false)
   // Where the stock for this line is held or was taken from.
   warehouseId      String?
+  // A free line (mystery box, Insider gift, free item coupon), priced at 0.
+  // freeReason says why, e.g. "Tier 1 mystery box".
+  isFree           Boolean        @default(false)
+  freeReason       String?
 
   returnRequests ReturnRequest[]
 
@@ -621,25 +654,40 @@ model Coupon {
   minOrderValue    Decimal?  @db.Decimal(10, 2)
 
   // Coupon builder (docs/COMMERCE_BUILD_PLAN.md, section 5).
-  maxDiscount           Decimal?       @db.Decimal(10, 2)
-  scope                 CouponScope    @default(CART)
-  categoryIds           String[]       @default([])
-  productIds            String[]       @default([])
-  excludeSaleItems      Boolean        @default(false)
-  audience              CouponAudience @default(EVERYONE)
+  maxDiscount           Decimal?        @db.Decimal(10, 2)
+  scope                 CouponScope     @default(CART)
+  categoryIds           String[]        @default([])
+  productIds            String[]        @default([])
+  excludeSaleItems      Boolean         @default(false)
+  audience              CouponAudience  @default(EVERYONE)
   // Normalized emails and +91 phone numbers, for audience SPECIFIC.
-  allowedContacts       String[]       @default([])
+  allowedContacts       String[]        @default([])
   minItems              Int?
-  autoApply             Boolean        @default(false)
-  combinableWithCoupons Boolean        @default(false)
-  combinableWithInsider Boolean        @default(false)
-  prepaidOnly           Boolean        @default(false)
-  priority              Int            @default(0)
-  createdAt             DateTime       @default(now())
-  updatedAt             DateTime       @default(now()) @updatedAt
+  autoApply             Boolean         @default(false)
+  combinableWithCoupons Boolean         @default(false)
+  combinableWithInsider Boolean         @default(false)
+  prepaidOnly           Boolean         @default(false)
+  priority              Int             @default(0)
+  // Which orders it works on: normal orders, pre-orders or both.
+  appliesTo             CouponOrderKind @default(ORDERS)
+  // CREDIT: a personal coupon made from a cancelled pre-order's reserve.
+  kind                  CouponKind      @default(STANDARD)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @default(now()) @updatedAt
 
   rules       DiscountRule[]
   redemptions CouponRedemption[]
+}
+
+enum CouponOrderKind {
+  ORDERS
+  PREORDERS
+  BOTH
+}
+
+enum CouponKind {
+  STANDARD
+  CREDIT
 }
 
 enum CouponScope {
@@ -673,6 +721,8 @@ enum DiscountType {
   BUY_X_GET_Y
   TIERED
   FREE_SHIPPING
+  // Gives a product size and colour free. config { variantId, quantity }.
+  FREE_ITEM
 }
 
 model CouponRedemption {
@@ -1053,10 +1103,54 @@ model InsiderCode {
 // is read when a discount is applied, never copied onto codes, so editing
 // it changes every Insider not covered by a tier.
 model InsiderSetting {
-  id               String   @id @default("singleton")
-  defaultPercent   Int      @default(5)
-  updatedAt        DateTime @updatedAt
+  id               String           @id @default("singleton")
+  defaultPercent   Int              @default(5)
+  // How the Insider discount works with coupons and the pre-order discount:
+  // ADD (percentages add up on the price) or BEST (the bigger one only).
+  stackMode        InsiderStackMode @default(ADD)
+  updatedAt        DateTime         @updatedAt
   updatedByStaffId String?
+}
+
+enum InsiderStackMode {
+  ADD
+  BEST
+}
+
+// The pre-order campaign (docs/COMMERCE_BUILD_PLAN.md section 14a). Tiers
+// run one after another from startsAt, each for its number of days. Settings
+// data; orders keep their own copy of the tier, discount and gifts.
+model PreorderCampaign {
+  id                   String    @id @default(cuid())
+  name                 String
+  isActive             Boolean   @default(false)
+  startsAt             DateTime
+  // Paid now per item, rupees. The rest is paid when stock is ready.
+  reserveAmount        Decimal   @default(900) @db.Decimal(10, 2)
+  expectedShipDate     DateTime?
+  productIds           String[]  @default([])
+  // Free for Insiders on every pre-order: a gift-only product variant.
+  insiderGiftVariantId String?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  tiers  PreorderTier[]
+  orders Order[]
+}
+
+model PreorderTier {
+  id            String           @id @default(cuid())
+  campaignId    String
+  campaign      PreorderCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  position      Int
+  label         String
+  days          Int
+  percent       Int
+  // The mystery box for this tier: a gift-only product variant.
+  giftVariantId String?
+  giftLabel     String?
+
+  @@unique([campaignId, position])
 }
 
 // "Signed up between startsAt and endsAt gets percent". endsAt is
@@ -1244,6 +1338,10 @@ enum WhatsAppPurpose {
   INSIDER_CODE
   // Sent by staff from Insiders > WhatsApp, with any approved template.
   CAMPAIGN
+  // Pre-orders: reserve paid, balance due (and reminders), reserve kept as credit.
+  PREORDER_RESERVED
+  PREORDER_BALANCE
+  PREORDER_CREDIT
 }
 
 enum WhatsAppHeader {

@@ -2,6 +2,9 @@ import Image from "@/_components/ScaledImage";
 import Link from "next/link";
 import { MobileNav } from "./MobileNav";
 import { CartButton } from "./commerce/CartButton";
+import { PreorderBanner } from "./preorder/PreorderBanner";
+import { cachedListHiddenCategorySlugs } from "../../lib/cachedCatalog";
+import { showsCategoryLink } from "../../lib/hiddenCategories";
 
 // Figma draws two desktop navs: the Homepage (758:2246) has five links with
 // "insiders" as a small tag over "find your wei", every inner page (Collection
@@ -40,13 +43,17 @@ export type SiteHeaderNav = keyof typeof NAV_LINKS;
 // inverted swaps blue and green throughout (used by the About page): blue
 // header zone, green announcement bar, green text and icons, with the
 // recolored copies of the header SVGs from images/header/inverted.
-export function SiteHeader({
+export async function SiteHeader({
   inverted = false,
   nav = "home",
 }: {
   inverted?: boolean;
   nav?: SiteHeaderNav;
 }) {
+  const hiddenSlugs = await cachedListHiddenCategorySlugs();
+  const links = NAV_LINKS[nav].filter((link) =>
+    showsCategoryLink(link.href, hiddenSlugs),
+  );
   const aboutVariant = nav === "about";
   const dir = inverted ? "/images/header/inverted" : "/images/header";
   const accent = inverted ? "text-onwei-green" : "text-onwei-blue";
@@ -100,7 +107,7 @@ export function SiteHeader({
             height={17}
             aria-hidden
           />
-          <MobileNav inverted={inverted} />
+          <MobileNav inverted={inverted} hiddenSlugs={hiddenSlugs} />
           <div className="flex items-center gap-2.5">
             <Link
               href="/account"
@@ -185,7 +192,7 @@ export function SiteHeader({
           )}
 
           <ul className="flex flex-wrap items-center justify-center gap-6 desk:gap-14">
-            {NAV_LINKS[nav].map((link) => (
+            {links.map((link) => (
               <li key={link.label} className="relative">
                 <Link
                   href={link.href}
@@ -234,6 +241,7 @@ export function SiteHeader({
           </div>
         </nav>
       </header>
+      <PreorderBanner />
     </>
   );
 }

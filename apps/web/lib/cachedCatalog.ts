@@ -10,6 +10,7 @@ import {
   listCategoryComparison,
   listComparableProducts,
   listFaqs,
+  listHiddenCategorySlugs,
   listInstagramPhotos,
   listMarqueeItems,
   listPublishedArticles,
@@ -132,5 +133,11 @@ export const cachedGetPublishedArticleBySlug = unstable_cache(
 export const cachedGetLegalPage = unstable_cache(
   getLegalPage,
   ["catalog:getLegalPage"],
+  { revalidate: REVALIDATE_SECONDS, tags: TAGS },
+);
+
+export const cachedListHiddenCategorySlugs = unstable_cache(
+  listHiddenCategorySlugs,
+  ["catalog:listHiddenCategorySlugs"],
   { revalidate: REVALIDATE_SECONDS, tags: TAGS },
 );

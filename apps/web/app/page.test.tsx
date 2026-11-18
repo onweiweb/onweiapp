@@ -8,6 +8,10 @@ import HomePage from "./page";
 vi.mock("@/_components/SiteFooter", () => ({
   SiteFooter: () => <footer />,
 }));
+// SiteHeader is async too (it reads which categories pre-order mode hides).
+vi.mock("@/_components/SiteHeader", () => ({
+  SiteHeader: () => <header />,
+}));
 
 // HomePage is an async Server Component that queries real catalog data via
 // @onwei/core, so this needs a real DATABASE_URL, same convention as the

@@ -1,3 +1,4 @@
+import { listGiftableItems } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { CouponBuilder, EMPTY_DRAFT } from "../../_components/CouponBuilder";
@@ -5,7 +6,7 @@ import { PageHeader } from "../../_components/ui";
 
 export default async function NewCouponPage() {
   await requirePageSession("coupon:create");
-  const [categories, products] = await Promise.all([
+  const [categories, products, freeItems] = await Promise.all([
     prisma.category.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
@@ -15,6 +16,7 @@ export default async function NewCouponPage() {
       orderBy: { name: "asc" },
       select: { id: true, name: true },
     }),
+    listGiftableItems(),
   ]);
   return (
     <main className="flex flex-col gap-6">
@@ -28,6 +30,7 @@ export default async function NewCouponPage() {
         locked={false}
         categories={categories}
         products={products}
+        freeItems={freeItems}
       />
     </main>
   );

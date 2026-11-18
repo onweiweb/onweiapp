@@ -71,6 +71,59 @@ export const WHATSAPP_PURPOSES: Record<TemplatePurpose, WhatsAppPurposeInfo> = {
     respectsOptOut: true,
     allowsImage: true,
   },
+  PREORDER_RESERVED: {
+    purpose: "PREORDER_RESERVED",
+    title: "Pre-order reserved",
+    whenSent: "Right after a customer pays the reserve for a pre-order.",
+    category: "Utility",
+    variables: [
+      { key: "firstName", label: "First name", sample: "Priya" },
+      { key: "orderNumber", label: "Order number", sample: "ONW1042" },
+      {
+        key: "product",
+        label: "What they reserved",
+        sample: "Onwei Paddle Pro x 1",
+      },
+      { key: "paidNow", label: "Amount paid now", sample: "₹900" },
+      { key: "balance", label: "Balance to pay later", sample: "₹2,500" },
+    ],
+    respectsOptOut: true,
+    allowsImage: true,
+  },
+  PREORDER_BALANCE: {
+    purpose: "PREORDER_BALANCE",
+    title: "Pre-order ready, pay the balance",
+    whenSent:
+      'When staff press "Stock is in" on the pre-order page, and as reminders after 3 and 7 days if it\'s still unpaid.',
+    category: "Utility",
+    variables: [
+      { key: "firstName", label: "First name", sample: "Priya" },
+      { key: "orderNumber", label: "Order number", sample: "ONW1042" },
+      { key: "balance", label: "Balance to pay", sample: "₹2,500" },
+      {
+        key: "orderPath",
+        label: "Order page (end of the button link)",
+        sample: "ONW1042",
+      },
+    ],
+    respectsOptOut: true,
+    allowsImage: true,
+  },
+  PREORDER_CREDIT: {
+    purpose: "PREORDER_CREDIT",
+    title: "Pre-order credit",
+    whenSent:
+      "When a pre-order is cancelled (by the customer, by staff, or because the balance wasn't paid in 14 days) and the reserve becomes credit.",
+    category: "Utility",
+    variables: [
+      { key: "firstName", label: "First name", sample: "Priya" },
+      { key: "amount", label: "Credit amount", sample: "₹900" },
+      { key: "creditCode", label: "Credit code", sample: "CR-7K2M9Q" },
+      { key: "validUntil", label: "Valid until", sample: "20 Nov 2027" },
+    ],
+    respectsOptOut: true,
+    allowsImage: false,
+  },
 };
 
 export const WHATSAPP_PURPOSE_LIST = Object.values(WHATSAPP_PURPOSES);

@@ -26,7 +26,13 @@ export async function updateOrderStatus(
       where: { id: input.orderId },
     });
 
-    if (!canTransition(before.status, input.toStatus)) {
+    // Pre-orders leave RESERVED only by paying the balance or through the
+    // pre-order cancel (credit or refund), never by a manual status change.
+    if (
+      before.status === "RESERVED" ||
+      input.toStatus === "RESERVED" ||
+      !canTransition(before.status, input.toStatus)
+    ) {
       throw new Error(
         `invalid-transition: can't move an order from ${before.status} to ${input.toStatus}`,
       );

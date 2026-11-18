@@ -38,6 +38,11 @@ const GIVE_OPTIONS: { type: GiveType; label: string; hint: string }[] = [
     label: "Free delivery",
     hint: "Removes the delivery fee",
   },
+  {
+    type: "FREE_ITEM",
+    label: "A free item",
+    hint: "Any item in stock, added at ₹0",
+  },
 ];
 
 function defaultGive(type: GiveType): Give {
@@ -58,6 +63,8 @@ function defaultGive(type: GiveType): Give {
       };
     case "FREE_SHIPPING":
       return { type };
+    case "FREE_ITEM":
+      return { type, variantId: "", quantity: 1 };
   }
 }
 
@@ -81,10 +88,18 @@ export const EMPTY_DRAFT: CouponDraft = {
   endsAt: null,
   autoApply: false,
   combinableWithCoupons: false,
-  combinableWithInsider: false,
   prepaidOnly: false,
   priority: 0,
+  appliesTo: "ORDERS",
 };
+
+/** A product size and colour that can be given free. */
+export interface FreeItemOption {
+  id: string;
+  name: string;
+  stock: number;
+  giftOnly: boolean;
+}
 
 const num = (v: string) => (v.trim() === "" ? null : Number(v));
 
@@ -240,6 +255,7 @@ export function CouponBuilder({
   uses,
   categories,
   products,
+  freeItems,
 }: {
   couponId?: string;
   initial: CouponDraft;
@@ -247,6 +263,7 @@ export function CouponBuilder({
   uses?: { confirmed: number; held: number };
   categories: { id: string; name: string }[];
   products: { id: string; name: string }[];
+  freeItems: FreeItemOption[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -607,6 +624,46 @@ export function CouponBuilder({
                 ) : null}
               </div>
             ) : null}
+            {give.type === "FREE_ITEM" ? (
+              <>
+                <Field
+                  label="Item to give"
+                  hint="Taken from stock when the order is paid. If it runs out, the order still goes through without it."
+                  error={errors.giveValue}
+                  className="min-w-72 flex-1"
+                >
+                  <select
+                    className="w-full rounded-2xl border border-onwei-blue/20 bg-onwei-white px-3 py-2 text-sm text-onwei-blue"
+                    disabled={locked}
+                    value={give.variantId}
+                    onChange={(e) =>
+                      set("give", { ...give, variantId: e.target.value })
+                    }
+                  >
+                    <option value="">Pick an item</option>
+                    {freeItems.map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.name}
+                        {item.giftOnly ? " (gift only)" : ""} · {item.stock} in
+                        stock
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+                <Field label="How many" className="w-32">
+                  <AdminInput
+                    type="number"
+                    min={1}
+                    max={5}
+                    disabled={locked}
+                    value={give.quantity}
+                    onChange={(e) =>
+                      set("give", { ...give, quantity: Number(e.target.value) })
+                    }
+                  />
+                </Field>
+              </>
+            ) : null}
             {showMax ? (
               <Field
                 label="Maximum discount per order (₹)"
@@ -626,7 +683,38 @@ export function CouponBuilder({
           </div>
         </Section>
 
-        <Section title="On what?">
+        <Section
+          title="Where this works"
+          hint="Which orders, and which items in them."
+        >
+          <p className="text-sm font-semibold text-onwei-blue">For</p>
+          <div className="grid gap-2 md:grid-cols-3">
+            <Radio
+              name="appliesTo"
+              value="ORDERS"
+              current={draft.appliesTo}
+              label="Normal orders"
+              disabled={locked}
+              onChange={(v) => set("appliesTo", v)}
+            />
+            <Radio
+              name="appliesTo"
+              value="PREORDERS"
+              current={draft.appliesTo}
+              label="Pre-orders"
+              disabled={locked}
+              onChange={(v) => set("appliesTo", v)}
+            />
+            <Radio
+              name="appliesTo"
+              value="BOTH"
+              current={draft.appliesTo}
+              label="Both"
+              disabled={locked}
+              onChange={(v) => set("appliesTo", v)}
+            />
+          </div>
+          <p className="text-sm font-semibold text-onwei-blue">On</p>
           <div className="grid gap-2 md:grid-cols-3">
             <Radio
               name="scope"
@@ -838,13 +926,10 @@ export function CouponBuilder({
             label="Can be used together with other coupons"
             hint="Both coupons have to allow it."
           />
-          <Check
-            checked={draft.combinableWithInsider}
-            disabled={locked}
-            onChange={(v) => set("combinableWithInsider", v)}
-            label="Can be used together with the Insider discount"
-            hint="If not, the customer gets whichever saves them more."
-          />
+          <p className="text-sm text-onwei-blue/70">
+            With the Insider discount: follows the setting on the Insider
+            discount tab (add on top, or bigger one wins).
+          </p>
           <Check
             checked={draft.prepaidOnly}
             disabled={locked}

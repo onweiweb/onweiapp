@@ -6,6 +6,7 @@ export const DISCOUNT_TYPE_LABELS: Record<DiscountType, string> = {
   BUY_X_GET_Y: "Buy X, get Y",
   TIERED: "Spend more, save more",
   FREE_SHIPPING: "Free delivery",
+  FREE_ITEM: "A free item",
 };
 
 export function describeDiscountRule(
@@ -23,5 +24,7 @@ export function describeDiscountRule(
       return "Spend more, save more";
     case "FREE_SHIPPING":
       return "Free delivery";
+    case "FREE_ITEM":
+      return `${config.quantity ?? 1} free item`;
   }
 }

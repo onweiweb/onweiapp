@@ -191,3 +191,52 @@ export function suggestTemplateValues(
   for (let i = 0; i < template.buttonValues; i++) values.push(buttonKey);
   return values;
 }
+
+/**
+ * Whether a Gupshup template can be used for a message, and if not, why.
+ * The admin picker lists only "OK" templates, and saving refuses the rest.
+ */
+export type TemplateFit =
+  | "OK"
+  | "NOT_APPROVED"
+  | "WRONG_CATEGORY"
+  | "UNSUPPORTED_HEADER"
+  | "IMAGE_NOT_ALLOWED";
+
+export function templateFitFor(
+  purpose: TemplatePurpose,
+  template: Pick<GupshupTemplateSummary, "status" | "category" | "header">,
+): TemplateFit {
+  if (template.status !== "APPROVED") return "NOT_APPROVED";
+  if (!categoryFits(purpose, template.category)) return "WRONG_CATEGORY";
+  if (template.header === "UNSUPPORTED") return "UNSUPPORTED_HEADER";
+  if (template.header === "IMAGE" && !WHATSAPP_PURPOSES[purpose].allowsImage) {
+    return "IMAGE_NOT_ALLOWED";
+  }
+  return "OK";
+}
+
+/** Plain words for staff when a template can't be used. */
+export function templateFitMessage(
+  purpose: TemplatePurpose,
+  template: Pick<
+    GupshupTemplateSummary,
+    "status" | "category" | "templateType"
+  >,
+  fit: Exclude<TemplateFit, "OK">,
+): string {
+  switch (fit) {
+    case "NOT_APPROVED":
+      return template.status === "PENDING"
+        ? "WhatsApp hasn't approved this template yet."
+        : `WhatsApp shows this template as ${template.status.toLowerCase()}.`;
+    case "WRONG_CATEGORY":
+      return WHATSAPP_PURPOSES[purpose].category === "Authentication"
+        ? `This template is ${template.category.toLowerCase()}. Sign-in codes need an authentication template.`
+        : `This template is ${template.category.toLowerCase()}. This message needs a utility or marketing template.`;
+    case "UNSUPPORTED_HEADER":
+      return `This template has a ${template.templateType.toLowerCase()} at the top, which Onwei can't send. Use one with an image, text or nothing.`;
+    case "IMAGE_NOT_ALLOWED":
+      return "This message can't have an image. Use a template without one.";
+  }
+}

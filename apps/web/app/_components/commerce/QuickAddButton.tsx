@@ -7,27 +7,50 @@ import { ProductVariantPicker } from "../ProductVariantPicker";
 import { VariantPrice } from "../VariantPrice";
 import { rupees } from "../../../lib/messages/commerce";
 import { useCart, type QuickChoice } from "./CartProvider";
+import {
+  buyModeFor,
+  reserveText,
+  usePreorderStatus,
+  waitingCopy,
+} from "../preorder/usePreorderStatus";
 
 // Product card "add to cart": adds straight away when there's one option,
 // otherwise opens a small picker over the page (same pills as the product
 // page) so the customer never has to leave to choose a size or colour.
 export function QuickAddButton({
   productId,
+  slug,
   inStock,
   className,
 }: {
   productId: string;
+  /** Product page, for "Reserve" while it's on pre-order. */
+  slug?: string;
   inStock: boolean;
   className: string;
 }) {
   const { quickAdd } = useCart();
   const [working, setWorking] = useState(false);
   const [choice, setChoice] = useState<QuickChoice | null>(null);
+  const preorder = usePreorderStatus();
+  const mode = buyModeFor(preorder, productId);
+  if (mode === "RESERVE" && slug && preorder) {
+    return (
+      <Link href={`/product/${slug}`} className={className}>
+        reserve for {reserveText(preorder.reserveAmount)}
+      </Link>
+    );
+  }
+  const waiting =
+    mode === "SOON" || mode === "CLOSED" || mode === "LAUNCH"
+      ? waitingCopy(mode, preorder?.opensAt ?? null)
+      : null;
   return (
     <>
       <button
         type="button"
-        disabled={!inStock || working}
+        disabled={!inStock || working || mode !== "SHOP"}
+        title={waiting?.note}
         onClick={async () => {
           setWorking(true);
           const next = await quickAdd(productId);
@@ -36,7 +59,13 @@ export function QuickAddButton({
         }}
         className={`${className} disabled:opacity-60`}
       >
-        {!inStock ? "sold out" : working ? "adding..." : "add to cart"}
+        {waiting
+          ? waiting.button
+          : !inStock
+            ? "sold out"
+            : working
+              ? "adding..."
+              : "add to cart"}
       </button>
       {choice ? (
         <QuickPicker choice={choice} onClose={() => setChoice(null)} />

@@ -20,7 +20,8 @@ const MODE_OPTIONS: Array<{
   {
     value: "PREORDERS",
     label: "Pre-orders open",
-    consequence: "Visitors can browse the store and place pre-orders.",
+    consequence:
+      "Only the pre-order campaign's products are shown, and they can only be reserved. Menus hide categories with nothing on pre-order. Every shopping bag is emptied when you switch this on. Needs a pre-order campaign that is switched on and not over yet.",
   },
   {
     value: "LIVE",

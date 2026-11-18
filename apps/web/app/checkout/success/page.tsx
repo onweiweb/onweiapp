@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAccountSummary } from "@onwei/core";
+import { rupees } from "../../../lib/messages/commerce";
 import { CheckoutShell, HelpCard } from "../_components/CheckoutShell";
 import { loadResultOrder } from "../_components/loadOrder";
 import {
@@ -31,6 +32,7 @@ export default async function CheckoutSuccessPage({
     order.address?.fullName.split(/\s+/)[0] ??
     null;
   const confirming = order.status === "PENDING";
+  const reserved = order.status === "RESERVED" && order.preorder !== null;
 
   return (
     <CheckoutShell>
@@ -38,7 +40,7 @@ export default async function CheckoutSuccessPage({
         <div className="flex flex-col gap-6">
           <ResultIcon tone="ok" />
           <ResultTag
-            label={`Order #${order.orderNumber} · ${confirming ? "Confirming" : "Confirmed"}`}
+            label={`Order #${order.orderNumber} · ${confirming ? "Confirming" : reserved ? "Reserved" : "Confirmed"}`}
             note="Good move!"
           />
           <h1 className="font-display text-[length:max(3rem,34px)] font-bold uppercase leading-[0.95]">
@@ -50,7 +52,7 @@ export default async function CheckoutSuccessPage({
             {confirming ? null : (
               <>
                 <br />
-                You&apos;re all set.
+                {reserved ? "It's reserved." : "You're all set."}
               </>
             )}
           </h1>
@@ -64,6 +66,19 @@ export default async function CheckoutSuccessPage({
                 refund.
               </p>
             </>
+          ) : reserved && order.preorder ? (
+            <p className="font-grotesk text-[length:max(0.9375rem,13px)] leading-[1.6]">
+              You paid {rupees(order.preorder.reserveTotal)} and your
+              {order.preorder.tierLabel
+                ? ` ${order.preorder.tierLabel}`
+                : ""}{" "}
+              price is locked in.{" "}
+              {order.contactEmail
+                ? `We've sent the details to ${order.contactEmail}. `
+                : ""}
+              When it&apos;s ready to ship we&apos;ll message you a link to pay
+              the remaining {rupees(order.preorder.balanceDue)}.
+            </p>
           ) : (
             <p className="font-grotesk text-[length:max(0.9375rem,13px)] leading-[1.6]">
               {order.contactEmail
@@ -73,7 +88,7 @@ export default async function CheckoutSuccessPage({
               details as soon as it ships.
             </p>
           )}
-          <OrderProgress status={order.status} />
+          {reserved ? null : <OrderProgress status={order.status} />}
           <OrderDetailsCard order={order} />
           <div className="flex flex-wrap gap-3">
             <Link
@@ -102,12 +117,16 @@ export default async function CheckoutSuccessPage({
                 ? "Cash on delivery"
                 : confirming
                   ? "Confirming"
-                  : "Paid"
+                  : reserved
+                    ? "Reserve paid"
+                    : "Paid"
             }
             totalLabel={
               order.paymentMethod === "COD"
                 ? "To pay on delivery"
-                : "Total paid"
+                : reserved
+                  ? "Total (reserve paid)"
+                  : "Total paid"
             }
           />
         </div>

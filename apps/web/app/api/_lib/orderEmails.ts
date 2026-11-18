@@ -1,4 +1,8 @@
-import { getOrderDetailById } from "@onwei/core";
+import {
+  getOrderDetailById,
+  notifyPreorder,
+  type PreorderEvent,
+} from "@onwei/core";
 import {
   renderNewOrderAlertEmail,
   renderOrderConfirmationEmail,
@@ -52,6 +56,22 @@ export function sendOrderEmailsInBackground(orderId: string): void {
       console.error("[email] order email failed", error);
     }
   };
+  try {
+    after(task);
+  } catch {
+    void task();
+  }
+}
+
+/** Pre-order messages (reserved, balance, credit), after the response. */
+export function sendPreorderMessageInBackground(
+  orderId: string,
+  event: PreorderEvent,
+): void {
+  const task = () =>
+    notifyPreorder(orderId, event, {
+      siteUrl: process.env.NEXT_PUBLIC_SITE_URL,
+    });
   try {
     after(task);
   } catch {

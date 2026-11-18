@@ -7,6 +7,8 @@ import {
   getWhatsAppStats,
   listWhatsAppTemplates,
   missingGupshupSettings,
+  templateFitFor,
+  templateFitMessage,
   type WhatsAppTemplateView,
 } from "@onwei/core";
 import { hasPermission } from "@onwei/auth";
@@ -31,21 +33,25 @@ import { requirePageSession } from "../_lib/requirePageSession";
 import { PAGE_SIZE, parsePage } from "../_lib/pagination";
 import { MESSAGE_WHEN as WHEN, after } from "../_lib/messageTiming";
 import type { WhatsAppPurpose, WhatsAppStatus } from "@onwei/database";
-import { WhatsAppRowActions } from "./_components";
+import { WhatsAppRowActions, WhatsAppSwitch } from "./_components";
 import { cachedGupshupTemplates } from "./_gupshup";
 
-/** What Gupshup says about a saved template's approval at Meta. */
-function approvalOf(
-  templateId: string,
+/**
+ * Why the saved template can't be used now, by Gupshup's current list, or
+ * null when it can (or when Gupshup couldn't be asked).
+ */
+function problemOf(
+  template: WhatsAppTemplateView,
   list: Awaited<ReturnType<typeof cachedGupshupTemplates>>,
 ): string | null {
-  if (!templateId) return null;
-  if (!list.ok) return "Approval: couldn't check Gupshup";
-  const found = list.templates.find((t) => t.id === templateId);
-  if (!found) return "Approval: not found in Gupshup";
-  if (found.status === "APPROVED") return "Approved by WhatsApp";
-  if (found.status === "PENDING") return "Waiting for WhatsApp approval";
-  return `WhatsApp: ${found.status.toLowerCase()}${found.reason ? ` (${found.reason})` : ""}`;
+  if (!template.gupshupTemplateId || !list.ok) return null;
+  const found = list.templates.find((t) => t.id === template.gupshupTemplateId);
+  if (!found) return "This template isn't in Gupshup any more.";
+  const fit = templateFitFor(template.purpose, found);
+  if (fit === "OK") return null;
+  const reason =
+    fit === "NOT_APPROVED" && found.reason ? ` (${found.reason})` : "";
+  return `${templateFitMessage(template.purpose, found, fit)}${reason}`;
 }
 
 const STATS_DAYS = 7;
@@ -55,18 +61,27 @@ function cleanReason(reason: string): string {
   return reason.replace(/^null,\s*/i, "");
 }
 
-function statusOf(template: WhatsAppTemplateView): {
-  label: string;
-  tone: StatusTone;
-} {
-  const needsImage =
-    template.headerType === "IMAGE" && !template.headerImageUrl;
-  if (!template.gupshupTemplateId || needsImage) {
-    return { label: "Needs setup", tone: "problem" };
+function statusOf(
+  template: WhatsAppTemplateView,
+  problem: string | null,
+): { label: string; tone: StatusTone } {
+  if (!template.gupshupTemplateId) {
+    return { label: "Not set up", tone: "pending" };
+  }
+  if (problem) {
+    return {
+      label: template.isActive
+        ? "On, but template no longer approved"
+        : "Template no longer approved",
+      tone: "problem",
+    };
+  }
+  if (template.headerType === "IMAGE" && !template.headerImageUrl) {
+    return { label: "Needs an image", tone: "problem" };
   }
   return template.isActive
-    ? { label: "On", tone: "success" }
-    : { label: "Off", tone: "pending" };
+    ? { label: "Sending", tone: "success" }
+    : { label: "Ready, switched off", tone: "active" };
 }
 
 const TABS = [
@@ -125,7 +140,7 @@ export default async function WhatsAppPage({
     <main className="flex flex-col gap-6">
       <PageHeader
         title="WhatsApp"
-        description="Messages Onwei sends on WhatsApp through Gupshup. For each one, pick its template from Gupshup, send a test, then switch it on once WhatsApp has approved it."
+        description="Messages Onwei sends on WhatsApp through Gupshup. For each one: choose an approved template, send yourself a test, then switch it on."
       />
       <AdminTabLinks basePath="/whatsapp" tabs={TABS} active={tab} />
 
@@ -137,6 +152,11 @@ export default async function WhatsAppPage({
         )}
         {missing.length > 0 ? (
           <span>Missing settings: {missing.join(", ")}.</span>
+        ) : null}
+        {missing.length === 0 && !gupshupList.ok ? (
+          <span>
+            Couldn&apos;t check template approvals with Gupshup just now.
+          </span>
         ) : null}
         <span>Delivery updates: {webhookReady ? "on" : "not set up"}</span>
         <span>
@@ -158,7 +178,8 @@ export default async function WhatsAppPage({
           {WHATSAPP_PURPOSE_LIST.map((info) => {
             const template = templates.find((t) => t.purpose === info.purpose)!;
             const stat = stats.find((s) => s.purpose === info.purpose)!;
-            const status = statusOf(template);
+            const problem = problemOf(template, gupshupList);
+            const status = statusOf(template, problem);
             const delivered = stat.byStatus.DELIVERED + stat.byStatus.READ;
             return (
               <AdminTableRow key={info.purpose}>
@@ -171,10 +192,17 @@ export default async function WhatsAppPage({
                 </AdminTableCell>
                 <AdminTableCell>
                   <AdminBadge tone={status.tone}>{status.label}</AdminBadge>
-                  {approvalOf(template.gupshupTemplateId, gupshupList) ? (
-                    <p className="mt-1 text-xs text-onwei-blue/60">
-                      {approvalOf(template.gupshupTemplateId, gupshupList)}
+                  {problem ? (
+                    <p className="mt-1 max-w-xs whitespace-normal text-xs text-onwei-blue/70">
+                      {problem}
                     </p>
+                  ) : null}
+                  {canManage ? (
+                    <WhatsAppSwitch
+                      info={info}
+                      template={template}
+                      problem={problem}
+                    />
                   ) : null}
                 </AdminTableCell>
                 <AdminTableCell>
@@ -199,6 +227,7 @@ export default async function WhatsAppPage({
                   <WhatsAppRowActions
                     info={info}
                     template={template}
+                    problem={problem}
                     canManage={canManage}
                   />
                 </AdminTableCell>

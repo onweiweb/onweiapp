@@ -1,5 +1,6 @@
 "use client";
 
+import { showsCategoryLink } from "../../lib/hiddenCategories";
 import { useEffect, useRef, useState } from "react";
 import Image from "@/_components/ScaledImage";
 import Link from "next/link";
@@ -18,7 +19,17 @@ const NAV_LINKS = [
   { label: "insiders", href: "/insiders" },
 ] as const;
 
-export function MobileNav({ inverted = false }: { inverted?: boolean }) {
+export function MobileNav({
+  inverted = false,
+  hiddenSlugs = [],
+}: {
+  inverted?: boolean;
+  /** Categories hidden in pre-order mode (see lib/hiddenCategories). */
+  hiddenSlugs?: readonly string[];
+}) {
+  const links = NAV_LINKS.filter((link) =>
+    showsCategoryLink(link.href, hiddenSlugs),
+  );
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -87,7 +98,7 @@ export function MobileNav({ inverted = false }: { inverted?: boolean }) {
           className={`absolute top-[calc(100%+0.75rem)] z-20 flex w-[15rem] flex-col items-center gap-4 rounded-[1.25rem] px-6 py-6 shadow-lg ${inverted ? "bg-onwei-green" : "bg-onwei-blue"}`}
         >
           <ul className="flex flex-col items-center gap-1">
-            {NAV_LINKS.map((link) => (
+            {links.map((link) => (
               <li key={link.label} role="none">
                 <Link
                   role="menuitem"

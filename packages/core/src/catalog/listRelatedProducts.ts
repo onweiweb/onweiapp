@@ -1,5 +1,6 @@
 import { prisma } from "@onwei/database";
 import { mapToListItem } from "./mapProduct";
+import { storefrontProductWhere } from "../preorders/storefront";
 import type { ProductListItem } from "./types";
 
 /**
@@ -20,10 +21,10 @@ export async function listRelatedProducts(
 
   const related = await prisma.product.findMany({
     where: {
-      categoryId: product.categoryId,
-      id: { not: productId },
-      status: "ACTIVE",
-      deletedAt: null,
+      AND: [
+        await storefrontProductWhere(),
+        { categoryId: product.categoryId, id: { not: productId } },
+      ],
     },
     orderBy: { createdAt: "asc" },
     take: limit,

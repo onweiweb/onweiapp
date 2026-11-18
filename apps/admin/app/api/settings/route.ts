@@ -1,4 +1,10 @@
-import { isValidEmail, updateSiteSetting, youtubeVideoId } from "@onwei/core";
+import {
+  canStartPreorderMode,
+  getSiteSetting,
+  isValidEmail,
+  updateSiteSetting,
+  youtubeVideoId,
+} from "@onwei/core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { defineAdminRoute } from "../_lib/defineAdminRoute";
@@ -84,6 +90,18 @@ export const PATCH = defineAdminRoute(
     emptyBodyMessage: "Nothing to update.",
   },
   async ({ staff, body }) => {
+    if (body.siteMode === "PREORDERS") {
+      const current = await getSiteSetting();
+      if (current.siteMode !== "PREORDERS" && !(await canStartPreorderMode()))
+        return NextResponse.json(
+          {
+            ok: false,
+            error:
+              "Set up a pre-order campaign first (Coupons and discounts, Pre-order tab), switched on and not yet over. Then turn on pre-orders.",
+          },
+          { status: 400 },
+        );
+    }
     const setting = await updateSiteSetting(body, {
       staffUserId: staff.staffUserId,
     });

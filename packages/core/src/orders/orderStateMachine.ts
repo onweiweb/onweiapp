@@ -5,7 +5,10 @@ import type { OrderStatus } from "@onwei/database";
  * Terminal states (REFUNDED) have no outgoing transitions.
  */
 const ALLOWED_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
-  PENDING: ["CONFIRMED", "CANCELLED"],
+  // A pre-order goes PENDING to RESERVED (reserve paid), then CONFIRMED
+  // once the balance is paid.
+  PENDING: ["CONFIRMED", "RESERVED", "CANCELLED"],
+  RESERVED: ["CONFIRMED", "CANCELLED"],
   CONFIRMED: ["PACKED", "CANCELLED"],
   PACKED: ["SHIPPED", "CANCELLED"],
   SHIPPED: ["OUT_FOR_DELIVERY"],

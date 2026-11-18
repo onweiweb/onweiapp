@@ -17,6 +17,8 @@ export function rupees(paise: number): string {
 export const CART_ERRORS: Record<string, string> = {
   NOT_AVAILABLE: "This item isn't available right now.",
   OUT_OF_STOCK: "That's sold out for now.",
+  PREORDER_ONLY:
+    "We're only taking pre-orders right now. The bag opens at launch.",
   INVALID_QUANTITY: "Pick a quantity from 1 to 10.",
   NETWORK: "We couldn't update your bag. Check your connection and try again.",
 };
@@ -56,6 +58,10 @@ export function codeMessage(input: {
       return input.blockedBy
         ? `This code can't be used with ${input.blockedBy}. We've kept the one that saves you more.`
         : "This code can't be combined with another offer.";
+    case "NOT_FOR_PREORDERS":
+      return "This code works on normal orders, not pre-orders.";
+    case "PREORDERS_ONLY":
+      return "This code only works on pre-orders.";
     case "BETTER_OFFER":
       return "Another offer in your bag saves you more, so we used that one.";
     case "RATE_LIMITED":
@@ -87,6 +93,8 @@ export const SIGN_IN_ERRORS: Record<string, string> = {
 
 export const CHECKOUT_ERRORS: Record<string, string> = {
   NOT_SIGNED_IN: "Sign in to place your order.",
+  PREORDER_ONLY:
+    "We're taking pre-orders right now, so the bag opens at launch. Reserve pre-order items from their product page.",
   EMPTY_CART: "Your bag is empty.",
   CART_NEEDS_ATTENTION:
     "Something in your bag needs a look before you pay. Check the items marked below.",
@@ -118,6 +126,7 @@ export const ADDRESS_FIELD_ERRORS: Record<string, string> = {
 
 export const ORDER_STATUS_LABELS: Record<string, string> = {
   PENDING: "Waiting for payment",
+  RESERVED: "Reserved",
   CONFIRMED: "Confirmed",
   PACKED: "Packing",
   SHIPPED: "Shipped",
@@ -184,3 +193,21 @@ export function paymentFailureMessage(code: string | undefined): string | null {
   }
   return null;
 }
+
+export const PREORDER_ERRORS: Record<string, string> = {
+  NOT_SIGNED_IN: "Sign in to reserve.",
+  NOT_OPEN: "Pre-orders aren't open right now.",
+  NOT_AVAILABLE: "This item isn't on pre-order right now.",
+  INVALID_QUANTITY: "Pick a quantity from 1 to 10.",
+  ADDRESS_REQUIRED: "Add the address we should deliver to.",
+  PRICE_CHANGED:
+    "Your price changed while you were checking out (the tier may have moved on). Have a look at the new numbers, then reserve.",
+  COUPON_USED_UP: "A code you used just ran out. We've updated your total.",
+  PAYMENT_UNAVAILABLE:
+    "Online payment isn't working right now. Try again in a minute.",
+  RATE_LIMITED: "That's a lot of tries. Wait a few minutes and try again.",
+  NOT_DUE: "There's nothing to pay on this order right now.",
+  NOT_CANCELLABLE:
+    "This pre-order can't be cancelled any more. Get in touch and we'll help.",
+  NETWORK: "Something went wrong. Check your connection and try again.",
+};

@@ -1,18 +1,16 @@
 import {
-  getInsiderDefaultPercent,
   getInsiderOverview,
+  istDateOf,
   getPrintedCardOverview,
   LOW_FREE_CARDS,
   PRINT_RUN_SIZE,
-  istDateOf,
-  istLastDayOf,
   listCardAddresses,
   listInsiderEmailStatus,
   type InsiderEmailStatus,
-  listInsiderTiers,
   listInsiderUpdates,
 } from "@onwei/core";
 import { hasPermission } from "@onwei/auth";
+import { redirect } from "next/navigation";
 import { requirePageSession } from "../_lib/requirePageSession";
 import { parsePage, PAGE_SIZE } from "../_lib/pagination";
 import {
@@ -31,12 +29,9 @@ import {
 } from "../_components/ui";
 import {
   CreateCodesButton,
-  DefaultPercentForm,
   EmailSender,
   FillCardsButton,
   PostedToggle,
-  TierActions,
-  TierForm,
 } from "./_components";
 import { MembersTab } from "./_members";
 import {
@@ -52,7 +47,6 @@ import { AddUpdateButton, UpdateActions } from "./_updates";
 const TABS = [
   { id: "members", label: "Members" },
   { id: "overview", label: "Overview" },
-  { id: "discount", label: "Discount" },
   { id: "addresses", label: "Card addresses" },
   { id: "cards", label: "Printed cards" },
   { id: "email", label: "Email" },
@@ -96,6 +90,8 @@ export default async function InsidersPage({
   const staff = await requirePageSession("waitlist:view");
   const canManage = hasPermission(staff.permissions, "waitlist:manage");
   const params = await searchParams;
+  // The Insider discount moved to Coupons and discounts.
+  if (params.tab === "discount") redirect("/coupons?tab=insider");
   const tab: TabId = TABS.some((t) => t.id === params.tab)
     ? (params.tab as TabId)
     : "members";
@@ -111,7 +107,6 @@ export default async function InsidersPage({
         <MembersTab page={parsePage(params.page)} q={params.q} />
       ) : null}
       {tab === "overview" ? <OverviewTab canManage={canManage} /> : null}
-      {tab === "discount" ? <DiscountTab canManage={canManage} /> : null}
       {tab === "addresses" ? (
         <AddressesTab
           canManage={canManage}
@@ -195,94 +190,6 @@ async function OverviewTab({ canManage }: { canManage: boolean }) {
           their code but won&apos;t get emails.
         </p>
       ) : null}
-    </div>
-  );
-}
-
-async function DiscountTab({ canManage }: { canManage: boolean }) {
-  const [defaultPercent, tiers] = await Promise.all([
-    getInsiderDefaultPercent(),
-    listInsiderTiers(),
-  ]);
-  const rows = tiers.map((tier) => ({
-    id: tier.id,
-    label: tier.label,
-    startDate: istDateOf(tier.startsAt),
-    endDate: istLastDayOf(tier.endsAt),
-    percent: tier.percent,
-  }));
-
-  return (
-    <div className="flex flex-col gap-6">
-      <AdminCard className="flex flex-col gap-2">
-        <h2 className="text-lg font-semibold text-onwei-blue">
-          Insider discount
-        </h2>
-        {canManage ? (
-          <DefaultPercentForm initial={defaultPercent} />
-        ) : (
-          <p className="text-sm">Every Insider gets {defaultPercent}% off.</p>
-        )}
-        <p className="text-xs text-onwei-blue/60">
-          Changes apply to the next order an Insider places. Orders already
-          placed keep the discount they got. Each coupon decides whether it can
-          be used together with the Insider discount.
-        </p>
-      </AdminCard>
-
-      <AdminCard className="flex flex-col gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-onwei-blue">
-            Tiers by signup date
-          </h2>
-          <p className="text-sm text-onwei-blue/70">
-            Optional. Give people who signed up between two dates a different
-            discount, for example more for the earliest Insiders. Dates are in
-            India time. Anyone outside every tier gets the discount above.
-          </p>
-        </div>
-        {rows.length === 0 ? (
-          <EmptyState
-            title="No tiers yet"
-            description={`Every Insider gets ${defaultPercent}% off.`}
-          />
-        ) : (
-          <AdminTable>
-            <AdminTableHead>
-              <AdminTableHeaderCell>Name</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Signed up</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Discount</AdminTableHeaderCell>
-              {canManage ? (
-                <AdminTableHeaderCell>{""}</AdminTableHeaderCell>
-              ) : null}
-            </AdminTableHead>
-            <tbody>
-              {rows.map((row) => (
-                <AdminTableRow key={row.id}>
-                  <AdminTableCell>{row.label}</AdminTableCell>
-                  <AdminTableCell>
-                    {row.startDate} to {row.endDate}
-                  </AdminTableCell>
-                  <AdminTableCell>{row.percent}%</AdminTableCell>
-                  {canManage ? (
-                    <AdminTableCell>
-                      <TierActions tier={row} />
-                    </AdminTableCell>
-                  ) : null}
-                </AdminTableRow>
-              ))}
-            </tbody>
-          </AdminTable>
-        )}
-        {canManage ? (
-          <div className="border-t border-onwei-blue/10 pt-4">
-            <h3 className="mb-3 text-sm font-semibold text-onwei-blue">
-              Add a tier
-            </h3>
-            <TierForm />
-          </div>
-        ) : null}
-      </AdminCard>
     </div>
   );
 }

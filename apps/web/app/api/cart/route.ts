@@ -4,6 +4,7 @@ import {
   getStoreSettings,
   parseJsonBody,
   setCartQuantity,
+  shopIsPreorderOnly,
 } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
@@ -20,13 +21,17 @@ const EMPTY = { lines: [], itemCount: 0 };
 export async function GET(request: Request) {
   const { owner } = await cartOwnerFrom(request);
   if (!owner.customerId && !owner.guestToken) {
-    const settings = await getStoreSettings();
+    const [settings, preorderOnly] = await Promise.all([
+      getStoreSettings(),
+      shopIsPreorderOnly(),
+    ]);
     return NextResponse.json({
       ok: true,
       cart: {
         ...EMPTY,
         empty: true,
         freeShippingThreshold: settings.freeShippingThreshold,
+        preorderOnly,
       },
     });
   }

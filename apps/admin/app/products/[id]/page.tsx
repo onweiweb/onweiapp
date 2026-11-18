@@ -139,6 +139,7 @@ async function TabBody({
         categoryReturnable={category?.isReturnable ?? true}
         initial={{
           isReturnable: product.isReturnable,
+          giftOnly: product.giftOnly,
           hsnCode: product.hsnCode ?? "",
           gstRate:
             product.gstRate === null ? "" : String(Number(product.gstRate)),

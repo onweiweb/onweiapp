@@ -9,7 +9,13 @@ import {
   RazorpayError,
   type RazorpayConfig,
 } from "../payments/razorpay";
-import { getCartView, removeOrderedItems, type CartView } from "./cart";
+import {
+  getCartView,
+  removeOrderedItems,
+  shopIsPreorderOnly,
+  type CartView,
+} from "./cart";
+import { variantLabelOf } from "./variantLabel";
 import { getCustomerIdentity } from "./customerIdentity";
 import { codAllowedFor, getStoreSettings } from "./storeSettings";
 
@@ -26,7 +32,8 @@ import { codAllowedFor, getStoreSettings } from "./storeSettings";
  *   orders are cancelled after the hold and give stock and uses back.
  */
 
-const toRupees = (paise: number) => new Prisma.Decimal(paise).dividedBy(100);
+export const toRupees = (paise: number) =>
+  new Prisma.Decimal(paise).dividedBy(100);
 
 export type PlaceOrderResult =
   | {
@@ -46,6 +53,7 @@ export type PlaceOrderResult =
       ok: false;
       reason:
         | "NOT_SIGNED_IN"
+        | "PREORDER_ONLY"
         | "EMPTY_CART"
         | "CART_NEEDS_ATTENTION"
         | "ADDRESS_REQUIRED"
@@ -74,12 +82,14 @@ export interface AddressSnapshot {
   country: string;
 }
 
-async function nextOrderNumber(tx: Prisma.TransactionClient): Promise<string> {
+export async function nextOrderNumber(
+  tx: Prisma.TransactionClient,
+): Promise<string> {
   const count = await tx.order.count();
   return `ONW${1001 + count}`;
 }
 
-function isUniqueViolation(error: unknown, field: string): boolean {
+export function isUniqueViolation(error: unknown, field: string): boolean {
   return (
     error instanceof Prisma.PrismaClientKnownRequestError &&
     error.code === "P2002" &&
@@ -88,7 +98,9 @@ function isUniqueViolation(error: unknown, field: string): boolean {
 }
 
 /** Cancels this customer's other unpaid orders so they don't hold stock twice. */
-async function supersedePendingOrders(customerId: string): Promise<void> {
+export async function supersedePendingOrders(
+  customerId: string,
+): Promise<void> {
   const pending = await prisma.order.findMany({
     where: { customerId, status: "PENDING", paymentMethod: "RAZORPAY" },
     select: { id: true },
@@ -107,6 +119,7 @@ export async function placeOrder(input: {
   razorpay: RazorpayConfig | null;
 }): Promise<PlaceOrderResult> {
   await releaseExpiredOrders();
+  if (await shopIsPreorderOnly()) return { ok: false, reason: "PREORDER_ONLY" };
 
   const identity = await getCustomerIdentity(input.customerId);
   if (!identity || (!identity.email && !identity.phone)) {
@@ -192,6 +205,43 @@ export async function placeOrder(input: {
             warehouses.set(line.variantId, row.warehouseId);
           }
 
+          // 1b. Free items from coupons: held if in stock, otherwise left
+          // out (the order still goes through).
+          const freeLines: {
+            variantId: string;
+            quantity: number;
+            warehouseId: string;
+            reason: string;
+          }[] = [];
+          for (const free of pricing.freeItems) {
+            if (!free.available) continue;
+            const rows = await tx.$queryRaw<{ warehouseId: string }[]>`
+              UPDATE "Inventory" SET "quantityReserved" = "quantityReserved" + ${free.quantity}
+              WHERE "id" = (
+                SELECT "id" FROM "Inventory"
+                WHERE "productVariantId" = ${free.variantId}
+                  AND "quantityOnHand" - "quantityReserved" >= ${free.quantity}
+                ORDER BY "quantityOnHand" - "quantityReserved" DESC
+                LIMIT 1
+                FOR UPDATE
+              )
+              AND "quantityOnHand" - "quantityReserved" >= ${free.quantity}
+              RETURNING "warehouseId"`;
+            if (rows[0])
+              freeLines.push({
+                variantId: free.variantId,
+                quantity: free.quantity,
+                warehouseId: rows[0].warehouseId,
+                reason: `Free with ${free.code}`,
+              });
+          }
+          const freeVariants = freeLines.length
+            ? await tx.productVariant.findMany({
+                where: { id: { in: freeLines.map((f) => f.variantId) } },
+                include: { product: { select: { name: true } } },
+              })
+            : [];
+
           // 2. Hold coupon uses, re-checking limits under a row lock.
           const couponDiscounts = pricing.discounts.filter((d) => d.couponId);
           for (const discount of couponDiscounts) {
@@ -258,29 +308,52 @@ export async function placeOrder(input: {
               couponCode: couponDiscounts.map((d) => d.code).join(", ") || null,
               reservationExpiresAt: isCod ? null : holdUntil,
               items: {
-                create: lines.map((line) => ({
-                  productVariantId: line.variantId,
-                  quantity: line.quantity,
-                  unitPrice: toRupees(line.unitPrice),
-                  discountAmount: toRupees(line.discount),
-                  taxAmount: toRupees(
-                    gstPortion(line.total, line.gstRate ?? 0),
-                  ),
-                  totalAmount: toRupees(line.total),
-                  productName: line.productName,
-                  variantLabel: line.variantLabel,
-                  sku: line.sku,
-                  imageUrl: line.imageUrl,
-                  gstRate:
-                    line.gstRate === null
-                      ? null
-                      : new Prisma.Decimal(line.gstRate),
-                  isReturnable: line.isReturnable,
-                  wasOnSale:
-                    line.compareAtPrice !== null &&
-                    line.compareAtPrice > line.unitPrice,
-                  warehouseId: warehouses.get(line.variantId) ?? null,
-                })),
+                create: [
+                  ...freeLines.flatMap((free) => {
+                    const variant = freeVariants.find(
+                      (v) => v.id === free.variantId,
+                    );
+                    if (!variant) return [];
+                    return [
+                      {
+                        productVariantId: variant.id,
+                        quantity: free.quantity,
+                        unitPrice: toRupees(0),
+                        totalAmount: toRupees(0),
+                        productName: variant.product.name,
+                        variantLabel: variantLabelOf(variant.attributes),
+                        sku: variant.sku,
+                        isReturnable: false,
+                        isFree: true,
+                        freeReason: free.reason,
+                        warehouseId: free.warehouseId,
+                      },
+                    ];
+                  }),
+                  ...lines.map((line) => ({
+                    productVariantId: line.variantId,
+                    quantity: line.quantity,
+                    unitPrice: toRupees(line.unitPrice),
+                    discountAmount: toRupees(line.discount),
+                    taxAmount: toRupees(
+                      gstPortion(line.total, line.gstRate ?? 0),
+                    ),
+                    totalAmount: toRupees(line.total),
+                    productName: line.productName,
+                    variantLabel: line.variantLabel,
+                    sku: line.sku,
+                    imageUrl: line.imageUrl,
+                    gstRate:
+                      line.gstRate === null
+                        ? null
+                        : new Prisma.Decimal(line.gstRate),
+                    isReturnable: line.isReturnable,
+                    wasOnSale:
+                      line.compareAtPrice !== null &&
+                      line.compareAtPrice > line.unitPrice,
+                    warehouseId: warehouses.get(line.variantId) ?? null,
+                  })),
+                ],
               },
               discounts: {
                 create: pricing.discounts.map((d) => ({
@@ -399,7 +472,7 @@ export async function placeOrder(input: {
 }
 
 /** Held stock becomes sold stock, with a SALE log per line. */
-async function convertHoldToSale(
+export async function convertHoldToSale(
   tx: Prisma.TransactionClient,
   orderId: string,
 ): Promise<void> {
@@ -426,7 +499,7 @@ async function convertHoldToSale(
   }
 }
 
-async function releaseHold(
+export async function releaseHold(
   tx: Prisma.TransactionClient,
   orderId: string,
 ): Promise<void> {
@@ -491,7 +564,8 @@ export async function releaseExpiredOrders(
 export type MarkPaidResult =
   | {
       ok: true;
-      status: "CONFIRMED" | "ALREADY_CONFIRMED";
+      /** RESERVED: a pre-order's reserve was paid. */
+      status: "CONFIRMED" | "RESERVED" | "ALREADY_CONFIRMED";
       orderId: string;
       orderNumber: string;
     }
@@ -504,6 +578,46 @@ export type MarkPaidResult =
  * changes nothing. Paid after the hold expired, or paid twice: the money is
  * refunded automatically and the order is flagged for staff.
  */
+/**
+ * Which order a Razorpay order pays for, and what it should pay. A normal
+ * order pays its total. A pre-order pays twice: the reserve (its first
+ * Razorpay order, while PENDING) and later the balance (its own Razorpay
+ * order, while RESERVED).
+ */
+async function paymentTarget(razorpayOrderId: string) {
+  const order = await prisma.order.findFirst({
+    where: {
+      OR: [{ razorpayOrderId }, { balanceRazorpayOrderId: razorpayOrderId }],
+    },
+    select: {
+      id: true,
+      orderNumber: true,
+      total: true,
+      status: true,
+      customerId: true,
+      kind: true,
+      reserveTotal: true,
+      balanceDue: true,
+      balanceRazorpayOrderId: true,
+    },
+  });
+  if (!order) return null;
+  const stage =
+    order.kind !== "PREORDER"
+      ? ("FULL" as const)
+      : order.balanceRazorpayOrderId === razorpayOrderId
+        ? ("BALANCE" as const)
+        : ("RESERVE" as const);
+  const expected =
+    stage === "RESERVE"
+      ? toMinorUnits(order.reserveTotal ?? 0)
+      : stage === "BALANCE"
+        ? toMinorUnits(order.balanceDue ?? 0)
+        : toMinorUnits(order.total);
+  const waitingStatus = stage === "BALANCE" ? "RESERVED" : "PENDING";
+  return { order, stage, expected, waitingStatus } as const;
+}
+
 export async function markOrderPaid(input: {
   razorpayOrderId: string;
   paymentId: string;
@@ -511,17 +625,9 @@ export async function markOrderPaid(input: {
   method?: string | null;
   razorpay: RazorpayConfig | null;
 }): Promise<MarkPaidResult> {
-  const order = await prisma.order.findUnique({
-    where: { razorpayOrderId: input.razorpayOrderId },
-    select: {
-      id: true,
-      orderNumber: true,
-      total: true,
-      status: true,
-      customerId: true,
-    },
-  });
-  if (!order) return { ok: false, reason: "NOT_FOUND" };
+  const target = await paymentTarget(input.razorpayOrderId);
+  if (!target) return { ok: false, reason: "NOT_FOUND" };
+  const { order, stage } = target;
 
   const existing = await prisma.payment.findUnique({
     where: {
@@ -540,7 +646,7 @@ export async function markOrderPaid(input: {
     };
   }
 
-  if (input.amountPaise !== toMinorUnits(order.total)) {
+  if (input.amountPaise !== target.expected) {
     await prisma.$transaction(async (tx) => {
       await upsertPayment(tx, order.id, input, "SUCCESS");
       await tx.order.update({
@@ -556,14 +662,64 @@ export async function markOrderPaid(input: {
 
   const outcome = await prisma.$transaction(async (tx) => {
     await upsertPayment(tx, order.id, input, "SUCCESS");
-    const claimed = await tx.order.updateMany({
-      where: { id: order.id, status: "PENDING" },
-      data: {
-        status: "CONFIRMED",
-        paidAt: new Date(),
-        reservationExpiresAt: null,
-      },
-    });
+    if (stage === "RESERVE") {
+      const reserved = await tx.order.updateMany({
+        where: { id: order.id, status: "PENDING" },
+        data: {
+          status: "RESERVED",
+          paidAt: new Date(),
+          reservationExpiresAt: null,
+        },
+      });
+      if (reserved.count === 1) {
+        await tx.couponRedemption.updateMany({
+          where: { orderId: order.id, status: "RESERVED" },
+          data: { status: "CONFIRMED" },
+        });
+        await tx.orderStatusHistory.create({
+          data: {
+            orderId: order.id,
+            status: "RESERVED",
+            note: "Reserve paid online",
+            changedBy: "system",
+          },
+        });
+        return "RESERVED" as const;
+      }
+    }
+    if (stage === "BALANCE") {
+      const balance = await tx.order.updateMany({
+        where: {
+          id: order.id,
+          status: "RESERVED",
+          balanceRequestedAt: { not: null },
+        },
+        data: { status: "CONFIRMED", balancePaidAt: new Date() },
+      });
+      if (balance.count === 1) {
+        await convertHoldToSale(tx, order.id);
+        await tx.orderStatusHistory.create({
+          data: {
+            orderId: order.id,
+            status: "CONFIRMED",
+            note: "Balance paid online",
+            changedBy: "system",
+          },
+        });
+        return "CONFIRMED" as const;
+      }
+    }
+    const claimed =
+      stage === "FULL"
+        ? await tx.order.updateMany({
+            where: { id: order.id, status: "PENDING" },
+            data: {
+              status: "CONFIRMED",
+              paidAt: new Date(),
+              reservationExpiresAt: null,
+            },
+          })
+        : { count: 0 };
     if (claimed.count === 1) {
       await convertHoldToSale(tx, order.id);
       await tx.couponRedemption.updateMany({
@@ -601,10 +757,10 @@ export async function markOrderPaid(input: {
     return "REFUND" as const;
   });
 
-  if (outcome === "CONFIRMED") {
+  if (outcome === "CONFIRMED" || outcome === "RESERVED") {
     return {
       ok: true,
-      status: "CONFIRMED",
+      status: outcome,
       orderId: order.id,
       orderNumber: order.orderNumber,
     };
@@ -669,15 +825,12 @@ export async function markPaymentFailed(input: {
   method?: string | null;
   reason?: string | null;
 }): Promise<void> {
-  const order = await prisma.order.findUnique({
-    where: { razorpayOrderId: input.razorpayOrderId },
-    select: { id: true },
-  });
-  if (!order) return;
+  const target = await paymentTarget(input.razorpayOrderId);
+  if (!target) return;
   await prisma.$transaction(async (tx) => {
     await upsertPayment(
       tx,
-      order.id,
+      target.order.id,
       input,
       "FAILED",
       input.reason ?? undefined,
@@ -800,6 +953,8 @@ export async function getRetryPayment(
     select: {
       razorpayOrderId: true,
       total: true,
+      kind: true,
+      reserveTotal: true,
       reservationExpiresAt: true,
       orderNumber: true,
     },
@@ -810,7 +965,9 @@ export async function getRetryPayment(
   return {
     keyId: razorpay.keyId,
     orderId: order.razorpayOrderId,
-    amount: toMinorUnits(order.total),
+    amount: toMinorUnits(
+      order.kind === "PREORDER" ? (order.reserveTotal ?? 0) : order.total,
+    ),
     orderNumber: order.orderNumber,
   };
 }
@@ -855,14 +1012,11 @@ export async function confirmRazorpayPayment(input: {
   }
 
   if (payment.status === "authorized") {
-    const order = await prisma.order.findUnique({
-      where: { razorpayOrderId: input.razorpayOrderId },
-      select: { status: true, total: true },
-    });
+    const target = await paymentTarget(input.razorpayOrderId);
     if (
-      !order ||
-      order.status !== "PENDING" ||
-      payment.amount !== toMinorUnits(order.total)
+      !target ||
+      target.order.status !== target.waitingStatus ||
+      payment.amount !== target.expected
     ) {
       return { ok: true, status: "PROCESSING" };
     }

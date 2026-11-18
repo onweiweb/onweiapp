@@ -230,6 +230,27 @@ export function CheckoutFlow({
     );
   }
 
+  if (view?.preorderOnly) {
+    return (
+      <div className="mx-auto flex max-w-[34rem] flex-col items-start gap-4">
+        <h1 className="font-display text-[length:max(2.5rem,30px)] font-bold uppercase leading-none">
+          Pre-orders are on
+        </h1>
+        <p className="font-grotesk leading-[1.6]">
+          Checkout opens at launch. Until then, items are reserved one at a time
+          from their product page: pay a small amount now and the rest when
+          it&apos;s ready to ship.
+        </p>
+        <Link
+          href="/collection/all"
+          className="rounded-full bg-onwei-blue px-6 py-3 font-grotesk text-[length:max(0.8125rem,11px)] uppercase text-onwei-beige"
+        >
+          See what&apos;s on pre-order
+        </Link>
+      </div>
+    );
+  }
+
   if (loaded && !view) {
     return (
       <div className="mx-auto flex max-w-[30rem] flex-col items-start gap-4">

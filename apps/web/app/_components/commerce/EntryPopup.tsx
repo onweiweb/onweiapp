@@ -5,6 +5,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useCart } from "./CartProvider";
 import { NameStep } from "./NameStep";
 import { SignInPanel } from "./SignInPanel";
+import { usePreorderStatus } from "../preorder/usePreorderStatus";
 
 // Shown once per visit (browser tab session) to signed-out visitors: sign
 // in, or carry on as a guest (closing counts as carrying on). It comes back
@@ -29,9 +30,12 @@ export function EntryPopup() {
   const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   const skip = SKIP_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  // While pre-orders are live the pre-order pop-up takes this slot.
+  const preorder = usePreorderStatus();
 
   useEffect(() => {
     if (skip || !session || session.signedIn) return;
+    if (!preorder || preorder.live) return;
     if (/bot|crawl|spider/i.test(navigator.userAgent)) return;
     try {
       if (sessionStorage.getItem(SEEN_KEY)) return;
@@ -46,7 +50,7 @@ export function EntryPopup() {
       setVisible(true);
     }, 1500);
     return () => clearInterval(timer);
-  }, [skip, session]);
+  }, [skip, session, preorder]);
 
   useEffect(() => {
     if (!visible) return;

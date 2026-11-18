@@ -1,5 +1,9 @@
 import { notFound } from "next/navigation";
-import { formatCurrency, loadCouponDraft } from "@onwei/core";
+import {
+  formatCurrency,
+  listGiftableItems,
+  loadCouponDraft,
+} from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { CouponBuilder } from "../../_components/CouponBuilder";
@@ -24,7 +28,7 @@ export default async function CouponDetailPage({
   const loaded = await loadCouponDraft(id);
   if (!loaded) notFound();
 
-  const [categories, products, recent] = await Promise.all([
+  const [categories, products, recent, freeItems] = await Promise.all([
     prisma.category.findMany({
       orderBy: { name: "asc" },
       select: { id: true, name: true },
@@ -40,6 +44,7 @@ export default async function CouponDetailPage({
       take: 50,
       include: { order: { select: { id: true, orderNumber: true } } },
     }),
+    listGiftableItems(),
   ]);
 
   return (
@@ -61,6 +66,7 @@ export default async function CouponDetailPage({
         uses={loaded.uses}
         categories={categories}
         products={products}
+        freeItems={freeItems}
       />
       <AdminCard>
         <h2 className="mb-3 text-lg font-semibold text-onwei-blue">

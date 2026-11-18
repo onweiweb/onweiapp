@@ -1,0 +1,6 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Close">
+<rect x="0.75" y="0.75" width="42.5" height="42.5" rx="21.25" stroke="#161845" stroke-width="1.5"/>
+<path id="X" d="M15 15L29 29M29 15L15 29" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" stroke="#161845"/>
+</g>
+</svg>

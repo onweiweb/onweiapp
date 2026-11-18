@@ -333,6 +333,24 @@ export interface OrderDetailItem {
     | "NOT_RETURNABLE"
     | "ALREADY_REQUESTED"
     | null;
+  /** A free line (mystery box, Insider gift, free item), and why. */
+  isFree: boolean;
+  freeReason: string | null;
+}
+
+/** Set on pre-orders. Paise. */
+export interface OrderPreorderInfo {
+  tierLabel: string | null;
+  reserveTotal: number;
+  balanceDue: number;
+  /** "WAITING": reserved, stock not in yet. "DUE": asked to pay. */
+  stage: "PAYING_RESERVE" | "WAITING" | "DUE" | "PAID" | "CANCELLED";
+  balanceRequestedAt: Date | null;
+  /** When it turns into credit if still unpaid. */
+  creditAfter: Date | null;
+  expectedShipDate: Date | null;
+  creditCode: string | null;
+  creditEndsAt: Date | null;
 }
 
 export interface OrderDetail {
@@ -370,6 +388,7 @@ export interface OrderDetail {
   awaitingPayment: boolean;
   /** When an unpaid online order's stock hold runs out. */
   holdExpiresAt: Date | null;
+  preorder: OrderPreorderInfo | null;
 }
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
@@ -435,10 +454,54 @@ export async function getCustomerOrder(
       quantity: item.quantity,
       unitPrice: toMinorUnits(item.unitPrice),
       total: toMinorUnits(item.totalAmount),
-      returnableQuantity: blocked ? 0 : left,
-      returnBlockedReason: blocked,
+      returnableQuantity: blocked || item.isFree ? 0 : left,
+      returnBlockedReason: item.isFree ? "NOT_RETURNABLE" : blocked,
+      isFree: item.isFree,
+      freeReason: item.freeReason,
     };
   });
+
+  let preorder: OrderPreorderInfo | null = null;
+  if (order.kind === "PREORDER") {
+    const [campaign, credit] = await Promise.all([
+      order.preorderCampaignId
+        ? prisma.preorderCampaign.findUnique({
+            where: { id: order.preorderCampaignId },
+            select: { expectedShipDate: true },
+          })
+        : Promise.resolve(null),
+      order.creditCouponId
+        ? prisma.coupon.findUnique({
+            where: { id: order.creditCouponId },
+            select: { code: true, endsAt: true },
+          })
+        : Promise.resolve(null),
+    ]);
+    preorder = {
+      tierLabel: order.preorderTierLabel,
+      reserveTotal: toMinorUnits(order.reserveTotal ?? 0),
+      balanceDue: toMinorUnits(order.balanceDue ?? 0),
+      stage:
+        order.status === "PENDING"
+          ? "PAYING_RESERVE"
+          : order.status === "CANCELLED" || order.status === "REFUNDED"
+            ? "CANCELLED"
+            : order.status !== "RESERVED"
+              ? "PAID"
+              : order.balanceRequestedAt
+                ? "DUE"
+                : "WAITING",
+      balanceRequestedAt: order.balanceRequestedAt,
+      creditAfter: order.balanceRequestedAt
+        ? new Date(
+            order.balanceRequestedAt.getTime() + 14 * 24 * 60 * 60 * 1000,
+          )
+        : null,
+      expectedShipDate: campaign?.expectedShipDate ?? null,
+      creditCode: credit?.code.toUpperCase() ?? null,
+      creditEndsAt: credit?.endsAt ?? null,
+    };
+  }
 
   const payment = order.payments[0];
   const paymentLabel =
@@ -500,6 +563,7 @@ export async function getCustomerOrder(
       order.paymentMethod === "RAZORPAY" &&
       (order.reservationExpiresAt?.getTime() ?? 0) > Date.now(),
     holdExpiresAt: order.reservationExpiresAt ?? null,
+    preorder,
   };
 }
 

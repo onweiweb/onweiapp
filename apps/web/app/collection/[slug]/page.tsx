@@ -2,7 +2,7 @@ import { TrackView } from "@/_components/TrackView";
 import type { Metadata } from "next";
 import Image from "@/_components/ScaledImage";
 import Link from "next/link";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound, permanentRedirect, redirect } from "next/navigation";
 import { findRedirect, sortProductList } from "@onwei/core";
 import {
   cachedListActiveProductsByCategorySlug as listActiveProductsByCategorySlug,
@@ -11,6 +11,7 @@ import {
   cachedListApprovedReviews as listApprovedReviews,
   cachedListCategoryComparison as listCategoryComparison,
   cachedListValueProps as listValueProps,
+  cachedListHiddenCategorySlugs,
 } from "../../../lib/cachedCatalog";
 import {
   buildCategoryMetadata,
@@ -229,13 +230,21 @@ export default async function CollectionPage({
 }) {
   const { slug } = await params;
 
+  // Pre-order mode hides categories with nothing on pre-order; their own
+  // page sends shoppers to Shop All.
+  const hiddenSlugs = await cachedListHiddenCategorySlugs();
+  if (hiddenSlugs.includes(slug)) redirect("/collection/all");
+  const visibleTabs = CATEGORY_TABS.filter(
+    (tab) => !hiddenSlugs.includes(tab.slug),
+  );
+
   const categorySections =
     slug === "all"
       ? (
           await Promise.all(
-            CATEGORY_TABS.filter((tab) => tab.slug !== "all").map((tab) =>
-              listActiveProductsByCategorySlug(tab.slug),
-            ),
+            visibleTabs
+              .filter((tab) => tab.slug !== "all")
+              .map((tab) => listActiveProductsByCategorySlug(tab.slug)),
           )
         ).filter(
           (result): result is NonNullable<typeof result> => result !== null,
@@ -414,7 +423,7 @@ export default async function CollectionPage({
             <p className="whitespace-nowrap font-grotesk text-body uppercase text-onwei-blue">
               Categories:
             </p>
-            {CATEGORY_TABS.map((tab) => (
+            {visibleTabs.map((tab) => (
               <Link
                 key={tab.slug}
                 href={`/collection/${tab.slug}`}

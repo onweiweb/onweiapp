@@ -1,4 +1,6 @@
 import Image from "@/_components/ScaledImage";
+import { cachedListHiddenCategorySlugs } from "../../lib/cachedCatalog";
+import { showsCategoryLink } from "../../lib/hiddenCategories";
 import Link from "next/link";
 import { getSiteSetting } from "@onwei/core";
 import { FacebookIcon, InstagramIcon, LinkedInIcon } from "./SocialIcons";
@@ -55,7 +57,8 @@ export async function SiteFooter({
 }: {
   desktopHeading?: readonly [string, string];
 }) {
-  const { instagramUrl, linkedinUrl, facebookUrl } = await getSiteSetting();
+  const [{ instagramUrl, linkedinUrl, facebookUrl }, hiddenSlugs] =
+    await Promise.all([getSiteSetting(), cachedListHiddenCategorySlugs()]);
 
   return (
     <footer>
@@ -187,38 +190,42 @@ export async function SiteFooter({
                         {column.heading}
                       </p>
                       <ul className="flex flex-col gap-4 font-grotesk font-medium leading-[1.3] text-[length:max(1rem,11px)]">
-                        {column.links.map((link) => (
-                          <li
-                            key={link.label}
-                            className={
-                              "desktopOnly" in link
-                                ? "max-desk:hidden"
-                                : undefined
-                            }
-                          >
-                            <Link
-                              href={link.href}
+                        {column.links
+                          .filter((link) =>
+                            showsCategoryLink(link.href, hiddenSlugs),
+                          )
+                          .map((link) => (
+                            <li
+                              key={link.label}
                               className={
-                                "mobileWidth" in link
-                                  ? `block ${link.mobileWidth}`
+                                "desktopOnly" in link
+                                  ? "max-desk:hidden"
                                   : undefined
                               }
                             >
-                              {"mobileLabel" in link ? (
-                                <>
-                                  <span className="whitespace-pre-line desk:hidden">
-                                    {link.mobileLabel}
-                                  </span>
-                                  <span className="max-desk:hidden">
-                                    {link.label}
-                                  </span>
-                                </>
-                              ) : (
-                                link.label
-                              )}
-                            </Link>
-                          </li>
-                        ))}
+                              <Link
+                                href={link.href}
+                                className={
+                                  "mobileWidth" in link
+                                    ? `block ${link.mobileWidth}`
+                                    : undefined
+                                }
+                              >
+                                {"mobileLabel" in link ? (
+                                  <>
+                                    <span className="whitespace-pre-line desk:hidden">
+                                      {link.mobileLabel}
+                                    </span>
+                                    <span className="max-desk:hidden">
+                                      {link.label}
+                                    </span>
+                                  </>
+                                ) : (
+                                  link.label
+                                )}
+                              </Link>
+                            </li>
+                          ))}
                       </ul>
                     </div>
                   ))}

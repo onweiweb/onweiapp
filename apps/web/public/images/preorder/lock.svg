@@ -1,0 +1,11 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Icon / lock" clip-path="url(#clip0_0_125)">
+<path id="Shackle" d="M3 6.75V3.75C3 2.05 4.3 0.75 6 0.75C7.7 0.75 9 2.05 9 3.75V6.75" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="white"/>
+<rect id="Body" x="0.5" y="6" width="11" height="8" rx="2" fill="white"/>
+</g>
+<defs>
+<clipPath id="clip0_0_125">
+<rect width="12" height="14" fill="white"/>
+</clipPath>
+</defs>
+</svg>

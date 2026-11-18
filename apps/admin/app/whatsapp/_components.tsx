@@ -9,8 +9,8 @@ import {
   AdminDialog,
   AdminInput,
   AdminSelect,
-  AdminTextarea,
   Field,
+  useConfirm,
   useToast,
 } from "../_components/ui";
 
@@ -40,14 +40,51 @@ async function postJson(url: string, method: string, body: unknown) {
   }) as { ok: boolean; error?: string; url?: string };
 }
 
+/** {{n}} in the message, shown with the label of the value that fills it. */
+function fillPreview(text: string, labels: string[]): string {
+  return text.replace(/\{\{\s*(\d+)\s*\}\}/g, (match, n: string) => {
+    const label = labels[Number(n) - 1];
+    return label ? `[${label}]` : match;
+  });
+}
+
+function blanksInText(text: string): number {
+  return new Set([...text.matchAll(/\{\{\s*(\d+)\s*\}\}/g)].map((m) => m[1]))
+    .size;
+}
+
+function Step({
+  number,
+  title,
+  children,
+}: {
+  number: number;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h3 className="flex items-center gap-2 text-sm font-medium">
+        <span className="flex size-6 items-center justify-center rounded-full bg-onwei-blue text-xs text-onwei-beige">
+          {number}
+        </span>
+        {title}
+      </h3>
+      <div className="pl-8">{children}</div>
+    </section>
+  );
+}
+
 function WhatsAppTemplateForm({
   info,
   initial,
+  problem,
   canManage,
   onDone,
 }: {
   info: WhatsAppPurposeInfo;
   initial: WhatsAppTemplateView;
+  problem: string | null;
   canManage: boolean;
   onDone: () => void;
 }) {
@@ -58,8 +95,11 @@ function WhatsAppTemplateForm({
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const dirty = JSON.stringify(values) !== baseline;
+  const changedTemplate =
+    values.gupshupTemplateId !== initial.gupshupTemplateId;
   const labelFor = (key: string) =>
     info.variables.find((v) => v.key === key)?.label ?? key;
+  const inText = blanksInText(values.previewText);
 
   function set<K extends keyof Values>(key: K, value: Values[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -85,7 +125,12 @@ function WhatsAppTemplateForm({
       return;
     }
     setBaseline(JSON.stringify(values));
-    toast("Saved.", "success");
+    toast(
+      values.isActive
+        ? "Saved."
+        : "Saved. Send a test, then switch it on from the list.",
+      "success",
+    );
     router.refresh();
     onDone();
   }
@@ -113,133 +158,101 @@ function WhatsAppTemplateForm({
   }
 
   const disabled = !canManage || saving;
+  const hasTemplate = Boolean(values.gupshupTemplateId);
+  const preview = fillPreview(
+    values.previewText,
+    values.variables.map(labelFor),
+  );
 
   return (
-    <form onSubmit={save} className="flex flex-col gap-4">
-      {canManage ? (
-        <GupshupPicker
-          info={info}
-          currentId={values.gupshupTemplateId}
-          currentImageUrl={values.headerImageUrl}
-          onPick={(picked) => setValues((v) => ({ ...v, ...picked }))}
-        />
-      ) : null}
-      <div className="grid gap-4 desk:grid-cols-2">
-        <Field
-          label="Gupshup template ID"
-          hint="Filled in when you pick a template above. The long Gupshup ID, not the Facebook one."
-        >
-          <AdminInput
-            value={values.gupshupTemplateId}
-            onChange={(e) => set("gupshupTemplateId", e.target.value)}
-            disabled={disabled}
-          />
-        </Field>
-        <Field
-          label="Template name"
-          hint="As named in Gupshup, so staff can find it there."
-        >
-          <AdminInput
-            value={values.templateName}
-            onChange={(e) => set("templateName", e.target.value)}
-            disabled={disabled}
-          />
-        </Field>
-      </div>
-
-      <Field
-        label="Values to fill in, in order"
-        hint="{{1}} gets the first value, {{2}} the second, and so on. A button that needs a value takes the last one."
-      >
-        <div className="flex flex-col gap-2">
-          {values.variables.map((key, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <span className="w-12 text-sm text-onwei-blue/70">{`{{${index + 1}}}`}</span>
-              <AdminSelect
-                value={key}
-                onChange={(e) => setVariable(index, e.target.value)}
-                disabled={disabled}
-              >
-                {info.variables.map((v) => (
-                  <option key={v.key} value={v.key}>
-                    {v.label}
-                  </option>
-                ))}
-              </AdminSelect>
-              {values.variables.length > 1 ? (
-                <AdminButton
-                  type="button"
-                  variant="secondary"
-                  disabled={disabled}
-                  onClick={() =>
-                    set(
-                      "variables",
-                      values.variables.filter((_, i) => i !== index),
-                    )
-                  }
-                >
-                  Remove
-                </AdminButton>
-              ) : null}
-            </div>
-          ))}
-          <div>
-            <AdminButton
-              type="button"
-              variant="secondary"
-              disabled={disabled || values.variables.length >= 10}
-              onClick={() =>
-                set("variables", [...values.variables, info.variables[0]!.key])
-              }
-            >
-              Add a value
-            </AdminButton>
-          </div>
-          <span className="text-xs text-onwei-blue/70">
-            Now filled in as:{" "}
-            {values.variables
-              .map((k, i) => `{{${i + 1}}} ${labelFor(k)}`)
-              .join(", ")}
-          </span>
+    <form onSubmit={save} className="flex flex-col gap-6">
+      <Step number={1} title="Choose the template">
+        <div className="flex flex-col gap-3">
+          {hasTemplate ? (
+            <p className="text-sm">
+              {changedTemplate ? "New choice: " : "Using: "}
+              <strong>{values.templateName || "a template"}</strong>
+            </p>
+          ) : null}
+          {problem && !changedTemplate ? (
+            <p className="rounded-xl bg-onwei-beige/60 px-3 py-2 text-sm text-onwei-black">
+              {problem} Pick an approved one below.
+            </p>
+          ) : null}
+          {canManage ? (
+            <GupshupPicker
+              info={info}
+              currentId={values.gupshupTemplateId}
+              currentImageUrl={values.headerImageUrl}
+              onPick={(picked) => setValues((v) => ({ ...v, ...picked }))}
+            />
+          ) : null}
         </div>
-      </Field>
+      </Step>
 
-      {info.allowsImage ? (
-        <div className="grid gap-4 desk:grid-cols-2">
-          <Field
-            label="Top of the message"
-            hint="Match what the template has in Gupshup."
-          >
-            <AdminSelect
-              value={values.headerType}
-              onChange={(e) =>
-                set("headerType", e.target.value as Values["headerType"])
-              }
-              disabled={disabled}
-            >
-              <option value="NONE">Nothing</option>
-              <option value="TEXT">A line of text (set in Gupshup)</option>
-              <option value="IMAGE">An image</option>
-            </AdminSelect>
-          </Field>
-          {values.headerType === "IMAGE" ? (
-            <Field
-              label="Image"
-              hint="JPEG or PNG under 5MB, landscape (about 1200 by 628). Sent with every message."
-            >
+      {hasTemplate ? (
+        <Step number={2} title="Check what gets filled in">
+          <div className="flex flex-col gap-4">
+            {values.previewText ? (
+              <div className="whitespace-pre-line rounded-2xl rounded-tl-sm bg-onwei-beige/50 px-4 py-3 text-sm">
+                {preview}
+              </div>
+            ) : null}
+            {values.variables.length > 0 ? (
               <div className="flex flex-col gap-2">
-                {values.headerImageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={values.headerImageUrl}
-                    alt=""
-                    className="max-h-40 w-fit rounded-xl border border-onwei-beige"
-                  />
-                ) : (
-                  <span className="text-sm text-onwei-blue/70">
-                    No image yet.
-                  </span>
-                )}
+                {values.variables.map((key, index) => (
+                  <label
+                    key={index}
+                    className="flex flex-wrap items-center gap-2 text-sm"
+                  >
+                    <span className="w-40 text-onwei-blue/70">
+                      {index < inText
+                        ? `Blank ${index + 1} in the message`
+                        : "End of the button link"}
+                    </span>
+                    <AdminSelect
+                      value={key}
+                      onChange={(e) => setVariable(index, e.target.value)}
+                      disabled={disabled}
+                    >
+                      {info.variables.map((v) => (
+                        <option key={v.key} value={v.key}>
+                          {v.label}
+                        </option>
+                      ))}
+                    </AdminSelect>
+                  </label>
+                ))}
+                <p className="text-xs text-onwei-blue/60">
+                  Already set to the usual order. Change one only if the preview
+                  reads wrong.
+                </p>
+              </div>
+            ) : null}
+          </div>
+        </Step>
+      ) : null}
+
+      {hasTemplate && values.headerType === "IMAGE" ? (
+        <Step number={3} title="Image at the top">
+          <Field
+            label="Image"
+            hint="JPEG or PNG under 5MB, landscape (about 1200 by 628). Sent with every message."
+          >
+            <div className="flex flex-col gap-2">
+              {values.headerImageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={values.headerImageUrl}
+                  alt=""
+                  className="max-h-40 w-fit rounded-xl border border-onwei-beige"
+                />
+              ) : (
+                <span className="text-sm text-onwei-blue/70">
+                  No image yet. Add one before switching this message on.
+                </span>
+              )}
+              {canManage ? (
                 <input
                   type="file"
                   accept="image/jpeg,image/png"
@@ -250,51 +263,24 @@ function WhatsAppTemplateForm({
                     e.target.value = "";
                   }}
                 />
-                {uploading ? (
-                  <span className="text-xs text-onwei-blue/70">
-                    Uploading...
-                  </span>
-                ) : null}
-              </div>
-            </Field>
-          ) : null}
-        </div>
+              ) : null}
+              {uploading ? (
+                <span className="text-xs text-onwei-blue/70">Uploading...</span>
+              ) : null}
+            </div>
+          </Field>
+        </Step>
       ) : null}
-
-      <Field
-        label="Message text (for reference)"
-        hint="Filled in from Gupshup when you pick a template, so staff can see what customers get. It doesn't change the message."
-      >
-        <AdminTextarea
-          rows={4}
-          value={values.previewText}
-          onChange={(e) => set("previewText", e.target.value)}
-          disabled={disabled}
-        />
-      </Field>
-
-      <div className="flex flex-col gap-1.5">
-        <label className="flex items-center gap-2 text-sm font-medium">
-          <input
-            type="checkbox"
-            checked={values.isActive}
-            onChange={(e) => set("isActive", e.target.checked)}
-            disabled={disabled}
-          />
-          Send this message
-        </label>
-        <p className="text-xs text-onwei-blue/70">
-          Only switch it on once WhatsApp has approved the template and a test
-          looked right.
-        </p>
-      </div>
 
       {canManage ? (
         <div className="flex justify-end gap-2">
           <AdminButton type="button" variant="secondary" onClick={onDone}>
             Cancel
           </AdminButton>
-          <AdminButton type="submit" disabled={!dirty || saving}>
+          <AdminButton
+            type="submit"
+            disabled={!dirty || saving || !hasTemplate}
+          >
             {saving ? "Saving..." : "Save"}
           </AdminButton>
         </div>
@@ -362,18 +348,94 @@ function TestSendForm({
   );
 }
 
-/** The Edit and Send test buttons on each row, each opening a popup. */
+/** Why a message can't be switched on yet, or undefined when it can. */
+function blockedReasonOf(
+  template: WhatsAppTemplateView,
+  problem: string | null,
+): string | undefined {
+  if (!template.gupshupTemplateId) return "Choose a template first.";
+  if (template.headerType === "IMAGE" && !template.headerImageUrl) {
+    return "Add the image first (Change template).";
+  }
+  if (problem) return "Pick an approved template first.";
+  return undefined;
+}
+
+/** Switches one message on or off, under its status on the row. */
+export function WhatsAppSwitch({
+  info,
+  template,
+  problem,
+}: {
+  info: WhatsAppPurposeInfo;
+  template: WhatsAppTemplateView;
+  problem: string | null;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const confirm = useConfirm();
+  const [switching, setSwitching] = useState(false);
+  const blocked = template.isActive
+    ? undefined
+    : blockedReasonOf(template, problem);
+
+  async function toggle() {
+    const turningOn = !template.isActive;
+    const ok = await confirm({
+      title: turningOn
+        ? `Start sending "${info.title}"?`
+        : `Stop sending "${info.title}"?`,
+      message: turningOn
+        ? `${info.whenSent} Customers get it from now on, so send yourself a test first.`
+        : "Customers stop getting this WhatsApp until you switch it back on.",
+      confirmLabel: turningOn ? "Switch on" : "Switch off",
+      danger: !turningOn,
+    });
+    if (!ok) return;
+    setSwitching(true);
+    const result = await postJson("/api/whatsapp/templates", "PATCH", {
+      purpose: template.purpose,
+      isActive: turningOn,
+    });
+    setSwitching(false);
+    if (!result.ok) {
+      toast(result.error ?? "That didn't work. Try again.", "error");
+      return;
+    }
+    toast(turningOn ? "Switched on." : "Switched off.", "success");
+    router.refresh();
+  }
+
+  if (blocked) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => void toggle()}
+      disabled={switching}
+      className="mt-1 block text-xs underline disabled:opacity-60"
+    >
+      {switching ? "Saving..." : template.isActive ? "Switch off" : "Switch on"}
+    </button>
+  );
+}
+
+/** Choose or change the template, and send a test, each in a popup. */
 export function WhatsAppRowActions({
   info,
   template,
+  problem,
   canManage,
 }: {
   info: WhatsAppPurposeInfo;
   template: WhatsAppTemplateView;
+  /** Why the saved template can't be used now, from the page. */
+  problem: string | null;
   canManage: boolean;
 }) {
   const [open, setOpen] = useState<"edit" | "test" | null>(null);
   const close = () => setOpen(null);
+  const hasTemplate = Boolean(template.gupshupTemplateId);
+
   return (
     <div className="flex flex-wrap justify-end gap-2">
       <AdminButton
@@ -381,19 +443,15 @@ export function WhatsAppRowActions({
         variant="secondary"
         onClick={() => setOpen("edit")}
       >
-        {canManage ? "Edit" : "View"}
+        {!canManage ? "View" : hasTemplate ? "Change" : "Choose template"}
       </AdminButton>
       {canManage ? (
         <AdminButton
           type="button"
           variant="secondary"
           onClick={() => setOpen("test")}
-          disabled={!template.gupshupTemplateId}
-          title={
-            template.gupshupTemplateId
-              ? undefined
-              : "Save the Gupshup template ID first"
-          }
+          disabled={!hasTemplate}
+          title={hasTemplate ? undefined : "Choose a template first"}
         >
           Send test
         </AdminButton>
@@ -406,14 +464,16 @@ export function WhatsAppRowActions({
         title={info.title}
         description={
           <>
-            {info.whenSent} Approve it in Gupshup under the{" "}
-            <strong>{info.category}</strong> category.
+            {info.whenSent} Needs an approved{" "}
+            <strong>{info.category.toLowerCase()}</strong> template
+            {info.category === "Authentication" ? "" : " (or marketing)"}.
           </>
         }
       >
         <WhatsAppTemplateForm
           info={info}
           initial={template}
+          problem={problem}
           canManage={canManage}
           onDone={close}
         />

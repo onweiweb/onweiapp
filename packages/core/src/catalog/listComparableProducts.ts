@@ -1,5 +1,6 @@
 import { prisma } from "@onwei/database";
 import { mapSpecs } from "./mapProduct";
+import { storefrontProductWhere } from "../preorders/storefront";
 import { toMinorUnits } from "./helpers";
 import type { ComparisonProduct } from "./types";
 
@@ -32,10 +33,10 @@ export async function listComparableProducts(
   // check) alone.
   const candidates = await prisma.product.findMany({
     where: {
-      categoryId: product.categoryId,
-      id: { not: productId },
-      status: "ACTIVE",
-      deletedAt: null,
+      AND: [
+        await storefrontProductWhere(),
+        { categoryId: product.categoryId, id: { not: productId } },
+      ],
     },
     orderBy: { createdAt: "asc" },
     take: limit * 5,
@@ -83,9 +84,8 @@ export async function listCategoryComparison(
 ): Promise<ComparisonProduct[]> {
   const anchors = await prisma.product.findMany({
     where: {
+      ...(await storefrontProductWhere()),
       category: { slug: categorySlug },
-      status: "ACTIVE",
-      deletedAt: null,
     },
     orderBy: { createdAt: "asc" },
     take: 5,

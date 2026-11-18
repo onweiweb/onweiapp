@@ -36,7 +36,6 @@ function coupon(
     minOrderValue: null,
     minItems: null,
     combinableWithCoupons: false,
-    combinableWithInsider: false,
     prepaidOnly: false,
     priority: 0,
     createdAt: 0,
@@ -49,6 +48,7 @@ function input(overrides: Partial<PricingInput>): PricingInput {
   return {
     lines: [line({ key: "a" })],
     insider: null,
+    insiderMode: "BEST",
     coupons: [],
     paymentMethod: null,
     shipping: { freeThreshold: R(999), fee: R(99) },
@@ -320,11 +320,11 @@ describe("coupon conditions", () => {
       input({
         lines: [line({ key: "a", unitPrice: R(1000) })],
         insider: { percent: 5 },
+        insiderMode: "ADD",
         coupons: [
           coupon({
             id: "min1000",
             minOrderValue: R(1000),
-            combinableWithInsider: true,
           }),
         ],
       }),
@@ -405,17 +405,18 @@ describe("combining", () => {
     expect(result2.discountTotal).toBe(R(200));
   });
 
-  it("uses Insider and a code together when the code allows it", () => {
-    const ok = coupon({ id: "ok", combinableWithInsider: true });
+  it("adds Insider and a code together in ADD mode (5% + 10% = 15%)", () => {
+    const ok = coupon({ id: "ok" });
     const result = priceCart(
       input({
         lines: [line({ key: "x", unitPrice: R(2000) })],
         insider: { percent: 5 },
+        insiderMode: "ADD",
         coupons: [ok],
       }),
     );
-    // 2000 - 5% = 1900, then 10% = 190, total 290.
-    expect(result.discountTotal).toBe(R(290));
+    // Both on the original 2000: 100 + 200.
+    expect(result.discountTotal).toBe(R(300));
     expect(result.insiderApplied).toBe(true);
   });
 
@@ -450,10 +451,10 @@ describe("combining", () => {
           line({ key: "b", unitPrice: R(449.5), quantity: 1 }),
         ],
         insider: { percent: 7 },
+        insiderMode: "ADD",
         coupons: [
           coupon({
             id: "c",
-            combinableWithInsider: true,
             give: { type: "PERCENTAGE", percent: 13 },
           }),
         ],
@@ -472,5 +473,150 @@ describe("combining", () => {
       result.merchandiseTotal + result.shippingFee + result.codFee,
     );
     for (const l of result.lines) expect(l.total).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe("pre-orders", () => {
+  const tier = { percent: 15, label: "Tier 1, 15% off" };
+
+  it("adds the tier and Insider percentages in ADD mode (15% + 5% = 20%)", () => {
+    const result = priceCart(
+      input({
+        lines: [line({ key: "x", unitPrice: R(4000) })],
+        orderKind: "PREORDER",
+        preorder: tier,
+        insider: { percent: 5 },
+        insiderMode: "ADD",
+      }),
+    );
+    expect(result.preorderApplied).toBe(true);
+    expect(result.insiderApplied).toBe(true);
+    expect(result.discountTotal).toBe(R(800));
+    expect(result.discounts.map((d) => d.kind)).toEqual([
+      "PREORDER",
+      "INSIDER",
+    ]);
+  });
+
+  it("gives only the bigger one in BEST mode", () => {
+    const small = priceCart(
+      input({
+        lines: [line({ key: "x", unitPrice: R(4000) })],
+        orderKind: "PREORDER",
+        preorder: tier,
+        insider: { percent: 5 },
+        insiderMode: "BEST",
+      }),
+    );
+    expect(small.preorderApplied).toBe(true);
+    expect(small.insiderApplied).toBe(false);
+    expect(small.discountTotal).toBe(R(600));
+
+    const big = priceCart(
+      input({
+        lines: [line({ key: "x", unitPrice: R(4000) })],
+        orderKind: "PREORDER",
+        preorder: { percent: 8, label: "Tier 3" },
+        insider: { percent: 10 },
+        insiderMode: "BEST",
+      }),
+    );
+    expect(big.preorderApplied).toBe(false);
+    expect(big.insiderApplied).toBe(true);
+    expect(big.discountTotal).toBe(R(400));
+  });
+
+  it("refuses coupons not set for pre-orders, and pre-order coupons on normal orders", () => {
+    const normal = coupon({ id: "normal" });
+    const pre = coupon({ id: "pre", appliesTo: "PREORDERS" });
+    const both = coupon({
+      id: "both",
+      appliesTo: "BOTH",
+      give: { type: "FLAT", amount: R(100) },
+      combinableWithCoupons: true,
+    });
+    const onPreorder = priceCart(
+      input({
+        orderKind: "PREORDER",
+        preorder: tier,
+        coupons: [normal, both],
+      }),
+    );
+    expect(onPreorder.rejected).toEqual([
+      { couponId: "normal", code: "NORMAL", reason: "NOT_FOR_PREORDERS" },
+    ]);
+    expect(onPreorder.discounts.map((d) => d.code)).toContain("BOTH");
+
+    const onOrder = priceCart(input({ coupons: [pre] }));
+    expect(onOrder.rejected[0]?.reason).toBe("PREORDERS_ONLY");
+  });
+});
+
+describe("free items and credits", () => {
+  const socks = (available: boolean) =>
+    coupon({
+      id: "socks",
+      give: {
+        type: "FREE_ITEM",
+        variantId: "v-socks",
+        quantity: 1,
+        value: R(400),
+        itemLabel: "Socks",
+        available,
+      },
+    });
+
+  it("lists a free item at no charge and keeps it with the Insider discount in BEST mode", () => {
+    const result = priceCart(
+      input({
+        insider: { percent: 5 },
+        insiderMode: "BEST",
+        coupons: [socks(true)],
+      }),
+    );
+    expect(result.insiderApplied).toBe(true);
+    expect(result.freeItems).toMatchObject([
+      { variantId: "v-socks", quantity: 1, available: true },
+    ]);
+    expect(result.discountTotal).toBe(R(50));
+  });
+
+  it("counts a free item's value when picking between offers that can't combine", () => {
+    const flat = coupon({ id: "flat", give: { type: "FLAT", amount: R(300) } });
+    const result = priceCart(input({ coupons: [socks(true), flat] }));
+    expect(result.freeItems).toHaveLength(1);
+    expect(result.discountTotal).toBe(0);
+  });
+
+  it("still applies an out of stock free item coupon, flagged", () => {
+    const result = priceCart(input({ coupons: [socks(false)] }));
+    expect(result.freeItems[0]?.available).toBe(false);
+    expect(result.rejected).toEqual([]);
+  });
+
+  it("lets a personal credit go with any coupon and the Insider discount", () => {
+    const credit = coupon({
+      id: "credit",
+      isCredit: true,
+      appliesTo: "BOTH",
+      give: { type: "FLAT", amount: R(900) },
+    });
+    const pct = coupon({
+      id: "pct",
+      give: { type: "PERCENTAGE", percent: 10 },
+    });
+    const result = priceCart(
+      input({
+        lines: [line({ key: "x", unitPrice: R(3000) })],
+        insider: { percent: 5 },
+        insiderMode: "BEST",
+        coupons: [credit, pct],
+      }),
+    );
+    expect(result.discounts.map((d) => d.code).sort()).toEqual([
+      "CREDIT",
+      "PCT",
+    ]);
+    expect(result.insiderApplied).toBe(false);
   });
 });

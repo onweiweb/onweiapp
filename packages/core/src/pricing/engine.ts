@@ -6,13 +6,20 @@
  *
  * Order of work:
  * 1. Each line starts at its selling price (GST inclusive) times quantity.
- * 2. The Insider discount, if the customer is an Insider and every coupon
- *    used allows it.
- * 3. Item-level coupons (categories or products), then cart-level coupons,
+ * 2. The pre-order tier discount, on a pre-order.
+ * 3. The Insider discount, if the customer is an Insider. `insiderMode` says
+ *    how it works with the other offers: ADD (percentages add up on the
+ *    original price, so 15% + 5% = 20%) or BEST (the Insider discount or the
+ *    other offers, whichever saves more; free delivery, free items and
+ *    personal credits still go with it).
+ * 4. Item-level coupons (categories or products), then cart-level coupons,
  *    each by priority. A coupon's minimum cart value is checked against the
- *    cart after the discounts before it.
- * 4. Each coupon's maximum applies to that coupon alone.
- * 5. Delivery and COD fees are added last and never discounted, except that
+ *    cart after the discounts before it. In ADD mode percentage coupons are
+ *    also worked out on the original price.
+ * 5. Each coupon's maximum applies to that coupon alone.
+ * 6. Free items (free item coupons) are listed at ₹0, counted at their value
+ *    when choosing the best combination.
+ * 7. Delivery and COD fees are added last and never discounted, except that
  *    a free-delivery coupon removes the delivery fee.
  *
  * When codes can't all be used together, the engine tries every allowed
@@ -24,7 +31,21 @@ export type DiscountGive =
   | { type: "FLAT"; amount: number }
   | { type: "BUY_X_GET_Y"; buyQty: number; getQty: number }
   | { type: "TIERED"; tiers: { minSubtotal: number; percent: number }[] }
-  | { type: "FREE_SHIPPING" };
+  | { type: "FREE_SHIPPING" }
+  | {
+      type: "FREE_ITEM";
+      variantId: string;
+      quantity: number;
+      /** Paise per unit, what the item normally sells for. */
+      value: number;
+      /** Name shown to the customer, e.g. "Onwei socks (M)". */
+      itemLabel: string;
+      /** False when the item is out of stock: the coupon still applies. */
+      available: boolean;
+    };
+
+export type InsiderMode = "ADD" | "BEST";
+export type OrderKindForPricing = "STANDARD" | "PREORDER";
 
 export interface PricingLine {
   key: string;
@@ -52,8 +73,11 @@ export interface PricingCoupon {
   minOrderValue: number | null;
   minItems: number | null;
   combinableWithCoupons: boolean;
-  combinableWithInsider: boolean;
   prepaidOnly: boolean;
+  /** Which orders it works on. Missing means normal orders only. */
+  appliesTo?: "ORDERS" | "PREORDERS" | "BOTH";
+  /** A personal credit: goes with every other offer. */
+  isCredit?: boolean;
   priority: number;
   /** Milliseconds, for tie-breaks (earliest created wins). */
   createdAt: number;
@@ -64,6 +88,11 @@ export interface PricingCoupon {
 export interface PricingInput {
   lines: readonly PricingLine[];
   insider: { percent: number } | null;
+  insiderMode: InsiderMode;
+  /** Normal order or pre-order. Missing means a normal order. */
+  orderKind?: OrderKindForPricing;
+  /** The pre-order tier discount, on every line of a pre-order. */
+  preorder?: { percent: number; label: string } | null;
   coupons: readonly PricingCoupon[];
   paymentMethod: "RAZORPAY" | "COD" | null;
   shipping: { freeThreshold: number; fee: number };
@@ -79,8 +108,18 @@ export interface PricedLine {
   total: number;
 }
 
+export interface FreeItem {
+  couponId: string;
+  code: string;
+  variantId: string;
+  quantity: number;
+  value: number;
+  itemLabel: string;
+  available: boolean;
+}
+
 export interface AppliedDiscount {
-  kind: "INSIDER" | "COUPON";
+  kind: "INSIDER" | "COUPON" | "PREORDER";
   couponId: string | null;
   code: string | null;
   label: string;
@@ -88,6 +127,8 @@ export interface AppliedDiscount {
   freeShipping: boolean;
   /** Per-line share of this discount, by line key. */
   perLine: Record<string, number>;
+  /** Set for a free item coupon. */
+  freeItem?: FreeItem;
 }
 
 export type CouponRejectionReason =
@@ -97,6 +138,8 @@ export type CouponRejectionReason =
   | "PREPAID_ONLY"
   | "NOT_WITH_INSIDER"
   | "NOT_WITH_COUPON"
+  | "NOT_FOR_PREORDERS"
+  | "PREORDERS_ONLY"
   | "BETTER_OFFER";
 
 export interface RejectedCoupon {
@@ -126,6 +169,9 @@ export interface PricingResult {
   insiderApplied: boolean;
   /** Insider was available but a code that can't be combined saved more. */
   insiderBlockedBy: string | null;
+  preorderApplied: boolean;
+  /** Free items from free item coupons (available or not). */
+  freeItems: FreeItem[];
   rejected: RejectedCoupon[];
 }
 
@@ -218,6 +264,7 @@ function couponDiscount(
   lines: readonly PricingLine[],
   remaining: Remaining,
   eligible: Set<string>,
+  percentOnOriginal: boolean,
 ): Record<string, number> {
   const eligibleLines = lines.filter((line) => eligible.has(line.key));
   const values = eligibleLines.map((line) => ({
@@ -225,18 +272,26 @@ function couponDiscount(
     value: remaining.get(line.key) ?? 0,
   }));
   const base = values.reduce((sum, v) => sum + v.value, 0);
+  // ADD mode: percentages are worked out on the original price, so they add
+  // up (15% + 5% = 20%). Never more than what is left, though.
+  const percentBase = percentOnOriginal
+    ? eligibleLines.reduce(
+        (sum, line) => sum + line.unitPrice * line.quantity,
+        0,
+      )
+    : base;
   const give = coupon.give;
 
   let amount = 0;
   if (give.type === "PERCENTAGE") {
-    amount = roundHalfUp((base * give.percent) / 100);
+    amount = roundHalfUp((percentBase * give.percent) / 100);
   } else if (give.type === "FLAT") {
     amount = give.amount;
   } else if (give.type === "TIERED") {
     const tier = [...give.tiers]
       .sort((a, b) => b.minSubtotal - a.minSubtotal)
       .find((t) => base >= t.minSubtotal);
-    amount = tier ? roundHalfUp((base * tier.percent) / 100) : 0;
+    amount = tier ? roundHalfUp((percentBase * tier.percent) / 100) : 0;
   } else if (give.type === "BUY_X_GET_Y") {
     // Every unit at its current value; in each group of buy+get, the
     // cheapest `get` units are free.
@@ -268,7 +323,7 @@ function couponDiscount(
     }
     return perLine;
   } else {
-    amount = 0; // FREE_SHIPPING: nothing off the goods.
+    amount = 0; // FREE_SHIPPING and FREE_ITEM: nothing off the goods.
   }
 
   if (coupon.maxDiscount !== null)
@@ -287,6 +342,9 @@ interface ScenarioResult {
   discounts: AppliedDiscount[];
   remaining: Remaining;
   freeShipping: boolean;
+  /** Value of free items in stock, for choosing the best combination. */
+  freeItemValue: number;
+  preorderApplied: boolean;
   /** Coupons whose minimum failed after earlier discounts. */
   failed: PricingCoupon[];
 }
@@ -308,6 +366,12 @@ function runScenario(input: PricingInput, scenario: Scenario): ScenarioResult {
   const discounts: AppliedDiscount[] = [];
   const failed: PricingCoupon[] = [];
   let freeShipping = false;
+  let freeItemValue = 0;
+  const addMode = input.insiderMode === "ADD";
+  const original = input.lines.reduce(
+    (sum, line) => sum + line.unitPrice * line.quantity,
+    0,
+  );
 
   const apply = (perLine: Record<string, number>) => {
     for (const [key, value] of Object.entries(perLine)) {
@@ -315,24 +379,48 @@ function runScenario(input: PricingInput, scenario: Scenario): ScenarioResult {
     }
   };
 
-  if (scenario.insider && input.insider) {
+  /** A percentage off every line; in ADD mode on the original price. */
+  const percentOff = (percent: number): Record<string, number> => {
     const values = input.lines.map((line) => ({
       key: line.key,
       value: remaining.get(line.key) ?? 0,
     }));
-    const base = values.reduce((sum, v) => sum + v.value, 0);
-    const amount = Math.min(
-      base,
-      roundHalfUp((base * input.insider.percent) / 100),
+    const left = values.reduce((sum, v) => sum + v.value, 0);
+    const base = addMode ? original : left;
+    return allocate(
+      Math.min(left, roundHalfUp((base * percent) / 100)),
+      values,
     );
-    const perLine = allocate(amount, values);
+  };
+  const total = (perLine: Record<string, number>) =>
+    Object.values(perLine).reduce((sum, v) => sum + v, 0);
+
+  // BEST mode: with the Insider discount on, the pre-order discount is off
+  // (the engine also tries it the other way round and keeps the better one).
+  const preorderOn = Boolean(input.preorder) && !(scenario.insider && !addMode);
+  if (preorderOn && input.preorder) {
+    const perLine = percentOff(input.preorder.percent);
+    apply(perLine);
+    discounts.push({
+      kind: "PREORDER",
+      couponId: null,
+      code: null,
+      label: input.preorder.label,
+      amount: total(perLine),
+      freeShipping: false,
+      perLine,
+    });
+  }
+
+  if (scenario.insider && input.insider) {
+    const perLine = percentOff(input.insider.percent);
     apply(perLine);
     discounts.push({
       kind: "INSIDER",
       couponId: null,
       code: null,
       label: `Insider ${input.insider.percent}% off`,
-      amount,
+      amount: total(perLine),
       freeShipping: false,
       perLine,
     });
@@ -358,7 +446,36 @@ function runScenario(input: PricingInput, scenario: Scenario): ScenarioResult {
       });
       continue;
     }
-    const perLine = couponDiscount(coupon, input.lines, remaining, eligible);
+    if (coupon.give.type === "FREE_ITEM") {
+      const give = coupon.give;
+      if (give.available) freeItemValue += give.value * give.quantity;
+      discounts.push({
+        kind: "COUPON",
+        couponId: coupon.id,
+        code: coupon.code,
+        label: coupon.label,
+        amount: 0,
+        freeShipping: false,
+        perLine: {},
+        freeItem: {
+          couponId: coupon.id,
+          code: coupon.code,
+          variantId: give.variantId,
+          quantity: give.quantity,
+          value: give.value,
+          itemLabel: give.itemLabel,
+          available: give.available,
+        },
+      });
+      continue;
+    }
+    const perLine = couponDiscount(
+      coupon,
+      input.lines,
+      remaining,
+      eligible,
+      addMode,
+    );
     const amount = Object.values(perLine).reduce((sum, v) => sum + v, 0);
     if (amount <= 0) {
       failed.push(coupon);
@@ -381,6 +498,8 @@ function runScenario(input: PricingInput, scenario: Scenario): ScenarioResult {
     discounts,
     remaining,
     freeShipping,
+    freeItemValue,
+    preorderApplied: preorderOn,
     failed,
   };
 }
@@ -396,11 +515,27 @@ function shippingFor(
   return freeShipping ? { fee: 0, saved: due } : { fee: due, saved: 0 };
 }
 
-function compatible(scenario: Scenario): boolean {
+/** Takes money off the goods (not free delivery, a free item or a credit). */
+function takesMoneyOff(coupon: PricingCoupon): boolean {
+  return (
+    !coupon.isCredit &&
+    coupon.give.type !== "FREE_SHIPPING" &&
+    coupon.give.type !== "FREE_ITEM"
+  );
+}
+
+/** Whether the Insider discount can go with this coupon. */
+function goesWithInsider(coupon: PricingCoupon, mode: InsiderMode): boolean {
+  return mode === "ADD" || !takesMoneyOff(coupon);
+}
+
+function compatible(scenario: Scenario, mode: InsiderMode): boolean {
   const { coupons } = scenario;
-  if (scenario.insider && coupons.some((c) => !c.combinableWithInsider))
+  if (scenario.insider && coupons.some((c) => !goesWithInsider(c, mode)))
     return false;
-  if (coupons.length > 1 && coupons.some((c) => !c.combinableWithCoupons))
+  // Personal credits go with everything.
+  const others = coupons.filter((c) => !c.isCredit);
+  if (others.length > 1 && others.some((c) => !c.combinableWithCoupons))
     return false;
   return true;
 }
@@ -412,6 +547,18 @@ function standaloneRejection(
 ): RejectedCoupon | null {
   if (coupon.prepaidOnly && input.paymentMethod === "COD") {
     return { couponId: coupon.id, code: coupon.code, reason: "PREPAID_ONLY" };
+  }
+  const appliesTo = coupon.appliesTo ?? "ORDERS";
+  const kind = input.orderKind ?? "STANDARD";
+  if (kind === "PREORDER" && appliesTo === "ORDERS") {
+    return {
+      couponId: coupon.id,
+      code: coupon.code,
+      reason: "NOT_FOR_PREORDERS",
+    };
+  }
+  if (kind === "STANDARD" && appliesTo === "PREORDERS") {
+    return { couponId: coupon.id, code: coupon.code, reason: "PREORDERS_ONLY" };
   }
   const eligible = eligibleKeys(coupon, input.lines);
   if (eligible.size === 0) {
@@ -501,7 +648,7 @@ export function priceCart(input: PricingInput): PricingResult {
     const chosen = pool.filter((_, i) => mask & (1 << i));
     for (const insider of insiderOptions) {
       const scenario: Scenario = { insider, coupons: chosen };
-      if (!compatible(scenario)) continue;
+      if (!compatible(scenario, input.insiderMode)) continue;
       const result = runScenario(input, scenario);
       if (!result.valid) continue;
       const merchandise = [...result.remaining.values()].reduce(
@@ -516,7 +663,9 @@ export function priceCart(input: PricingInput): PricingResult {
       // discount is never dropped just to stay above the threshold.
       const typed = chosen.filter((c) => c.source === "code").length;
       const savings =
-        result.discounts.reduce((sum, d) => sum + d.amount, 0) + shipping.saved;
+        result.discounts.reduce((sum, d) => sum + d.amount, 0) +
+        shipping.saved +
+        result.freeItemValue;
       if (
         !best ||
         savings > best.savings ||
@@ -540,14 +689,14 @@ export function priceCart(input: PricingInput): PricingResult {
   let insiderBlockedBy: string | null = null;
   if (input.insider && !insiderApplied) {
     const blocker = winner.scenario.coupons.find(
-      (c) => !c.combinableWithInsider,
+      (c) => !goesWithInsider(c, input.insiderMode),
     );
     insiderBlockedBy = blocker?.code ?? null;
   }
 
   for (const coupon of candidates) {
     if (chosenIds.has(coupon.id) || coupon.source !== "code") continue;
-    if (insiderApplied && !coupon.combinableWithInsider) {
+    if (insiderApplied && !goesWithInsider(coupon, input.insiderMode)) {
       rejected.push({
         couponId: coupon.id,
         code: coupon.code,
@@ -556,7 +705,10 @@ export function priceCart(input: PricingInput): PricingResult {
       continue;
     }
     const blocker = winner.scenario.coupons.find(
-      (c) => !c.combinableWithCoupons || !coupon.combinableWithCoupons,
+      (c) =>
+        !c.isCredit &&
+        !coupon.isCredit &&
+        (!c.combinableWithCoupons || !coupon.combinableWithCoupons),
     );
     if (blocker) {
       rejected.push({
@@ -613,6 +765,10 @@ export function priceCart(input: PricingInput): PricingResult {
     freeShippingRemaining,
     insiderApplied,
     insiderBlockedBy,
+    preorderApplied: winner.result.preorderApplied,
+    freeItems: winner.result.discounts
+      .map((d) => d.freeItem)
+      .filter((item): item is FreeItem => Boolean(item)),
     rejected,
   };
 }

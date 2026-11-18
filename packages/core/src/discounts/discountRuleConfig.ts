@@ -49,6 +49,16 @@ export const tieredConfigSchema = z.object({
 
 export const freeShippingConfigSchema = z.object({});
 
+/** A product size and colour given free, and how many. */
+export const freeItemConfigSchema = z.object({
+  variantId: z.string().min(1, "Pick the item to give."),
+  quantity: z
+    .number()
+    .int("Use a whole number.")
+    .min(1, "Give at least 1.")
+    .max(5, "Give at most 5."),
+});
+
 export type PercentageConfig = z.infer<typeof percentageConfigSchema>;
 export type TieredConfig = z.infer<typeof tieredConfigSchema>;
 export type FlatConfig = z.infer<typeof flatConfigSchema>;
@@ -71,7 +81,9 @@ export function validateDiscountRuleConfig(
           ? buyXGetYConfigSchema
           : type === "TIERED"
             ? tieredConfigSchema
-            : freeShippingConfigSchema;
+            : type === "FREE_ITEM"
+              ? freeItemConfigSchema
+              : freeShippingConfigSchema;
 
   const result = schema.safeParse(config);
   if (!result.success) {

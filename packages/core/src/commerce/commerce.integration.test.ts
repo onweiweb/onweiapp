@@ -47,9 +47,9 @@ function draft(overrides: Partial<CouponDraft>): CouponDraft {
     endsAt: null,
     autoApply: false,
     combinableWithCoupons: false,
-    combinableWithInsider: false,
     prepaidOnly: false,
     priority: 0,
+    appliesTo: "ORDERS",
     ...overrides,
   };
 }
@@ -159,7 +159,22 @@ describe.skipIf(!process.env.DATABASE_URL)(
         });
     }
 
+    // These run the normal shop, so the dev site must not be in pre-order
+    // mode while they run; the old mode is put back afterwards.
+    let previousMode: "WAITLIST" | "PREORDERS" | "LIVE" | null = null;
+    let previousCod = true;
+
     beforeAll(async () => {
+      const setting = await prisma.siteSetting.findUnique({
+        where: { id: "singleton" },
+        select: { siteMode: true },
+      });
+      previousMode = setting?.siteMode ?? null;
+      if (previousMode === "PREORDERS")
+        await prisma.siteSetting.update({
+          where: { id: "singleton" },
+          data: { siteMode: "LIVE" },
+        });
       staffUserId = (await prisma.staffUser.findFirstOrThrow()).id;
       const category = await prisma.category.create({
         data: { name: "Test cat", slug: `test-${TAG}` },
@@ -191,15 +206,32 @@ describe.skipIf(!process.env.DATABASE_URL)(
       await prisma.inventory.create({
         data: { productVariantId: variantId, warehouseId, quantityOnHand: 10 },
       });
-      await prisma.storeSetting.upsert({
+      const store = await prisma.storeSetting.upsert({
         where: { id: "singleton" },
         create: { id: "singleton" },
         update: {},
       });
+      // The COD tests need cash on delivery on; staff may have it off in dev.
+      previousCod = store.codEnabled;
+      if (!store.codEnabled)
+        await prisma.storeSetting.update({
+          where: { id: "singleton" },
+          data: { codEnabled: true },
+        });
     });
 
     afterAll(async () => {
       vi.restoreAllMocks();
+      if (previousMode === "PREORDERS")
+        await prisma.siteSetting.update({
+          where: { id: "singleton" },
+          data: { siteMode: "PREORDERS" },
+        });
+      if (!previousCod)
+        await prisma.storeSetting.update({
+          where: { id: "singleton" },
+          data: { codEnabled: false },
+        });
       const orders = await prisma.order.findMany({
         where: { customerId: { in: customerIds } },
         select: { id: true },
@@ -297,7 +329,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
         expectedTotal: view.pricing.total,
         razorpay: null,
       });
-      expect(result.ok).toBe(true);
+      expect(result.ok ? true : result.reason).toBe(true);
       if (!result.ok) return;
       const order = await prisma.order.findUniqueOrThrow({
         where: { id: result.orderId },

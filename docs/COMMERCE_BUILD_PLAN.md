@@ -716,7 +716,7 @@ insiders_page`, consent wording without "about the launch" stored as `insiders-v
 - **Admin naming:** the Waitlist page is now Insiders > Members (`/waitlist` redirects). Admin copy says Insiders.
 - **Consent:** the waitlist box now reads "...contacting me about the launch by email and WhatsApp...", and new entries
   store `consentVersion` as `waitlist-v2:<privacy version>`.
-- **Insiders > WhatsApp sends (2026-11-19, local):** staff pick any approved Utility or Marketing template from Gupshup,
+- **Insiders > WhatsApp sends (pushed 2026-11-17, b762ec1, prod migrated):** staff pick any approved Utility or Marketing template from Gupshup,
   choose what fills each blank (first name, full name, Insider code, address form link, the end of a button link, or
   fixed text), pick a group (all, no address yet, address shared, joined between dates, hand-picked), see counts of who
   is left out (STOP, unsubscribed, no code, already got this template, with an opt-in to send again), send a test with
@@ -728,6 +728,26 @@ insiders_page`, consent wording without "about the launch" stored as `insiders-v
   (browser-safe parts in `campaignFill.ts`, imported as `@onwei/core/campaign-fill`), routes under
   `apps/admin/app/api/insiders/whatsapp/`. Migration `20261119120000_whatsapp_campaigns` (owner runs on prod before the
   push). The Insider code message is now labelled Utility in admin.
+- **WhatsApp numbers panel (pushed 2026-11-18, 6cf5164):** top of "Sent messages" and "Automatic messages": sent,
+  delivered (includes read), read, not delivered yet, failed, each with a %, split by message type (New message,
+  welcome, Insider code), top 3 failure reasons, range 7 days, 30 days (default) or all time (`?range=`). Data from
+  `getInsiderWhatsAppStats({ days })` in `campaign.ts` (date math lives in core, the React purity lint forbids
+  `Date.now()` in a server component).
+- **Meta rejected `onwei_insider_code` as Utility (Incorrect Category):** a message carrying a discount code is
+  Marketing. Replacement proposed: `onwei_card_address_request` (Utility, no code), body "Hi {{1}}, we need your
+  delivery address to send your Onwei card..." with an "Add address" URL button `https://www.onwei.in/insider/address?t={{1}}`;
+  admin fill: First name, end of the address link. Owner to submit in Gupshup.
+- **Sender shows as a number, not "Onwei":** WhatsApp shows the number to people who have not saved it until the
+  display name is approved and Meta business verification is done; the name always shows only with Meta Verified or
+  an Official Business Account. Owner to check Name status in WhatsApp Manager and verify the business.
+- **WhatsApp page tidy-up (2026-11-18, local):** the "Choose template" popup lists only templates that are approved
+  and fit the message (`templateFitFor` in `gupshupTemplates.ts`: approved, right category, sendable top part, image
+  only where allowed) and says how many are still waiting. Steps: choose, check the filled-in preview (one dropdown per
+  blank, count fixed by the template), image if the template has one. Template ID, name, text box and header select are
+  no longer shown. Saving refuses a new or switched-on template that doesn't fit (`api/whatsapp/templates/_usable.ts`);
+  an old one can always be kept switched off. On/off moved to the row (PATCH on the same route, with a confirm). A
+  saved template WhatsApp later rejects shows red ("Template no longer approved") but is not switched off
+  automatically (owner's call). The save route now accepts all six messages (it only took three before).
 
 ## 14. Figma inventory (checked 2026-11-09)
 
@@ -776,37 +796,117 @@ at desktop and mobile and shown to the owner before its phase ships.
   look but shows one milestone: free shipping.
 - Currency written as both "Rs." and "₹". The build uses "₹" everywhere (section 11).
 
-## 14a. Pre-order campaign (Phase H, later)
+## 14a. Pre-order campaign (Phase H, approved 2026-11-18, built locally, not pushed)
 
-Owner decision 2026-11-09: build later, keep here so the earlier phases leave room for it (lap discount as a
-discount source in the engine, reservations as an order type). Figma shows a 21-day launch pre-order:
+Owner sheet and answers (2026-11-18):
 
-- Three "laps": Lap 1 (days 1 to 7) 30% off plus a big mystery box, Lap 2 (days 8 to 14) 20% plus a mystery box, Final
-  lap (days 15 to 21) 10% plus a mini mystery box. The earlier you reserve, the bigger the saving.
-- "Reserve for ₹900": a ₹900 payment holds the product and is "redeemable against the final discounted value".
-- Countdown per lap, pop-up, banner, marquee, lap states (closed, live, locked).
+- Three tiers, days per tier set in admin (length not fixed yet). Tier 1: 15% + mystery box worth ₹1,000; tier 2: 10% +
+  box ₹500 (tote, socks, cap); tier 3: 8% + box ₹250 (cap, socks). Box contents are examples: a box is any inventory item.
+- Insiders: 5% extra (use whatever Insider discount is configured) + an exclusive gift worth ₹200. Referral: later.
+- Insider discount with other offers is an admin choice: "Add on top" (15% + 5% = 20%, percentages add on the original
+  price) or "Bigger one wins". It applies to coupons too and replaces the per-coupon "works with Insider" tick.
+- Reserve ₹900 per item now (admin setting, default 900), balance when stock is ready. Online only, no COD. Anyone can
+  pre-order (sign-in needed). No cap on quantity. Pre-orders are the next step (site mode PREORDERS).
+- Cancel: the paid reserve turns into a personal coupon (credit) for the customer. Cash refund is a staff-only fallback.
+- Coupons get a "free item" reward (any inventory item), filter pills by type (codes, automatic, free item, personal
+  credits) and "Where this works": on (whole order, categories, products), for (normal orders, pre-orders, both), who.
 
-What it needs (proposal, all admin-configurable):
+Design (as built):
 
-- Campaign settings: start date, laps (dates, %, reward name), reserve amount (₹900), which products.
-- Reservation: customer signs in, picks product and variant, pays ₹900 through Razorpay. The lap's discount is locked
-  to that reservation at payment time.
-- Balance payment when stock is ready: customer gets an email, pays the rest (price minus lap discount minus ₹900)
-  through the normal checkout, order ships.
-- Mystery box: a free item added to the order by lap, tracked as stock.
+- Admin "Coupons and discounts" (`/coupons`) with tabs Coupons, Insider discount (moved from Insiders), Pre-order, and a
+  price checker. Products get a "Gift only, not sold on the site" switch (mystery boxes, Insider gift).
+- Engine (`packages/core/src/pricing/engine.ts`): `insiderMode` ADD or BEST, an optional pre-order tier discount, coupon
+  `FREE_ITEM` reward (free lines at ₹0, counted at their value when picking the best combination), coupon
+  `appliesTo` checked against the order kind.
+- Order kind PREORDER, new status RESERVED (reserve paid, waiting for stock and balance). PENDING to RESERVED on the
+  reserve payment, RESERVED to CONFIRMED on the balance payment. Reserve uses `Order.razorpayOrderId`, the balance its
+  own Razorpay order (`balanceRazorpayOrderId`). Tier, discounts and gifts are saved on the order at reserve time.
+- Stock: reserving takes none. "Stock is in, ask for balance" (per product) holds stock for the oldest reservations
+  first, plus their box and gift, and sends the balance link (email and WhatsApp). Balance paid turns the hold into a
+  sale, like a normal order. Reminders after 3 and 7 days; after 14 days staff can cancel (credit coupon, stock back).
+- Pre-order checkout is its own one-product flow (not the cart), so the normal cart's stock rules stay untouched.
+- Owner follow-ups (2026-11-18): a credit keeps its leftover for the next order; unpaid balance gets reminders, then
+  after 14 days the reserve becomes credit valid for a year (every pre-order credit lasts 12 months).
 
-Questions before it can be planned in detail:
+Built (2026-11-18, local, not pushed). Migrations `20261120120000_preorders_and_discounts` and
+`20261120120100_preorder_whatsapp` (owner runs on prod BEFORE the push: new enum values and columns the code reads).
 
-1. Is the ₹900 refundable if the customer changes their mind? Until when?
-2. Does the lap discount stack with the Insider discount and coupons? (Default proposal: no, the customer gets the
-   better of the two.)
-3. One reservation per product per customer, or any number?
-4. Is it one ₹900 per item or per order?
-5. When does the balance get paid, and what if the customer never pays it?
-6. Is this happening before the full store opens (launch sequence: waitlist, pre-order, live)?
-7. Does it replace the entry pop-up during the 21 days?
+- Core `packages/core/src/preorders/`: `campaign.ts` (settings, tier windows, public status), `quote.ts` (price and
+  reserve split), `reserve.ts` (place), `balance.ts` (ask for balance FIFO, balance payment, cancel to credit or refund,
+  daily reminders, customer credits), `report.ts` (admin numbers), `checker.ts` (admin price checker), `notify.ts`
+  (email + WhatsApp), `rateLimit.ts`. Payments: `markOrderPaid` handles reserve (PENDING to RESERVED) and balance
+  (RESERVED to CONFIRMED) through `paymentTarget`. Manual status changes never move RESERVED orders.
+- Normal cart: refuses gift-only products and everything while the site is in PREORDERS mode; free item coupons add
+  ₹0 lines held from stock (left out if out of stock). Credits (`Coupon.kind CREDIT`) go with every offer.
+- Admin: `/coupons` "Coupons and discounts" with tabs Coupons (type pills, "Where this works"), Insider discount (moved
+  from Insiders, `?tab=discount` redirects; add on top / bigger one wins), Pre-order (campaign form, numbers, "Stock is
+  in, ask for balance" per product), Price checker. Orders list filter by kind; order page pre-order panel with cancel
+  to credit (or refund with `order:refund`). Products have "Gift only". WhatsApp templates: PREORDER_RESERVED,
+  PREORDER_BALANCE, PREORDER_CREDIT (off until set up in admin WhatsApp).
+- Storefront: banner (Figma 1257:7003) under the header, pinned; pop-up (1257:5853 desktop, 1257:6666 mobile sheet) once
+  per visit instead of the sign-in pop-up; "Reserve for ₹900" on product page and cards; `/preorder/checkout`
+  (checkout style, no Figma); success page and account order page (pay balance, cancel to credit); account "My
+  credits". Daily cron (`/api/cron/release-orders`) sends reminders and makes credits.
+- Figma copy typos fixed: "and and" to "and", "wont" to "won't". The pre-order marquee (Design page 1233:3238) is not on
+  Dev Ready and was not built. Lap names, percentages and gift names come from admin, so the site shows 15/10/8%.
+- Gifts: the tier's mystery box is one per item; the Insider gift is one per pre-order.
+- Pre-order mode on the normal bag (fix 2026-11-18, after the owner reached the normal checkout at full price): in
+  PREORDERS mode `getCartView` returns `preorderOnly` and `canCheckout: false`, each line says if it is `reservable`.
+  The bag drawer shows "Reserve this" per pre-order item and a note instead of Checkout; `/checkout` shows "Pre-orders
+  are on" with Reserve links; `placeOrder` refuses with `PREORDER_ONLY` (own message, not "Your bag is empty").
+  Products not in the campaign show a disabled "Available at launch" on the product page and cards.
 
-This needs Razorpay early, so it changes the build order: Razorpay moves before the full cart if pre-orders come first.
+Clean switch between pre-orders and the normal shop (audit and fix 2026-11-18, after the owner saw "This item isn't
+available right now" on an item with 121 in stock):
+
+- Cause: the browser and the server used two different rules. The server shut the bag whenever the site mode was
+  PREORDERS. The browser only treated the site as pre-order when a campaign lap was also running. Dev was in PREORDERS
+  with no campaign, so the site showed "Add to cart" and the server refused it with a generic message.
+- One rule now: `getStorefront()` / `storefrontStateOf()` in `packages/core/src/preorders/storefront.ts` returns LIVE,
+  WAITLIST, PREORDER_OPEN (a lap runs), PREORDER_SOON (starts later) or PREORDER_CLOSED (no campaign, or it ended). The
+  cart, quick add, the pre-order quote (refused unless PREORDER_OPEN, so the reserve link is dead while the site is
+  live), `/api/preorder/status` (new `state` and `opensAt`) and the buttons (`buyModeFor`) all read it.
+- Bag in pre-order mode: add, quick add and + refuse with `PREORDER_ONLY` ("We're only taking pre-orders right now. The
+  bag opens at launch."). `getCartView` shows no lines, the drawer shows "Pre-orders are on" with a link to Shop All, and
+  `/checkout` says checkout opens at launch. The per-line "Reserve this" was removed.
+- Owner decisions: switching the site INTO pre-order mode empties every bag and its typed codes (`emptyAllCarts`, inside
+  the `updateSiteSetting` transaction, line count in the audit log). Admin refuses the switch unless a campaign is
+  switched on and not over (`canStartPreorderMode`).
+- Owner decision: lists show only campaign products in pre-order mode (`storefrontProductWhere` in featured, category,
+  Shop All, related and compare lists). Categories with nothing on pre-order are hidden from the header, mobile menu,
+  footer, collection tabs and homepage tabs (`listHiddenCategorySlugs`, `lib/hiddenCategories.ts`); their collection
+  page redirects to Shop All. A product page stays reachable by its link and shows "Available at launch".
+- Buttons stay disabled until the status loads. Campaign products show "Pre-orders open <date>" before the start and
+  "Pre-orders closed" after the end. Saving a campaign or the site mode refreshes the catalog cache and product pages.
+- Going LIVE after pre-orders: lists, menus and the bag return to normal on the next refresh. Reserved orders still
+  pay their balance through their own link (balance payments don't depend on the site mode).
+- Core integration tests now run one file at a time when a database is connected (`packages/core/vitest.config.ts`):
+  the commerce and pre-order files switch the shared site mode and broke each other in parallel.
+
+Problems hit while building (and the fix):
+
+- Typecheck breaks after adding `insiderMode`, RESERVED and removing `combinableWithInsider`: every caller updated.
+- Circular import cart.ts / orders.ts over `variantLabelOf`: moved to `commerce/variantLabel.ts`.
+- Lint: no `Date.now()` in render (use `useNow`), no mutable variable inside `useMemo` (rewrote with reduce).
+- Integration test called real Razorpay: vitest restores mocks after each test, so the Razorpay stub must be set in
+  `beforeEach`, not `beforeAll`.
+- Dev server threw `preorderCampaign` undefined after the migration: stale Prisma client in the running server.
+  Run `prisma generate` and restart `npm run dev` after any schema change.
+- Pop-up live lap card narrower than the others (flex plus padding): use `grid grid-flow-col auto-cols-[minmax(0,1fr)]`.
+- White strip around the pinned banner: wrap it in a sticky `bg-onwei-green py-2` div.
+- Mobile pop-up "Locked" pill overflowed: header row wraps on mobile.
+- Commerce integration tests failed because the dev DB was in PREORDERS mode and COD was off in dev Settings: the test
+  now switches site mode to LIVE and COD on in `beforeAll` and restores both after. Slow dev DB hooks: 60s timeouts.
+- Normal checkout reachable in pre-order mode, showing the full price and "Your bag is empty": fixed as above.
+- In dev, WhatsApp sign-in codes are not really sent: no SIGN_IN_CODE template row in the dev DB and
+  `MSG91_OTP_TEMPLATE_ID` is empty, so the static `OTP_STATIC_CODE` is used.
+- Still failing, unrelated and untouched: admin `app/page.test.tsx` (cookies outside a request) and web
+  `app/about/page.test.tsx` (async SiteFooter).
+
+Before pushing: owner runs both migrations on prod; then push only on "commit and push". Owner to-dos for the launch of
+pre-orders: create the campaign and gift-only products in admin, submit the three pre-order WhatsApp templates
+(Utility), set site mode to PREORDERS. Optional: relabel the "Total" line on the reserve checkout; the pre-order
+marquee is not built.
 
 ## 15. Schema changes (summary, each goes through the `db-migrations` skill and a prod migration by the owner)
 
@@ -855,6 +955,6 @@ Soft deletes on customer-facing rows, price snapshots on order lines, audit rows
 2. (Answered: 5% for everyone, tiers available in admin.)
 3. Starting values for admin settings (all editable later): free shipping threshold, delivery fee below it, COD fee
    ₹49, COD max ₹5,000, return window 7 days.
-4. Pre-order campaign: answers to the seven questions in section 14a (before Phase H only).
+4. (Answered 2026-11-18, see section 14a. Pre-orders built locally.)
 5. Razorpay: test keys in `.env.local`, account activation status.
 6. Go-ahead to start Phase A.

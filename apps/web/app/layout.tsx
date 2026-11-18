@@ -12,6 +12,7 @@ import { AnalyticsProvider } from "./_components/AnalyticsProvider";
 import { CartProvider } from "./_components/commerce/CartProvider";
 import { CartDrawer } from "./_components/commerce/CartDrawer";
 import { EntryPopup } from "./_components/commerce/EntryPopup";
+import { PreorderPopup } from "./_components/preorder/PreorderPopup";
 import "./globals.css";
 
 // Figma specs "Author Variable" (display headlines, weights Medium/Semibold/
@@ -96,6 +97,7 @@ export default function RootLayout({
           {children}
           <CartDrawer />
           <EntryPopup />
+          <PreorderPopup />
         </CartProvider>
         <AnalyticsProvider />
         <SpeedInsights />

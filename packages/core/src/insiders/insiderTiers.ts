@@ -108,6 +108,49 @@ export async function getInsiderDefaultPercent(): Promise<number> {
   return row?.defaultPercent ?? DEFAULT_INSIDER_PERCENT;
 }
 
+export type InsiderStackMode = "ADD" | "BEST";
+
+/**
+ * How the Insider discount works with coupons and the pre-order discount:
+ * ADD (percentages add up on the price) or BEST (the bigger one only).
+ */
+export async function getInsiderStackMode(): Promise<InsiderStackMode> {
+  const row = await prisma.insiderSetting.findUnique({
+    where: { id: SINGLETON_ID },
+    select: { stackMode: true },
+  });
+  return row?.stackMode ?? "ADD";
+}
+
+export async function updateInsiderStackMode(
+  mode: InsiderStackMode,
+  actor: AuditActor,
+): Promise<void> {
+  const before = await getInsiderStackMode();
+  await prisma.$transaction(async (tx) => {
+    await tx.insiderSetting.upsert({
+      where: { id: SINGLETON_ID },
+      create: {
+        id: SINGLETON_ID,
+        stackMode: mode,
+        updatedByStaffId: actor.staffUserId,
+      },
+      update: { stackMode: mode, updatedByStaffId: actor.staffUserId },
+    });
+    await writeAuditLog(
+      {
+        staffUserId: actor.staffUserId,
+        action: "insider.stackMode.update",
+        entityType: "InsiderSetting",
+        entityId: SINGLETON_ID,
+        beforeState: { stackMode: before },
+        afterState: { stackMode: mode },
+      },
+      tx,
+    );
+  });
+}
+
 export async function listInsiderTiers(): Promise<InsiderTierSummary[]> {
   return prisma.insiderTier.findMany({
     orderBy: { startsAt: "asc" },

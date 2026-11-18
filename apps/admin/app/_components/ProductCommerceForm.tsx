@@ -20,7 +20,12 @@ export function ProductCommerceForm({
   categoryReturnable,
 }: {
   productId: string;
-  initial: { isReturnable: boolean; hsnCode: string; gstRate: string };
+  initial: {
+    isReturnable: boolean;
+    hsnCode: string;
+    gstRate: string;
+    giftOnly: boolean;
+  };
   categoryReturnable: boolean;
 }) {
   const router = useRouter();
@@ -43,6 +48,7 @@ export function ProductCommerceForm({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             isReturnable: values.isReturnable,
+            giftOnly: values.giftOnly,
             hsnCode: values.hsnCode.trim() || null,
             gstRate: values.gstRate === "" ? null : Number(values.gstRate),
           }),
@@ -61,6 +67,24 @@ export function ProductCommerceForm({
         router.refresh();
       }}
     >
+      <AdminCard className="flex flex-col gap-3">
+        <h2 className="text-lg font-semibold text-onwei-blue">Gift only</h2>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={values.giftOnly}
+            onChange={(e) =>
+              setValues((v) => ({ ...v, giftOnly: e.target.checked }))
+            }
+          />
+          Gift only, not sold on the site
+        </label>
+        <p className="text-xs text-onwei-blue/60">
+          For mystery boxes and other giveaways. It keeps its stock in Inventory
+          and can be given free by a pre-order tier, the Insider gift or a free
+          item coupon, but never shows in the shop.
+        </p>
+      </AdminCard>
       <AdminCard className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-onwei-blue">Returns</h2>
         <label className="flex items-center gap-2 text-sm">

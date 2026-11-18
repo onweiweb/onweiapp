@@ -7,6 +7,7 @@ import {
   cachedListPublishedArticles as listPublishedArticles,
   cachedListSurfaceReviews as listSurfaceReviews,
   cachedListValueProps as listValueProps,
+  cachedListHiddenCategorySlugs,
 } from "../lib/cachedCatalog";
 import type {
   ArticleListItem,
@@ -623,6 +624,7 @@ export default async function HomePage() {
     instagramPhotos,
     articles,
     settings,
+    hiddenSlugs,
   ] = await Promise.all([
     listActiveProductsByCategorySlug("pickleball"),
     listActiveProductsByCategorySlug("pilates"),
@@ -633,11 +635,12 @@ export default async function HomePage() {
     listInstagramPhotos(),
     listPublishedArticles(3),
     getSiteSetting(),
+    cachedListHiddenCategorySlugs(),
   ]);
   // Figma draws two states of this row, "pickle ball" picked (758:2325) and
   // the second tab picked (758:2632). Each tab shows its own category's
   // products, never another category's under a picked tab.
-  const shopTabs: ShopTab[] = [
+  const allShopTabs: ShopTab[] = [
     {
       key: "pickleball",
       label: "pickle ball",
@@ -664,6 +667,9 @@ export default async function HomePage() {
     },
   ];
 
+  // Pre-order mode hides categories with nothing on pre-order.
+  const shopTabs = allShopTabs.filter((tab) => !hiddenSlugs.includes(tab.key));
+
   const reviewProducts = [
     ...(pilatesCollection?.products ?? []),
     ...(pickleballCollection?.products ?? []),
@@ -676,7 +682,7 @@ export default async function HomePage() {
       {/* Client feedback 2026-11-16: About right after the banners, then the
           products, then reviews, then the video. */}
       <AboutSection />
-      <ShopTabs tabs={shopTabs} />
+      {shopTabs.length ? <ShopTabs tabs={shopTabs} /> : null}
       <ReviewWall
         reviews={wallReviews}
         heading={<MoversHeading count={settings.moversCount} />}

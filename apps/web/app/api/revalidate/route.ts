@@ -58,7 +58,11 @@ export async function POST(request: Request) {
     // cache), so drop this process's copy and rebuild the pages that show
     // them. Without this, a switch flipped in admin took up to ~45s to show.
     clearSiteSettingCache();
+    // Pre-order mode changes which products and categories are listed, so
+    // the catalog cache and product pages go too.
+    revalidateTag("catalog", { expire: 0 });
     revalidatePath("/collection/[slug]", "page");
+    revalidatePath("/product/[slug]", "page");
     for (const path of [
       "/",
       "/insiders",

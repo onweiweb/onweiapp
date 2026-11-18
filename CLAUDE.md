@@ -292,7 +292,7 @@ in WAITLIST mode, so the shop is hidden until the owner flips it to LIVE. Razorp
 (`onwei.in` and `mail.onwei.in` verified) and `admin.onwei.in` are set up. Read `docs/COMMERCE_BUILD_PLAN.md`
 (progress log, launch checklist, section 18) before touching any of it. Left: owner's admin setup (GST/HSN, shop rules,
 marquee, refund permission, Insider tiers), Insider email send (100 a day), Phase G (real SMS and WhatsApp, phone
-sign-in is refused on live prod until then), Phase H pre-order (needs answers in section 14a), and unplanned gaps
+sign-in is refused on live prod until then), Phase H pre-order (built locally 2026-11-18, not pushed, needs 2 prod migrations first, see section 14a), and unplanned gaps
 (shipped/delivered/refund emails, PIN autofill). GST invoicing, delivery partner and CRM are still not started.
 Local test data: dev waitlist entry and Insider code WEI6615 for the owner's own email; test orders ONW1001 to ONW1006.
 Contact Us (2026-11-09, pushed 8030251, prod migrated): `/contact` from Figma 1189:6006 / 1189:6203, reusing SiteHeader, FaqSection
@@ -304,11 +304,15 @@ prod before the push: `getSiteSetting` reads the whole row and the waitlist gate
 Printed Insider cards (2026-11-15, pushed 85af9e4, prod migrated): 500 pre-made codes in `InsiderCode`, new signups take
 the next free card, admin Insiders "Printed cards" tab (set up, printer CSV). The Insider email is sent only from admin
 (the automatic send at signup was removed 2026-11-16, 6d13cf6). Details in `docs/COMMERCE_BUILD_PLAN.md`.
-WhatsApp through Gupshup (2026-11-16, local, not pushed): templates managed in admin `/whatsapp` (DB rows, off by default),
+WhatsApp through Gupshup (2026-11-16): templates managed in admin `/whatsapp` (DB rows, off by default),
 real WhatsApp sign-in codes, waitlist-joined message, Insider WhatsApp sent with the Insider email, Gupshup webhook for
 delivery and STOP, waitlist consent names WhatsApp. Pushed ce3d290, prod migrated. Then (local): compact WhatsApp page with
-popups, Waitlist merged into Insiders > Members, `/insiders` signup page behind every "find your wei" link. Migration `20261116120000_whatsapp_messaging` needs the prod
-migration before the push. Details in `docs/COMMERCE_BUILD_PLAN.md` section 13.
+popups, Waitlist merged into Insiders > Members, `/insiders` signup page behind every "find your wei" link. Migration `20261116120000_whatsapp_messaging` is on prod.
+SMS sign-in codes through MSG91 (2026-11-17, ba1c8db, prod migrated): admin "Text messages" log; switches on once the owner
+sets `MSG91_AUTH_KEY` and `MSG91_OTP_TEMPLATE_ID` on Vercel (web). Client feedback round pushed (61ca1d3).
+Insiders > WhatsApp sends (2026-11-17, b762ec1, prod migrated `20261119120000_whatsapp_campaigns`): any approved
+template, fill blanks, pick a group, test, batch send, per-send log; numbers panel added 2026-11-18 (6cf5164).
+Details in `docs/COMMERCE_BUILD_PLAN.md` section 13.
 
 **Latest (2026-10-21):** Blogs page and admin blog editor, admin overhaul (speed, nav, shared kit), waitlist blog switch,
 blog analytics, product delete and redesigned product pages are pushed (up to f34223b). The backup product image work

@@ -2,6 +2,7 @@ import { prisma } from "@onwei/database";
 import type { SiteMode } from "@onwei/database";
 import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
+import { emptyAllCarts } from "../commerce/cart";
 
 const SINGLETON_ID = "singleton";
 // Read on effectively every request, apps/web/proxy.ts's site-mode gate,
@@ -126,36 +127,48 @@ export async function updateSiteSetting(
     where: { id: SINGLETON_ID },
   });
 
-  const row = await prisma.siteSetting.update({
-    where: { id: SINGLETON_ID },
-    data: {
-      siteMode: input.siteMode,
-      launchAt: input.launchAt,
-      showCountdown: input.showCountdown,
-      allowInternationalPhone: input.allowInternationalPhone,
-      showBlogOnWaitlist: input.showBlogOnWaitlist,
-      instagramUrl: input.instagramUrl,
-      linkedinUrl: input.linkedinUrl,
-      facebookUrl: input.facebookUrl,
-      youtubeUrl: input.youtubeUrl,
-      spotifyUrl: input.spotifyUrl,
-      contactAddress: input.contactAddress,
-      contactPhone: input.contactPhone,
-      contactEmail: input.contactEmail,
-      moversCount: input.moversCount,
-      homeVideoDesktopUrl: input.homeVideoDesktopUrl,
-      homeVideoMobileUrl: input.homeVideoMobileUrl,
-      updatedByStaffId: actor.staffUserId,
-    },
-  });
+  // Switching into pre-order mode empties every bag, so nothing bought for
+  // the normal shop is carried into pre-orders (owner decision 2026-11-18).
+  const enteringPreorders =
+    input.siteMode === "PREORDERS" && before.siteMode !== "PREORDERS";
 
-  await writeAuditLog({
-    staffUserId: actor.staffUserId,
-    action: "siteSetting.update",
-    entityType: "SiteSetting",
-    entityId: row.id,
-    beforeState: before,
-    afterState: row,
+  const row = await prisma.$transaction(async (tx) => {
+    const bagLinesRemoved = enteringPreorders ? await emptyAllCarts(tx) : 0;
+    const row = await tx.siteSetting.update({
+      where: { id: SINGLETON_ID },
+      data: {
+        siteMode: input.siteMode,
+        launchAt: input.launchAt,
+        showCountdown: input.showCountdown,
+        allowInternationalPhone: input.allowInternationalPhone,
+        showBlogOnWaitlist: input.showBlogOnWaitlist,
+        instagramUrl: input.instagramUrl,
+        linkedinUrl: input.linkedinUrl,
+        facebookUrl: input.facebookUrl,
+        youtubeUrl: input.youtubeUrl,
+        spotifyUrl: input.spotifyUrl,
+        contactAddress: input.contactAddress,
+        contactPhone: input.contactPhone,
+        contactEmail: input.contactEmail,
+        moversCount: input.moversCount,
+        homeVideoDesktopUrl: input.homeVideoDesktopUrl,
+        homeVideoMobileUrl: input.homeVideoMobileUrl,
+        updatedByStaffId: actor.staffUserId,
+      },
+    });
+
+    await writeAuditLog(
+      {
+        staffUserId: actor.staffUserId,
+        action: "siteSetting.update",
+        entityType: "SiteSetting",
+        entityId: row.id,
+        beforeState: before,
+        afterState: enteringPreorders ? { ...row, bagLinesRemoved } : row,
+      },
+      tx,
+    );
+    return row;
   });
 
   cached = null;

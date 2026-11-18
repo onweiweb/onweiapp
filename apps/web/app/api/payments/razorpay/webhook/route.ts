@@ -6,7 +6,10 @@ import {
 } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { razorpayConfig } from "../../../_lib/requestAuth";
-import { sendOrderEmailsInBackground } from "../../../_lib/orderEmails";
+import {
+  sendOrderEmailsInBackground,
+  sendPreorderMessageInBackground,
+} from "../../../_lib/orderEmails";
 
 // Razorpay webhook. Set it up in the Razorpay dashboard with this URL and
 // the events payment.authorized, payment.captured, payment.failed,
@@ -69,6 +72,8 @@ export async function POST(request: Request) {
         });
         if (paid.ok && paid.status === "CONFIRMED")
           sendOrderEmailsInBackground(paid.orderId);
+        if (paid.ok && paid.status === "RESERVED")
+          sendPreorderMessageInBackground(paid.orderId, { type: "RESERVED" });
       }
       break;
     case "payment.failed":
