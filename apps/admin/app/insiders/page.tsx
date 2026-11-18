@@ -19,6 +19,7 @@ import {
   AdminCard,
   AdminPager,
   AdminTabLinks,
+  CopyText,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
@@ -270,9 +271,11 @@ async function AddressesTab({
                 <AdminTableRow key={row.id}>
                   <AdminTableCell>{row.fullName}</AdminTableCell>
                   <AdminTableCell>
-                    {row.line1}
-                    {row.line2 ? `, ${row.line2}` : ""}, {row.city}, {row.state}{" "}
-                    {row.postalCode}
+                    <CopyText
+                      label="address"
+                      text={`${row.fullName}, ${row.line1}${row.line2 ? `, ${row.line2}` : ""}, ${row.city}, ${row.state} ${row.postalCode}, ${row.phone}`}
+                      display={`${row.line1}${row.line2 ? `, ${row.line2}` : ""}, ${row.city}, ${row.state} ${row.postalCode}`}
+                    />
                   </AdminTableCell>
                   <AdminTableCell>{row.phone}</AdminTableCell>
                   <AdminTableCell>{row.insiderCode ?? "-"}</AdminTableCell>

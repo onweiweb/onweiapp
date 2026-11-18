@@ -1,4 +1,5 @@
 export { AdminTabLinks } from "./AdminTabLinks";
+export { CopyText } from "./CopyText";
 export type { AdminTabLink } from "./AdminTabLinks";
 export { AdminFeedbackProvider, useConfirm, useToast } from "./AdminFeedback";
 export { EmptyState } from "./EmptyState";
