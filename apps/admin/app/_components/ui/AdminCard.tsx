@@ -7,7 +7,7 @@ export function AdminCard({
 }) {
   return (
     <div
-      className={`rounded-[30px] border border-onwei-beige bg-onwei-white p-6 ${className}`}
+      className={`rounded-[20px] border border-onwei-beige bg-onwei-white p-5 ${className}`}
     >
       {children}
     </div>

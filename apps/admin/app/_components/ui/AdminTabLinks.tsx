@@ -33,7 +33,7 @@ export function AdminTabLinks({
             href={`${basePath}?tab=${tab.id}`}
             role="tab"
             aria-selected={isActive}
-            className={`-mb-px border-b-2 px-4 py-2 font-cta text-sm uppercase tracking-wide transition-colors ${
+            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
               isActive
                 ? "border-onwei-blue text-onwei-blue"
                 : "border-transparent text-onwei-blue/60 hover:text-onwei-blue"

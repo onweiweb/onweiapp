@@ -22,7 +22,7 @@ export const AdminInput = forwardRef<
   return (
     <input
       ref={ref}
-      className={`h-11 rounded-[500px] border border-onwei-blue/25 bg-transparent px-4 font-cta text-sm text-onwei-blue outline-none focus:border-onwei-purple ${className}`}
+      className={`h-9 rounded-[500px] border border-onwei-blue/25 bg-transparent px-3.5 text-sm text-onwei-blue outline-none focus:border-onwei-purple ${className}`}
       {...props}
     />
   );
@@ -35,7 +35,7 @@ export const AdminSelect = forwardRef<
   return (
     <select
       ref={ref}
-      className={`h-11 rounded-[20px] border border-onwei-blue/25 bg-transparent px-4 font-cta text-sm text-onwei-blue outline-none focus:border-onwei-purple ${className}`}
+      className={`h-9 rounded-[14px] border border-onwei-blue/25 bg-transparent px-3.5 text-sm text-onwei-blue outline-none focus:border-onwei-purple ${className}`}
       {...props}
     />
   );
@@ -48,7 +48,7 @@ export const AdminTextarea = forwardRef<
   return (
     <textarea
       ref={ref}
-      className={`rounded-[20px] border border-onwei-blue/25 bg-transparent p-4 font-cta text-sm text-onwei-blue outline-none focus:border-onwei-purple ${className}`}
+      className={`rounded-[14px] border border-onwei-blue/25 bg-transparent px-3.5 py-2.5 text-sm text-onwei-blue outline-none focus:border-onwei-purple ${className}`}
       {...props}
     />
   );

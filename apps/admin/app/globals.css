@@ -20,7 +20,9 @@
   --color-onwei-white: #ffffff;
 
   --font-display: var(--font-archivo), sans-serif;
-  --font-grotesk: var(--font-mono), monospace;
+  /* Admin body text is Inter (easier to read in dense tables than the
+     storefront mono); `font-mono` stays IBM Plex Mono for codes. */
+  --font-grotesk: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-cta: var(--font-raleway), sans-serif;
 }
 
@@ -66,7 +68,7 @@ select {
   padding-right: 2.5rem;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none' stroke='%23161845' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 1rem center;
+  background-position: right 0.875rem center;
   background-size: 0.75rem;
 }
 select:disabled {

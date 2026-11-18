@@ -1,7 +1,7 @@
 export function AdminTable({ children }: { children: React.ReactNode }) {
   return (
     <div className="overflow-x-auto rounded-[20px] border border-onwei-blue/10">
-      <table className="w-full min-w-max border-collapse bg-onwei-white text-sm">
+      <table className="w-full min-w-max border-collapse bg-onwei-white text-[13px] tabular-nums">
         {children}
       </table>
     </div>
@@ -23,7 +23,7 @@ export function AdminTableHeaderCell({
 }: {
   children: React.ReactNode;
 }) {
-  return <th className="px-4 py-2 text-xs font-medium">{children}</th>;
+  return <th className="px-3 py-2 text-[11px] font-semibold">{children}</th>;
 }
 
 export function AdminTableRow({ children }: { children: React.ReactNode }) {
@@ -41,5 +41,7 @@ export function AdminTableCell({
   children: React.ReactNode;
   className?: string;
 }) {
-  return <td className={`px-4 py-2 align-middle ${className}`}>{children}</td>;
+  return (
+    <td className={`px-3 py-1.5 align-middle ${className}`}>{children}</td>
+  );
 }

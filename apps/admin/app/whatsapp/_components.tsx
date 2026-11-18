@@ -412,7 +412,7 @@ export function WhatsAppSwitch({
       type="button"
       onClick={() => void toggle()}
       disabled={switching}
-      className="mt-1 block text-xs underline disabled:opacity-60"
+      className="ml-2 text-xs underline underline-offset-2 disabled:opacity-60"
     >
       {switching ? "Saving..." : template.isActive ? "Switch off" : "Switch on"}
     </button>

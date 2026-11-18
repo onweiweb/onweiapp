@@ -70,9 +70,7 @@ function statusOf(
   }
   if (problem) {
     return {
-      label: template.isActive
-        ? "On, but template no longer approved"
-        : "Template no longer approved",
+      label: template.isActive ? "On, template rejected" : "Template rejected",
       tone: "problem",
     };
   }
@@ -80,8 +78,8 @@ function statusOf(
     return { label: "Needs an image", tone: "problem" };
   }
   return template.isActive
-    ? { label: "Sending", tone: "success" }
-    : { label: "Ready, switched off", tone: "active" };
+    ? { label: "On", tone: "success" }
+    : { label: "Off", tone: "pending" };
 }
 
 const TABS = [

@@ -746,7 +746,7 @@ insiders_page`, consent wording without "about the launch" stored as `insiders-v
   blank, count fixed by the template), image if the template has one. Template ID, name, text box and header select are
   no longer shown. Saving refuses a new or switched-on template that doesn't fit (`api/whatsapp/templates/_usable.ts`);
   an old one can always be kept switched off. On/off moved to the row (PATCH on the same route, with a confirm). A
-  saved template WhatsApp later rejects shows red ("Template no longer approved") but is not switched off
+  saved template WhatsApp later rejects shows red ("Template rejected"); working ones show On or Off but is not switched off
   automatically (owner's call). The save route now accepts all six messages (it only took three before).
 
 ## 14. Figma inventory (checked 2026-11-09)

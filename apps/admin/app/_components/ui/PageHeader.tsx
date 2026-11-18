@@ -19,7 +19,7 @@ export function PageHeader({
   actions?: React.ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 border-b border-onwei-blue/10 pb-4">
+    <header className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 border-b border-onwei-blue/10 pb-3">
       <div className="flex min-w-0 flex-col gap-1">
         {back ? (
           <Link
@@ -29,7 +29,7 @@ export function PageHeader({
             &larr; {back.label}
           </Link>
         ) : null}
-        <h1 className="font-display text-2xl font-semibold uppercase leading-tight">
+        <h1 className="font-display text-xl font-semibold uppercase leading-tight">
           {title}
         </h1>
         {description ? (

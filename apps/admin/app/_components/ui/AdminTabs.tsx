@@ -38,7 +38,7 @@ export function AdminTabs({
               role="tab"
               aria-selected={isActive}
               onClick={() => setActive(tab.id)}
-              className={`rounded-[30px] px-4 py-1.5 font-cta text-sm uppercase tracking-wide transition-colors ${
+              className={`rounded-[30px] px-3.5 py-1 text-sm font-medium transition-colors ${
                 isActive
                   ? "bg-onwei-blue text-onwei-beige"
                   : "border border-onwei-blue/30 bg-transparent text-onwei-blue/70 hover:border-onwei-blue"

@@ -16,7 +16,7 @@ export function AdminBadge({
 }) {
   return (
     <span
-      className={`inline-flex items-center rounded-[30px] px-3 py-1 font-grotesk text-xs font-medium uppercase tracking-wide ${TONE_CLASSES[tone]}`}
+      className={`inline-flex items-center rounded-[30px] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${TONE_CLASSES[tone]}`}
     >
       {children}
     </span>

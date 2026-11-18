@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Archivo, IBM_Plex_Mono, Raleway } from "next/font/google";
+import { Archivo, IBM_Plex_Mono, Inter, Raleway } from "next/font/google";
 import Image from "next/image";
 import { AdminNav } from "./_components/AdminNav";
 import { SignOutButton } from "./_components/SignOutButton";
@@ -19,6 +19,14 @@ const raleway = Raleway({
 const archivo = Archivo({
   subsets: ["latin"],
   variable: "--font-archivo",
+  display: "swap",
+});
+
+// Body text. The storefront's mono font was hard to read in dense admin
+// tables and forms; it stays for codes and numbers (`font-mono`).
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
   display: "swap",
 });
 
@@ -107,7 +115,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
-      className={`${raleway.variable} ${archivo.variable} ${ibmPlexMono.variable}`}
+      className={`${raleway.variable} ${archivo.variable} ${inter.variable} ${ibmPlexMono.variable}`}
     >
       <body className="min-h-screen bg-onwei-beige font-grotesk text-onwei-blue">
         <AdminFeedbackProvider>
@@ -118,7 +126,7 @@ export default async function RootLayout({
                 className="sticky top-0 hidden h-screen w-52 shrink-0 flex-col justify-between gap-3 self-start bg-onwei-blue p-3 text-onwei-beige lg:flex"
               >
                 <div className="admin-nav-scroll -mr-1.5 min-h-0 flex-1 overflow-y-auto pr-1.5">
-                  <div className="mb-5 flex items-center gap-2 px-3 pt-1">
+                  <div className="mb-4 flex items-center gap-2 px-3 pt-1">
                     <Image
                       src="/images/footer/logo-circle.svg"
                       alt=""
@@ -152,7 +160,7 @@ export default async function RootLayout({
                     </div>
                   </div>
                 </details>
-                <div className="mx-auto w-full max-w-[96rem] px-4 py-5 lg:px-8 lg:py-6">
+                <div className="mx-auto w-full max-w-[96rem] px-4 py-4 lg:px-6 lg:py-5">
                   {children}
                 </div>
               </div>
