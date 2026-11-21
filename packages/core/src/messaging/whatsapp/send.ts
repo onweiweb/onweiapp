@@ -1,3 +1,4 @@
+import { failureCodeOf, failureKindOf } from "./failures";
 import { prisma, type WhatsAppPurpose } from "@onwei/database";
 import {
   readGupshupConfig,
@@ -153,6 +154,9 @@ export interface DeliverTemplateInput {
   campaignId?: string;
 }
 
+/** Two retries, after 1s then 3s, when Gupshup says too many at once. */
+const RATE_LIMIT_RETRY_MS = [1000, 3000];
+
 /**
  * Logs one message as sending, asks Gupshup to send it, then marks it sent
  * or failed. Shared by the automatic messages and staff campaigns. The log
@@ -162,6 +166,8 @@ export async function deliverTemplate(
   input: DeliverTemplateInput,
   config: GupshupConfig,
   fetchImpl?: typeof fetch,
+  /** Waits before each retry when Gupshup says 429 (too many at once). */
+  retryDelaysMs: readonly number[] = RATE_LIMIT_RETRY_MS,
 ): Promise<Exclude<SendWhatsAppResult, { status: "skipped" }>> {
   const log = await prisma.whatsAppMessage.create({
     data: {
@@ -175,16 +181,22 @@ export async function deliverTemplate(
     select: { id: true },
   });
 
-  const result = await sendGupshupTemplate(
-    config,
-    {
-      phone: input.phone,
-      templateId: input.templateId,
-      params: input.params,
-      imageUrl: input.imageUrl ?? null,
-    },
-    fetchImpl,
-  );
+  const message = {
+    phone: input.phone,
+    templateId: input.templateId,
+    params: input.params,
+    imageUrl: input.imageUrl ?? null,
+  };
+  let result = await sendGupshupTemplate(config, message, fetchImpl);
+  for (const wait of retryDelaysMs) {
+    if (
+      result.ok ||
+      failureKindOf(failureCodeOf(result.reason)) !== "RATE_LIMIT"
+    )
+      break;
+    await new Promise((resolve) => setTimeout(resolve, wait));
+    result = await sendGupshupTemplate(config, message, fetchImpl);
+  }
 
   const now = new Date();
   if (result.ok) {
@@ -200,7 +212,12 @@ export async function deliverTemplate(
   }
   await prisma.whatsAppMessage.update({
     where: { id: log.id },
-    data: { status: "FAILED", failedAt: now, failureReason: result.reason },
+    data: {
+      status: "FAILED",
+      failedAt: now,
+      failureReason: result.reason,
+      failureCode: failureCodeOf(result.reason),
+    },
   });
   console.error("[whatsapp] send failed", input.purpose, result.reason);
   return { status: "failed", reason: result.reason };

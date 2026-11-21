@@ -740,6 +740,12 @@ insiders_page`, consent wording without "about the launch" stored as `insiders-v
 - **Sender shows as a number, not "Onwei":** WhatsApp shows the number to people who have not saved it until the
   display name is approved and Meta business verification is done; the name always shows only with Meta Verified or
   an Official Business Account. Owner to check Name status in WhatsApp Manager and verify the business.
+- **WhatsApp failure reasons (2026-11-21):** `WhatsAppMessage.failureCode` (migration `20261121120000_whatsapp_failure_code`,
+  backfills old rows from the reason text). `failures.ts` (browser-safe at `@onwei/core/whatsapp-failures`) maps codes to
+  plain words and kinds: HELD (131049, 130472, 131050: Meta held it back, counted as "Held by Meta" not Failed, can be sent
+  again), RATE_LIMIT (429, 130429, 131056: `deliverTemplate` retries twice after 1s and 3s), UNDELIVERABLE (131026: left
+  out of Insiders sends for 90 days unless a later message got through, `undeliverablePhones`), TEMPLATE (132xxx).
+  Admin logs and numbers show the plain line with WhatsApp's own words underneath.
 - **WhatsApp page tidy-up (2026-11-18, local):** the "Choose template" popup lists only templates that are approved
   and fit the message (`templateFitFor` in `gupshupTemplates.ts`: approved, right category, sendable top part, image
   only where allowed) and says how many are still waiting. Steps: choose, check the filled-in preview (one dropdown per

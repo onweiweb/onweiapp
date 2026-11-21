@@ -46,5 +46,6 @@ export {
   type WhatsAppTemplateView,
 } from "./templates";
 export * from "./gupshupTemplates";
+export * from "./failures";
 export * from "./messageLog";
 export * from "./campaign";

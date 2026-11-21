@@ -1,3 +1,9 @@
+import {
+  UNDELIVERABLE_FAILURE_CODES,
+  failureKindOf,
+  groupFailures,
+  type FailureGroup,
+} from "./failures";
 import { prisma, type Prisma, type WhatsAppStatus } from "@onwei/database";
 import { writeAuditLog } from "../../admin/auditLog";
 import type { AuditActor } from "../../admin/types";
@@ -154,12 +160,57 @@ export interface CampaignPlan {
   missingCode: number;
   /** Already got this template (sent, delivered or read). */
   alreadyGot: number;
+  /** Failed as "not on WhatsApp" lately, so left out. */
+  undeliverable: number;
   /** Already got it, but still included because repeats are allowed. */
   repeats: number;
   /** Who will get it, oldest signup first. Ids only. */
   ids: string[];
   /** More matched than one send can take. */
   overLimit: boolean;
+}
+
+const UNDELIVERABLE_DAYS = 90;
+
+/**
+ * Numbers that failed as "not on WhatsApp" in the last 90 days and haven't
+ * received anything since. Insiders sends leave them out, so they don't fail
+ * again and drag the numbers down.
+ */
+export async function undeliverablePhones(
+  phones: string[],
+  now: Date = new Date(),
+): Promise<Set<string>> {
+  if (phones.length === 0) return new Set();
+  const since = new Date(now.getTime() - UNDELIVERABLE_DAYS * 86_400_000);
+  const failed = await prisma.whatsAppMessage.groupBy({
+    by: ["phone"],
+    where: {
+      phone: { in: phones },
+      status: "FAILED",
+      failureCode: { in: UNDELIVERABLE_FAILURE_CODES },
+      createdAt: { gte: since },
+    },
+    _max: { createdAt: true },
+  });
+  if (failed.length === 0) return new Set();
+  const reached = await prisma.whatsAppMessage.groupBy({
+    by: ["phone"],
+    where: {
+      phone: { in: failed.map((f) => f.phone) },
+      status: { in: ["DELIVERED", "READ"] },
+    },
+    _max: { createdAt: true },
+  });
+  const lastReached = new Map(reached.map((r) => [r.phone, r._max.createdAt]));
+  return new Set(
+    failed
+      .filter((f) => {
+        const ok = lastReached.get(f.phone);
+        return !ok || (f._max.createdAt !== null && ok < f._max.createdAt);
+      })
+      .map((f) => f.phone),
+  );
 }
 
 /** Counts who will get it and why others won't. No names or numbers. */
@@ -178,7 +229,7 @@ export async function planCampaign(input: {
   const overLimit = members.length > CAMPAIGN_MAX_RECIPIENTS;
   const list = members.slice(0, CAMPAIGN_MAX_RECIPIENTS);
 
-  const [optOuts, earlier] = await Promise.all([
+  const [optOuts, earlier, cantGet] = await Promise.all([
     prisma.whatsAppOptOut.findMany({
       where: { phone: { in: list.map((m) => m.phone) } },
       select: { phone: true },
@@ -192,6 +243,7 @@ export async function planCampaign(input: {
       distinct: ["waitlistEntryId"],
       select: { waitlistEntryId: true },
     }),
+    undeliverablePhones(list.map((m) => m.phone)),
   ]);
   const stopped = new Set(optOuts.map((o) => o.phone));
   const got = new Set(earlier.map((m) => m.waitlistEntryId));
@@ -202,6 +254,7 @@ export async function planCampaign(input: {
     unsubscribed: 0,
     missingCode: 0,
     alreadyGot: 0,
+    undeliverable: 0,
     repeats: 0,
     ids: [],
     overLimit,
@@ -209,6 +262,7 @@ export async function planCampaign(input: {
   for (const member of list) {
     if (stopped.has(member.phone)) plan.optedOut++;
     else if (member.unsubscribedAt) plan.unsubscribed++;
+    else if (cantGet.has(member.phone)) plan.undeliverable++;
     else if (input.needsCode && !member.insiderCode) plan.missingCode++;
     else if (got.has(member.id) && !input.allowRepeat) plan.alreadyGot++;
     else {
@@ -326,14 +380,15 @@ export async function sendCampaignBatch(
     where: { id: { in: unique }, unsubscribedAt: null },
     select: { id: true, fullName: true, phone: true, insiderCode: true },
   });
-  const stopped = new Set(
-    (
-      await prisma.whatsAppOptOut.findMany({
-        where: { phone: { in: members.map((m) => m.phone) } },
-        select: { phone: true },
-      })
-    ).map((o) => o.phone),
-  );
+  const phones = members.map((m) => m.phone);
+  const [optOuts, cantGet] = await Promise.all([
+    prisma.whatsAppOptOut.findMany({
+      where: { phone: { in: phones } },
+      select: { phone: true },
+    }),
+    undeliverablePhones(phones),
+  ]);
+  const stopped = new Set([...optOuts.map((o) => o.phone), ...cantGet]);
 
   const result: CampaignBatchResult = {
     sent: 0,
@@ -404,12 +459,40 @@ export async function sendCampaignTest(
 
 // ---------- Log ----------
 
+/**
+ * FAILED here leaves out messages Meta held back (marketing limits,
+ * experiments): those are counted in `held`, since they aren't our problem.
+ */
 export type CampaignCounts = Record<WhatsAppStatus, number> & {
   total: number;
+  held: number;
 };
 
 function emptyCounts(): CampaignCounts {
-  return { SENDING: 0, SENT: 0, DELIVERED: 0, READ: 0, FAILED: 0, total: 0 };
+  return {
+    SENDING: 0,
+    SENT: 0,
+    DELIVERED: 0,
+    READ: 0,
+    FAILED: 0,
+    total: 0,
+    held: 0,
+  };
+}
+
+/** Adds one grouped row, moving Meta's holds out of FAILED. */
+export function addToCounts(
+  counts: CampaignCounts,
+  status: WhatsAppStatus,
+  failureCode: string | null,
+  n: number,
+): void {
+  counts.total += n;
+  if (status === "FAILED" && failureKindOf(failureCode) === "HELD") {
+    counts.held += n;
+  } else {
+    counts[status] += n;
+  }
 }
 
 export interface CampaignListRow {
@@ -440,7 +523,7 @@ export async function listCampaigns(input: {
   const [grouped, staff] = await Promise.all([
     ids.length
       ? prisma.whatsAppMessage.groupBy({
-          by: ["campaignId", "status"],
+          by: ["campaignId", "status", "failureCode"],
           where: { campaignId: { in: ids } },
           _count: { _all: true },
         })
@@ -458,8 +541,7 @@ export async function listCampaigns(input: {
       const counts = emptyCounts();
       for (const g of grouped) {
         if (g.campaignId !== row.id) continue;
-        counts[g.status] = g._count._all;
-        counts.total += g._count._all;
+        addToCounts(counts, g.status, g.failureCode, g._count._all);
       }
       return {
         id: row.id,
@@ -487,7 +569,7 @@ export async function getCampaign(id: string): Promise<CampaignDetail | null> {
   if (!row) return null;
   const [grouped, staff] = await Promise.all([
     prisma.whatsAppMessage.groupBy({
-      by: ["status"],
+      by: ["status", "failureCode"],
       where: { campaignId: id },
       _count: { _all: true },
     }),
@@ -500,8 +582,7 @@ export async function getCampaign(id: string): Promise<CampaignDetail | null> {
   ]);
   const counts = emptyCounts();
   for (const g of grouped) {
-    counts[g.status] = g._count._all;
-    counts.total += g._count._all;
+    addToCounts(counts, g.status, g.failureCode, g._count._all);
   }
   return {
     id: row.id,
@@ -529,7 +610,8 @@ export type InsiderWhatsAppPurpose = (typeof INSIDER_WHATSAPP_PURPOSES)[number];
 export interface InsiderWhatsAppStats {
   all: CampaignCounts;
   byPurpose: Record<InsiderWhatsAppPurpose, CampaignCounts>;
-  topFailures: { reason: string; count: number }[];
+  /** Real failures only (not Meta's holds), most common first. */
+  topFailures: FailureGroup[];
 }
 
 /**
@@ -548,16 +630,14 @@ export async function getInsiderWhatsAppStats(
   };
   const [grouped, failures] = await Promise.all([
     prisma.whatsAppMessage.groupBy({
-      by: ["purpose", "status"],
+      by: ["purpose", "status", "failureCode"],
       where,
       _count: { _all: true },
     }),
     prisma.whatsAppMessage.groupBy({
-      by: ["failureReason"],
+      by: ["failureCode", "failureReason"],
       where: { ...where, status: "FAILED" },
       _count: { _all: true },
-      orderBy: { _count: { failureReason: "desc" } },
-      take: 5,
     }),
   ]);
   const all = emptyCounts();
@@ -568,23 +648,17 @@ export async function getInsiderWhatsAppStats(
   };
   for (const g of grouped) {
     const n = g._count._all;
-    all[g.status] += n;
-    all.total += n;
-    const bucket = byPurpose[g.purpose as InsiderWhatsAppPurpose];
-    bucket[g.status] += n;
-    bucket.total += n;
-  }
-  const merged = new Map<string, number>();
-  for (const f of failures) {
-    const reason = f.failureReason?.trim() || "No reason given";
-    merged.set(reason, (merged.get(reason) ?? 0) + f._count._all);
+    addToCounts(all, g.status, g.failureCode, n);
+    addToCounts(
+      byPurpose[g.purpose as InsiderWhatsAppPurpose],
+      g.status,
+      g.failureCode,
+      n,
+    );
   }
   return {
     all,
     byPurpose,
-    topFailures: [...merged]
-      .map(([reason, count]) => ({ reason, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 3),
+    topFailures: groupFailures(failures).slice(0, 3),
   };
 }

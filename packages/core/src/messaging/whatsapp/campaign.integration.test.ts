@@ -5,7 +5,10 @@ import {
   getInsiderWhatsAppStats,
   planCampaign,
   sendCampaignBatch,
+  undeliverablePhones,
 } from "./campaign";
+import { deliverTemplate } from "./send";
+import { applyGupshupStatus } from "./webhook";
 
 const config = {
   apiKey: "test-key",
@@ -174,9 +177,89 @@ describe.skipIf(!process.env.DATABASE_URL)(
         after.byPurpose.WAITLIST_JOINED.DELIVERED -
           before.byPurpose.WAITLIST_JOINED.DELIVERED,
       ).toBe(1);
-      expect(after.topFailures.map((f) => f.reason)).toContain(
+      expect(after.topFailures.map((f) => f.message)).toContain(
         `Test failure ${tag}`,
       );
+    });
+
+    it("retries when Gupshup says too many at once", async () => {
+      let calls = 0;
+      const fetchImpl = (async () => {
+        calls++;
+        return calls === 1
+          ? new Response(JSON.stringify({ message: "Rate limit hit" }), {
+              status: 429,
+            })
+          : Response.json({ status: "submitted", messageId: `ok-${tag}` });
+      }) as typeof fetch;
+      const result = await deliverTemplate(
+        {
+          purpose: "CAMPAIGN",
+          phone: phones[0]!,
+          templateId: "tpl-1",
+          templateName,
+          params: ["Ready"],
+        },
+        config,
+        fetchImpl,
+        [0, 0],
+      );
+      expect(result).toEqual({ status: "sent", messageId: `ok-${tag}` });
+      expect(calls).toBe(2);
+    });
+
+    it("counts Meta's holds apart from failures and keeps the code", async () => {
+      const since = new Date(Date.now() - 1000);
+      const before = await getInsiderWhatsAppStats({ since });
+      const held = await prisma.whatsAppMessage.create({
+        data: {
+          purpose: "CAMPAIGN",
+          phone: phones[0]!,
+          status: "SENT",
+          providerMessageId: `held-${tag}`,
+        },
+      });
+      await applyGupshupStatus({
+        kind: "status",
+        ids: [`held-${tag}`],
+        status: "FAILED",
+        failureReason:
+          "131049: This message was not delivered to maintain healthy ecosystem engagement., (#131049)",
+        at: new Date(),
+      });
+      const row = await prisma.whatsAppMessage.findUniqueOrThrow({
+        where: { id: held.id },
+      });
+      expect(row.failureCode).toBe("131049");
+      const after = await getInsiderWhatsAppStats({ since });
+      expect(after.all.held - before.all.held).toBe(1);
+      expect(after.all.FAILED - before.all.FAILED).toBe(0);
+      expect(after.topFailures.map((f) => f.code)).not.toContain("131049");
+    });
+
+    it("leaves out numbers that aren't on WhatsApp until one gets through", async () => {
+      const phone = phones[1]!;
+      await prisma.whatsAppMessage.create({
+        data: {
+          purpose: "CAMPAIGN",
+          phone,
+          status: "FAILED",
+          failureCode: "131026",
+          failureReason: "131026: Message undeliverable",
+        },
+      });
+      expect(await undeliverablePhones([phone])).toEqual(new Set([phone]));
+      const plan = await planCampaign({
+        audience: { group: "picked", ids: [ids[1]!] },
+        templateName,
+        needsCode: false,
+        allowRepeat: true,
+      });
+      expect(plan).toMatchObject({ undeliverable: 1, ids: [] });
+      await prisma.whatsAppMessage.create({
+        data: { purpose: "CAMPAIGN", phone, status: "DELIVERED" },
+      });
+      expect(await undeliverablePhones([phone])).toEqual(new Set());
     });
   },
 );

@@ -35,6 +35,7 @@ type Plan = {
   unsubscribed: number;
   missingCode: number;
   alreadyGot: number;
+  undeliverable: number;
   repeats: number;
   willGet: number;
   overLimit: boolean;
@@ -439,6 +440,8 @@ function PlanSummary({
       `${plural(plan.missingCode, "person")} without an Insider code yet (the message needs it)`,
     plan.alreadyGot > 0 &&
       `${plural(plan.alreadyGot, "person")} already got this template`,
+    plan.undeliverable > 0 &&
+      `${plural(plan.undeliverable, "number")} can't get WhatsApp (failed as not on WhatsApp in the last 90 days)`,
   ].filter(Boolean) as string[];
   const repeatCount = plan.alreadyGot + plan.repeats;
 

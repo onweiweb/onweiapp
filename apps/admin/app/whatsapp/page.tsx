@@ -34,6 +34,7 @@ import { PAGE_SIZE, parsePage } from "../_lib/pagination";
 import { MESSAGE_WHEN as WHEN, after } from "../_lib/messageTiming";
 import type { WhatsAppPurpose, WhatsAppStatus } from "@onwei/database";
 import { WhatsAppRowActions, WhatsAppSwitch } from "./_components";
+import { FailedBadge, WhatsAppFailure } from "../_components/WhatsAppFailure";
 import { cachedGupshupTemplates } from "./_gupshup";
 
 /**
@@ -65,11 +66,6 @@ function mappedCategory(
 }
 
 const STATS_DAYS = 7;
-
-/** Older rows kept Gupshup's "null, " in front of WhatsApp's reason. */
-function cleanReason(reason: string): string {
-  return reason.replace(/^null,\s*/i, "");
-}
 
 function statusOf(
   template: WhatsAppTemplateView,
@@ -221,11 +217,11 @@ export default async function WhatsAppPage({
                   <p>
                     {stat.total} sent · {delivered} delivered ·{" "}
                     {stat.byStatus.FAILED} failed
+                    {stat.held ? ` · ${stat.held} held by Meta` : ""}
                   </p>
                   {stat.topFailures[0] ? (
                     <p className="max-w-md whitespace-normal text-xs text-onwei-blue/60">
-                      Most common problem:{" "}
-                      {cleanReason(stat.topFailures[0].reason)}.{" "}
+                      Most common problem: {stat.topFailures[0].message}{" "}
                       <Link
                         href={`/whatsapp?tab=log&status=FAILED&purpose=${info.purpose}`}
                         className="underline"
@@ -318,9 +314,11 @@ async function LogTab({ params }: { params: SearchParams }) {
           <strong>Sending</strong>: being handed to Gupshup.{" "}
           <strong>Sent</strong>: Gupshup accepted it. <strong>Delivered</strong>
           : it reached the phone. <strong>Read</strong>: they opened it.{" "}
-          <strong>Failed</strong>: it didn&apos;t go out, the reason is
-          WhatsApp&apos;s own. Stuck on Sent for hours usually means the phone
-          is off, or delivery updates aren&apos;t reaching us.
+          <strong>Failed</strong>: it didn&apos;t go out, with the reason in
+          plain words. <strong>Held by Meta</strong>: Meta held a marketing
+          message back (not our fault), it can be sent again later. Stuck on
+          Sent for hours usually means the phone is off, or delivery updates
+          aren&apos;t reaching us.
         </p>
       </AdminCard>
 
@@ -367,16 +365,21 @@ async function LogTab({ params }: { params: SearchParams }) {
                     <p className="text-xs text-onwei-blue/60">{row.phone}</p>
                   </AdminTableCell>
                   <AdminTableCell className="max-w-sm">
-                    <AdminBadge tone={info.tone}>{info.label}</AdminBadge>
+                    {row.status === "FAILED" ? (
+                      <FailedBadge code={row.failureCode} />
+                    ) : (
+                      <AdminBadge tone={info.tone}>{info.label}</AdminBadge>
+                    )}
                     {timing ? (
                       <span className="ml-2 text-xs text-onwei-blue/60">
                         {timing}
                       </span>
                     ) : null}
-                    {row.failureReason ? (
-                      <p className="mt-1 max-w-sm whitespace-normal text-xs text-onwei-blue/70">
-                        {cleanReason(row.failureReason)}
-                      </p>
+                    {row.status === "FAILED" ? (
+                      <WhatsAppFailure
+                        code={row.failureCode}
+                        reason={row.failureReason}
+                      />
                     ) : null}
                   </AdminTableCell>
                 </AdminTableRow>

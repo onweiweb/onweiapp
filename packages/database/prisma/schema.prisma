@@ -1397,6 +1397,9 @@ model WhatsAppMessage {
   campaign          WhatsAppCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   status            WhatsAppStatus    @default(SENDING)
   failureReason     String?
+  // Meta's or Gupshup's error code (e.g. 131049), for plain reasons in admin
+  // and for leaving out numbers that can't get WhatsApp.
+  failureCode       String?
   createdAt         DateTime          @default(now())
   sentAt            DateTime?
   deliveredAt       DateTime?
@@ -1409,6 +1412,7 @@ model WhatsAppMessage {
   @@index([customerId])
   @@index([campaignId, status])
   @@index([templateName])
+  @@index([phone, failureCode])
 }
 
 // One send from Insiders > WhatsApp: the template staff picked, what went in

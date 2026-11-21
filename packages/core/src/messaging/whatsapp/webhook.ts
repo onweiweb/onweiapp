@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { prisma, type WhatsAppStatus } from "@onwei/database";
+import { failureCodeOf } from "./failures";
 
 /**
  * Gupshup webhook (Gupshup format, version 2). Gupshup's self-serve webhooks
@@ -138,7 +139,11 @@ export async function applyGupshupStatus(
       ...(status === "DELIVERED" ? { deliveredAt: event.at } : {}),
       ...(status === "READ" ? { readAt: event.at } : {}),
       ...(status === "FAILED"
-        ? { failedAt: event.at, failureReason: event.failureReason ?? null }
+        ? {
+            failedAt: event.at,
+            failureReason: event.failureReason ?? null,
+            failureCode: failureCodeOf(event.failureReason),
+          }
         : {}),
     },
   });

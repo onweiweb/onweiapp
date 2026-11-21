@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@onwei/database";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
 import { getActiveProductBySlug } from "./getActiveProductBySlug";
 import { listActiveCategories } from "./listActiveCategories";
 import { listActiveProductsByCategorySlug } from "./listActiveProductsByCategorySlug";
@@ -16,6 +16,31 @@ describe.skipIf(!process.env.DATABASE_URL)(
   () => {
     const createdCategoryIds: string[] = [];
     const createdProductIds: string[] = [];
+    let previousSiteMode: "WAITLIST" | "PREORDERS" | "LIVE" | null = null;
+
+    // Pre-order mode lists only campaign products, so these run in the
+    // normal shop and put the dev site back afterwards.
+    beforeAll(async () => {
+      previousSiteMode =
+        (
+          await prisma.siteSetting.findUnique({
+            where: { id: "singleton" },
+            select: { siteMode: true },
+          })
+        )?.siteMode ?? null;
+      await prisma.siteSetting.updateMany({
+        where: { id: "singleton" },
+        data: { siteMode: "LIVE" },
+      });
+    });
+
+    afterAll(async () => {
+      if (previousSiteMode)
+        await prisma.siteSetting.update({
+          where: { id: "singleton" },
+          data: { siteMode: previousSiteMode },
+        });
+    });
 
     afterEach(async () => {
       // FK-safe order: Inventory -> ProductImage -> ProductVariant -> Product -> Category

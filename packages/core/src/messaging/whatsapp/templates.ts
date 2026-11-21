@@ -5,6 +5,7 @@ import {
   type WhatsAppStatus,
 } from "@onwei/database";
 import { writeAuditLog } from "../../admin/auditLog";
+import { failureKindOf, groupFailures, type FailureGroup } from "./failures";
 import {
   WHATSAPP_PURPOSES,
   isAllowedVariable,
@@ -154,8 +155,10 @@ export async function saveWhatsAppTemplate(
 export interface WhatsAppPurposeStats {
   purpose: WhatsAppPurpose;
   total: number;
+  /** FAILED leaves out Meta's holds, counted in `held`. */
   byStatus: Record<WhatsAppStatus, number>;
-  topFailures: { reason: string; count: number }[];
+  held: number;
+  topFailures: FailureGroup[];
 }
 
 /** Counts only, no phone numbers. */
@@ -166,12 +169,12 @@ export async function getWhatsAppStats(
   const since = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
   const [grouped, failures] = await Promise.all([
     prisma.whatsAppMessage.groupBy({
-      by: ["purpose", "status"],
+      by: ["purpose", "status", "failureCode"],
       where: { createdAt: { gte: since } },
       _count: { _all: true },
     }),
     prisma.whatsAppMessage.groupBy({
-      by: ["purpose", "failureReason"],
+      by: ["purpose", "failureCode", "failureReason"],
       where: { createdAt: { gte: since }, status: "FAILED" },
       _count: { _all: true },
     }),
@@ -185,19 +188,18 @@ export async function getWhatsAppStats(
       READ: 0,
       FAILED: 0,
     };
+    let held = 0;
     for (const row of grouped) {
-      if (row.purpose === purpose) byStatus[row.status] = row._count._all;
+      if (row.purpose !== purpose) continue;
+      if (row.status === "FAILED" && failureKindOf(row.failureCode) === "HELD")
+        held += row._count._all;
+      else byStatus[row.status] += row._count._all;
     }
-    const topFailures = failures
-      .filter((row) => row.purpose === purpose)
-      .map((row) => ({
-        reason: row.failureReason ?? "No reason given",
-        count: row._count._all,
-      }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 3);
-    const total = Object.values(byStatus).reduce((sum, n) => sum + n, 0);
-    return { purpose, total, byStatus, topFailures };
+    const topFailures = groupFailures(
+      failures.filter((row) => row.purpose === purpose),
+    ).slice(0, 3);
+    const total = Object.values(byStatus).reduce((sum, n) => sum + n, 0) + held;
+    return { purpose, total, byStatus, held, topFailures };
   });
 }
 

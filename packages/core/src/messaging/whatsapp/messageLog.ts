@@ -28,6 +28,7 @@ export interface WhatsAppLogRow {
   name: string | null;
   status: WhatsAppStatus;
   failureReason: string | null;
+  failureCode: string | null;
   createdAt: Date;
   sentAt: Date | null;
   deliveredAt: Date | null;
@@ -72,6 +73,7 @@ export async function listWhatsAppMessages(
       phone: true,
       status: true,
       failureReason: true,
+      failureCode: true,
       createdAt: true,
       sentAt: true,
       deliveredAt: true,
@@ -90,6 +92,7 @@ export async function listWhatsAppMessages(
       name: row.waitlistEntry?.fullName ?? row.customer?.name ?? null,
       status: row.status,
       failureReason: row.failureReason,
+      failureCode: row.failureCode,
       createdAt: row.createdAt,
       sentAt: row.sentAt,
       deliveredAt: row.deliveredAt,

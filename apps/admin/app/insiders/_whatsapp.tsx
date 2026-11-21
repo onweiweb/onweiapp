@@ -25,6 +25,7 @@ import {
   type StatusTone,
 } from "../_components/ui";
 import { WhatsAppSender } from "./_whatsappSend";
+import { FailedBadge, WhatsAppFailure } from "../_components/WhatsAppFailure";
 
 /**
  * Insiders > WhatsApp: send any approved template to a group of Insiders,
@@ -122,6 +123,9 @@ function DeliveryBar({ counts }: { counts: CampaignCounts }) {
         />
         <Stat label="Read" value={counts.READ} dot="bg-onwei-blue" />
         <Stat label="Failed" value={counts.FAILED} dot="bg-onwei-black" />
+        {counts.held > 0 ? (
+          <Stat label="Held by Meta" value={counts.held} />
+        ) : null}
       </dl>
     </div>
   );
@@ -190,16 +194,21 @@ function MessageTable({
                 <p className="text-xs text-onwei-blue/60">{row.phone}</p>
               </AdminTableCell>
               <AdminTableCell className="max-w-sm">
-                <AdminBadge tone={info.tone}>{info.label}</AdminBadge>
+                {row.status === "FAILED" ? (
+                  <FailedBadge code={row.failureCode} />
+                ) : (
+                  <AdminBadge tone={info.tone}>{info.label}</AdminBadge>
+                )}
                 {timing ? (
                   <span className="ml-2 text-xs text-onwei-blue/60">
                     {timing}
                   </span>
                 ) : null}
-                {row.failureReason ? (
-                  <p className="mt-1 max-w-sm whitespace-normal text-xs text-onwei-blue/70">
-                    {row.failureReason}
-                  </p>
+                {row.status === "FAILED" ? (
+                  <WhatsAppFailure
+                    code={row.failureCode}
+                    reason={row.failureReason}
+                  />
                 ) : null}
               </AdminTableCell>
             </AdminTableRow>
@@ -322,7 +331,9 @@ async function WhatsAppNumbers({
           </p>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            <div
+              className={`grid grid-cols-2 gap-3 ${all.held > 0 ? "lg:grid-cols-6" : "lg:grid-cols-5"}`}
+            >
               <NumberTile
                 label="Sent"
                 value={all.total}
@@ -352,6 +363,14 @@ async function WhatsAppNumbers({
                 of={all.total}
                 hint="WhatsApp could not deliver it"
               />
+              {all.held > 0 ? (
+                <NumberTile
+                  label="Held by Meta"
+                  value={all.held}
+                  of={all.total}
+                  hint="Marketing limits or Meta's tests. Not counted as failed; they can be sent again later"
+                />
+              ) : null}
             </div>
             <AdminTable>
               <AdminTableHead>
@@ -388,6 +407,11 @@ async function WhatsAppNumbers({
                         <span className="text-onwei-blue/60">
                           {percent(c.FAILED, c.total)}
                         </span>
+                        {c.held > 0 ? (
+                          <span className="block text-xs text-onwei-blue/60">
+                            + {c.held.toLocaleString("en-IN")} held by Meta
+                          </span>
+                        ) : null}
                       </AdminTableCell>
                     </AdminTableRow>
                   );
@@ -401,12 +425,17 @@ async function WhatsAppNumbers({
                 </p>
                 <ul className="flex flex-col gap-1 text-sm text-onwei-blue">
                   {stats.topFailures.map((f) => (
-                    <li key={f.reason} className="flex gap-2">
+                    <li key={f.code ?? f.message} className="flex gap-2">
                       <span className="shrink-0 font-semibold">
                         {f.count.toLocaleString("en-IN")}
                       </span>
-                      <span className="break-words text-onwei-blue/80">
-                        {f.reason}
+                      <span className="min-w-0 break-words text-onwei-blue/80">
+                        {f.message}
+                        {f.raw && f.raw !== f.message ? (
+                          <span className="block text-xs text-onwei-blue/50">
+                            {f.raw.replace(/^null,\s*/i, "")}
+                          </span>
+                        ) : null}
                       </span>
                     </li>
                   ))}
