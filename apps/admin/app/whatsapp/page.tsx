@@ -54,6 +54,16 @@ function problemOf(
   return `${templateFitMessage(template.purpose, found, fit)}${reason}`;
 }
 
+/** The chosen template's own category in Gupshup, e.g. "utility". */
+function mappedCategory(
+  template: WhatsAppTemplateView,
+  list: Awaited<ReturnType<typeof cachedGupshupTemplates>>,
+): string | null {
+  if (!template.gupshupTemplateId || !list.ok) return null;
+  const found = list.templates.find((t) => t.id === template.gupshupTemplateId);
+  return found ? found.category.toLowerCase() : null;
+}
+
 const STATS_DAYS = 7;
 
 /** Older rows kept Gupshup's "null, " in front of WhatsApp's reason. */
@@ -183,10 +193,14 @@ export default async function WhatsAppPage({
               <AdminTableRow key={info.purpose}>
                 <AdminTableCell>
                   <p className="font-medium">{info.title}</p>
-                  <p className="text-xs text-onwei-blue/60">
-                    {info.category}
-                    {template.templateName ? ` · ${template.templateName}` : ""}
-                  </p>
+                  {template.templateName ? (
+                    <p className="text-xs text-onwei-blue/60">
+                      {template.templateName}
+                      {mappedCategory(template, gupshupList)
+                        ? ` · ${mappedCategory(template, gupshupList)}`
+                        : ""}
+                    </p>
+                  ) : null}
                 </AdminTableCell>
                 <AdminTableCell>
                   <AdminBadge tone={status.tone}>{status.label}</AdminBadge>

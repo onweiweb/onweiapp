@@ -13,30 +13,16 @@ export interface PickedTemplate {
   previewText: string;
 }
 
-type PickerTemplate = GupshupTemplateSummary & { suggestedValues: string[] };
-
-function previewOf(t: PickerTemplate): string {
-  return [t.bodyText, t.footer, ...t.buttons.map((b) => `[${b.text}]`)]
-    .filter(Boolean)
-    .join("\n\n");
-}
+export type ApprovedTemplate = GupshupTemplateSummary & {
+  suggestedValues: string[];
+};
 
 /**
- * The approved Gupshup templates that fit this message, as cards. Picking
- * one fills in the form. Asked fresh each time the popup opens.
+ * The approved Gupshup templates that fit this message, asked fresh each
+ * time the popup opens, plus how many are still waiting for approval.
  */
-export function GupshupPicker({
-  info,
-  currentId,
-  currentImageUrl,
-  onPick,
-}: {
-  info: WhatsAppPurposeInfo;
-  currentId: string;
-  currentImageUrl: string | null;
-  onPick: (values: PickedTemplate) => void;
-}) {
-  const [templates, setTemplates] = useState<PickerTemplate[] | null>(null);
+export function useApprovedTemplates(purpose: WhatsAppPurposeInfo["purpose"]) {
+  const [templates, setTemplates] = useState<ApprovedTemplate[] | null>(null);
   const [waiting, setWaiting] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,11 +30,11 @@ export function GupshupPicker({
     let live = true;
     void (async () => {
       const response = await fetch(
-        `/api/whatsapp/templates/gupshup?purpose=${info.purpose}`,
+        `/api/whatsapp/templates/gupshup?purpose=${purpose}`,
       ).catch(() => null);
       const data = (await response?.json().catch(() => null)) as {
         ok: boolean;
-        templates?: PickerTemplate[];
+        templates?: ApprovedTemplate[];
         waiting?: number;
         error?: string;
       } | null;
@@ -66,86 +52,29 @@ export function GupshupPicker({
     return () => {
       live = false;
     };
-  }, [info.purpose]);
+  }, [purpose]);
 
-  function choose(t: PickerTemplate) {
-    const header =
-      t.header === "IMAGE" ? "IMAGE" : t.header === "TEXT" ? "TEXT" : "NONE";
-    onPick({
-      gupshupTemplateId: t.id,
-      templateName: t.name,
-      language: t.language,
-      variables: t.suggestedValues,
-      headerType: header,
-      // Keep an image staff already uploaded, otherwise use Gupshup's.
-      headerImageUrl:
-        header === "IMAGE" ? (currentImageUrl ?? t.sampleImageUrl) : null,
-      previewText: previewOf(t),
-    });
-  }
+  return { templates, waiting, error };
+}
 
-  const waitingNote =
-    waiting > 0
-      ? ` ${waiting} ${waiting === 1 ? "template is" : "templates are"} still waiting for WhatsApp's approval.`
-      : "";
-
-  if (error) return <p className="text-sm text-onwei-black">{error}</p>;
-  if (templates === null) {
-    return (
-      <p className="text-sm text-onwei-blue/70">
-        Loading approved templates from Gupshup...
-      </p>
-    );
-  }
-  if (templates.length === 0) {
-    return (
-      <p className="text-sm text-onwei-blue/80">
-        No approved {info.category.toLowerCase()} templates in Gupshup yet.
-        Create one there and come back once WhatsApp approves it.{waitingNote}
-      </p>
-    );
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div
-        role="radiogroup"
-        aria-label="Approved templates"
-        className="flex max-h-72 flex-col gap-2 overflow-y-auto pr-1"
-      >
-        {templates.map((t) => {
-          const selected = t.id === currentId;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => choose(t)}
-              className={`rounded-xl border px-4 py-3 text-left text-sm ${
-                selected
-                  ? "border-onwei-blue bg-onwei-beige/40"
-                  : "border-onwei-beige hover:border-onwei-blue/50"
-              }`}
-            >
-              <span className="flex flex-wrap items-center gap-x-2 font-medium">
-                {selected ? "✓ " : ""}
-                {t.name}
-                <span className="text-xs font-normal text-onwei-blue/60">
-                  {t.category.toLowerCase()} · {t.language}
-                  {t.header === "IMAGE" ? " · with image" : ""}
-                </span>
-              </span>
-              <span className="mt-1 line-clamp-2 text-xs text-onwei-blue/70">
-                {t.bodyText}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-      {waitingNote ? (
-        <p className="text-xs text-onwei-blue/60">{waitingNote.trim()}</p>
-      ) : null}
-    </div>
-  );
+/** The form values a picked template fills in. */
+export function pickedFrom(
+  t: ApprovedTemplate,
+  currentImageUrl: string | null,
+): PickedTemplate {
+  const header =
+    t.header === "IMAGE" ? "IMAGE" : t.header === "TEXT" ? "TEXT" : "NONE";
+  return {
+    gupshupTemplateId: t.id,
+    templateName: t.name,
+    language: t.language,
+    variables: t.suggestedValues,
+    headerType: header,
+    // Keep an image staff already uploaded, otherwise use Gupshup's.
+    headerImageUrl:
+      header === "IMAGE" ? (currentImageUrl ?? t.sampleImageUrl) : null,
+    previewText: [t.bodyText, t.footer, ...t.buttons.map((b) => `[${b.text}]`)]
+      .filter(Boolean)
+      .join("\n\n"),
+  };
 }

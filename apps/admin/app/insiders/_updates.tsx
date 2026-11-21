@@ -127,7 +127,7 @@ function UpdateForm({
           required
         />
       </Field>
-      <div className="grid gap-4 desk:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <Field
           label="Date (optional)"
           hint="For events. Leave empty for offers."
@@ -148,7 +148,7 @@ function UpdateForm({
           />
         </Field>
       </div>
-      <div className="grid gap-4 desk:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <Field
           label="Button link (optional)"
           hint="https://… or a page on our site, like /collection/all."

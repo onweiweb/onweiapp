@@ -15,7 +15,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  AdminBadge,
   AdminButton,
   AdminInput,
   AdminSelect,
@@ -23,6 +22,10 @@ import {
   useConfirm,
   useToast,
 } from "../_components/ui";
+import {
+  PhonePreview,
+  TemplateList,
+} from "../_components/WhatsAppTemplateParts";
 
 type Template = GupshupTemplateSummary & { suggestedFill: CampaignFillSlot[] };
 
@@ -139,180 +142,6 @@ function Pill({
     >
       {children}
     </button>
-  );
-}
-
-// ---------- Phone preview ----------
-
-function PreviewText({ text, values }: { text: string; values: string[] }) {
-  const parts = text.split(/(\{\{\s*\d+\s*\}\})/g);
-  return (
-    <p className="whitespace-pre-wrap break-words text-[13px] leading-snug text-[#111b21]">
-      {parts.map((part, i) => {
-        const match = /^\{\{\s*(\d+)\s*\}\}$/.exec(part);
-        if (!match) return <span key={i}>{part}</span>;
-        const value = values[Number(match[1]) - 1];
-        return (
-          <mark
-            key={i}
-            className="rounded bg-onwei-green px-0.5 text-[#111b21]"
-          >
-            {value ?? part}
-          </mark>
-        );
-      })}
-    </p>
-  );
-}
-
-function PhonePreview({
-  template,
-  fill,
-  imageUrl,
-}: {
-  template: Template | null;
-  fill: CampaignFillSlot[];
-  imageUrl: string | null;
-}) {
-  const values = sampleCampaignParams(fill);
-  return (
-    <div className="mx-auto w-full max-w-[20rem] rounded-[2.5rem] border-[10px] border-onwei-black bg-onwei-black shadow-xl">
-      <div className="overflow-hidden rounded-[1.8rem]">
-        <div className="flex items-center gap-2 bg-[#075e54] px-4 py-3 text-white">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-onwei-beige font-grotesk text-xs font-bold text-onwei-blue">
-            ON
-          </span>
-          <div className="leading-tight">
-            <p className="text-sm font-semibold">Onwei</p>
-            <p className="text-[11px] opacity-80">Business account</p>
-          </div>
-        </div>
-        <div className="min-h-[26rem] bg-[#efe7dd] p-3">
-          {template ? (
-            <div className="max-w-[92%]">
-              <div className="rounded-lg rounded-tl-none bg-white p-1.5 shadow-sm">
-                {template.header === "IMAGE" ? (
-                  imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={imageUrl}
-                      alt=""
-                      className="mb-1.5 aspect-[1.91/1] w-full rounded-md object-cover"
-                    />
-                  ) : (
-                    <div className="mb-1.5 flex aspect-[1.91/1] w-full items-center justify-center rounded-md bg-onwei-beige text-xs text-onwei-blue/60">
-                      Image goes here
-                    </div>
-                  )
-                ) : null}
-                <div className="px-1.5 pb-1">
-                  <PreviewText text={template.bodyText} values={values} />
-                  {template.footer ? (
-                    <p className="mt-1.5 text-[11px] text-[#667781]">
-                      {template.footer}
-                    </p>
-                  ) : null}
-                  <p className="mt-0.5 text-right text-[10px] text-[#667781]">
-                    10:24
-                  </p>
-                </div>
-              </div>
-              {template.buttons.map((button, i) => (
-                <div
-                  key={i}
-                  className="mt-1 rounded-lg bg-white py-2 text-center text-[13px] font-medium text-[#00a5f4] shadow-sm"
-                >
-                  {button.type === "URL" ? "↗ " : ""}
-                  {button.text}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="mt-24 text-center text-sm text-[#667781]">
-              Pick a template to see the message here.
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------- Step 1: template ----------
-
-function TemplatePicker({
-  templates,
-  error,
-  chosenId,
-  onPick,
-}: {
-  templates: Template[] | null;
-  error: string | null;
-  chosenId: string | null;
-  onPick: (template: Template) => void;
-}) {
-  if (error) {
-    return (
-      <p className="rounded-2xl bg-onwei-beige px-4 py-3 text-sm text-onwei-blue">
-        {error}
-      </p>
-    );
-  }
-  if (!templates) {
-    return (
-      <div className="grid gap-3 sm:grid-cols-2">
-        {[0, 1].map((i) => (
-          <div
-            key={i}
-            className="h-28 animate-pulse rounded-2xl bg-onwei-beige/70"
-          />
-        ))}
-      </div>
-    );
-  }
-  if (templates.length === 0) {
-    return (
-      <p className="rounded-2xl bg-onwei-beige px-4 py-3 text-sm text-onwei-blue">
-        No approved utility or marketing templates yet. Once Gupshup approves
-        one, it shows up here.
-      </p>
-    );
-  }
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {templates.map((template) => {
-        const chosen = template.id === chosenId;
-        return (
-          <button
-            key={template.id}
-            type="button"
-            onClick={() => onPick(template)}
-            className={`flex flex-col gap-2 rounded-2xl border p-4 text-left transition ${
-              chosen
-                ? "border-onwei-blue bg-onwei-blue/[0.04] ring-2 ring-onwei-blue"
-                : "border-onwei-blue/15 hover:border-onwei-blue/50"
-            }`}
-          >
-            <span className="flex flex-wrap items-center gap-2">
-              <span className="break-all font-medium text-onwei-blue">
-                {template.name}
-              </span>
-              <AdminBadge
-                tone={template.category === "UTILITY" ? "success" : "active"}
-              >
-                {template.category.toLowerCase()}
-              </AdminBadge>
-              {template.header === "IMAGE" ? (
-                <AdminBadge tone="pending">image</AdminBadge>
-              ) : null}
-            </span>
-            <span className="line-clamp-3 text-sm text-onwei-blue/70">
-              {template.bodyText}
-            </span>
-          </button>
-        );
-      })}
-    </div>
   );
 }
 
@@ -887,11 +716,13 @@ export function WhatsAppSender({ canManage }: { canManage: boolean }) {
           hint="Approved utility and marketing templates from Gupshup."
           done={Boolean(template)}
         >
-          <TemplatePicker
+          <TemplateList
             templates={templates}
             error={listError}
+            emptyText="No approved utility or marketing templates yet. Once Gupshup approves one, it shows up here."
             chosenId={template?.id ?? null}
             onPick={pickTemplate}
+            disabled={running}
           />
         </Step>
 
@@ -1063,7 +894,11 @@ export function WhatsAppSender({ canManage }: { canManage: boolean }) {
         <p className="mb-3 text-center text-xs uppercase tracking-wide text-onwei-blue/60">
           Preview with sample values
         </p>
-        <PhonePreview template={template} fill={fill} imageUrl={imageUrl} />
+        <PhonePreview
+          template={template}
+          values={sampleCampaignParams(fill)}
+          imageUrl={imageUrl}
+        />
       </aside>
     </div>
   );

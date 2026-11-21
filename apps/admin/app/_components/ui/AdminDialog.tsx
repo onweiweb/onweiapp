@@ -20,7 +20,7 @@ export function AdminDialog({
   onClose: () => void;
   title: string;
   description?: React.ReactNode;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   children: React.ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -37,7 +37,9 @@ export function AdminDialog({
       ? "w-[min(26rem,92vw)]"
       : size === "lg"
         ? "w-[min(52rem,92vw)]"
-        : "w-[min(38rem,92vw)]";
+        : size === "xl"
+          ? "w-[min(70rem,94vw)]"
+          : "w-[min(38rem,92vw)]";
 
   return (
     <dialog

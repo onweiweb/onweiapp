@@ -3,7 +3,11 @@
 import type { WhatsAppPurposeInfo, WhatsAppTemplateView } from "@onwei/core";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { GupshupPicker } from "./_picker";
+import {
+  PhonePreview,
+  TemplateList,
+} from "../_components/WhatsAppTemplateParts";
+import { pickedFrom, useApprovedTemplates } from "./_picker";
 import {
   AdminButton,
   AdminDialog,
@@ -40,14 +44,6 @@ async function postJson(url: string, method: string, body: unknown) {
   }) as { ok: boolean; error?: string; url?: string };
 }
 
-/** {{n}} in the message, shown with the label of the value that fills it. */
-function fillPreview(text: string, labels: string[]): string {
-  return text.replace(/\{\{\s*(\d+)\s*\}\}/g, (match, n: string) => {
-    const label = labels[Number(n) - 1];
-    return label ? `[${label}]` : match;
-  });
-}
-
 function blanksInText(text: string): number {
   return new Set([...text.matchAll(/\{\{\s*(\d+)\s*\}\}/g)].map((m) => m[1]))
     .size;
@@ -63,7 +59,7 @@ function Step({
   children: React.ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3">
+    <section className="flex flex-col gap-2.5">
       <h3 className="flex items-center gap-2 text-sm font-medium">
         <span className="flex size-6 items-center justify-center rounded-full bg-onwei-blue text-xs text-onwei-beige">
           {number}
@@ -90,6 +86,7 @@ function WhatsAppTemplateForm({
 }) {
   const router = useRouter();
   const toast = useToast();
+  const { templates, waiting, error } = useApprovedTemplates(info.purpose);
   const [values, setValues] = useState<Values>(() => pick(initial));
   const [baseline, setBaseline] = useState(() => JSON.stringify(pick(initial)));
   const [saving, setSaving] = useState(false);
@@ -99,7 +96,11 @@ function WhatsAppTemplateForm({
     values.gupshupTemplateId !== initial.gupshupTemplateId;
   const labelFor = (key: string) =>
     info.variables.find((v) => v.key === key)?.label ?? key;
-  const inText = blanksInText(values.previewText);
+  const chosen =
+    templates?.find((t) => t.id === values.gupshupTemplateId) ?? null;
+  const inText = chosen?.bodyValues ?? blanksInText(values.previewText);
+  const hasTemplate = Boolean(values.gupshupTemplateId);
+  const disabled = !canManage || saving;
 
   function set<K extends keyof Values>(key: K, value: Values[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -157,101 +158,90 @@ function WhatsAppTemplateForm({
     toast("Image uploaded. Save to use it.", "success");
   }
 
-  const disabled = !canManage || saving;
-  const hasTemplate = Boolean(values.gupshupTemplateId);
-  const preview = fillPreview(
-    values.previewText,
-    values.variables.map(labelFor),
-  );
-
   return (
-    <form onSubmit={save} className="flex flex-col gap-6">
-      <Step number={1} title="Choose the template">
-        <div className="flex flex-col gap-3">
-          {hasTemplate ? (
-            <p className="text-sm">
-              {changedTemplate ? "New choice: " : "Using: "}
-              <strong>{values.templateName || "a template"}</strong>
-            </p>
-          ) : null}
-          {problem && !changedTemplate ? (
-            <p className="rounded-xl bg-onwei-beige/60 px-3 py-2 text-sm text-onwei-black">
-              {problem} Pick an approved one below.
-            </p>
-          ) : null}
-          {canManage ? (
-            <GupshupPicker
-              info={info}
-              currentId={values.gupshupTemplateId}
-              currentImageUrl={values.headerImageUrl}
-              onPick={(picked) => setValues((v) => ({ ...v, ...picked }))}
-            />
-          ) : null}
-        </div>
-      </Step>
-
-      {hasTemplate ? (
-        <Step number={2} title="Check what gets filled in">
-          <div className="flex flex-col gap-4">
-            {values.previewText ? (
-              <div className="whitespace-pre-line rounded-2xl rounded-tl-sm bg-onwei-beige/50 px-4 py-3 text-sm">
-                {preview}
-              </div>
+    <form
+      onSubmit={save}
+      className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]"
+    >
+      <div className="flex min-w-0 flex-col gap-5">
+        <Step number={1} title="Choose the template">
+          <div className="flex flex-col gap-2">
+            {problem && !changedTemplate ? (
+              <p className="rounded-xl bg-onwei-beige/60 px-3 py-2 text-sm text-onwei-black">
+                {problem} Pick an approved one below.
+              </p>
             ) : null}
-            {values.variables.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {values.variables.map((key, index) => (
-                  <label
-                    key={index}
-                    className="flex flex-wrap items-center gap-2 text-sm"
-                  >
-                    <span className="w-40 text-onwei-blue/70">
-                      {index < inText
-                        ? `Blank ${index + 1} in the message`
-                        : "End of the button link"}
-                    </span>
-                    <AdminSelect
-                      value={key}
-                      onChange={(e) => setVariable(index, e.target.value)}
-                      disabled={disabled}
-                    >
-                      {info.variables.map((v) => (
-                        <option key={v.key} value={v.key}>
-                          {v.label}
-                        </option>
-                      ))}
-                    </AdminSelect>
-                  </label>
-                ))}
-                <p className="text-xs text-onwei-blue/60">
-                  Already set to the usual order. Change one only if the preview
-                  reads wrong.
-                </p>
-              </div>
+            {canManage ? (
+              <TemplateList
+                templates={templates}
+                error={error}
+                emptyText={`No approved ${info.category.toLowerCase()} templates in Gupshup yet. Create one there and come back once WhatsApp approves it.`}
+                chosenId={values.gupshupTemplateId || null}
+                onPick={(t) =>
+                  setValues((v) => ({
+                    ...v,
+                    ...pickedFrom(t, v.headerImageUrl),
+                  }))
+                }
+              />
+            ) : (
+              <p className="text-sm">
+                {values.templateName || "No template chosen yet."}
+              </p>
+            )}
+            {waiting > 0 ? (
+              <p className="text-xs text-onwei-blue/60">
+                {waiting} more {waiting === 1 ? "template is" : "templates are"}{" "}
+                waiting for WhatsApp&apos;s approval.
+              </p>
             ) : null}
           </div>
         </Step>
-      ) : null}
 
-      {hasTemplate && values.headerType === "IMAGE" ? (
-        <Step number={3} title="Image at the top">
-          <Field
-            label="Image"
-            hint="JPEG or PNG under 5MB, landscape (about 1200 by 628). Sent with every message."
-          >
+        {hasTemplate && values.variables.length > 0 ? (
+          <Step number={2} title="Fill in the blanks">
             <div className="flex flex-col gap-2">
-              {values.headerImageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={values.headerImageUrl}
-                  alt=""
-                  className="max-h-40 w-fit rounded-xl border border-onwei-beige"
-                />
-              ) : (
-                <span className="text-sm text-onwei-blue/70">
-                  No image yet. Add one before switching this message on.
-                </span>
-              )}
+              {values.variables.map((key, index) => (
+                <label
+                  key={index}
+                  className="grid grid-cols-[9rem_minmax(0,1fr)] items-center gap-2 text-sm"
+                >
+                  <span className="text-onwei-blue/70">
+                    {index < inText
+                      ? `Blank ${index + 1}`
+                      : "End of the button link"}
+                  </span>
+                  <AdminSelect
+                    value={key}
+                    onChange={(e) => setVariable(index, e.target.value)}
+                    disabled={disabled}
+                  >
+                    {info.variables.map((v) => (
+                      <option key={v.key} value={v.key}>
+                        {v.label}
+                      </option>
+                    ))}
+                  </AdminSelect>
+                </label>
+              ))}
+              <p className="text-xs text-onwei-blue/60">
+                Already set to the usual order. Change one only if the preview
+                reads wrong.
+              </p>
+            </div>
+          </Step>
+        ) : null}
+
+        {hasTemplate && values.headerType === "IMAGE" ? (
+          <Step number={3} title="Image at the top">
+            <div className="flex flex-col gap-1.5 text-sm">
+              <span className="text-xs text-onwei-blue/70">
+                JPEG or PNG under 5MB, landscape (about 1200 by 628). Sent with
+                every message.
+                {values.headerImageUrl
+                  ? ""
+                  : " Add one before switching this message on."}
+              </span>
               {canManage ? (
                 <input
                   type="file"
@@ -268,27 +258,43 @@ function WhatsAppTemplateForm({
                 <span className="text-xs text-onwei-blue/70">Uploading...</span>
               ) : null}
             </div>
-          </Field>
-        </Step>
-      ) : null}
+          </Step>
+        ) : null}
 
-      {canManage ? (
-        <div className="flex justify-end gap-2">
-          <AdminButton type="button" variant="secondary" onClick={onDone}>
-            Cancel
-          </AdminButton>
-          <AdminButton
-            type="submit"
-            disabled={!dirty || saving || !hasTemplate}
-          >
-            {saving ? "Saving..." : "Save"}
-          </AdminButton>
-        </div>
-      ) : (
-        <p className="text-xs text-onwei-blue/70">
-          You can see these settings but not change them.
-        </p>
-      )}
+        {canManage ? (
+          <div className="flex justify-end gap-2">
+            <AdminButton type="button" variant="secondary" onClick={onDone}>
+              Cancel
+            </AdminButton>
+            <AdminButton
+              type="submit"
+              disabled={!dirty || saving || !hasTemplate}
+            >
+              {saving ? "Saving..." : "Save"}
+            </AdminButton>
+          </div>
+        ) : (
+          <p className="text-xs text-onwei-blue/70">
+            You can see these settings but not change them.
+          </p>
+        )}
+      </div>
+
+      <aside className="lg:sticky lg:top-0 lg:self-start">
+        {chosen ? (
+          <PhonePreview
+            template={chosen}
+            values={values.variables.map((k) => labelFor(k))}
+            imageUrl={values.headerImageUrl}
+          />
+        ) : values.previewText ? (
+          <div className="whitespace-pre-line rounded-2xl bg-onwei-beige/50 px-4 py-3 text-sm">
+            {values.previewText}
+          </div>
+        ) : (
+          <PhonePreview template={null} values={[]} imageUrl={null} />
+        )}
+      </aside>
     </form>
   );
 }
@@ -460,7 +466,7 @@ export function WhatsAppRowActions({
       <AdminDialog
         open={open === "edit"}
         onClose={close}
-        size="lg"
+        size="xl"
         title={info.title}
         description={
           <>
