@@ -93,8 +93,8 @@ read before assuming something that looks broken is a missing asset.
 - Admin lists page with `apps/admin/app/_lib/pagination.ts` plus `AdminPager`, never a bare `take: N`.
 - State changes (orders, and later shipments, payments, invoices) use a transaction with a compare-and-set
   on the old status, and write history and audit rows in the same transaction.
-- Orders, checkout, payments, coupons and returns are built (see `docs/COMMERCE_BUILD_PLAN.md`). GST invoicing,
-  delivery partner and CRM are deliberately not built yet and have no answers. Do not start them or add schema for them
+- Orders, checkout, payments, coupons and returns are built (see `docs/COMMERCE_BUILD_PLAN.md`). The delivery partner
+  (iThink) is approved and in progress (section 19). GST invoicing and CRM are deliberately not built yet and have no answers. Do not start them or add schema for them
   without an approved plan.
 
 ## Databases and migrations (added 2026-10-01)
@@ -313,6 +313,10 @@ sets `MSG91_AUTH_KEY` and `MSG91_OTP_TEMPLATE_ID` on Vercel (web). Client feedba
 Insiders > WhatsApp sends (2026-11-17, b762ec1, prod migrated `20261119120000_whatsapp_campaigns`): any approved
 template, fill blanks, pick a group, test, batch send, per-send log; numbers panel added 2026-11-18 (6cf5164).
 Details in `docs/COMMERCE_BUILD_PLAN.md` section 13.
+
+iThink Logistics (2026-11-24, built locally, not pushed): Insiders > Ship cards sends Insider cards to iThink, staff print
+labels in the iThink portal, "Update all" reads courier status. Needs prod migration `20261124120000_insider_card_shipments`
+and the live `ITHINK_*` keys on the admin project. Orders are phase 2. See `docs/COMMERCE_BUILD_PLAN.md` section 19.
 
 **Latest (2026-10-21):** Blogs page and admin blog editor, admin overhaul (speed, nav, shared kit), waitlist blog switch,
 blog analytics, product delete and redesigned product pages are pushed (up to f34223b). The backup product image work

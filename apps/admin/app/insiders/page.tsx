@@ -4,7 +4,6 @@ import {
   getPrintedCardOverview,
   LOW_FREE_CARDS,
   PRINT_RUN_SIZE,
-  listCardAddresses,
   listInsiderEmailStatus,
   type InsiderEmailStatus,
   listInsiderUpdates,
@@ -19,7 +18,6 @@ import {
   AdminCard,
   AdminPager,
   AdminTabLinks,
-  CopyText,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
@@ -28,12 +26,8 @@ import {
   EmptyState,
   PageHeader,
 } from "../_components/ui";
-import {
-  CreateCodesButton,
-  EmailSender,
-  FillCardsButton,
-  PostedToggle,
-} from "./_components";
+import { CreateCodesButton, EmailSender, FillCardsButton } from "./_components";
+import { CARD_SHIP_VIEWS, ShipCardsTab, type CardShipView } from "./_shipCards";
 import { MembersTab } from "./_members";
 import {
   WHATSAPP_RANGES,
@@ -48,7 +42,7 @@ import { AddUpdateButton, UpdateActions } from "./_updates";
 const TABS = [
   { id: "members", label: "Members" },
   { id: "overview", label: "Overview" },
-  { id: "addresses", label: "Card addresses" },
+  { id: "ship", label: "Ship cards" },
   { id: "cards", label: "Printed cards" },
   { id: "email", label: "Email" },
   { id: "whatsapp", label: "WhatsApp" },
@@ -93,6 +87,8 @@ export default async function InsidersPage({
   const params = await searchParams;
   // The Insider discount moved to Coupons and discounts.
   if (params.tab === "discount") redirect("/coupons?tab=insider");
+  // Card addresses became Ship cards.
+  if (params.tab === "addresses") redirect("/insiders?tab=ship");
   const tab: TabId = TABS.some((t) => t.id === params.tab)
     ? (params.tab as TabId)
     : "members";
@@ -108,14 +104,14 @@ export default async function InsidersPage({
         <MembersTab page={parsePage(params.page)} q={params.q} />
       ) : null}
       {tab === "overview" ? <OverviewTab canManage={canManage} /> : null}
-      {tab === "addresses" ? (
-        <AddressesTab
+      {tab === "ship" ? (
+        <ShipCardsTab
           canManage={canManage}
           page={parsePage(params.page)}
-          show={
-            params.show === "all" || params.show === "posted"
-              ? params.show
-              : "toPost"
+          view={
+            CARD_SHIP_VIEWS.includes(params.view as CardShipView)
+              ? (params.view as CardShipView)
+              : "ready"
           }
         />
       ) : null}
@@ -191,124 +187,6 @@ async function OverviewTab({ canManage }: { canManage: boolean }) {
           their code but won&apos;t get emails.
         </p>
       ) : null}
-    </div>
-  );
-}
-
-const SHOW_OPTIONS = [
-  { id: "toPost", label: "To post" },
-  { id: "posted", label: "Posted" },
-  { id: "all", label: "All" },
-] as const;
-
-async function AddressesTab({
-  canManage,
-  page,
-  show,
-}: {
-  canManage: boolean;
-  page: number;
-  show: "all" | "toPost" | "posted";
-}) {
-  const { rows, hasNext, total } = await listCardAddresses({
-    page,
-    pageSize: PAGE_SIZE,
-    show,
-  });
-
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex gap-2">
-          {SHOW_OPTIONS.map((option) => (
-            <a
-              key={option.id}
-              href={`/insiders?tab=addresses&show=${option.id}`}
-              className={`rounded-full px-3 py-1 text-sm ${
-                option.id === show
-                  ? "bg-onwei-blue text-onwei-beige"
-                  : "border border-onwei-blue/30 text-onwei-blue"
-              }`}
-            >
-              {option.label}
-            </a>
-          ))}
-        </div>
-        <a
-          href={`/api/insiders/addresses/export${show === "toPost" ? "" : "?all=1"}`}
-        >
-          <AdminButton type="button" variant="secondary">
-            {show === "toPost"
-              ? "Download addresses to post (CSV)"
-              : "Download all (CSV)"}
-          </AdminButton>
-        </a>
-      </div>
-      {rows.length === 0 ? (
-        <EmptyState
-          title={
-            show === "toPost" ? "Nothing to post right now" : "No addresses yet"
-          }
-          description="Addresses show up here when Insiders use the “Share your address” link in their email."
-        />
-      ) : (
-        <>
-          <p className="text-sm text-onwei-blue/70">{total} in this list</p>
-          <AdminTable>
-            <AdminTableHead>
-              <AdminTableHeaderCell>Name</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Address</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Phone</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Code</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Card no.</AdminTableHeaderCell>
-              <AdminTableHeaderCell>Status</AdminTableHeaderCell>
-              {canManage ? (
-                <AdminTableHeaderCell>{""}</AdminTableHeaderCell>
-              ) : null}
-            </AdminTableHead>
-            <tbody>
-              {rows.map((row) => (
-                <AdminTableRow key={row.id}>
-                  <AdminTableCell>{row.fullName}</AdminTableCell>
-                  <AdminTableCell>
-                    <CopyText
-                      label="address"
-                      text={`${row.fullName}, ${row.line1}${row.line2 ? `, ${row.line2}` : ""}, ${row.city}, ${row.state} ${row.postalCode}, ${row.phone}`}
-                      display={`${row.line1}${row.line2 ? `, ${row.line2}` : ""}, ${row.city}, ${row.state} ${row.postalCode}`}
-                    />
-                  </AdminTableCell>
-                  <AdminTableCell>{row.phone}</AdminTableCell>
-                  <AdminTableCell>{row.insiderCode ?? "-"}</AdminTableCell>
-                  <AdminTableCell>
-                    {row.cardNumber ?? "Not printed"}
-                  </AdminTableCell>
-                  <AdminTableCell>
-                    <AdminBadge tone={row.postedAt ? "success" : "pending"}>
-                      {row.postedAt
-                        ? `Posted ${istDateOf(row.postedAt)}`
-                        : "To post"}
-                    </AdminBadge>
-                  </AdminTableCell>
-                  {canManage ? (
-                    <AdminTableCell>
-                      <PostedToggle
-                        id={row.id}
-                        posted={Boolean(row.postedAt)}
-                      />
-                    </AdminTableCell>
-                  ) : null}
-                </AdminTableRow>
-              ))}
-            </tbody>
-          </AdminTable>
-        </>
-      )}
-      <AdminPager
-        pathname="/insiders"
-        page={page}
-        hasNext={hasNext}
-        params={{ tab: "addresses", show }}
-      />
     </div>
   );
 }

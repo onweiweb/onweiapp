@@ -971,3 +971,54 @@ Soft deletes on customer-facing rows, price snapshots on order lines, audit rows
 4. (Answered 2026-11-18, see section 14a. Pre-orders built locally.)
 5. Razorpay: test keys in `.env.local`, account activation status.
 6. Go-ahead to start Phase A.
+
+## 19. Delivery partner: iThink Logistics (approved 2026-11-24)
+
+The owner picked iThink Logistics (https://docs.ithinklogistics.com/, API v3). Two phases: Insider cards first
+(built locally 2026-11-24, not pushed), then orders.
+
+**Decisions:** Add Order (books the courier and returns the tracking number at once), not Sync Order. Labels are
+printed in the iThink portal, not in Onwei admin. iThink picks the courier (`logistics` empty). No polling for now:
+staff press "Update all" (webhooks are not in iThink's docs; ClickPost lists them, so ask the account manager).
+Weight is always kg, dates go as `dd-mm-yyyy` (India time). Card envelope: 20.3 x 15.2 x 1 cm, 26 g, declared value
+₹1, editable in Insiders > Ship cards.
+
+**Keys (web and admin):** `ITHINK_ENV` (`staging` or `production`), `ITHINK_ACCESS_TOKEN`, `ITHINK_SECRET_KEY`,
+`ITHINK_PICKUP_ADDRESS_ID`, optional `ITHINK_RETURN_ADDRESS_ID` (defaults to the pickup id) and `ITHINK_STORE_ID`.
+Without all four required values admin says "iThink isn't connected yet". Phase 1 needs them on the admin project only.
+
+**API quirks found on the test server (2026-11-24), not in the docs:**
+
+- Add Order refuses a request missing any optional field ("Invalid Request Format - gst_number"), so every field is
+  sent, empty or "0". `logistics` must be present.
+- The reference comes back lowercased in `refnum`; `waybill` is a number.
+- A reference iThink has seen is refused ("Duplicate Order no. in system"), so a parcel is never booked twice. When a
+  reply is lost, sending the same reference again and then reading Order Details for that day finds the booking.
+- Order Details ignores `order_no`; we match the reference ourselves.
+- The test server is one account shared by many shops, and its Track Order and Cancel return canned sample data.
+  Test mode reads status from Order Details (`latest_courier_status`) instead, and test references get a random tail.
+
+**Phase 1, Insider cards (`packages/core/src/logistics`, admin Insiders > Ship cards):**
+
+- `Shipment` table, one row per parcel attempt (`reference` unique, `isCurrent` marks the newest), linked to
+  `InsiderCardAddress`. No copy of the address. Statuses: SENDING, BOOKED, IN_TRANSIT, OUT_FOR_DELIVERY, DELIVERED,
+  RETURNING, RETURNED, LOST, CANCELLED, FAILED. Envelope settings on `InsiderSetting`. Migration
+  `20261124120000_insider_card_shipments` (additive).
+- Lists: Ready to send (address, printed card, not posted, nothing active), Sent, Needs a look (refused, coming back,
+  lost, address changed after booking, no reply for 5 minutes), No card yet.
+- Send selected or "Send all", 10 per request. References `CARD-0042`, then `CARD-0042-2` for a resend.
+- "Update all": 50 per request, each card asked once per press. Courier updates only move forward (or to returning,
+  lost, cancelled before pickup). Picked up sets `InsiderCardAddress.postedAt`, which the member's address page shows.
+- Cancel booking (only before pickup), Keep as is (address changed), Posted by hand (blocked while iThink has the
+  card). The old CSV download and "Mark posted" button are gone; `?tab=addresses` redirects to `?tab=ship`.
+- Audit rows: send, cancel, keep, envelope change, posted by hand. Courier status changes are not audited.
+- Tests: `ithinkClient.test.ts`, `shipmentStatus.test.ts`, `cardShipments.integration.test.ts` (fake iThink).
+
+**Launch for phase 1:** migrate prod (`20261124120000_insider_card_shipments`) before the push, add the live iThink
+keys to the admin Vercel project with `ITHINK_ENV=production`, push, send 3 or 4 cards, check them in the portal.
+
+**Phase 2, orders (not started):** PIN check at checkout, send on CONFIRMED (pre-orders after the balance), retry,
+"Get latest update" per order and "Update all open shipments", order status moves (Shipped, Out for delivery,
+Delivered) with shipped and delivered emails, cancel in admin cancels on iThink, default parcel size in Settings,
+customer order page shows courier and tracking. Open: should the customer order page refresh itself (at most every
+30 minutes)? Later: polling or webhooks, return pickups, COD remittance, failed-delivery reattempt.

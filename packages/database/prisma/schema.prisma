@@ -1103,13 +1103,20 @@ model InsiderCode {
 // is read when a discount is applied, never copied onto codes, so editing
 // it changes every Insider not covered by a tier.
 model InsiderSetting {
-  id               String           @id @default("singleton")
-  defaultPercent   Int              @default(5)
+  id                String           @id @default("singleton")
+  defaultPercent    Int              @default(5)
   // How the Insider discount works with coupons and the pre-order discount:
   // ADD (percentages add up on the price) or BEST (the bigger one only).
-  stackMode        InsiderStackMode @default(ADD)
-  updatedAt        DateTime         @updatedAt
-  updatedByStaffId String?
+  stackMode         InsiderStackMode @default(ADD)
+  // The Insider card envelope, sent to the delivery partner with each card.
+  cardLengthCm      Decimal          @default(20.3) @db.Decimal(6, 1)
+  cardWidthCm       Decimal          @default(1) @db.Decimal(6, 1)
+  cardHeightCm      Decimal          @default(15.2) @db.Decimal(6, 1)
+  cardWeightKg      Decimal          @default(0.026) @db.Decimal(6, 3)
+  // Value written on the parcel, rupees. The card is free.
+  cardDeclaredValue Decimal          @default(1) @db.Decimal(10, 2)
+  updatedAt         DateTime         @updatedAt
+  updatedByStaffId  String?
 }
 
 enum InsiderStackMode {
@@ -1184,7 +1191,66 @@ model InsiderCardAddress {
   postalCode      String
   submittedAt     DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+  // Set when the card was picked up by the courier, or marked posted by hand.
   postedAt        DateTime?
+  shipments       Shipment[]
+}
+
+// One parcel sent through the delivery partner (iThink Logistics). Phase 1
+// holds Insider cards; orders come later. Holds no copy of the address: it
+// ships to the linked address row. See docs/COMMERCE_BUILD_PLAN.md section 19.
+model Shipment {
+  id                   String              @id @default(cuid())
+  kind                 ShipmentKind
+  insiderCardAddressId String?
+  insiderCardAddress   InsiderCardAddress? @relation(fields: [insiderCardAddressId], references: [id], onDelete: Cascade)
+  // Our reference on iThink ("CARD-0042", a resend "CARD-0042-2"). iThink
+  // refuses a reference it has seen, so a parcel is never booked twice.
+  reference            String              @unique
+  // Only the newest attempt for a card is current; older ones are history.
+  isCurrent            Boolean             @default(true)
+  status               ShipmentStatus      @default(SENDING)
+  awb                  String?             @unique
+  courier              String?
+  // iThink's own words for the latest scan, e.g. "In Transit".
+  courierStatus        String?
+  lastScanAt           DateTime?
+  // Plain-words reason when iThink refused it or something went wrong.
+  error                String?
+  // The address was edited after this parcel was booked.
+  addressChangedAt     DateTime?
+  sentByStaffId        String?
+  bookedAt             DateTime?
+  pickedUpAt           DateTime?
+  deliveredAt          DateTime?
+  cancelledAt          DateTime?
+  lastCheckedAt        DateTime?
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([insiderCardAddressId, isCurrent])
+  @@index([status, lastCheckedAt])
+}
+
+enum ShipmentKind {
+  INSIDER_CARD
+}
+
+enum ShipmentStatus {
+  // Sent to iThink, reply not saved yet (or never came).
+  SENDING
+  // iThink took it and booked a courier; waiting for pickup.
+  BOOKED
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  // Coming back to us (courier couldn't deliver).
+  RETURNING
+  RETURNED
+  LOST
+  CANCELLED
+  // iThink refused it (e.g. invalid PIN code) or couldn't be reached.
+  FAILED
 }
 
 // Homepage and PDP shared marketing content, CMS-editable so it isn't

@@ -3,6 +3,10 @@ import { z } from "zod";
 import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
 import { validatePhone } from "../validation/phone";
+import {
+  flagCardAddressChanged,
+  hasActiveCardShipment,
+} from "../logistics/cardShipments";
 
 /** Indian states and union territories, for the address form's dropdown. */
 export const INDIAN_STATES = [
@@ -148,96 +152,51 @@ export async function saveCardAddress(
     state,
     postalCode,
   };
-  await prisma.insiderCardAddress.upsert({
+  const before = await prisma.insiderCardAddress.findUnique({
     where: { waitlistEntryId: entryId },
-    create: { waitlistEntryId: entryId, ...data },
-    update: data,
+    select: {
+      id: true,
+      fullName: true,
+      phone: true,
+      line1: true,
+      line2: true,
+      city: true,
+      state: true,
+      postalCode: true,
+    },
+  });
+  await prisma.$transaction(async (tx) => {
+    await tx.insiderCardAddress.upsert({
+      where: { waitlistEntryId: entryId },
+      create: { waitlistEntryId: entryId, ...data },
+      update: data,
+    });
+    // A card already booked with the old address needs a look from staff.
+    if (before) {
+      const { id, ...old } = before;
+      if (JSON.stringify(old) !== JSON.stringify(data)) {
+        await flagCardAddressChanged(id, tx);
+      }
+    }
   });
   return { ok: true };
 }
 
-export interface CardAddressListRow extends CardAddressView {
-  id: string;
-  insiderCode: string | null;
-  /** Number of the printed card to post, if their code is on one. */
-  cardNumber: number | null;
-  email: string;
-  submittedAt: Date;
-}
-
-export async function listCardAddresses(input: {
-  page: number;
-  pageSize: number;
-  show: "all" | "toPost" | "posted";
-}): Promise<{ rows: CardAddressListRow[]; hasNext: boolean; total: number }> {
-  const where =
-    input.show === "toPost"
-      ? { postedAt: null }
-      : input.show === "posted"
-        ? { postedAt: { not: null } }
-        : {};
-  const skip = (Math.max(input.page, 1) - 1) * input.pageSize;
-  const [rows, total] = await Promise.all([
-    prisma.insiderCardAddress.findMany({
-      where,
-      skip,
-      take: input.pageSize + 1,
-      orderBy: [{ submittedAt: "asc" }, { id: "asc" }],
-      include: {
-        waitlistEntry: {
-          select: {
-            insiderCode: true,
-            email: true,
-            printedCard: { select: { cardNumber: true } },
-          },
-        },
-      },
-    }),
-    prisma.insiderCardAddress.count({ where }),
-  ]);
-  return {
-    rows: rows.slice(0, input.pageSize).map((row) => ({
-      id: row.id,
-      fullName: row.fullName,
-      phone: row.phone,
-      line1: row.line1,
-      line2: row.line2,
-      city: row.city,
-      state: row.state,
-      postalCode: row.postalCode,
-      postedAt: row.postedAt,
-      submittedAt: row.submittedAt,
-      insiderCode: row.waitlistEntry.insiderCode,
-      cardNumber: row.waitlistEntry.printedCard?.cardNumber ?? null,
-      email: row.waitlistEntry.email,
-    })),
-    hasNext: rows.length > input.pageSize,
-    total,
-  };
-}
-
-/** Every address still to post, oldest first, for the CSV export. */
-export async function listAllCardAddresses(
-  show: "all" | "toPost",
-): Promise<CardAddressListRow[]> {
-  const { rows } = await listCardAddresses({
-    page: 1,
-    pageSize: 10_000,
-    show,
-  });
-  return rows;
-}
-
+/** Posted by hand (delivered without iThink), or undo that. */
 export async function setCardPosted(
   addressId: string,
   posted: boolean,
   actor: AuditActor,
-): Promise<{ ok: true } | { ok: false; reason: "NOT_FOUND" }> {
+): Promise<{ ok: true } | { ok: false; reason: "NOT_FOUND" | "SHIPPING" }> {
   const before = await prisma.insiderCardAddress.findUnique({
     where: { id: addressId },
     select: { id: true, postedAt: true },
   });
   if (!before) return { ok: false, reason: "NOT_FOUND" };
+  // A card going through iThink is marked posted by the courier update.
+  if (await hasActiveCardShipment(addressId)) {
+    return { ok: false, reason: "SHIPPING" };
+  }
   await prisma.$transaction(async (tx) => {
     const row = await tx.insiderCardAddress.update({
       where: { id: addressId },

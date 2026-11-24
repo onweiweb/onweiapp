@@ -65,7 +65,8 @@ recovery path alongside the expand-contract migration approach in
 `docs/DATABASE_SCHEMA.md`, depends on which Vercel Postgres plan/tier is
 provisioned.
 
-**Logistics/courier integration.** The brief asks for order-tracking
+**Logistics/courier integration.** (Decided 2026-11-24: iThink Logistics, see
+`docs/COMMERCE_BUILD_PLAN.md` section 19.) The brief asks for order-tracking
 "feasibility." The schema (`OrderStatusHistory`) supports it either way, but
 whether status updates come from a courier webhook (Shiprocket, Delhivery,
 etc.) or are entered manually by admin staff for now is a real product and

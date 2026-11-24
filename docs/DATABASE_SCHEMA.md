@@ -108,6 +108,13 @@ link can be copied again and campaign names get reused. Internal tool data with 
 access effect, so it is hard deleted and writes no audit row. Making the exact same link twice
 reuses the row (upsert on `url`). Migration `add_tracked_links` (additive).
 
+**Shipments.** `Shipment` is one parcel sent through the delivery partner (iThink Logistics), one row per attempt.
+`reference` is unique and is what iThink keys on, so a parcel is never booked twice; `isCurrent` marks the newest
+attempt for a card. Phase 1 links Insider cards (`insiderCardAddressId`, cascade delete with the address, no copy of
+the address). Courier status only moves forward (`canMoveShipment` in `packages/core/src/logistics`). Card envelope size
+and weight live on `InsiderSetting`. Migration `20261124120000_insider_card_shipments` (additive). Orders join in
+phase 2. See `docs/COMMERCE_BUILD_PLAN.md` section 19.
+
 ## Deliberately deferred
 
 Multi-currency, multi-language, and multi-warehouse _routing_ (choosing which

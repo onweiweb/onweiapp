@@ -318,36 +318,6 @@ export function FillCardsButton({
   );
 }
 
-export function PostedToggle({ id, posted }: { id: string; posted: boolean }) {
-  const router = useRouter();
-  const toast = useToast();
-  const [busy, setBusy] = useState(false);
-
-  async function toggle() {
-    setBusy(true);
-    const result = await send(`/api/insiders/addresses/${id}`, "PATCH", {
-      posted: !posted,
-    });
-    setBusy(false);
-    if (!result.ok) {
-      toast(result.error ?? "That didn't work. Try again.", "error");
-      return;
-    }
-    router.refresh();
-  }
-
-  return (
-    <AdminButton
-      type="button"
-      variant={posted ? "secondary" : "primary"}
-      onClick={toggle}
-      disabled={busy}
-    >
-      {posted ? "Undo posted" : "Mark posted"}
-    </AdminButton>
-  );
-}
-
 /**
  * Test send, then the real send in batches until nobody is left. Shows
  * progress as it goes; stopping the page midway is safe (nobody is emailed

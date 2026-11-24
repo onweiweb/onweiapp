@@ -15,9 +15,12 @@ export const PATCH = defineAdminRoute<typeof bodySchema, { id: string }>(
       return NextResponse.json(
         {
           ok: false,
-          error: "This address is no longer here. Refresh the page.",
+          error:
+            result.reason === "SHIPPING"
+              ? "This card is going through iThink, so it's marked posted when the courier picks it up. Cancel the iThink booking first to post it by hand."
+              : "This address is no longer here. Refresh the page.",
         },
-        { status: 404 },
+        { status: result.reason === "SHIPPING" ? 409 : 404 },
       );
     }
     return NextResponse.json({ ok: true });
