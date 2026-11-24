@@ -17,8 +17,13 @@ export type { EmailSender } from "./sender/emailSender";
 export {
   renderOrderConfirmationEmail,
   renderNewOrderAlertEmail,
+  renderOrderDeliveredEmail,
+  renderOrderShippedEmail,
 } from "./templates/orderEmails";
-export type { OrderEmailInput } from "./templates/orderEmails";
+export type {
+  OrderDeliveryEmailInput,
+  OrderEmailInput,
+} from "./templates/orderEmails";
 export { renderContactAlertEmail } from "./templates/contactEmails";
 export type { ContactAlertInput } from "./templates/contactEmails";
 export {

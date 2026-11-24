@@ -4,6 +4,8 @@ import type { AuditActor } from "../admin/types";
 import { toMinorUnits } from "../catalog/helpers";
 import { updateOrderStatus } from "../orders/updateOrderStatus";
 import type { RazorpayConfig } from "../payments/razorpay";
+import type { IthinkDeps } from "../logistics/cardShipments";
+import { cancelOrderShipment } from "../logistics/orderShipments";
 import { refundPayment } from "./orders";
 
 /** Staff actions on an order. Every one writes history and an audit row. */
@@ -124,6 +126,7 @@ export async function cancelOrderByStaff(
   reason: string,
   actor: AuditActor,
   razorpay: RazorpayConfig | null,
+  ithink: IthinkDeps = {},
 ): Promise<{ refunded: boolean; refundProblem?: string }> {
   const clean = reason.trim();
   if (clean.length < 3)
@@ -137,6 +140,10 @@ export async function cancelOrderByStaff(
       "Only orders that haven't shipped can be cancelled here.",
     );
   }
+  // The courier booking goes first: if iThink can't cancel it (the parcel
+  // may be picked up), the order stays as it is.
+  const courier = await cancelOrderShipment(orderId, actor, ithink);
+  if (!courier.ok) throw new OrderActionError(courier.message);
   await prisma.$transaction(async (tx) => {
     const claimed = await tx.order.updateMany({
       where: { id: orderId, status: order.status },

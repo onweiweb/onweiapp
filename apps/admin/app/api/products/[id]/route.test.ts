@@ -54,6 +54,10 @@ describe.skipIf(!process.env.DATABASE_URL)(
         data: {
           name: "Test Category",
           slug: `test-category-${crypto.randomUUID()}`,
+          boxLengthCm: 45,
+          boxWidthCm: 25,
+          boxHeightCm: 5,
+          boxWeightGrams: 150,
         },
       });
       createdCategoryIds.push(category.id);

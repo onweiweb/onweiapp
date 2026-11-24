@@ -1,0 +1,372 @@
+import { randomUUID } from "node:crypto";
+import { prisma } from "@onwei/database";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { cancelOrderByStaff, OrderActionError } from "../commerce/adminOrders";
+import type { IthinkConfig } from "./ithinkClient";
+import {
+  checkDeliveryPincode,
+  clearPincodeCache,
+  refreshOrderShipments,
+  sendOrderToIthink,
+} from "./orderShipments";
+
+// Test orders only (example.test customers), removed afterwards. iThink is
+// faked: nothing leaves this machine.
+const config: IthinkConfig = {
+  mode: "production",
+  accessToken: "test",
+  secretKey: "test",
+  pickupAddressId: "1",
+  returnAddressId: "1",
+  storeId: "",
+};
+
+type Handler = (path: string, data: Record<string, unknown>) => unknown;
+
+function fake(handler: Handler): typeof fetch {
+  return (async (url: string, init?: RequestInit) => {
+    const { data } = JSON.parse(String(init?.body)) as {
+      data: Record<string, unknown>;
+    };
+    const path = new URL(url).pathname.replace("/api_v3/", "");
+    return new Response(JSON.stringify(handler(path, data)), { status: 200 });
+  }) as unknown as typeof fetch;
+}
+
+describe.skipIf(!process.env.DATABASE_URL)(
+  "order shipments (integration)",
+  { timeout: 30000 },
+  () => {
+    const orderIds: string[] = [];
+    const customerIds: string[] = [];
+    let actor: { staffUserId: string };
+    let variantId: string;
+    let nextAwb = Date.now() * 10 + 7;
+    const sent: Record<string, unknown>[] = [];
+
+    const booking = fake((path, data) => {
+      if (path !== "order/add.json") return {};
+      const shipments = data.shipments as { order: string }[];
+      sent.push(...(shipments as unknown as Record<string, unknown>[]));
+      return {
+        status: "success",
+        data: Object.fromEntries(
+          shipments.map((s, i) => [
+            String(i + 1),
+            {
+              status: "success",
+              waybill: String((nextAwb += 1)),
+              refnum: s.order.toLowerCase(),
+              logistic_name: "delhivery",
+            },
+          ]),
+        ),
+      };
+    });
+
+    function track(awb: string, status: string, code: string) {
+      return fake((path) =>
+        path === "order/track.json"
+          ? {
+              data: {
+                [awb]: {
+                  message: "success",
+                  awb_no: awb,
+                  logistic: "Delhivery",
+                  current_status: status,
+                  current_status_code: code,
+                  last_scan_details: {
+                    status_date_time: "2026-11-25 10:00:00",
+                  },
+                  order_date_time: {
+                    delivery_date: code === "DL" ? "2026-11-27 15:00:00" : "",
+                  },
+                },
+              },
+            }
+          : {},
+      );
+    }
+
+    async function makeOrder(input: {
+      paymentMethod: "COD" | "RAZORPAY";
+      paid?: boolean;
+    }): Promise<string> {
+      const customer = await prisma.customer.create({
+        data: { email: `ship-${randomUUID()}@example.test` },
+      });
+      customerIds.push(customer.id);
+      const address = await prisma.address.create({
+        data: {
+          customerId: customer.id,
+          type: "SHIPPING",
+          fullName: "Test Buyer",
+          phone: "+919876543210",
+          line1: "1 Test Street",
+          city: "Hyderabad",
+          state: "Telangana",
+          postalCode: "500032",
+          country: "IN",
+        },
+      });
+      const order = await prisma.order.create({
+        data: {
+          orderNumber: `TSHIP-${randomUUID().slice(0, 8)}`,
+          customerId: customer.id,
+          status: "CONFIRMED",
+          paymentMethod: input.paymentMethod,
+          subtotal: 1000,
+          shippingTotal: 99,
+          codFee: input.paymentMethod === "COD" ? 49 : 0,
+          total: input.paymentMethod === "COD" ? 1148 : 1099,
+          contactEmail: customer.email,
+          shippingAddressId: address.id,
+          billingAddressId: address.id,
+          shippingAddressSnapshot: {
+            fullName: "Test Buyer",
+            phone: "+919876543210",
+            line1: "1 Test Street",
+            line2: null,
+            city: "Hyderabad",
+            state: "Telangana",
+            postalCode: "500032",
+            country: "IN",
+          },
+          items: {
+            create: [
+              {
+                productVariantId: variantId,
+                quantity: 1,
+                unitPrice: 1000,
+                totalAmount: 1000,
+                productName: "Test Tee",
+                variantLabel: "M",
+                sku: "TEST-TEE-M",
+              },
+              {
+                productVariantId: variantId,
+                quantity: 1,
+                unitPrice: 0,
+                totalAmount: 0,
+                productName: "Test Gift",
+                variantLabel: "",
+                sku: "TEST-GIFT",
+                isFree: true,
+              },
+            ],
+          },
+        },
+      });
+      if (input.paid) {
+        await prisma.payment.create({
+          data: {
+            orderId: order.id,
+            provider: "razorpay",
+            providerPaymentId: `pay_test_${randomUUID()}`,
+            amount: 1099,
+            status: "SUCCESS",
+          },
+        });
+      }
+      orderIds.push(order.id);
+      return order.id;
+    }
+
+    const current = (orderId: string) =>
+      prisma.shipment.findFirstOrThrow({ where: { orderId, isCurrent: true } });
+
+    beforeAll(async () => {
+      actor = { staffUserId: (await prisma.staffUser.findFirstOrThrow()).id };
+      variantId = (await prisma.productVariant.findFirstOrThrow()).id;
+    });
+
+    afterAll(async () => {
+      const shipments = await prisma.shipment.findMany({
+        where: { orderId: { in: orderIds } },
+        select: { id: true },
+      });
+      await prisma.auditLog.deleteMany({
+        where: {
+          entityId: { in: [...orderIds, ...shipments.map((s) => s.id)] },
+        },
+      });
+      await prisma.shipment.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+      await prisma.orderStatusHistory.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+      await prisma.payment.deleteMany({ where: { orderId: { in: orderIds } } });
+      await prisma.orderItem.deleteMany({
+        where: { orderId: { in: orderIds } },
+      });
+      await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
+      await prisma.address.deleteMany({
+        where: { customerId: { in: customerIds } },
+      });
+      await prisma.customer.deleteMany({ where: { id: { in: customerIds } } });
+    });
+
+    it("books a cash on delivery order once, then follows the courier to delivered", async () => {
+      const id = await makeOrder({ paymentMethod: "COD" });
+      const result = await sendOrderToIthink(id, null, {
+        config,
+        fetchImpl: booking,
+      });
+      expect(result).toMatchObject({ ok: true, outcome: "BOOKED" });
+      const parcel = sent.at(-1)!;
+      expect(parcel).toMatchObject({
+        payment_mode: "COD",
+        cod_amount: "1148",
+        total_amount: "1148",
+        shipping_charges: "99",
+        cod_charges: "49",
+        // The free gift goes as ₹1, balanced in the discount.
+        total_discount: "1",
+      });
+      const booked = await current(id);
+      expect(booked.status).toBe("BOOKED");
+
+      expect(
+        await sendOrderToIthink(id, actor, { config, fetchImpl: booking }),
+      ).toEqual({
+        ok: false,
+        reason: "ALREADY_SENT",
+      });
+
+      const awb = booked.awb!;
+      const shipped = await refreshOrderShipments(
+        { startedAt: new Date(Date.now() + 1000), orderId: id },
+        { config, fetchImpl: track(awb, "In Transit", "UD") },
+      );
+      expect(shipped).toMatchObject({
+        ok: true,
+        events: [{ orderId: id, type: "SHIPPED" }],
+      });
+      const order = await prisma.order.findUniqueOrThrow({ where: { id } });
+      expect(order).toMatchObject({
+        status: "SHIPPED",
+        trackingNumber: awb,
+        courierName: "Delhivery",
+      });
+
+      const delivered = await refreshOrderShipments(
+        { startedAt: new Date(Date.now() + 1000), orderId: id },
+        { config, fetchImpl: track(awb, "Delivered", "DL") },
+      );
+      expect(delivered).toMatchObject({
+        events: [{ orderId: id, type: "DELIVERED" }],
+      });
+      const done = await prisma.order.findUniqueOrThrow({ where: { id } });
+      expect(done.status).toBe("DELIVERED");
+      expect(done.deliveredAt?.toISOString()).toBe("2026-11-27T09:30:00.000Z");
+      const history = await prisma.orderStatusHistory.findMany({
+        where: { orderId: id },
+        orderBy: { createdAt: "asc" },
+      });
+      expect(history.map((h) => h.status)).toEqual(["SHIPPED", "DELIVERED"]);
+      expect(history.every((h) => h.changedBy === "ithink")).toBe(true);
+    });
+
+    it("jumps straight to delivered when the in-between scans were missed", async () => {
+      const id = await makeOrder({ paymentMethod: "RAZORPAY", paid: true });
+      await sendOrderToIthink(id, null, { config, fetchImpl: booking });
+      expect(sent.at(-1)).toMatchObject({
+        payment_mode: "Prepaid",
+        cod_amount: "0",
+      });
+      const awb = (await current(id)).awb!;
+      await refreshOrderShipments(
+        { startedAt: new Date(Date.now() + 1000), orderId: id },
+        { config, fetchImpl: track(awb, "Delivered", "DL") },
+      );
+      const history = await prisma.orderStatusHistory.findMany({
+        where: { orderId: id },
+        orderBy: { createdAt: "asc" },
+      });
+      expect(history.map((h) => h.status)).toEqual(["SHIPPED", "DELIVERED"]);
+    });
+
+    it("flags an order coming back", async () => {
+      const id = await makeOrder({ paymentMethod: "COD" });
+      await sendOrderToIthink(id, null, { config, fetchImpl: booking });
+      const awb = (await current(id)).awb!;
+      await refreshOrderShipments(
+        { startedAt: new Date(Date.now() + 1000), orderId: id },
+        { config, fetchImpl: track(awb, "RTO In Transit", "RT") },
+      );
+      const order = await prisma.order.findUniqueOrThrow({ where: { id } });
+      expect(order.needsAttention).toContain("sending it back");
+      expect((await current(id)).status).toBe("RETURNING");
+    });
+
+    it("cancels the courier booking with the order, and keeps the order if iThink says no", async () => {
+      const id = await makeOrder({ paymentMethod: "COD" });
+      await sendOrderToIthink(id, null, { config, fetchImpl: booking });
+
+      const refuse = fake(() => ({
+        status: "error",
+        data: [{ status: "error", remark: "Already picked up" }],
+      }));
+      await expect(
+        cancelOrderByStaff(id, "Customer asked", actor, null, {
+          config,
+          fetchImpl: refuse,
+        }),
+      ).rejects.toBeInstanceOf(OrderActionError);
+      expect(
+        (await prisma.order.findUniqueOrThrow({ where: { id } })).status,
+      ).toBe("CONFIRMED");
+
+      const accept = fake(() => ({
+        status: "success",
+        data: [{ status: "success" }],
+      }));
+      await cancelOrderByStaff(id, "Customer asked", actor, null, {
+        config,
+        fetchImpl: accept,
+      });
+      expect(
+        (await prisma.order.findUniqueOrThrow({ where: { id } })).status,
+      ).toBe("CANCELLED");
+      expect((await current(id)).status).toBe("CANCELLED");
+    });
+
+    it("only sends confirmed orders and needs the keys", async () => {
+      const id = await makeOrder({ paymentMethod: "COD" });
+      await prisma.order.update({ where: { id }, data: { status: "PENDING" } });
+      expect(
+        await sendOrderToIthink(id, null, { config, fetchImpl: booking }),
+      ).toEqual({
+        ok: false,
+        reason: "NOT_READY",
+      });
+      expect(await sendOrderToIthink(id, null, { config: null })).toEqual({
+        ok: false,
+        reason: "NOT_SET_UP",
+      });
+    });
+
+    it("checks a PIN once and remembers it", async () => {
+      clearPincodeCache();
+      let calls = 0;
+      const pins = fake(() => {
+        calls += 1;
+        return {
+          status: "success",
+          data: { "744301": { delhivery: { prepaid: "N", cod: "N" } } },
+        };
+      });
+      const deps = { config, fetchImpl: pins };
+      expect(await checkDeliveryPincode("744301", deps)).toEqual({
+        deliverable: false,
+        cod: false,
+      });
+      await checkDeliveryPincode("744301", deps);
+      expect(calls).toBe(1);
+      expect(await checkDeliveryPincode("12345", deps)).toBeNull();
+      expect(await checkDeliveryPincode("500032", { config: null })).toBeNull();
+      clearPincodeCache();
+    });
+  },
+);

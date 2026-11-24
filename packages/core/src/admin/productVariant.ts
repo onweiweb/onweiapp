@@ -1,5 +1,6 @@
 import { prisma } from "@onwei/database";
 import { writeAuditLog } from "./auditLog";
+import { checkWeightGrams, DeliveryDetailsError } from "./productDelivery";
 import type {
   AuditActor,
   CreateProductVariantInput,
@@ -25,6 +26,8 @@ export async function createProductVariant(
   input: CreateProductVariantInput,
   actor: AuditActor,
 ) {
+  const weightProblem = checkWeightGrams(input.weightGrams ?? null);
+  if (weightProblem) throw new DeliveryDetailsError(weightProblem);
   const variant = await prisma.productVariant.create({
     data: {
       productId: input.productId,
@@ -56,6 +59,8 @@ export async function updateProductVariant(
   const before = await prisma.productVariant.findUniqueOrThrow({
     where: { id },
   });
+  const weightProblem = checkWeightGrams(input.weightGrams ?? null);
+  if (weightProblem) throw new DeliveryDetailsError(weightProblem);
 
   const variant = await prisma.productVariant.update({
     where: { id },

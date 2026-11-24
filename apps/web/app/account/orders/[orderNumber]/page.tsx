@@ -115,7 +115,19 @@ export default async function OrderPage({
           {order.trackingNumber ? (
             <p className="rounded-[1rem] bg-onwei-white px-5 py-3 font-grotesk text-[length:max(0.875rem,12px)]">
               Shipped with {order.courierName}. Tracking number{" "}
-              <span className="font-bold">{order.trackingNumber}</span>.
+              {order.trackingUrl ? (
+                <a
+                  href={order.trackingUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-bold underline underline-offset-2"
+                >
+                  {order.trackingNumber}
+                </a>
+              ) : (
+                <span className="font-bold">{order.trackingNumber}</span>
+              )}
+              .
             </p>
           ) : null}
 

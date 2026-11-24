@@ -9,9 +9,12 @@ const ALLOWED_TRANSITIONS: Record<OrderStatus, readonly OrderStatus[]> = {
   // once the balance is paid.
   PENDING: ["CONFIRMED", "RESERVED", "CANCELLED"],
   RESERVED: ["CONFIRMED", "CANCELLED"],
-  CONFIRMED: ["PACKED", "CANCELLED"],
+  // The courier can pick up an order nobody marked packed, and a delivery
+  // can be seen without the out-for-delivery scan (iThink updates are read
+  // when staff press "Update", so steps get skipped).
+  CONFIRMED: ["PACKED", "SHIPPED", "CANCELLED"],
   PACKED: ["SHIPPED", "CANCELLED"],
-  SHIPPED: ["OUT_FOR_DELIVERY"],
+  SHIPPED: ["OUT_FOR_DELIVERY", "DELIVERED"],
   OUT_FOR_DELIVERY: ["DELIVERED"],
   DELIVERED: ["RETURN_REQUESTED"],
   CANCELLED: ["REFUNDED"],

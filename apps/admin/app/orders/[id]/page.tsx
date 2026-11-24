@@ -3,7 +3,11 @@ import { notFound } from "next/navigation";
 import { hasPermission } from "@onwei/auth";
 import {
   formatCurrency,
+  getOrderParcelGaps,
+  getOrderShipment,
+  istDateOf,
   nextStatuses,
+  readIthinkConfig,
   refundableAmount,
   type AddressSnapshot,
 } from "@onwei/core";
@@ -15,6 +19,7 @@ import {
   RETURN_STATUS_LABELS,
 } from "../../_lib/orderStatusLabels";
 import { OrderStatusForm } from "../../_components/OrderStatusForm";
+import { OrderDelivery } from "../../_components/OrderDelivery";
 import { CancelPreorderForm } from "../../_components/CancelPreorderForm";
 import {
   CancelOrderForm,
@@ -78,7 +83,17 @@ export default async function OrderDetailPage({
 
   const address =
     order.shippingAddressSnapshot as unknown as AddressSnapshot | null;
-  const left = await refundableAmount(order.id);
+  const [left, shipment, parcelGaps] = await Promise.all([
+    refundableAmount(order.id),
+    getOrderShipment(order.id),
+    getOrderParcelGaps(order.id),
+  ]);
+  const ithinkConnected = readIthinkConfig() !== null;
+  // A parcel iThink has (or may have): the hand-ship form steps aside.
+  const shipmentActive =
+    shipment !== null &&
+    !["CANCELLED", "FAILED", "RETURNED", "LOST"].includes(shipment.status);
+  const sendable = order.status === "CONFIRMED" || order.status === "PACKED";
   const isCod = order.paymentMethod === "COD";
   // Staff move orders forward here; shipping has its own form (it needs the
   // tracking number) and cancelling has its own (it refunds).
@@ -120,10 +135,44 @@ export default async function OrderDetailPage({
         </AdminCard>
       ) : null}
 
-      {canUpdate &&
-      (order.status === "CONFIRMED" || order.status === "PACKED") ? (
+      {shipment || sendable ? (
         <AdminCard className="flex flex-col gap-4">
-          <Heading>Ship it</Heading>
+          <Heading>Delivery (iThink)</Heading>
+          <OrderDelivery
+            orderId={order.id}
+            connected={ithinkConnected}
+            canSend={sendable}
+            canUpdate={canUpdate}
+            estimatedItems={parcelGaps}
+            shipment={
+              shipment
+                ? {
+                    reference: shipment.reference,
+                    status: shipment.status,
+                    awb: shipment.awb,
+                    courier: shipment.courier,
+                    courierStatus: shipment.courierStatus,
+                    trackingUrl: shipment.trackingUrl,
+                    error: shipment.error,
+                    unsure: shipment.unsure,
+                    checkedOn: shipment.lastCheckedAt
+                      ? istDateOf(shipment.lastCheckedAt)
+                      : null,
+                    attempts: shipment.attempts,
+                  }
+                : null
+            }
+          />
+        </AdminCard>
+      ) : null}
+
+      {canUpdate && sendable && !shipmentActive ? (
+        <AdminCard className="flex flex-col gap-4">
+          <Heading>Ship it by hand</Heading>
+          <p className="text-sm text-onwei-blue/70">
+            Only for an order sent without iThink: add the courier and tracking
+            number yourself.
+          </p>
           <ShipForm orderId={order.id} />
         </AdminCard>
       ) : null}

@@ -173,6 +173,15 @@ model Category {
   // non-returnable (socks, innerwear).
   isReturnable Boolean    @default(true)
 
+  // The shipper box every product in this category goes in, for the courier
+  // (iThink). An order's parcel is the longest length, the widest width and
+  // the box heights stacked, one box per unit; boxWeightGrams is the empty
+  // box, added per box. Needed before a product in it can go live.
+  boxLengthCm    Decimal? @db.Decimal(6, 1)
+  boxWidthCm     Decimal? @db.Decimal(6, 1)
+  boxHeightCm    Decimal? @db.Decimal(6, 1)
+  boxWeightGrams Int?
+
   // Nullable overrides for apps/web's generateMetadata, falls back to a
   // computed default (from name) when unset. Same pair as Product below.
   metaTitle       String?
@@ -268,6 +277,7 @@ model ProductVariant {
   attributes     Json
   price          Decimal       @db.Decimal(10, 2)
   compareAtPrice Decimal?      @db.Decimal(10, 2)
+  // Weight of one unit packed, in grams. Required on new variants (courier).
   weightGrams    Int?
   status         ProductStatus @default(ACTIVE)
 
@@ -437,6 +447,8 @@ model Order {
   balancePaidAt          DateTime?
   // Personal coupon made from the reserve when a pre-order is cancelled.
   creditCouponId         String?
+  // Parcels sent through the delivery partner (newest is current).
+  shipments              Shipment[]
 
   items             OrderItem[]
   statusHistory     OrderStatusHistory[]
@@ -1005,6 +1017,12 @@ model StoreSetting {
   returnReasons         String[] @default(["Wrong size", "Damaged or faulty", "Not as described", "Changed my mind", "Other"])
   returnConditionNote   String   @default("Unused, with tags attached and in the original packaging.")
   returnShippingNote    String   @default("We'll arrange a pickup from your address.")
+  // The parcel sent to the delivery partner for an order: one box size, and
+  // the weight used for an item whose product has no weight set.
+  parcelLengthCm        Decimal  @default(30) @db.Decimal(6, 1)
+  parcelWidthCm         Decimal  @default(25) @db.Decimal(6, 1)
+  parcelHeightCm        Decimal  @default(5) @db.Decimal(6, 1)
+  defaultItemWeightKg   Decimal  @default(0.3) @db.Decimal(6, 3)
   updatedAt             DateTime @updatedAt
   updatedByStaffId      String?
 }
@@ -1196,14 +1214,16 @@ model InsiderCardAddress {
   shipments       Shipment[]
 }
 
-// One parcel sent through the delivery partner (iThink Logistics). Phase 1
-// holds Insider cards; orders come later. Holds no copy of the address: it
+// One parcel sent through the delivery partner (iThink Logistics): an Insider
+// card or an order. Holds no copy of the address: it
 // ships to the linked address row. See docs/COMMERCE_BUILD_PLAN.md section 19.
 model Shipment {
   id                   String              @id @default(cuid())
   kind                 ShipmentKind
   insiderCardAddressId String?
   insiderCardAddress   InsiderCardAddress? @relation(fields: [insiderCardAddressId], references: [id], onDelete: Cascade)
+  orderId              String?
+  order                Order?              @relation(fields: [orderId], references: [id])
   // Our reference on iThink ("CARD-0042", a resend "CARD-0042-2"). iThink
   // refuses a reference it has seen, so a parcel is never booked twice.
   reference            String              @unique
@@ -1229,11 +1249,13 @@ model Shipment {
   updatedAt            DateTime            @updatedAt
 
   @@index([insiderCardAddressId, isCurrent])
+  @@index([orderId, isCurrent])
   @@index([status, lastCheckedAt])
 }
 
 enum ShipmentKind {
   INSIDER_CARD
+  ORDER
 }
 
 enum ShipmentStatus {

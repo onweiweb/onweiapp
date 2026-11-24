@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { prisma } from "@onwei/database";
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest";
+import { getDeliveryDetailsGaps } from "./productDelivery";
 import {
   createProduct,
   deleteProduct,
@@ -57,7 +58,14 @@ describe.skipIf(!process.env.DATABASE_URL)(
 
     async function createFixtureCategory() {
       const category = await prisma.category.create({
-        data: { name: "Test Category", slug: `test-category-${randomUUID()}` },
+        data: {
+          name: "Test Category",
+          slug: `test-category-${randomUUID()}`,
+          boxLengthCm: 45,
+          boxWidthCm: 25,
+          boxHeightCm: 5,
+          boxWeightGrams: 150,
+        },
       });
       createdCategoryIds.push(category.id);
       return category;
@@ -108,6 +116,38 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect((updateLog!.afterState as { status: string }).status).toBe(
         "ACTIVE",
       );
+    });
+
+    it("goes live without delivery details and lists what's missing", async () => {
+      const category = await createFixtureCategory();
+      await prisma.category.update({
+        where: { id: category.id },
+        data: { boxWeightGrams: null },
+      });
+      const product = await createProduct(
+        {
+          name: "Test Product",
+          slug: `test-product-${randomUUID()}`,
+          categoryId: category.id,
+        },
+        actor,
+      );
+      createdProductIds.push(product.id);
+      const variant = await prisma.productVariant.create({
+        data: {
+          productId: product.id,
+          sku: `TEST-${randomUUID()}`,
+          attributes: { size: "M" },
+          price: 999,
+        },
+      });
+      const live = await updateProduct(product.id, { status: "ACTIVE" }, actor);
+      expect(live.status).toBe("ACTIVE");
+      expect(await getDeliveryDetailsGaps(product.id)).toEqual([
+        "the shipper box for Test Category (Categories)",
+        "a weight for M (Variants tab)",
+      ]);
+      await prisma.productVariant.delete({ where: { id: variant.id } });
     });
 
     it("soft-deletes a product (sets deletedAt, never removes the row) and can restore it", async () => {

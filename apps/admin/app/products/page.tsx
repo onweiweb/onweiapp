@@ -1,5 +1,10 @@
 import { hasPermission } from "@onwei/auth";
-import { deriveInStock, formatCurrency, toMinorUnits } from "@onwei/core";
+import {
+  deriveInStock,
+  formatCurrency,
+  MISSING_DELIVERY_DETAILS,
+  toMinorUnits,
+} from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { pageWindow, parsePage, trimPage } from "../_lib/pagination";
 import { requirePageSession } from "../_lib/requirePageSession";
@@ -52,51 +57,78 @@ function priceText(prices: { toString(): string }[]): string {
 export default async function ProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; status?: string; q?: string }>;
+  searchParams: Promise<{
+    page?: string;
+    status?: string;
+    q?: string;
+    missing?: string;
+  }>;
 }) {
   const { permissions } = await requirePageSession();
   const canDelete = hasPermission(permissions, "product:delete");
-  const { page: pageParam, status, q } = await searchParams;
+  const { page: pageParam, status, q, missing } = await searchParams;
+  const missingOnly = missing === "1";
   const page = parsePage(pageParam);
   const statusFilter = FILTERS.some((f) => f.value && f.value === status)
     ? (status as "ACTIVE" | "DRAFT" | "ARCHIVED")
     : undefined;
   const query = q?.trim() || undefined;
 
-  const fetched = await prisma.product.findMany({
-    where: {
-      deletedAt: null,
-      ...(statusFilter ? { status: statusFilter } : {}),
-      ...(query ? { name: { contains: query, mode: "insensitive" } } : {}),
-    },
-    select: {
-      id: true,
-      name: true,
-      status: true,
-      category: { select: { name: true } },
-      images: {
-        orderBy: { sortOrder: "asc" },
-        take: 1,
-        select: { url: true },
+  const [fetched, missingCount] = await Promise.all([
+    prisma.product.findMany({
+      where: {
+        deletedAt: null,
+        ...(statusFilter ? { status: statusFilter } : {}),
+        ...(query ? { name: { contains: query, mode: "insensitive" } } : {}),
+        ...(missingOnly ? MISSING_DELIVERY_DETAILS : {}),
       },
-      variants: {
-        select: {
-          price: true,
-          inventory: {
-            select: { quantityOnHand: true, quantityReserved: true },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        images: {
+          orderBy: { sortOrder: "asc" },
+          take: 1,
+          select: { url: true },
+        },
+        category: {
+          select: {
+            name: true,
+            boxLengthCm: true,
+            boxWidthCm: true,
+            boxHeightCm: true,
+            boxWeightGrams: true,
+          },
+        },
+        variants: {
+          select: {
+            price: true,
+            weightGrams: true,
+            status: true,
+            inventory: {
+              select: { quantityOnHand: true, quantityReserved: true },
+            },
           },
         },
       },
-    },
-    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    ...pageWindow(page),
-  });
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      ...pageWindow(page),
+    }),
+    prisma.product.count({
+      where: {
+        deletedAt: null,
+        status: { not: "ARCHIVED" },
+        ...MISSING_DELIVERY_DETAILS,
+      },
+    }),
+  ]);
   const { rows: products, hasNext } = trimPage(fetched);
 
   const hrefFor = (next: string) => {
     const params = new URLSearchParams();
     if (next) params.set("status", next);
     if (query) params.set("q", query);
+    if (missingOnly) params.set("missing", "1");
     const qs = params.toString();
     return qs ? `/products?${qs}` : "/products";
   };
@@ -108,6 +140,27 @@ export default async function ProductsPage({
         description="Everything you sell. Open a product to edit its details, photos and variants."
         actions={<LinkButton href="/products/new">Add a product</LinkButton>}
       />
+
+      {missingCount > 0 || missingOnly ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-onwei-black/30 bg-onwei-white px-5 py-3 text-sm text-onwei-blue">
+          <p>
+            {missingCount === 0
+              ? "Every product has its delivery details."
+              : `${missingCount} ${missingCount === 1 ? "product is" : "products are"} missing delivery details (a weight on a size, or a shipper box on the category). Their orders go to iThink with an estimated size and weight.`}
+          </p>
+          <LinkButton
+            href={
+              missingOnly
+                ? "/products"
+                : `/products?missing=1${statusFilter ? `&status=${statusFilter}` : ""}`
+            }
+            variant="secondary"
+            className="!px-3 !py-1 text-xs"
+          >
+            {missingOnly ? "Show all products" : "Show them"}
+          </LinkButton>
+        </div>
+      ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Status" className="flex flex-wrap gap-2">
@@ -129,6 +182,9 @@ export default async function ProductsPage({
           {statusFilter ? (
             <input type="hidden" name="status" value={statusFilter} />
           ) : null}
+          {missingOnly ? (
+            <input type="hidden" name="missing" value="1" />
+          ) : null}
           <AdminInput
             name="q"
             defaultValue={query ?? ""}
@@ -143,7 +199,7 @@ export default async function ProductsPage({
       </div>
 
       {products.length === 0 ? (
-        statusFilter || query ? (
+        statusFilter || query || missingOnly ? (
           <EmptyState
             title="No products match"
             description="Try a different status or search."
@@ -178,6 +234,15 @@ export default async function ProductsPage({
                 deriveInStock(variant.inventory),
               );
               const thumb = product.images[0]?.url;
+              const c = product.category;
+              const missingDetails =
+                c.boxLengthCm === null ||
+                c.boxWidthCm === null ||
+                c.boxHeightCm === null ||
+                c.boxWeightGrams === null ||
+                product.variants.some(
+                  (v) => v.weightGrams === null && v.status !== "ARCHIVED",
+                );
               return (
                 <AdminTableRow key={product.id}>
                   <AdminTableCell>
@@ -188,6 +253,11 @@ export default async function ProductsPage({
                       <ProductThumb url={thumb} />
                       {product.name}
                     </a>
+                    {missingDetails ? (
+                      <span className="mt-1 block text-xs text-onwei-black">
+                        Missing delivery details
+                      </span>
+                    ) : null}
                   </AdminTableCell>
                   <AdminTableCell>{product.category.name}</AdminTableCell>
                   <AdminTableCell>
@@ -240,6 +310,7 @@ export default async function ProductsPage({
         params={{
           ...(statusFilter ? { status: statusFilter } : {}),
           ...(query ? { q: query } : {}),
+          ...(missingOnly ? { missing: "1" } : {}),
         }}
       />
     </main>

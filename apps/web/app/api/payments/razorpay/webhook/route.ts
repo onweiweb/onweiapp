@@ -7,7 +7,7 @@ import {
 import { NextResponse } from "next/server";
 import { razorpayConfig } from "../../../_lib/requestAuth";
 import {
-  sendOrderEmailsInBackground,
+  afterOrderConfirmed,
   sendPreorderMessageInBackground,
 } from "../../../_lib/orderEmails";
 
@@ -71,7 +71,7 @@ export async function POST(request: Request) {
           razorpay: config,
         });
         if (paid.ok && paid.status === "CONFIRMED")
-          sendOrderEmailsInBackground(paid.orderId);
+          afterOrderConfirmed(paid.orderId);
         if (paid.ok && paid.status === "RESERVED")
           sendPreorderMessageInBackground(paid.orderId, { type: "RESERVED" });
       }

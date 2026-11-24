@@ -27,7 +27,7 @@ capture per section after scrolling the page.
 
 ## Collection (760:3829), PDP (759:2979), About Us (760:4492): fixed in this pass
 
-- Per page Figma differences now modelled: header nav (`SiteHeader nav="home" | "inner" | "about"`), newsletter headline
+- Per page Figma differences now modelled: header nav (one nav on every page since 2026-11-24, owner's call), newsletter headline
   (`SiteFooter desktopHeading`), Instagram note and arrow positions (props).
 - Collection: hero art pinned from the centre line, row spacing, section gaps, find-your-wei block, video spacing.
 - PDP: 854px gallery with equal-height thumbs, 418px panel (no overflow), pairs of highlight tags, 30px option pills,

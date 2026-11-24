@@ -59,7 +59,7 @@ export default async function ContactPage() {
 
   return (
     <main className="bg-onwei-green text-onwei-blue">
-      <SiteHeader nav="about" />
+      <SiteHeader />
 
       {/* 1189:6037: photo left, form card right, on white. */}
       <section className="flex justify-center bg-onwei-white px-3 py-6 desk:px-11 desk:py-14">

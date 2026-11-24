@@ -24,7 +24,7 @@ export default async function InsidersPage() {
   ]);
   return (
     <main className="flex flex-col items-center bg-onwei-beige text-onwei-blue">
-      <SiteHeader nav="inner" />
+      <SiteHeader />
       <InsidersJoinSection instagramUrl={instagramUrl} place="insiders" />
       <InsiderUpdates updates={updates} />
       <div className="w-full">

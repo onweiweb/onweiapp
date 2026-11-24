@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@onwei/database";
 import { CategoryForm } from "../../_components/CategoryForm";
 import { CategoryReturnableToggle } from "../../_components/ProductCommerceForm";
-import { CategoryBannerForm } from "../../_components/CategoryBannerForm";
+import { CategoryShipperBoxForm } from "../../_components/CategoryShipperBoxForm";
 
 export default async function EditCategoryPage({
   params,
@@ -32,10 +32,14 @@ export default async function EditCategoryPage({
           metaDescription: category.metaDescription ?? "",
         }}
       />
-      <CategoryBannerForm
+      <CategoryShipperBoxForm
         categoryId={category.id}
-        slug={category.slug}
-        initialUrl={category.imageUrl}
+        initial={{
+          lengthCm: category.boxLengthCm?.toString() ?? "",
+          widthCm: category.boxWidthCm?.toString() ?? "",
+          heightCm: category.boxHeightCm?.toString() ?? "",
+          weightGrams: category.boxWeightGrams?.toString() ?? "",
+        }}
       />
       <CategoryReturnableToggle
         categoryId={category.id}

@@ -41,6 +41,7 @@ export default async function CategoriesPage() {
             <AdminTableHeaderCell>Name</AdminTableHeaderCell>
             <AdminTableHeaderCell>Products</AdminTableHeaderCell>
             <AdminTableHeaderCell>Visible on site</AdminTableHeaderCell>
+            <AdminTableHeaderCell>Shipper box</AdminTableHeaderCell>
             <AdminTableHeaderCell>
               <span className="sr-only">Actions</span>
             </AdminTableHeaderCell>
@@ -56,6 +57,16 @@ export default async function CategoriesPage() {
                   <AdminBadge tone={category.isActive ? "success" : "pending"}>
                     {category.isActive ? "Visible" : "Hidden"}
                   </AdminBadge>
+                </AdminTableCell>
+                <AdminTableCell>
+                  {category.boxLengthCm !== null &&
+                  category.boxWidthCm !== null &&
+                  category.boxHeightCm !== null &&
+                  category.boxWeightGrams !== null ? (
+                    `${Number(category.boxLengthCm)} x ${Number(category.boxWidthCm)} x ${Number(category.boxHeightCm)} cm, ${category.boxWeightGrams} g`
+                  ) : (
+                    <AdminBadge tone="problem">Not set</AdminBadge>
+                  )}
                 </AdminTableCell>
                 <AdminTableCell className="text-right">
                   <LinkButton

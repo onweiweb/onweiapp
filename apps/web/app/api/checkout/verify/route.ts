@@ -8,7 +8,7 @@ import { z } from "zod";
 import { invalidInput } from "../../_lib/invalidInput";
 import { customerIdFrom, razorpayConfig } from "../../_lib/requestAuth";
 import {
-  sendOrderEmailsInBackground,
+  afterOrderConfirmed,
   sendPreorderMessageInBackground,
 } from "../../_lib/orderEmails";
 
@@ -80,8 +80,7 @@ export async function POST(request: Request) {
         )
       : NextResponse.json({ ok: true, status: "PROCESSING" });
   }
-  if (result.status === "CONFIRMED")
-    sendOrderEmailsInBackground(result.orderId);
+  if (result.status === "CONFIRMED") afterOrderConfirmed(result.orderId);
   if (result.status === "RESERVED")
     sendPreorderMessageInBackground(result.orderId, { type: "RESERVED" });
   return NextResponse.json({

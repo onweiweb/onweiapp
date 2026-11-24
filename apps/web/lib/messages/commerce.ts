@@ -99,8 +99,12 @@ export const CHECKOUT_ERRORS: Record<string, string> = {
   CART_NEEDS_ATTENTION:
     "Something in your bag needs a look before you pay. Check the items marked below.",
   ADDRESS_REQUIRED: "Add the address we should deliver to.",
+  PIN_NOT_SERVICEABLE:
+    "We can't deliver to this PIN code yet. Check it, or choose another address.",
   COD_NOT_AVAILABLE:
     "Cash on delivery isn't available for this order. Pay online instead.",
+  COD_NOT_AVAILABLE_HERE:
+    "Cash on delivery isn't available at this PIN code. Pay online instead.",
   PRICE_CHANGED:
     "Your total changed while you were checking out. Have a look at the new total, then place your order.",
   OUT_OF_STOCK:
@@ -200,6 +204,8 @@ export const PREORDER_ERRORS: Record<string, string> = {
   NOT_AVAILABLE: "This item isn't on pre-order right now.",
   INVALID_QUANTITY: "Pick a quantity from 1 to 10.",
   ADDRESS_REQUIRED: "Add the address we should deliver to.",
+  PIN_NOT_SERVICEABLE:
+    "We can't deliver to this PIN code yet. Check it, or choose another address.",
   PRICE_CHANGED:
     "Your price changed while you were checking out (the tier may have moved on). Have a look at the new numbers, then reserve.",
   COUPON_USED_UP: "A code you used just ran out. We've updated your total.",

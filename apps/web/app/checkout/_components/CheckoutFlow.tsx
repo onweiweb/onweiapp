@@ -168,6 +168,9 @@ export function CheckoutFlow({
   const [loaded, setLoaded] = useState(false);
   const [placing, setPlacing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Cash on delivery off for the chosen PIN (iThink's couriers don't take it).
+  const [codOffForPin, setCodOffForPin] = useState(false);
+  const [checkingPin, setCheckingPin] = useState(false);
 
   // Reload when the bag changes (codes, quantities) or the method changes.
   useEffect(() => {
@@ -274,11 +277,40 @@ export function CheckoutFlow({
   const total = view?.pricing.total ?? 0;
   const codBlocked = !cod.enabled
     ? "Cash on delivery isn't offered right now."
-    : cod.max !== null && total > cod.max
-      ? `Cash on delivery is available for orders up to ${rupees(cod.max)}.`
-      : cod.min !== null && total < cod.min
-        ? `Cash on delivery is available for orders from ${rupees(cod.min)}.`
-        : null;
+    : codOffForPin
+      ? "Cash on delivery isn't available at this PIN code."
+      : cod.max !== null && total > cod.max
+        ? `Cash on delivery is available for orders up to ${rupees(cod.max)}.`
+        : cod.min !== null && total < cod.min
+          ? `Cash on delivery is available for orders from ${rupees(cod.min)}.`
+          : null;
+
+  /** Checks the PIN can be delivered to, then moves on to payment. */
+  async function continueToPayment() {
+    if (!address) return;
+    setCheckingPin(true);
+    setError(null);
+    const response = await fetch(
+      `/api/checkout/pincode?pin=${encodeURIComponent(address.postalCode)}`,
+    ).catch(() => null);
+    const data = (await response?.json().catch(() => null)) as {
+      ok: boolean;
+      known?: boolean;
+      deliverable?: boolean;
+      cod?: boolean;
+    } | null;
+    setCheckingPin(false);
+    // No answer: carry on, the order is checked again when it's placed.
+    const known = Boolean(data?.ok && data.known);
+    if (known && !data?.deliverable) {
+      setError(CHECKOUT_ERRORS.PIN_NOT_SERVICEABLE!);
+      return;
+    }
+    const codOff = known && !data?.cod;
+    setCodOffForPin(codOff);
+    if (codOff && method === "COD") setMethod("RAZORPAY");
+    setStep("payment");
+  }
 
   async function place() {
     if (!view || !address) return;
@@ -470,11 +502,11 @@ export function CheckoutFlow({
             </p>
             <button
               type="button"
-              disabled={!address || adding || !view?.canCheckout}
-              onClick={() => setStep("payment")}
+              disabled={!address || adding || !view?.canCheckout || checkingPin}
+              onClick={continueToPayment}
               className={PRIMARY}
             >
-              Continue to payment
+              {checkingPin ? "Checking delivery..." : "Continue to payment"}
             </button>
           </>
         ) : (

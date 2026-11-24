@@ -162,6 +162,16 @@ export function ithinkPhone(value: string): string {
   return digits.length > 10 ? digits.slice(-10) : digits;
 }
 
+export interface IthinkProduct {
+  name: string;
+  sku: string;
+  quantity: number;
+  /** Rupees per item. iThink refuses 0, so free items go as 1. */
+  price: number;
+  taxRate?: number | null;
+  hsn?: string | null;
+}
+
 export interface IthinkParcel {
   reference: string;
   orderDate: Date;
@@ -173,9 +183,15 @@ export interface IthinkParcel {
   pin: string;
   phone: string;
   email?: string;
-  productName: string;
-  sku: string;
-  declaredValue: number;
+  products: IthinkProduct[];
+  /** What the parcel is worth, rupees (the order total for an order). */
+  totalAmount: number;
+  paymentMode: "Prepaid" | "COD";
+  /** Cash the courier collects, rupees. 0 when prepaid. */
+  codAmount?: number;
+  shippingCharges?: number;
+  codCharges?: number;
+  totalDiscount?: number;
   lengthCm: number;
   widthCm: number;
   heightCm: number;
@@ -188,7 +204,6 @@ export function buildIthinkShipment(
   parcel: IthinkParcel,
 ): Record<string, unknown> {
   const phone = ithinkPhone(parcel.phone);
-  const value = num(parcel.declaredValue, 2);
   const address = {
     name: parcel.name,
     add: parcel.line1,
@@ -200,12 +215,13 @@ export function buildIthinkShipment(
     country: "India",
     phone,
   };
+  const cod = parcel.paymentMode === "COD";
   return {
     waybill: "",
     order: parcel.reference,
     sub_order: "",
     order_date: ithinkDate(parcel.orderDate),
-    total_amount: value,
+    total_amount: num(parcel.totalAmount, 2),
     ...address,
     company_name: "",
     alt_phone: "",
@@ -223,30 +239,28 @@ export function buildIthinkShipment(
     billing_phone: phone,
     billing_alt_phone: "",
     billing_email: "",
-    products: [
-      {
-        product_name: parcel.productName,
-        product_sku: parcel.sku,
-        product_quantity: "1",
-        product_price: value,
-        product_tax_rate: "",
-        product_hsn_code: "",
-        product_discount: "",
-      },
-    ],
+    products: parcel.products.map((p) => ({
+      product_name: p.name,
+      product_sku: p.sku,
+      product_quantity: String(p.quantity),
+      product_price: num(Math.max(p.price, 1), 2),
+      product_tax_rate: p.taxRate == null ? "" : num(p.taxRate, 2),
+      product_hsn_code: p.hsn ?? "",
+      product_discount: "0",
+    })),
     shipment_length: num(parcel.lengthCm, 1),
     shipment_width: num(parcel.widthCm, 1),
     shipment_height: num(parcel.heightCm, 1),
     weight: num(parcel.weightKg, 3),
-    shipping_charges: "0",
+    shipping_charges: num(parcel.shippingCharges ?? 0, 2),
     giftwrap_charges: "0",
     transaction_charges: "0",
-    total_discount: "0",
+    total_discount: num(parcel.totalDiscount ?? 0, 2),
     first_attemp_discount: "0",
-    cod_charges: "0",
+    cod_charges: num(parcel.codCharges ?? 0, 2),
     advance_amount: "0",
-    cod_amount: "0",
-    payment_mode: "Prepaid",
+    cod_amount: cod ? num(parcel.codAmount ?? 0, 2) : "0",
+    payment_mode: cod ? "COD" : "Prepaid",
     reseller_name: "",
     eway_bill_number: "",
     gst_number: "",
@@ -555,5 +569,37 @@ export async function cancelIthinkParcel(
     reason: remark
       ? `iThink said: ${remark}`
       : "iThink didn't cancel it and gave no reason.",
+  };
+}
+
+export interface PincodeService {
+  /** Some courier delivers here (prepaid). */
+  deliverable: boolean;
+  /** Some courier collects cash on delivery here. */
+  cod: boolean;
+}
+
+/** Can iThink's couriers deliver to this PIN? Null when iThink didn't answer. */
+export async function checkIthinkPincode(
+  config: IthinkConfig,
+  pin: string,
+  fetchImpl: typeof fetch = fetch,
+): Promise<PincodeService | null> {
+  const result = await call(
+    config,
+    "pincode/check.json",
+    { pincode: pin },
+    fetchImpl,
+  );
+  if (!result.ok) return null;
+  if (str(result.body.status).toLowerCase() !== "success") return null;
+  const couriers = Object.values(record(record(result.body.data)[pin])).map(
+    record,
+  );
+  if (couriers.length === 0) return { deliverable: false, cod: false };
+  const yes = (v: unknown) => str(v).toUpperCase() === "Y";
+  return {
+    deliverable: couriers.some((c) => yes(c.prepaid) || yes(c.cod)),
+    cod: couriers.some((c) => yes(c.cod)),
   };
 }

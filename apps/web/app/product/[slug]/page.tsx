@@ -161,7 +161,7 @@ export default async function ProductPage({
         ])}
       />
       {faqs.length > 0 ? <JsonLd data={buildFaqJsonLd(faqs)} /> : null}
-      <SiteHeader nav="inner" />
+      <SiteHeader />
 
       <section className="flex flex-col items-center bg-onwei-green px-6 pt-14 desk:px-14 desk:pt-0">
         <div className="flex w-full max-w-[90rem] flex-col gap-8 desk:flex-row desk:items-start desk:gap-14">

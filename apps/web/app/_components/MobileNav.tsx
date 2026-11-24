@@ -4,6 +4,7 @@ import { showsCategoryLink } from "../../lib/hiddenCategories";
 import { useEffect, useRef, useState } from "react";
 import Image from "@/_components/ScaledImage";
 import Link from "next/link";
+import { NAV_LINKS } from "./navLinks";
 
 // Figma's mobile header (node 761:4767) has no menu affordance at all, no
 // hamburger, no drawer state anywhere in the file, just logo + a decorative
@@ -11,13 +12,6 @@ import Link from "next/link";
 // reach Shop/Pickleball/Pilates/etc., so per explicit approval this makes
 // the logo itself the menu trigger, opening a panel that drops down from
 // it, an intentional addition, not something copied from a Figma state.
-const NAV_LINKS = [
-  { label: "Shop All", href: "/collection/all" },
-  { label: "Pickleball", href: "/collection/pickleball" },
-  { label: "Pilates", href: "/collection/pilates" },
-  { label: "our story", href: "/about" },
-  { label: "insiders", href: "/insiders" },
-] as const;
 
 export function MobileNav({
   inverted = false,

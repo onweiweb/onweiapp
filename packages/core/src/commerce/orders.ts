@@ -1,3 +1,4 @@
+import { checkDeliveryPincode } from "../logistics/orderShipments";
 import { Prisma, prisma } from "@onwei/database";
 import { toMinorUnits } from "../catalog/helpers";
 import { gstPortion } from "../pricing/engine";
@@ -57,7 +58,9 @@ export type PlaceOrderResult =
         | "EMPTY_CART"
         | "CART_NEEDS_ATTENTION"
         | "ADDRESS_REQUIRED"
+        | "PIN_NOT_SERVICEABLE"
         | "COD_NOT_AVAILABLE"
+        | "COD_NOT_AVAILABLE_HERE"
         | "PRICE_CHANGED"
         | "OUT_OF_STOCK"
         | "COUPON_USED_UP"
@@ -133,6 +136,14 @@ export async function placeOrder(input: {
     },
   });
   if (!address) return { ok: false, reason: "ADDRESS_REQUIRED" };
+  // Null when iThink can't tell us: the order goes ahead.
+  const service = await checkDeliveryPincode(address.postalCode);
+  if (service && !service.deliverable) {
+    return { ok: false, reason: "PIN_NOT_SERVICEABLE" };
+  }
+  if (input.paymentMethod === "COD" && service && !service.cod) {
+    return { ok: false, reason: "COD_NOT_AVAILABLE_HERE" };
+  }
 
   await supersedePendingOrders(input.customerId);
 

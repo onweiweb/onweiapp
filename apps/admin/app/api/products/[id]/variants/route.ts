@@ -1,4 +1,4 @@
-import { createProductVariant } from "@onwei/core";
+import { createProductVariant, DeliveryDetailsError } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
@@ -39,7 +39,13 @@ export const POST = defineAdminRoute<typeof bodySchema, { id: string }>(
       );
       await triggerCatalogRevalidate();
       return NextResponse.json({ ok: true, variant }, { status: 201 });
-    } catch {
+    } catch (error) {
+      if (error instanceof DeliveryDetailsError) {
+        return NextResponse.json(
+          { ok: false, error: error.message },
+          { status: 400 },
+        );
+      }
       return NextResponse.json(
         { ok: false, error: "That SKU is already in use." },
         { status: 400 },

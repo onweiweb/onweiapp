@@ -26,6 +26,10 @@ export interface StoreSettingsValues {
   returnReasons: string[];
   returnConditionNote: string;
   returnShippingNote: string;
+  parcelLengthCm: number;
+  parcelWidthCm: number;
+  parcelHeightCm: number;
+  defaultItemWeightKg: number;
 }
 
 const numberOrNull = (value: string) =>
@@ -142,6 +146,64 @@ export function StoreSettingsForm({
             className="w-40"
           />
         </Field>
+      </AdminCard>
+
+      <AdminCard className="flex flex-col gap-4">
+        <div>
+          <h2 className="text-lg font-semibold text-onwei-blue">
+            Backup parcel size for iThink
+          </h2>
+          <p className="text-sm text-onwei-blue/70">
+            Orders normally use each category&apos;s shipper box (Categories)
+            and each size&apos;s weight (product Variants tab). These numbers
+            are only used for an item whose category has no box, or whose size
+            has no weight.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-4">
+          <Field label="Length (cm)">
+            <AdminInput
+              type="number"
+              min={1}
+              step="any"
+              disabled={disabled}
+              value={values.parcelLengthCm}
+              onChange={(e) => set("parcelLengthCm", Number(e.target.value))}
+            />
+          </Field>
+          <Field label="Width (cm)">
+            <AdminInput
+              type="number"
+              min={1}
+              step="any"
+              disabled={disabled}
+              value={values.parcelWidthCm}
+              onChange={(e) => set("parcelWidthCm", Number(e.target.value))}
+            />
+          </Field>
+          <Field label="Height (cm)">
+            <AdminInput
+              type="number"
+              min={1}
+              step="any"
+              disabled={disabled}
+              value={values.parcelHeightCm}
+              onChange={(e) => set("parcelHeightCm", Number(e.target.value))}
+            />
+          </Field>
+          <Field label="Weight per item with none set (grams)">
+            <AdminInput
+              type="number"
+              min={1}
+              step="1"
+              disabled={disabled}
+              value={Math.round(values.defaultItemWeightKg * 1000)}
+              onChange={(e) =>
+                set("defaultItemWeightKg", Number(e.target.value) / 1000)
+              }
+            />
+          </Field>
+        </div>
       </AdminCard>
 
       <AdminCard className="flex flex-col gap-4">

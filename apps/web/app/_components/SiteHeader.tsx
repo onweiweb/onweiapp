@@ -1,60 +1,22 @@
 import Image from "@/_components/ScaledImage";
 import Link from "next/link";
 import { MobileNav } from "./MobileNav";
+import { NAV_LINKS } from "./navLinks";
 import { CartButton } from "./commerce/CartButton";
 import { PreorderBanner } from "./preorder/PreorderBanner";
 import { cachedListHiddenCategorySlugs } from "../../lib/cachedCatalog";
 import { showsCategoryLink } from "../../lib/hiddenCategories";
 
-// Figma draws two desktop navs: the Homepage (758:2246) has five links with
-// "insiders" as a small tag over "find your wei", every inner page (Collection
-// 760:3855, PDP 759:3006) has six links with "About Us" and "insiders" as
-// plain items.
-const NAV_LINKS = {
-  home: [
-    { label: "Shop All", href: "/collection/all" },
-    { label: "Pickleball", href: "/collection/pickleball" },
-    { label: "Pilates", href: "/collection/pilates" },
-    { label: "our story", href: "/about" },
-    // Client feedback 2026-11-16: "find your wei" is off the nav for now,
-    // "insiders" stays as a plain link (Figma 758:2264 had it as a tag over
-    // "find your wei").
-    { label: "insiders", href: "/insiders" },
-  ],
-  inner: [
-    { label: "Shop All", href: "/collection/all" },
-    { label: "Pickleball", href: "/collection/pickleball" },
-    { label: "Pilates", href: "/collection/pilates" },
-    { label: "About Us", href: "/about" },
-    { label: "insiders", href: "/insiders" },
-  ],
-  // About Us (760:4505): four links, no insiders, and a wordmark logo with
-  // "own your effort" beside it (see `aboutVariant` below).
-  about: [
-    { label: "Shop All", href: "/collection/all" },
-    { label: "Pickleball", href: "/collection/pickleball" },
-    { label: "Pilates", href: "/collection/pilates" },
-    { label: "About Us", href: "/about" },
-  ],
-} as const;
-
-export type SiteHeaderNav = keyof typeof NAV_LINKS;
-
 // inverted swaps blue and green throughout (used by the About page): blue
 // header zone, green announcement bar, green text and icons, with the
 // recolored copies of the header SVGs from images/header/inverted.
-export async function SiteHeader({
-  inverted = false,
-  nav = "home",
-}: {
-  inverted?: boolean;
-  nav?: SiteHeaderNav;
-}) {
+// The same header on every page (owner, 2026-11-24). About Us and Contact
+// used to have their own (wordmark logo, no insiders, shipping line only).
+export async function SiteHeader({ inverted = false }: { inverted?: boolean }) {
   const hiddenSlugs = await cachedListHiddenCategorySlugs();
-  const links = NAV_LINKS[nav].filter((link) =>
+  const links = NAV_LINKS.filter((link) =>
     showsCategoryLink(link.href, hiddenSlugs),
   );
-  const aboutVariant = nav === "about";
   const dir = inverted ? "/images/header/inverted" : "/images/header";
   const accent = inverted ? "text-onwei-green" : "text-onwei-blue";
   return (
@@ -74,17 +36,16 @@ export async function SiteHeader({
           >
             Free shipping on orders over &#8377;1500
           </p>
-          {/* The About Us frame (760:4494) has only the shipping line. */}
           <Image
             src={`${dir}/vector-divider.svg`}
             alt=""
             width={20}
             height={15}
             aria-hidden
-            className={`hidden shrink-0 ${aboutVariant ? "" : "desk:block"}`}
+            className="hidden shrink-0 desk:block"
           />
           <p
-            className={`hidden whitespace-nowrap font-display text-[length:max(0.875rem,11px)] font-normal uppercase leading-[normal] desk:block ${inverted ? "text-onwei-blue" : "text-onwei-white"} ${aboutVariant ? "desk:hidden" : ""}`}
+            className={`hidden whitespace-nowrap font-display text-[length:max(0.875rem,11px)] font-normal uppercase leading-[normal] desk:block ${inverted ? "text-onwei-blue" : "text-onwei-white"}`}
           >
             /on-way/ When you stop waiting to feel ready and just show up
           </p>
@@ -147,49 +108,15 @@ export async function SiteHeader({
           aria-label="Primary"
           className="relative hidden w-full items-center justify-center gap-x-6 gap-y-4 px-6 py-6 desk:flex desk:justify-between desk:px-14"
         >
-          {aboutVariant ? (
-            <>
-              {/* Figma 760:4497: the wordmark is two pieces, ON (56x27) and
-                  WEI (91x27), 3px apart, with the script tag 12px right. */}
-              <Link
-                href="/"
-                aria-label="Onwei home"
-                className="flex shrink-0 items-start gap-[0.1828rem]"
-              >
-                <Image
-                  src="/images/header/wordmark-on.svg"
-                  alt="Onwei"
-                  width={56}
-                  height={27}
-                  priority
-                />
-                <Image
-                  src="/images/header/wordmark-wei.svg"
-                  alt=""
-                  width={91}
-                  height={27}
-                  aria-hidden
-                  priority
-                />
-              </Link>
-              <span
-                aria-hidden
-                className={`absolute left-[13.625rem] top-[2.6875rem] whitespace-nowrap font-script text-[length:max(0.875rem,11px)] uppercase leading-none ${accent}`}
-              >
-                own your effort
-              </span>
-            </>
-          ) : (
-            <Link href="/" aria-label="Onwei home" className="shrink-0">
-              <Image
-                src={`${dir}/logo.svg`}
-                alt="Onwei"
-                width={118}
-                height={56}
-                priority
-              />
-            </Link>
-          )}
+          <Link href="/" aria-label="Onwei home" className="shrink-0">
+            <Image
+              src={`${dir}/logo.svg`}
+              alt="Onwei"
+              width={118}
+              height={56}
+              priority
+            />
+          </Link>
 
           <ul className="flex flex-wrap items-center justify-center gap-6 desk:gap-14">
             {links.map((link) => (

@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { invalidInput } from "../../_lib/invalidInput";
 import { customerIdFrom, razorpayConfig } from "../../_lib/requestAuth";
-import { sendOrderEmailsInBackground } from "../../_lib/orderEmails";
+import { afterOrderConfirmed } from "../../_lib/orderEmails";
 
 // "Pay" / "Place order". The server prices the cart again; if the total
 // isn't what the customer saw, nothing is created and the new total comes
@@ -38,7 +38,6 @@ export async function POST(request: Request) {
       { status: result.reason === "PAYMENT_UNAVAILABLE" ? 503 : 409 },
     );
   }
-  if (result.paymentMethod === "COD")
-    sendOrderEmailsInBackground(result.orderId);
+  if (result.paymentMethod === "COD") afterOrderConfirmed(result.orderId);
   return NextResponse.json(result);
 }

@@ -66,7 +66,7 @@ export default async function AboutPage() {
           inverted
         />
       ) : (
-        <SiteHeader nav="about" />
+        <SiteHeader />
       )}
 
       <ScrollReveal

@@ -39,6 +39,7 @@ import { ComparisonTable } from "@/_components/ComparisonTable";
 import { ReviewList } from "@/_components/ReviewList";
 import { WriteReviewButton } from "@/_components/WriteReviewButton";
 import { MoversHeading } from "@/_components/MoversHeading";
+import { HandDrawnOval } from "@/_components/HandDrawnOval";
 import { getSiteSetting } from "@onwei/core";
 
 // Figma (file kGG2vJdbqU6b1d1xmIhRwG, frame 760:3829 "Collection") mocks up
@@ -292,10 +293,6 @@ export default async function CollectionPage({
         }),
     getSiteSetting(),
   ]);
-  const banner = isAll
-    ? null
-    : (categorySections[0]?.category.imageUrl ?? null);
-
   const breadcrumbName =
     slug === "all" ? "Shop All" : (categorySections[0]?.category.name ?? slug);
 
@@ -318,102 +315,85 @@ export default async function CollectionPage({
             { name: breadcrumbName, path: `/collection/${slug}` },
           ])}
         />
-        <SiteHeader nav="inner" />
+        <SiteHeader />
 
-        {banner ? (
-          // Client feedback 2026-11-16: Pickleball and Pilates get their own
-          // banner image or GIF (admin Categories), unoptimized so a GIF
-          // keeps moving. No banner falls back to the illustrated header.
-          <section className="relative w-full bg-onwei-green">
-            <h1 className="sr-only">{breadcrumbName}</h1>
-            <div className="relative aspect-[390/260] w-full desk:aspect-[1440/420]">
-              <Image
-                src={banner}
-                alt={`${breadcrumbName} at Onwei`}
-                fill
-                priority
-                unoptimized
-                sizes="100vw"
-                className="object-cover"
-              />
-            </div>
-          </section>
-        ) : (
-          <section className="relative flex flex-col items-center bg-onwei-green px-6 pb-14 pt-[5.5rem] desk:px-14 desk:pb-14 desk:pt-8">
-            {/* Desktop (node 760:3874): every illustration is absolute to the
+        {/* Owner, 2026-11-24: every collection uses the illustrated
+            "Shop all" header with its own name (Pickleball, Pilates); the
+            uploaded category banner is no longer shown. */}
+        <section className="relative flex flex-col items-center bg-onwei-green px-6 pb-14 pt-[5.5rem] desk:px-14 desk:pb-14 desk:pt-8">
+          {/* Desktop (node 760:3874): every illustration is absolute to the
             section, x measured from the centre line so it holds at any
             width, y from the top (px / 16). Mobile has no Figma frame, so
             it keeps a scaled adaptation. */}
-            <Image
-              src="/images/collection/illustration-weightlifter.svg"
-              alt=""
-              width={99}
-              height={98}
-              aria-hidden
-              className="pointer-events-none absolute left-6 top-6 origin-top-left scale-75 desk:left-[calc(50%-26.125rem)] desk:top-[2.2106rem] desk:scale-100"
-            />
-            {/* Figma node 760:4191, straddles the boundary with the category
+          <Image
+            src="/images/collection/illustration-weightlifter.svg"
+            alt=""
+            width={99}
+            height={98}
+            aria-hidden
+            className="pointer-events-none absolute left-6 top-6 origin-top-left scale-75 desk:left-[calc(50%-26.125rem)] desk:top-[2.2106rem] desk:scale-100"
+          />
+          {/* Figma node 760:4191, straddles the boundary with the category
             nav below it, same overlap pattern as JoinMovementSection's
             illustration straddling above its section. */}
-            <Image
-              src="/images/collection/illustration-pilates-hero.svg"
-              alt=""
-              width={167}
-              height={65}
-              aria-hidden
-              className="pointer-events-none absolute bottom-[-1.5rem] right-4 origin-bottom-right scale-75 desk:bottom-auto desk:left-[calc(50%+19.1875rem)] desk:right-auto desk:top-40 desk:origin-center desk:scale-100"
-            />
-            <Image
-              src="/images/collection/squiggle-shop.svg"
-              alt=""
-              width={46}
-              height={36}
-              aria-hidden
-              className="pointer-events-none absolute left-[calc(50%-11.5625rem)] top-[1.3356rem] hidden desk:block"
-            />
-            <Image
-              src="/images/collection/arrow-curl.svg"
-              alt=""
-              width={86}
-              height={55}
-              aria-hidden
-              className="pointer-events-none absolute left-[calc(50%+16.75rem)] top-[3.5856rem] hidden desk:block"
-            />
-            <div className="relative flex w-full max-w-[90rem] flex-col items-center gap-6 text-center desk:max-w-[39.9375rem]">
+          <Image
+            src="/images/collection/illustration-pilates-hero.svg"
+            alt=""
+            width={167}
+            height={65}
+            aria-hidden
+            className="pointer-events-none absolute bottom-[-1.5rem] right-4 origin-bottom-right scale-75 desk:bottom-auto desk:left-[calc(50%+19.1875rem)] desk:right-auto desk:top-40 desk:origin-center desk:scale-100"
+          />
+          <Image
+            src="/images/collection/squiggle-shop.svg"
+            alt=""
+            width={46}
+            height={36}
+            aria-hidden
+            className={`pointer-events-none absolute left-[calc(50%-11.5625rem)] top-[1.3356rem] hidden ${isAll ? "desk:block" : ""}`}
+          />
+          <Image
+            src="/images/collection/arrow-curl.svg"
+            alt=""
+            width={86}
+            height={55}
+            aria-hidden
+            className="pointer-events-none absolute left-[calc(50%+16.75rem)] top-[3.5856rem] hidden desk:block"
+          />
+          <div className="relative flex w-full max-w-[90rem] flex-col items-center gap-6 text-center desk:max-w-[39.9375rem]">
+            <h1 className="relative inline-block font-display text-[3rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[4rem]">
               <Image
-                src="/images/collection/oval-all.svg"
+                src="/images/collection/squiggle-shop.svg"
                 alt=""
-                width={141}
-                height={61}
+                width={46}
+                height={36}
                 aria-hidden
-                className="pointer-events-none absolute left-[20.7813rem] top-[0.4606rem] hidden desk:block"
+                className={`pointer-events-none absolute -left-12 top-0 origin-top-left scale-75 ${isAll ? "desk:hidden" : "desk:-left-14 desk:-top-2 desk:scale-100"}`}
               />
-              <h1 className="relative inline-block font-display text-[3rem] font-bold uppercase leading-[1.1] text-onwei-blue desk:text-[4rem]">
-                <Image
-                  src="/images/collection/squiggle-shop.svg"
-                  alt=""
-                  width={46}
-                  height={36}
-                  aria-hidden
-                  className="pointer-events-none absolute -left-12 top-0 origin-top-left scale-75 desk:hidden"
-                />
-                Shop all
-                <Image
-                  src="/images/collection/arrow-curl.svg"
-                  alt=""
-                  width={86}
-                  height={55}
-                  aria-hidden
-                  className="pointer-events-none absolute -right-[4.5rem] top-2 origin-top-left scale-75 desk:hidden"
-                />
-              </h1>
-              <p className="max-w-[30.25rem] font-grotesk text-body text-onwei-blue">
-                Shop our range of goods for pickleball or pilates and be a part
-                of our community!
-              </p>
-            </div>
-          </section>
-        )}
+              {isAll ? (
+                <>
+                  Shop <HandDrawnOval variant="heading">all</HandDrawnOval>
+                </>
+              ) : (
+                <HandDrawnOval variant="heading">
+                  {breadcrumbName}
+                </HandDrawnOval>
+              )}
+              <Image
+                src="/images/collection/arrow-curl.svg"
+                alt=""
+                width={86}
+                height={55}
+                aria-hidden
+                className="pointer-events-none absolute -right-[4.5rem] top-2 origin-top-left scale-75 desk:hidden"
+              />
+            </h1>
+            <p className="max-w-[30.25rem] font-grotesk text-body text-onwei-blue">
+              Shop our range of goods for pickleball or pilates and be a part of
+              our community!
+            </p>
+          </div>
+        </section>
 
         <nav
           aria-label="Category"
@@ -431,21 +411,11 @@ export default async function CollectionPage({
                   tab.slug === slug ? "font-medium" : "font-normal"
                 }`}
               >
-                {/* Figma node 760:4210, a hand-drawn oval circling the
-                  active tab. Figma only mocks this for "Shop All" (sized
-                  to its text width); Pickleball/Pilates have no matching
-                  asset to circle themselves with when active. */}
-                {tab.slug === "all" && slug === "all" ? (
-                  <Image
-                    src="/images/collection/oval-shop-all.svg"
-                    alt=""
-                    width={122}
-                    height={45}
-                    aria-hidden
-                    className="pointer-events-none absolute -left-4 -top-3"
-                  />
-                ) : null}
-                <span className="relative">{tab.label}</span>
+                {tab.slug === slug ? (
+                  <HandDrawnOval variant="tab">{tab.label}</HandDrawnOval>
+                ) : (
+                  tab.label
+                )}
               </Link>
             ))}
           </div>

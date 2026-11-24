@@ -9,6 +9,7 @@ import {
 } from "./customerIdentity";
 import type { AddressSnapshot } from "./orders";
 import { getStoreSettings } from "./storeSettings";
+import { ithinkTrackingUrl } from "../logistics/ithinkClient";
 
 /** Everything the account page and checkout need about the customer. */
 export interface AccountSummary {
@@ -373,6 +374,8 @@ export interface OrderDetail {
   total: number;
   trackingNumber: string | null;
   courierName: string | null;
+  /** The courier's tracking page, when the parcel went through iThink. */
+  trackingUrl: string | null;
   timeline: { status: OrderStatus; at: Date }[];
   returns: {
     id: string;
@@ -414,6 +417,11 @@ export async function getCustomerOrder(
         take: 1,
       },
       statusHistory: { orderBy: { createdAt: "asc" } },
+      shipments: {
+        where: { isCurrent: true },
+        select: { awb: true },
+        take: 1,
+      },
       returnRequests: {
         include: { orderItem: { select: { productName: true } } },
         orderBy: { requestedAt: "desc" },
@@ -546,6 +554,10 @@ export async function getCustomerOrder(
     total: toMinorUnits(order.total),
     trackingNumber: order.trackingNumber,
     courierName: order.courierName,
+    trackingUrl:
+      order.trackingNumber && order.shipments[0]?.awb === order.trackingNumber
+        ? ithinkTrackingUrl(order.trackingNumber)
+        : null,
     timeline,
     returns: order.returnRequests.map((r) => ({
       id: r.id,

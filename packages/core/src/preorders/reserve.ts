@@ -1,3 +1,4 @@
+import { checkDeliveryPincode } from "../logistics/orderShipments";
 import { Prisma, prisma } from "@onwei/database";
 import {
   getCustomerIdentity,
@@ -42,6 +43,7 @@ export type PlacePreorderResult =
       reason:
         | "NOT_SIGNED_IN"
         | "ADDRESS_REQUIRED"
+        | "PIN_NOT_SERVICEABLE"
         | "NOT_OPEN"
         | "NOT_AVAILABLE"
         | "INVALID_QUANTITY"
@@ -79,6 +81,10 @@ export async function placePreorder(input: {
     },
   });
   if (!address) return { ok: false, reason: "ADDRESS_REQUIRED" };
+  const service = await checkDeliveryPincode(address.postalCode);
+  if (service && !service.deliverable) {
+    return { ok: false, reason: "PIN_NOT_SERVICEABLE" };
+  }
 
   const insider = await getInsiderStatus(identity);
   const result = await quotePreorder({

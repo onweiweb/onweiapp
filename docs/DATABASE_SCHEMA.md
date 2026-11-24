@@ -37,6 +37,11 @@ work without a schema change later. `Product` holds the shared fields;
 clothing catalog without variants would need a rework almost immediately.
 `ProductImage` has an `isPlaceholder` flag so the storefront can show a
 default image until an admin uploads a real one, per the brief.
+Courier details (2026-11-24): each `Category` has one shipper box
+(`boxLengthCm`, `boxWidthCm`, `boxHeightCm`, `boxWeightGrams`) and each
+`ProductVariant` a packed `weightGrams`. An order's parcel stacks one box per
+unit. Both are optional: anything missing uses the backup size and weight
+in `StoreSetting`, and admin flags the product.
 
 **Inventory**, `Warehouse` exists even for a single-warehouse launch, so
 adding a second one later is a data change, not a schema change.
@@ -112,8 +117,8 @@ reuses the row (upsert on `url`). Migration `add_tracked_links` (additive).
 `reference` is unique and is what iThink keys on, so a parcel is never booked twice; `isCurrent` marks the newest
 attempt for a card. Phase 1 links Insider cards (`insiderCardAddressId`, cascade delete with the address, no copy of
 the address). Courier status only moves forward (`canMoveShipment` in `packages/core/src/logistics`). Card envelope size
-and weight live on `InsiderSetting`. Migration `20261124120000_insider_card_shipments` (additive). Orders join in
-phase 2. See `docs/COMMERCE_BUILD_PLAN.md` section 19.
+and weight live on `InsiderSetting`. Migration `20261124120000_insider_card_shipments` (additive). Orders link through `orderId`
+(migration `20261125120000_order_shipments`, which also adds the parcel size to `StoreSetting`). See `docs/COMMERCE_BUILD_PLAN.md` section 19.
 
 ## Deliberately deferred
 

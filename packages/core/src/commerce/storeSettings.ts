@@ -21,6 +21,11 @@ export interface StoreSettings {
   returnReasons: string[];
   returnConditionNote: string;
   returnShippingNote: string;
+  /** The box sent to the delivery partner, cm, and kg per item with no weight. */
+  parcelLengthCm: number;
+  parcelWidthCm: number;
+  parcelHeightCm: number;
+  defaultItemWeightKg: number;
 }
 
 type Row = Awaited<ReturnType<typeof prisma.storeSetting.upsert>>;
@@ -41,6 +46,10 @@ function toSettings(row: Row): StoreSettings {
     returnReasons: row.returnReasons,
     returnConditionNote: row.returnConditionNote,
     returnShippingNote: row.returnShippingNote,
+    parcelLengthCm: Number(row.parcelLengthCm),
+    parcelWidthCm: Number(row.parcelWidthCm),
+    parcelHeightCm: Number(row.parcelHeightCm),
+    defaultItemWeightKg: Number(row.defaultItemWeightKg),
   };
 }
 
@@ -94,6 +103,10 @@ export interface UpdateStoreSettingsInput {
   returnReasons?: string[];
   returnConditionNote?: string;
   returnShippingNote?: string;
+  parcelLengthCm?: number;
+  parcelWidthCm?: number;
+  parcelHeightCm?: number;
+  defaultItemWeightKg?: number;
 }
 
 export async function updateStoreSettings(

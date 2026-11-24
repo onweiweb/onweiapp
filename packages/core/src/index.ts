@@ -51,6 +51,18 @@ export {
   updateProductVariant,
 } from "./admin/productVariant";
 export {
+  BOX_SIDE_LIMIT_CM,
+  checkShipperBox,
+  checkWeightGrams,
+  deliveryGapsMessage,
+  DeliveryDetailsError,
+  getDeliveryDetailsGaps,
+  MISSING_DELIVERY_DETAILS,
+  updateCategoryShipperBox,
+  WEIGHT_LIMIT_GRAMS,
+  type ShipperBox,
+} from "./admin/productDelivery";
+export {
   addProductImage,
   removeProductImage,
   reorderProductImages,

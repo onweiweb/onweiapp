@@ -3,7 +3,6 @@ import { z } from "zod";
 import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
 import {
-  addIthinkParcels,
   cancelIthinkParcel,
   findIthinkParcel,
   ithinkTrackingUrl,
@@ -13,11 +12,12 @@ import {
   type IthinkParcel,
 } from "./ithinkClient";
 import {
-  canMoveShipment,
-  isPickedUp,
-  mapIthinkStatus,
-  OPEN_SHIPMENT_STATUSES,
-} from "./shipmentStatus";
+  applyCourierUpdate,
+  bookClaimedParcels,
+  markShipmentBooked,
+  type ClaimedParcel,
+} from "./parcelBooking";
+import { OPEN_SHIPMENT_STATUSES } from "./shipmentStatus";
 
 /**
  * Insider cards through iThink Logistics (docs/COMMERCE_BUILD_PLAN.md
@@ -352,14 +352,6 @@ export type SendCardsResult =
       problems: { name: string; reason: string }[];
     };
 
-interface Claimed {
-  shipmentId: string;
-  reference: string;
-  createdAt: Date;
-  name: string;
-  parcel: IthinkParcel;
-}
-
 /**
  * Sends up to 10 cards: the given addresses (ready, or ones that can be
  * sent again), or else the next ready ones, oldest first. A card already
@@ -397,7 +389,7 @@ export async function sendInsiderCards(
     },
   });
 
-  const claimed: Claimed[] = [];
+  const claimed: ClaimedParcel[] = [];
   let skipped = 0;
   for (const row of candidates) {
     const cardNumber = row.waitlistEntry.printedCard?.cardNumber;
@@ -421,9 +413,16 @@ export async function sendInsiderCards(
       state: row.state,
       pin: row.postalCode,
       phone: row.phone,
-      productName: "Onwei Insider card",
-      sku: "INSIDER-CARD",
-      declaredValue: settings.declaredValue,
+      products: [
+        {
+          name: "Onwei Insider card",
+          sku: "INSIDER-CARD",
+          quantity: 1,
+          price: settings.declaredValue,
+        },
+      ],
+      totalAmount: settings.declaredValue,
+      paymentMode: "Prepaid",
       lengthCm: settings.lengthCm,
       widthCm: settings.widthCm,
       heightCm: settings.heightCm,
@@ -443,7 +442,7 @@ export async function sendInsiderCards(
         shipmentId: current.id,
         reference: current.reference,
         createdAt: current.createdAt,
-        name: row.fullName,
+        label: row.fullName,
         parcel: parcel(current.reference),
       });
       continue;
@@ -512,7 +511,7 @@ export async function sendInsiderCards(
         shipmentId: made.id,
         reference: made.reference,
         createdAt: made.createdAt,
-        name: row.fullName,
+        label: row.fullName,
         parcel: parcel(made.reference),
       });
     } catch (error) {
@@ -528,78 +527,17 @@ export async function sendInsiderCards(
     }
   }
 
-  let booked = 0;
-  let failed = 0;
-  let unsure = 0;
-  const problems: { name: string; reason: string }[] = [];
-  if (claimed.length > 0) {
-    const results = await addIthinkParcels(
-      config,
-      claimed.map((c) => c.parcel),
-      fetchImpl,
-    );
-    for (const [index, result] of results.entries()) {
-      const item = claimed[index];
-      if (!item) continue;
-      if (result.outcome === "BOOKED") {
-        await markBooked(item.shipmentId, result.awb, result.courier, now);
-        booked += 1;
-      } else if (result.outcome === "DUPLICATE") {
-        const found = await findIthinkParcel(
-          config,
-          item.reference,
-          item.createdAt,
-          fetchImpl,
-        );
-        if (found) {
-          await markBooked(item.shipmentId, found.awb, found.courier, now);
-          booked += 1;
-        } else {
-          const reason =
-            "iThink already has this card but we couldn't read its tracking number. Find it in the iThink portal before sending again.";
-          await markFailed(item.shipmentId, reason);
-          failed += 1;
-          problems.push({ name: item.name, reason });
-        }
-      } else if (result.outcome === "REFUSED") {
-        await markFailed(item.shipmentId, result.reason);
-        failed += 1;
-        problems.push({ name: item.name, reason: result.reason });
-      } else {
-        const reason = `${result.reason} Press "Check again" later, it won't be booked twice.`;
-        await prisma.shipment.updateMany({
-          where: { id: item.shipmentId, status: "SENDING" },
-          data: { error: reason },
-        });
-        unsure += 1;
-        problems.push({ name: item.name, reason });
-      }
-    }
-  }
+  const { booked, failed, unsure, problems } = await bookClaimedParcels(
+    config,
+    claimed,
+    fetchImpl,
+    now,
+  );
 
   const remaining = await prisma.insiderCardAddress.count({
     where: viewWhere("ready", new Date()),
   });
   return { ok: true, booked, failed, unsure, skipped, remaining, problems };
-}
-
-async function markBooked(
-  shipmentId: string,
-  awb: string,
-  courier: string | null,
-  now: Date,
-): Promise<void> {
-  await prisma.shipment.updateMany({
-    where: { id: shipmentId, status: "SENDING" },
-    data: { status: "BOOKED", awb, courier, bookedAt: now, error: null },
-  });
-}
-
-async function markFailed(shipmentId: string, reason: string): Promise<void> {
-  await prisma.shipment.updateMany({
-    where: { id: shipmentId, status: "SENDING" },
-    data: { status: "FAILED", error: reason },
-  });
 }
 
 // ---------------------------------------------------------------------------
@@ -664,7 +602,7 @@ export async function refreshCardShipments(
       fetchImpl,
     );
     if (found) {
-      await markBooked(row.id, found.awb, found.courier, now);
+      await markShipmentBooked(row.id, found.awb, found.courier, now);
       changed += 1;
     }
   }
@@ -677,7 +615,20 @@ export async function refreshCardShipments(
   for (const row of open) {
     const latest = info.get(row.awb as string);
     if (!latest) continue;
-    if (await applyCourierUpdate(row, latest, now)) changed += 1;
+    const moved = await applyCourierUpdate(
+      row,
+      latest,
+      now,
+      async (tx, move) => {
+        if (move.pickedUpAt && row.insiderCardAddressId) {
+          await tx.insiderCardAddress.updateMany({
+            where: { id: row.insiderCardAddressId, postedAt: null },
+            data: { postedAt: move.pickedUpAt },
+          });
+        }
+      },
+    );
+    if (moved) changed += 1;
   }
 
   if (checkedIds.length > 0) {
@@ -690,59 +641,6 @@ export async function refreshCardShipments(
     where: refreshWhere(input.startedAt),
   });
   return { ok: true, checked: checkedIds.length, changed, remaining };
-}
-
-/** Saves iThink's latest words; moves the status on when allowed. */
-async function applyCourierUpdate(
-  row: {
-    id: string;
-    status: ShipmentStatus;
-    pickedUpAt: Date | null;
-    insiderCardAddressId: string | null;
-  },
-  latest: {
-    statusText: string;
-    statusCode: string;
-    courier: string | null;
-    lastScanAt: Date | null;
-    deliveredAt: Date | null;
-  },
-  now: Date,
-): Promise<boolean> {
-  const next = mapIthinkStatus(latest.statusText, latest.statusCode);
-  const words = {
-    courierStatus: latest.statusText || null,
-    ...(latest.courier ? { courier: latest.courier } : {}),
-    ...(latest.lastScanAt ? { lastScanAt: latest.lastScanAt } : {}),
-  };
-  if (!next || !canMoveShipment(row.status, next)) {
-    await prisma.shipment.update({ where: { id: row.id }, data: words });
-    return false;
-  }
-  const at = latest.lastScanAt ?? now;
-  const pickedUpAt = isPickedUp(next) && !row.pickedUpAt ? at : undefined;
-  return prisma.$transaction(async (tx) => {
-    const moved = await tx.shipment.updateMany({
-      where: { id: row.id, status: row.status },
-      data: {
-        ...words,
-        status: next,
-        ...(pickedUpAt ? { pickedUpAt } : {}),
-        ...(next === "DELIVERED"
-          ? { deliveredAt: latest.deliveredAt ?? at }
-          : {}),
-        ...(next === "CANCELLED" ? { cancelledAt: at } : {}),
-      },
-    });
-    if (moved.count === 0) return false;
-    if (pickedUpAt && row.insiderCardAddressId) {
-      await tx.insiderCardAddress.updateMany({
-        where: { id: row.insiderCardAddressId, postedAt: null },
-        data: { postedAt: pickedUpAt },
-      });
-    }
-    return true;
-  });
 }
 
 // ---------------------------------------------------------------------------

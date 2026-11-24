@@ -1,6 +1,7 @@
 import {
   getOrderDetailById,
   notifyPreorder,
+  sendOrderToIthink,
   type PreorderEvent,
 } from "@onwei/core";
 import {
@@ -54,6 +55,32 @@ export function sendOrderEmailsInBackground(orderId: string): void {
       }
     } catch (error) {
       console.error("[email] order email failed", error);
+    }
+  };
+  try {
+    after(task);
+  } catch {
+    void task();
+  }
+}
+
+/**
+ * A newly confirmed order: the confirmation email (and staff alert), and the
+ * order goes to iThink so it shows up in the portal for a label. A send that
+ * fails stays on the order in admin with a "Send to iThink" button.
+ */
+export function afterOrderConfirmed(orderId: string): void {
+  sendOrderEmailsInBackground(orderId);
+  const task = async () => {
+    try {
+      const result = await sendOrderToIthink(orderId, null);
+      if (!result.ok && result.reason !== "NOT_SET_UP") {
+        console.warn("[ithink] order not sent", orderId, result.reason);
+      } else if (result.ok && result.outcome !== "BOOKED") {
+        console.warn("[ithink] order not booked", orderId, result.outcome);
+      }
+    } catch (error) {
+      console.error("[ithink] order send failed", orderId, error);
     }
   };
   try {

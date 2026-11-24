@@ -3,6 +3,7 @@ import {
   addIthinkParcels,
   buildIthinkShipment,
   cancelIthinkParcel,
+  checkIthinkPincode,
   explainIthinkRemark,
   findIthinkParcel,
   ithinkDate,
@@ -35,9 +36,16 @@ function parcel(reference: string): IthinkParcel {
     state: "Telangana",
     pin: "500032",
     phone: "+919876543210",
-    productName: "Onwei Insider card",
-    sku: "INSIDER-CARD",
-    declaredValue: 1,
+    products: [
+      {
+        name: "Onwei Insider card",
+        sku: "INSIDER-CARD",
+        quantity: 1,
+        price: 1,
+      },
+    ],
+    totalAmount: 1,
+    paymentMode: "Prepaid",
     lengthCm: 20.3,
     widthCm: 1,
     heightCm: 15.2,
@@ -131,6 +139,83 @@ describe("formats", () => {
       shipment_length: "20.3",
       return_address_id: "12",
     });
+  });
+});
+
+describe("order parcels", () => {
+  it("sends cash on delivery and never a zero price", () => {
+    const body = buildIthinkShipment(config, {
+      ...parcel("ONW1001"),
+      products: [
+        {
+          name: "Tee",
+          sku: "TEE-M",
+          quantity: 2,
+          price: 999,
+          taxRate: 5,
+          hsn: "6109",
+        },
+        { name: "Mystery box", sku: "BOX", quantity: 1, price: 0 },
+      ],
+      totalAmount: 2097,
+      paymentMode: "COD",
+      codAmount: 2097,
+      shippingCharges: 99,
+      codCharges: 49,
+      totalDiscount: 51,
+    });
+    expect(body).toMatchObject({
+      payment_mode: "COD",
+      cod_amount: "2097",
+      total_amount: "2097",
+      shipping_charges: "99",
+      total_discount: "51",
+    });
+    const products = body.products as Record<string, string>[];
+    expect(products[0]).toMatchObject({
+      product_quantity: "2",
+      product_price: "999",
+      product_tax_rate: "5",
+    });
+    expect(products[1]?.product_price).toBe("1");
+  });
+
+  it("never asks a prepaid parcel for cash", () => {
+    const body = buildIthinkShipment(config, {
+      ...parcel("ONW1002"),
+      codAmount: 500,
+    });
+    expect(body.cod_amount).toBe("0");
+  });
+});
+
+describe("checkIthinkPincode", () => {
+  it("reads couriers per PIN", async () => {
+    const yes = fakeFetch({
+      status: "success",
+      data: {
+        "500032": {
+          delhivery: { prepaid: "Y", cod: "N" },
+          ecom: { prepaid: "Y", cod: "Y" },
+        },
+      },
+    });
+    expect(await checkIthinkPincode(config, "500032", yes.impl)).toEqual({
+      deliverable: true,
+      cod: true,
+    });
+    const no = fakeFetch({
+      status: "success",
+      data: { "744301": { delhivery: { prepaid: "N", cod: "N" } } },
+    });
+    expect(await checkIthinkPincode(config, "744301", no.impl)).toEqual({
+      deliverable: false,
+      cod: false,
+    });
+    const down = (async () => {
+      throw new TypeError("fetch failed");
+    }) as unknown as typeof fetch;
+    expect(await checkIthinkPincode(config, "500032", down)).toBeNull();
   });
 });
 

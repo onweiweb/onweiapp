@@ -1017,8 +1017,38 @@ Without all four required values admin says "iThink isn't connected yet". Phase 
 **Launch for phase 1:** migrate prod (`20261124120000_insider_card_shipments`) before the push, add the live iThink
 keys to the admin Vercel project with `ITHINK_ENV=production`, push, send 3 or 4 cards, check them in the portal.
 
-**Phase 2, orders (not started):** PIN check at checkout, send on CONFIRMED (pre-orders after the balance), retry,
-"Get latest update" per order and "Update all open shipments", order status moves (Shipped, Out for delivery,
-Delivered) with shipped and delivered emails, cancel in admin cancels on iThink, default parcel size in Settings,
-customer order page shows courier and tracking. Open: should the customer order page refresh itself (at most every
-30 minutes)? Later: polling or webhooks, return pickups, COD remittance, failed-delivery reattempt.
+**Phase 1 status:** pushed 2026-11-24 (0b9c350), prod migrated, live keys on both Vercel projects.
+
+**Phase 2, orders (built locally 2026-11-25, not pushed):**
+
+- Sending: `afterOrderConfirmed` (web `api/_lib/orderEmails.ts`) sends every newly confirmed order to iThink after the
+  response (COD placement, payment verify, Razorpay webhook; a pre-order once its balance is paid). Reference is the order
+  number (`ONW1001`, then `ONW1001-2`). A failed send stays on the order: admin order page "Delivery (iThink)" card with
+  Send to iThink, Check again (no reply), Get latest update.
+- Parcel: items at their price, free items at ₹1 (iThink refuses ₹0) balanced in `total_discount`, delivery fee and COD
+  fee as charges, `cod_amount` is the total minus online payments.
+- Parcel size and weight (owner, 2026-11-24): every category has one cardboard shipper box (`Category.box*`: length,
+  width, height in cm, empty weight in grams; admin Categories). Each unit in an order gets its own box, stacked: length
+  and width are the largest box, height is every box height added (times quantity), weight is each unit's variant weight
+  plus its empty box. A category with no box or a size with no weight uses the backup numbers in admin Settings > Delivery,
+  payment and returns (`StoreSetting.parcel*`, `defaultItemWeightKg`), and the admin order page warns that the size was
+  estimated. Nothing is blocked when they're missing (owner, 2026-11-24): products go live and sizes save without them,
+  the product page shows what's missing, and admin Products shows "Missing delivery details" with a filter. Migration
+  `20261126120000_category_shipper_box`. Tentative boxes from the owner: Pickleball 15 x 9 x 4 in, Yoga 37 x 17 x 14 in.
+- Updates: "Get latest update" on an order, "Update N open shipments from iThink" on the Orders list (50 per request).
+  Picked up moves the order to Shipped (tracking number and courier filled in), then Out for delivery, Delivered (with
+  iThink's delivery date, which starts the return window). Skipped steps are walked one history row each
+  (`changedBy = "ithink"`); the state machine now allows CONFIRMED > SHIPPED and SHIPPED > DELIVERED. Returning, returned,
+  lost or cancelled in the portal set `needsAttention`. Shipped and delivered emails go from admin after the update
+  (`renderOrderShippedEmail`, `renderOrderDeliveredEmail`).
+- Cancel: staff cancel cancels the iThink booking first; if iThink refuses (picked up) the order stays.
+- PIN check: `/api/checkout/pincode` (30 per 10 minutes per IP, 6-hour cache) when moving to payment: "We can't deliver to
+  this PIN code yet" or cash on delivery greyed out ("isn't available at this PIN code"). `placeOrder` and pre-order
+  reserve check again (`PIN_NOT_SERVICEABLE`, `COD_NOT_AVAILABLE_HERE`). iThink not answering never blocks a sale.
+- Customer order page links the tracking number to iThink's tracking page.
+- The "Ship it by hand" form stays for orders sent without iThink and hides while iThink has the parcel.
+- Migrations `20261125120000_order_shipments` (additive: `ShipmentKind.ORDER`, `Shipment.orderId`, `StoreSetting` parcel
+  columns) and `20261126120000_category_shipper_box` (additive `Category.box*`). `StoreSetting` is read on every cart view
+  and categories on every catalog page, so prod must be migrated before the push.
+- Not done: the customer order page doesn't refresh tracking by itself (button-only, as decided). Later: polling or
+  webhooks, return pickups, COD remittance, failed-delivery reattempt.

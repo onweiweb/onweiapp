@@ -124,8 +124,11 @@ read before assuming something that looks broken is a missing asset.
   (commit 6782342) at the owner's request: the code is live but hidden. Flipping prod to LIVE is the owner's call
   (admin Settings, site mode), and the first look after the flip is the real check because collection, product and
   journal pages are prebuilt. Push to `main` only when asked, and run no prod migration without the owner.
-- Figma differs per page for the header nav, newsletter headline and Instagram note/arrow, use the `SiteHeader nav`,
-  `SiteFooter desktopHeading` and `InstagramGrid` position props, not one shared copy. Capture screenshots per section
+- The header nav is the same on every page (owner, 2026-11-24): the Homepage links, one list in
+  `apps/web/app/_components/navLinks.ts` shared by `SiteHeader` and `MobileNav`. Figma still differs per page for the
+  newsletter headline and Instagram note/arrow, use the `SiteFooter desktopHeading` and `InstagramGrid` position props.
+- Collection pages all use the illustrated "Shop all" header with the category's name; the hand-drawn circle is the shared
+  `HandDrawnOval` (stretches to any word). Category banner uploads were removed from admin (`Category.imageUrl` unused). Capture screenshots per section
   after scrolling (full-page captures miss lazy images and SVGs). Details in `docs/FIGMA_AUDIT.md`.
 - Audit standard for `apps/web` against Figma: every illustration, artwork, image, button and copy line must
   match the frame exactly, at desktop and mobile widths. Compare live screenshots section by section, not by
@@ -314,9 +317,11 @@ Insiders > WhatsApp sends (2026-11-17, b762ec1, prod migrated `20261119120000_wh
 template, fill blanks, pick a group, test, batch send, per-send log; numbers panel added 2026-11-18 (6cf5164).
 Details in `docs/COMMERCE_BUILD_PLAN.md` section 13.
 
-iThink Logistics (2026-11-24, built locally, not pushed): Insiders > Ship cards sends Insider cards to iThink, staff print
+iThink Logistics (2026-11-24): Insiders > Ship cards sends Insider cards to iThink, staff print
 labels in the iThink portal, "Update all" reads courier status. Needs prod migration `20261124120000_insider_card_shipments`
-and the live `ITHINK_*` keys on the admin project. Orders are phase 2. See `docs/COMMERCE_BUILD_PLAN.md` section 19.
+and the live `ITHINK_*` keys on the admin project. Phase 1 pushed 0b9c350. Phase 2 (orders: send on confirm, Delivery card,
+update buttons, shipped/delivered emails, PIN check) built locally 2026-11-25, needs prod migration `20261125120000_order_shipments`
+before the push. See `docs/COMMERCE_BUILD_PLAN.md` section 19.
 
 **Latest (2026-10-21):** Blogs page and admin blog editor, admin overhaul (speed, nav, shared kit), waitlist blog switch,
 blog analytics, product delete and redesigned product pages are pushed (up to f34223b). The backup product image work

@@ -36,6 +36,22 @@ const bodySchema = z.object({
     .max(12, "Use at most 12 reasons."),
   returnConditionNote: z.string().max(300),
   returnShippingNote: z.string().max(300),
+  parcelLengthCm: z
+    .number({ error: "Enter the box length in cm." })
+    .min(1)
+    .max(150),
+  parcelWidthCm: z
+    .number({ error: "Enter the box width in cm." })
+    .min(1)
+    .max(150),
+  parcelHeightCm: z
+    .number({ error: "Enter the box height in cm." })
+    .min(1)
+    .max(150),
+  defaultItemWeightKg: z
+    .number({ error: "Enter the weight per item in grams." })
+    .min(0.001, "Use at least 1 gram per item.")
+    .max(20, "Use at most 20,000 grams per item."),
 });
 
 export const PATCH = defineAdminRoute(

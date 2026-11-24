@@ -1,7 +1,13 @@
 import { notFound } from "next/navigation";
 import { hasPermission } from "@onwei/auth";
 import { prisma } from "@onwei/database";
-import { formatCurrency, resolveSurfaceLimit, toMinorUnits } from "@onwei/core";
+import {
+  deliveryGapsMessage,
+  formatCurrency,
+  getDeliveryDetailsGaps,
+  resolveSurfaceLimit,
+  toMinorUnits,
+} from "@onwei/core";
 import { requirePageSession } from "../../_lib/requirePageSession";
 import { DeleteProductButton } from "../../_components/DeleteProductButton";
 import { ProductForm } from "../../_components/ProductForm";
@@ -25,7 +31,7 @@ const TAB_HELP: Record<TabId, string> = {
   details: "The text and settings shoppers see on the product page.",
   photos: "Photos shown on the product page. The first one is the main photo.",
   variants:
-    "Each size and color you sell, with its own code and price. A product can't be bought until it has at least one.",
+    "Each size and color you sell, with its own code, price and packed weight. A product can't be bought until it has at least one.",
   reviews: "Pick which approved reviews show on this product's page.",
   returns: "Whether customers can return it, and its GST details for invoices.",
 };
@@ -58,6 +64,7 @@ export default async function EditProductPage({
   if (!product || product.deletedAt) notFound();
 
   const status = STATUS[product.status];
+  const gaps = await getDeliveryDetailsGaps(product.id);
 
   return (
     <main className="flex flex-col gap-5">
@@ -79,6 +86,11 @@ export default async function EditProductPage({
           </>
         }
       />
+      {gaps.length > 0 ? (
+        <p className="rounded-[20px] border border-onwei-black/30 bg-onwei-white px-5 py-3 text-sm text-onwei-blue">
+          {deliveryGapsMessage(gaps)}
+        </p>
+      ) : null}
       <AdminTabLinks basePath={`/products/${id}`} tabs={TABS} active={active} />
       <p className="-mt-2 max-w-3xl text-sm text-onwei-blue/70">
         {TAB_HELP[active]}
@@ -157,11 +169,31 @@ async function TabBody({
   }
 
   if (tab === "variants") {
-    const variants = await prisma.productVariant.findMany({
-      where: { productId: id },
-    });
+    const [variants, category] = await Promise.all([
+      prisma.productVariant.findMany({ where: { productId: id } }),
+      prisma.category.findUnique({
+        where: { id: product.categoryId },
+        select: {
+          name: true,
+          boxLengthCm: true,
+          boxWidthCm: true,
+          boxHeightCm: true,
+          boxWeightGrams: true,
+        },
+      }),
+    ]);
+    const box =
+      category &&
+      category.boxLengthCm !== null &&
+      category.boxWidthCm !== null &&
+      category.boxHeightCm !== null &&
+      category.boxWeightGrams !== null
+        ? `Packed in the ${category.name} box, ${Number(category.boxLengthCm)} x ${Number(category.boxWidthCm)} x ${Number(category.boxHeightCm)} cm, ${category.boxWeightGrams} g empty`
+        : null;
     return (
       <VariantManager
+        boxText={box}
+        categoryHref={`/categories/${product.categoryId}`}
         productId={id}
         variants={variants.map((variant) => ({
           id: variant.id,
@@ -169,6 +201,7 @@ async function TabBody({
           attributes: variant.attributes as Record<string, string>,
           priceFormatted: formatCurrency(toMinorUnits(variant.price), "INR"),
           status: variant.status,
+          weightGrams: variant.weightGrams,
         }))}
       />
     );

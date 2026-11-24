@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { hasPermission } from "@onwei/auth";
+import { countOpenOrderShipments, readIthinkConfig } from "@onwei/core";
 import { prisma } from "@onwei/database";
+import { UpdateAllShipmentsButton } from "../_components/OrderDelivery";
 import type { OrderStatus } from "@onwei/database";
 import { requirePageSession } from "../_lib/requirePageSession";
 import { pageWindow, parsePage, trimPage } from "../_lib/pagination";
@@ -25,7 +28,8 @@ export default async function OrdersPage({
 }: {
   searchParams: Promise<{ status?: string; page?: string; kind?: string }>;
 }) {
-  await requirePageSession("order:view");
+  const staff = await requirePageSession("order:view");
+  const canUpdate = hasPermission(staff.permissions, "order:updateStatus");
   const { status, page: pageParam, kind } = await searchParams;
   const kindFilter =
     kind === "PREORDER" || kind === "STANDARD" ? kind : undefined;
@@ -45,6 +49,8 @@ export default async function OrdersPage({
     ...pageWindow(page),
   });
   const { rows: orders, hasNext } = trimPage(fetched);
+  const openShipments =
+    canUpdate && readIthinkConfig() ? await countOpenOrderShipments() : 0;
 
   return (
     <main className="flex flex-col gap-6">
@@ -53,6 +59,9 @@ export default async function OrdersPage({
         description="Every order placed on the store."
         actions={
           <>
+            {openShipments > 0 ? (
+              <UpdateAllShipmentsButton open={openShipments} />
+            ) : null}
             <form className="flex items-center gap-2">
               <AdminSelect name="kind" defaultValue={kindFilter ?? ""}>
                 <option value="">All orders</option>

@@ -21,6 +21,8 @@ describe("canTransition", () => {
     ["PENDING", "CANCELLED"],
     ["CONFIRMED", "PACKED"],
     ["PACKED", "SHIPPED"],
+    ["CONFIRMED", "SHIPPED"],
+    ["SHIPPED", "DELIVERED"],
     ["SHIPPED", "OUT_FOR_DELIVERY"],
     ["OUT_FOR_DELIVERY", "DELIVERED"],
     ["DELIVERED", "RETURN_REQUESTED"],
@@ -37,6 +39,8 @@ describe("canTransition", () => {
     ["DELIVERED", "PENDING"],
     ["REFUNDED", "PENDING"],
     ["CANCELLED", "CONFIRMED"],
+    ["CONFIRMED", "DELIVERED"],
+    ["OUT_FOR_DELIVERY", "SHIPPED"],
   ] satisfies [OrderStatus, OrderStatus][])("rejects %s -> %s", (from, to) => {
     expect(canTransition(from, to)).toBe(false);
   });

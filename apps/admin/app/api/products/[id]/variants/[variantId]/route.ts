@@ -1,4 +1,4 @@
-import { updateProductVariant } from "@onwei/core";
+import { DeliveryDetailsError, updateProductVariant } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { defineAdminRoute } from "../../../../_lib/defineAdminRoute";
@@ -31,7 +31,13 @@ export const PATCH = defineAdminRoute<
       });
       await triggerCatalogRevalidate();
       return NextResponse.json({ ok: true, variant });
-    } catch {
+    } catch (error) {
+      if (error instanceof DeliveryDetailsError) {
+        return NextResponse.json(
+          { ok: false, error: error.message },
+          { status: 400 },
+        );
+      }
       return NextResponse.json(
         { ok: false, error: "Couldn't find that variant." },
         { status: 404 },
