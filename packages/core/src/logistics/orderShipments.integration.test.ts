@@ -176,7 +176,15 @@ describe.skipIf(!process.env.DATABASE_URL)(
       prisma.shipment.findFirstOrThrow({ where: { orderId, isCurrent: true } });
 
     beforeAll(async () => {
-      actor = { staffUserId: (await prisma.staffUser.findFirstOrThrow()).id };
+      actor = {
+        staffUserId:
+          // The oldest staff member: other test files add and remove their own.
+          (
+            await prisma.staffUser.findFirstOrThrow({
+              orderBy: { createdAt: "asc" },
+            })
+          ).id,
+      };
       variantId = (await prisma.productVariant.findFirstOrThrow()).id;
     });
 

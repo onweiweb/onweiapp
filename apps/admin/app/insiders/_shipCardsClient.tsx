@@ -7,6 +7,7 @@ import {
   AdminButton,
   AdminDialog,
   AdminInput,
+  AdminSelect,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
@@ -36,6 +37,8 @@ export interface CardShipRowData {
   name: string;
   addressShort: string;
   addressFull: string;
+  /** The saved address, for the Edit address popup. */
+  address: AddressValues;
   cardNumber: number | null;
   postedOn: string | null;
   shipment: {
@@ -54,6 +57,226 @@ export interface CardShipRowData {
 }
 
 type Reply = { ok: boolean; error?: string } & Record<string, unknown>;
+
+interface AddressValues {
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+}
+
+type AddressField = keyof AddressValues;
+
+const FIELD_ERRORS: Partial<Record<AddressField, string>> = {
+  fullName: "Enter their name.",
+  phone: "A 10 digit Indian mobile number.",
+  line1: "Enter the house and street.",
+  city: "Enter the city.",
+  state: "Pick the state.",
+  postalCode: "6 digits.",
+};
+
+/**
+ * Staff fix a card address (Ready to send, Needs a look). What the second
+ * button does depends on where the card is: send it, or cancel the old
+ * iThink booking and send it again.
+ */
+function EditAddressButton({
+  row,
+  states,
+  canSend,
+}: {
+  row: CardShipRowData;
+  states: string[];
+  canSend: boolean;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [values, setValues] = useState<AddressValues>(row.address);
+  const [bad, setBad] = useState<AddressField[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const status = row.shipment?.status;
+  const unsure = status === "SENDING";
+
+  const sendLabel =
+    status === "BOOKED"
+      ? "Save, cancel old booking and send again"
+      : status === "RETURNING" || row.cardNumber === null || !canSend
+        ? null
+        : !row.shipment || status === "CANCELLED"
+          ? "Save and send"
+          : "Save and send again";
+
+  const set =
+    (key: AddressField) =>
+    (
+      e:
+        | React.ChangeEvent<HTMLInputElement>
+        | React.ChangeEvent<HTMLSelectElement>,
+    ) =>
+      setValues((v) => ({ ...v, [key]: e.target.value }));
+
+  async function save(send: boolean) {
+    setBusy(true);
+    setError(null);
+    const result = await post(
+      `/api/insiders/addresses/${row.id}/details`,
+      { ...values, send },
+      "PATCH",
+    );
+    setBusy(false);
+    if (!result.ok) {
+      setBad((result.fields as AddressField[] | undefined) ?? []);
+      setError(result.error ?? "That didn't save. Try again.");
+      return;
+    }
+    setBad([]);
+    setOpen(false);
+    toast(
+      String(result.message ?? "Address saved."),
+      result.warning ? "error" : "success",
+    );
+    router.refresh();
+  }
+
+  const field = (key: AddressField, label: string, input: React.ReactNode) => (
+    <Field
+      label={label}
+      error={bad.includes(key) ? (FIELD_ERRORS[key] ?? null) : null}
+    >
+      {input}
+    </Field>
+  );
+
+  return (
+    <>
+      <AdminButton
+        type="button"
+        variant="secondary"
+        disabled={unsure}
+        title={unsure ? 'Press "Check again" first' : undefined}
+        onClick={() => {
+          setValues(row.address);
+          setBad([]);
+          setError(null);
+          setOpen(true);
+        }}
+      >
+        Edit address
+      </AdminButton>
+      <AdminDialog
+        open={open}
+        onClose={() => setOpen(false)}
+        title={`${row.name}'s card address`}
+        description={
+          status === "BOOKED"
+            ? "iThink still has the old address on its booking. Save only keeps that booking; the other button cancels it and books the card again with this address."
+            : status === "RETURNING"
+              ? "The card is on its way back. Save the right address now and send it again once it's back."
+              : "Fix the address the card goes to."
+        }
+      >
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void save(false);
+          }}
+        >
+          {row.shipment?.error && status === "FAILED" ? (
+            <p className="rounded-[12px] bg-onwei-beige px-3 py-2 text-sm text-onwei-blue">
+              iThink said: {row.shipment.error}
+            </p>
+          ) : null}
+          {field(
+            "fullName",
+            "Name",
+            <AdminInput value={values.fullName} onChange={set("fullName")} />,
+          )}
+          {field(
+            "phone",
+            "Phone",
+            <AdminInput
+              value={values.phone}
+              onChange={set("phone")}
+              inputMode="tel"
+            />,
+          )}
+          {field(
+            "line1",
+            "Address line 1",
+            <AdminInput value={values.line1} onChange={set("line1")} />,
+          )}
+          <Field label="Address line 2 (optional)">
+            <AdminInput value={values.line2} onChange={set("line2")} />
+          </Field>
+          <div className="grid gap-3 md:grid-cols-3">
+            {field(
+              "city",
+              "City",
+              <AdminInput value={values.city} onChange={set("city")} />,
+            )}
+            {field(
+              "state",
+              "State",
+              <AdminSelect value={values.state} onChange={set("state")}>
+                {states.includes(values.state) ? null : (
+                  <option value="">Pick a state</option>
+                )}
+                {states.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </AdminSelect>,
+            )}
+            {field(
+              "postalCode",
+              "PIN code",
+              <AdminInput
+                value={values.postalCode}
+                onChange={set("postalCode")}
+                inputMode="numeric"
+              />,
+            )}
+          </div>
+          {error ? (
+            <p role="alert" className="text-sm text-onwei-black">
+              {error}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <AdminButton
+              type="submit"
+              variant={sendLabel ? "secondary" : "primary"}
+              disabled={busy}
+            >
+              {busy
+                ? "Saving..."
+                : sendLabel && status === "BOOKED"
+                  ? "Save only"
+                  : "Save"}
+            </AdminButton>
+            {sendLabel ? (
+              <AdminButton
+                type="button"
+                disabled={busy}
+                onClick={() => void save(true)}
+              >
+                {sendLabel}
+              </AdminButton>
+            ) : null}
+          </div>
+        </form>
+      </AdminDialog>
+    </>
+  );
+}
 
 async function post(
   url: string,
@@ -403,9 +626,11 @@ function TrackingCell({ row }: { row: CardShipRowData }) {
 function RowActions({
   row,
   canSend,
+  states,
 }: {
   row: CardShipRowData;
   canSend: boolean;
+  states: string[];
 }) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -550,6 +775,28 @@ function RowActions({
     buttons.push(<span key="again">{sendAgain("Send again")}</span>);
     buttons.push(<span key="hand">{handPosted}</span>);
   }
+  // Edit address: ready to send, and every "Needs a look" case.
+  const editable =
+    (!s || status === "CANCELLED"
+      ? !row.postedOn
+      : status === "FAILED" ||
+        status === "RETURNED" ||
+        status === "LOST" ||
+        status === "RETURNING" ||
+        status === "SENDING" ||
+        (status === "BOOKED" && s.addressChanged)) &&
+    // A card still sending is only editable once iThink has answered.
+    !(status === "SENDING" && !s?.unsure);
+  if (editable) {
+    buttons.push(
+      <EditAddressButton
+        key="edit"
+        row={row}
+        states={states}
+        canSend={canSend}
+      />,
+    );
+  }
   if (buttons.length === 0) return null;
   return <div className="flex flex-wrap gap-2">{buttons}</div>;
 }
@@ -559,11 +806,14 @@ export function CardShipTable({
   view,
   canManage,
   canSend,
+  states,
 }: {
   rows: CardShipRowData[];
   view: "ready" | "sent" | "problem" | "noCard";
   canManage: boolean;
   canSend: boolean;
+  /** Indian states, for the Edit address popup's dropdown. */
+  states: string[];
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -665,7 +915,7 @@ export function CardShipTable({
               </AdminTableCell>
               {canManage ? (
                 <AdminTableCell>
-                  <RowActions row={row} canSend={canSend} />
+                  <RowActions row={row} canSend={canSend} states={states} />
                 </AdminTableCell>
               ) : null}
             </AdminTableRow>

@@ -4,8 +4,11 @@ import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
 import { validatePhone } from "../validation/phone";
 import {
+  cancelCardShipment,
   flagCardAddressChanged,
   hasActiveCardShipment,
+  sendInsiderCards,
+  type IthinkDeps,
 } from "../logistics/cardShipments";
 
 /** Indian states and union territories, for the address form's dropdown. */
@@ -115,10 +118,22 @@ function clean(value: string | undefined): string {
   return (value ?? "").replace(/\s+/g, " ").trim();
 }
 
-export async function saveCardAddress(
-  entryId: string,
+interface CleanCardAddress {
+  fullName: string;
+  phone: string;
+  line1: string;
+  line2: string | null;
+  city: string;
+  state: string;
+  postalCode: string;
+}
+
+/** The one address check, for the member's link and for staff edits. */
+export function checkCardAddress(
   input: CardAddressInput,
-): Promise<SaveCardAddressResult> {
+):
+  | { ok: true; data: CleanCardAddress }
+  | { ok: false; reason: "INVALID_FIELDS"; fields: CardAddressField[] } {
   const fullName = clean(input.fullName);
   const line1 = clean(input.line1);
   const line2 = clean(input.line2);
@@ -136,6 +151,27 @@ export async function saveCardAddress(
   if (!PIN_PATTERN.test(postalCode)) bad.push("postalCode");
   if (bad.length > 0)
     return { ok: false, reason: "INVALID_FIELDS", fields: bad };
+  return {
+    ok: true,
+    data: {
+      fullName,
+      phone: phone.e164 as string,
+      line1,
+      line2: line2 || null,
+      city,
+      state,
+      postalCode,
+    },
+  };
+}
+
+export async function saveCardAddress(
+  entryId: string,
+  input: CardAddressInput,
+): Promise<SaveCardAddressResult> {
+  const checked = checkCardAddress(input);
+  if (!checked.ok) return checked;
+  const data = checked.data;
 
   const entry = await prisma.waitlistEntry.findUnique({
     where: { id: entryId },
@@ -143,15 +179,6 @@ export async function saveCardAddress(
   });
   if (!entry) return { ok: false, reason: "NOT_FOUND" };
 
-  const data = {
-    fullName,
-    phone: phone.e164 as string,
-    line1,
-    line2: line2 || null,
-    city,
-    state,
-    postalCode,
-  };
   const before = await prisma.insiderCardAddress.findUnique({
     where: { waitlistEntryId: entryId },
     select: {
@@ -216,4 +243,115 @@ export async function setCardPosted(
     );
   });
   return { ok: true };
+}
+
+export type StaffAddressEditResult =
+  | { ok: false; reason: "INVALID_FIELDS"; fields: CardAddressField[] }
+  | { ok: false; reason: "NOT_FOUND" }
+  /** iThink hasn't replied about the last send: "Check again" first. */
+  | { ok: false; reason: "CHECK_FIRST" }
+  /** The courier has the card (or it's delivered): the parcel can't change. */
+  | { ok: false; reason: "WITH_COURIER" }
+  | {
+      ok: true;
+      /** What happened after saving. */
+      outcome:
+        | "SAVED"
+        | "SENT"
+        | "SEND_FAILED"
+        | "NOT_SENT_CANCEL_REFUSED"
+        | "NOT_SET_UP";
+      /** iThink's words when the cancel or the new send didn't go through. */
+      message?: string;
+    };
+
+/**
+ * Staff fix an Insider's card address from Ship cards (Ready to send, Needs
+ * a look). With `send`, a card that can go again is sent with the new
+ * address; a booked one is cancelled on iThink first. A booked card saved
+ * without sending keeps its "address changed" flag, so it stays in Needs a
+ * look. The audit row names the fields changed, not the address itself.
+ */
+export async function updateCardAddressByStaff(
+  addressId: string,
+  input: CardAddressInput,
+  send: boolean,
+  actor: AuditActor,
+  deps: IthinkDeps = {},
+): Promise<StaffAddressEditResult> {
+  const checked = checkCardAddress(input);
+  if (!checked.ok) return checked;
+  const data = checked.data;
+
+  const before = await prisma.insiderCardAddress.findUnique({
+    where: { id: addressId },
+    select: {
+      fullName: true,
+      phone: true,
+      line1: true,
+      line2: true,
+      city: true,
+      state: true,
+      postalCode: true,
+      shipments: {
+        where: { isCurrent: true },
+        take: 1,
+        select: { status: true },
+      },
+    },
+  });
+  if (!before) return { ok: false, reason: "NOT_FOUND" };
+  const status = before.shipments[0]?.status;
+  if (status === "SENDING") return { ok: false, reason: "CHECK_FIRST" };
+  if (
+    status === "IN_TRANSIT" ||
+    status === "OUT_FOR_DELIVERY" ||
+    status === "DELIVERED"
+  ) {
+    return { ok: false, reason: "WITH_COURIER" };
+  }
+
+  const changed = (Object.keys(data) as (keyof CleanCardAddress)[]).filter(
+    (key) => before[key] !== data[key],
+  );
+  if (changed.length > 0) {
+    await prisma.$transaction(async (tx) => {
+      await tx.insiderCardAddress.update({ where: { id: addressId }, data });
+      if (status === "BOOKED") await flagCardAddressChanged(addressId, tx);
+      await writeAuditLog(
+        {
+          staffUserId: actor.staffUserId,
+          action: "insider.address.update",
+          entityType: "InsiderCardAddress",
+          entityId: addressId,
+          afterState: { changedFields: changed },
+        },
+        tx,
+      );
+    });
+  }
+
+  // A parcel coming back can't be sent again until it's back.
+  if (!send || status === "RETURNING") return { ok: true, outcome: "SAVED" };
+
+  if (status === "BOOKED") {
+    const cancelled = await cancelCardShipment(addressId, actor, deps);
+    if (!cancelled.ok) {
+      if (cancelled.reason === "NOT_SET_UP")
+        return { ok: true, outcome: "NOT_SET_UP" };
+      return {
+        ok: true,
+        outcome: "NOT_SENT_CANCEL_REFUSED",
+        message: cancelled.reason === "ITHINK" ? cancelled.message : undefined,
+      };
+    }
+  }
+  const sent = await sendInsiderCards({ addressIds: [addressId] }, actor, deps);
+  if (!sent.ok) return { ok: true, outcome: "NOT_SET_UP" };
+  if (sent.booked > 0) return { ok: true, outcome: "SENT" };
+  return {
+    ok: true,
+    outcome: "SEND_FAILED",
+    message: sent.problems[0]?.reason,
+  };
 }

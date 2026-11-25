@@ -1,6 +1,10 @@
 import { prisma } from "@onwei/database";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { saveCardAddress, setCardPosted } from "../insiders/cardAddress";
+import {
+  saveCardAddress,
+  setCardPosted,
+  updateCardAddressByStaff,
+} from "../insiders/cardAddress";
 import {
   cancelCardShipment,
   keepCardShipment,
@@ -116,7 +120,15 @@ describe.skipIf(!process.env.DATABASE_URL)(
     });
 
     beforeAll(async () => {
-      actor = { staffUserId: (await prisma.staffUser.findFirstOrThrow()).id };
+      actor = {
+        staffUserId:
+          // The oldest staff member: other test files add and remove their own.
+          (
+            await prisma.staffUser.findFirstOrThrow({
+              orderBy: { createdAt: "asc" },
+            })
+          ).id,
+      };
     });
 
     afterAll(async () => {
@@ -325,6 +337,140 @@ describe.skipIf(!process.env.DATABASE_URL)(
       });
       // Cancelled cards can be posted by hand.
       expect(await setCardPosted(id, true, actor)).toEqual({ ok: true });
+    });
+
+    it("lets staff fix a refused address and send it again", async () => {
+      const id = await makeMember("999999");
+      await sendInsiderCards({ addressIds: [id] }, actor, {
+        config,
+        fetchImpl: booking,
+      });
+      expect((await current(id)).status).toBe("FAILED");
+      const fixed = {
+        fullName: "Test Insider",
+        phone: "9876543210",
+        line1: "14 Test Road",
+        city: "Hyderabad",
+        state: "Telangana",
+        postalCode: "500032",
+      };
+
+      expect(
+        await updateCardAddressByStaff(
+          id,
+          { ...fixed, postalCode: "12" },
+          true,
+          actor,
+          { config, fetchImpl: booking },
+        ),
+      ).toEqual({
+        ok: false,
+        reason: "INVALID_FIELDS",
+        fields: ["postalCode"],
+      });
+
+      expect(
+        await updateCardAddressByStaff(id, fixed, true, actor, {
+          config,
+          fetchImpl: booking,
+        }),
+      ).toEqual({ ok: true, outcome: "SENT" });
+      const now = await current(id);
+      expect(now.status).toBe("BOOKED");
+      expect(now.reference).toMatch(/-2$/);
+      const log = await prisma.auditLog.findFirstOrThrow({
+        where: { entityId: id, action: "insider.address.update" },
+      });
+      // Which fields changed, never the address itself.
+      expect(log.afterState).toEqual({ changedFields: ["postalCode"] });
+      await prisma.auditLog.deleteMany({ where: { entityId: id } });
+    });
+
+    it("cancels the old booking when staff change a booked address, or keeps it if iThink says no", async () => {
+      const id = await makeMember();
+      await sendInsiderCards({ addressIds: [id] }, actor, {
+        config,
+        fetchImpl: booking,
+      });
+      const moved = {
+        fullName: "Test Insider",
+        phone: "9876543210",
+        line1: "99 New Road",
+        city: "Hyderabad",
+        state: "Telangana",
+        postalCode: "500032",
+      };
+      const refuse = fake((path) =>
+        path === "order/cancel.json"
+          ? {
+              status: "error",
+              data: [{ status: "error", remark: "Picked up" }],
+            }
+          : {},
+      );
+      expect(
+        await updateCardAddressByStaff(id, moved, true, actor, {
+          config,
+          fetchImpl: refuse,
+        }),
+      ).toMatchObject({ ok: true, outcome: "NOT_SENT_CANCEL_REFUSED" });
+      // Saved, still booked, and still flagged for a look.
+      const kept = await current(id);
+      expect(kept.status).toBe("BOOKED");
+      expect(kept.addressChangedAt).not.toBeNull();
+      expect(
+        (await prisma.insiderCardAddress.findUniqueOrThrow({ where: { id } }))
+          .line1,
+      ).toBe("99 New Road");
+
+      const both: typeof fetch = (async (url: string, init?: RequestInit) =>
+        String(url).includes("cancel")
+          ? new Response(
+              JSON.stringify({
+                status: "success",
+                data: [{ status: "success" }],
+              }),
+            )
+          : booking(url, init)) as unknown as typeof fetch;
+      expect(
+        await updateCardAddressByStaff(
+          id,
+          { ...moved, line1: "100 New Road" },
+          true,
+          actor,
+          { config, fetchImpl: both },
+        ),
+      ).toEqual({ ok: true, outcome: "SENT" });
+      const rebooked = await current(id);
+      expect(rebooked.status).toBe("BOOKED");
+      expect(rebooked.addressChangedAt).toBeNull();
+      expect(rebooked.reference).toMatch(/-2$/);
+      await prisma.auditLog.deleteMany({ where: { entityId: id } });
+    });
+
+    it("won't change an address while iThink hasn't replied", async () => {
+      const id = await makeMember();
+      await sendInsiderCards({ addressIds: [id] }, actor, {
+        config,
+        fetchImpl: failing,
+      });
+      expect((await current(id)).status).toBe("SENDING");
+      expect(
+        await updateCardAddressByStaff(
+          id,
+          {
+            fullName: "Test Insider",
+            phone: "9876543210",
+            line1: "1 Other Road",
+            city: "Hyderabad",
+            state: "Telangana",
+            postalCode: "500032",
+          },
+          false,
+          actor,
+          { config, fetchImpl: booking },
+        ),
+      ).toEqual({ ok: false, reason: "CHECK_FIRST" });
     });
 
     it("needs the iThink keys", async () => {

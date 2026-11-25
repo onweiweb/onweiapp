@@ -2,6 +2,7 @@ import {
   CARD_SHIP_VIEWS,
   countCardShipViews,
   getCardParcelSettings,
+  INDIAN_STATES,
   istDateOf,
   listCardShipRows,
   readIthinkConfig,
@@ -70,6 +71,16 @@ export async function ShipCardsTab({
     name: row.fullName,
     addressShort: `${row.line1}${row.line2 ? `, ${row.line2}` : ""}, ${row.city}, ${row.state} ${row.postalCode}`,
     addressFull: `${row.fullName}, ${row.line1}${row.line2 ? `, ${row.line2}` : ""}, ${row.city}, ${row.state} ${row.postalCode}, ${row.phone}`,
+    address: {
+      fullName: row.fullName,
+      // Saved as +91XXXXXXXXXX, edited as the 10 digits.
+      phone: row.phone.replace(/^\+91/, ""),
+      line1: row.line1,
+      line2: row.line2 ?? "",
+      city: row.city,
+      state: row.state,
+      postalCode: row.postalCode,
+    },
     cardNumber: row.cardNumber,
     postedOn: row.postedAt ? istDateOf(row.postedAt) : null,
     shipment: row.shipment
@@ -167,6 +178,7 @@ export async function ShipCardsTab({
           view={view}
           canManage={canManage}
           canSend={Boolean(config)}
+          states={[...INDIAN_STATES]}
         />
       )}
       <AdminPager

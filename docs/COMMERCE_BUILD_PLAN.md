@@ -1011,6 +1011,11 @@ Without all four required values admin says "iThink isn't connected yet". Phase 
   lost, cancelled before pickup). Picked up sets `InsiderCardAddress.postedAt`, which the member's address page shows.
 - Cancel booking (only before pickup), Keep as is (address changed), Posted by hand (blocked while iThink has the
   card). The old CSV download and "Mark posted" button are gone; `?tab=addresses` redirects to `?tab=ship`.
+- Edit address (2026-11-25): staff fix a card address from Ready to send and Needs a look (`updateCardAddressByStaff`,
+  same check as the member's link, `checkCardAddress`). Refused, came back or lost: Save, or Save and send again (new
+  attempt). Booked: Save only (stays flagged) or Save, cancel old booking and send again; if iThink won't cancel, the
+  address is saved and nothing new is sent. Coming back: Save only. No reply yet: disabled until "Check again". The
+  audit row lists the changed field names, not the address. The member isn't notified.
 - Audit rows: send, cancel, keep, envelope change, posted by hand. Courier status changes are not audited.
 - Tests: `ithinkClient.test.ts`, `shipmentStatus.test.ts`, `cardShipments.integration.test.ts` (fake iThink).
 
