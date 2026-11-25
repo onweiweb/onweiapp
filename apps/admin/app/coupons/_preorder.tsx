@@ -23,10 +23,8 @@ import {
   AdminTableRow,
   EmptyState,
 } from "../_components/ui";
-import {
-  DEFAULT_CAMPAIGN,
-  PreorderCampaignForm,
-} from "./_components/PreorderCampaignForm";
+import { PreorderCampaignForm } from "./_components/PreorderCampaignForm";
+import { DEFAULT_CAMPAIGN } from "./_components/defaultCampaign";
 import { BalanceNudgeList } from "./_components/BalanceNudgeList";
 
 const STATE_LABEL = { CLOSED: "Over", LIVE: "Live now", LOCKED: "Coming up" };

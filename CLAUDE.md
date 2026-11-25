@@ -289,12 +289,12 @@ docs/       -> architecture, schema rationale, test plan, security notes, open d
 
 ## Current phase
 
-**Latest (2026-11-26, local, not pushed):** owner brief rework. Pre-orders through the bag with a reserve from the
+**Latest (2026-11-26, pushed 5ac0785 and e31c241, prod migrated):** owner brief rework. Pre-orders through the bag with a reserve from the
 bag total before discounts (₹500 up to ₹4,000, ₹900 above), stock held at reserve, balance nudge (auto 7 days before
 close or from admin) that locks cancel, balance due 7 days after close then credit, cash refunds keep the gateway fee;
 Insider ID box above the pay button and sign-in by Insider ID; invite-only Insiders (invite by number or apply,
-admin Applications) with invite rewards. Needs prod migration `20261127120000_preorder_rework_insider_access` before
-the push. Details: `docs/COMMERCE_BUILD_PLAN.md` sections 14a and 20.
+admin Applications) with invite rewards. Prod still needs the data-only migration `20261127130000_legal_preorder_terms`
+(Terms wording). Details: `docs/COMMERCE_BUILD_PLAN.md` sections 14a and 20.
 
 **Earlier (2026-11-09):** the commerce build (Insider codes, coupons, sign-in, cart, checkout with Razorpay and COD,
 account, returns, staff tools) is pushed (3650c51, then the feedback round b64b37c) and prod is migrated. Prod is still
