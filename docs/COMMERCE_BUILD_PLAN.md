@@ -802,7 +802,34 @@ at desktop and mobile and shown to the owner before its phase ships.
   look but shows one milestone: free shipping.
 - Currency written as both "Rs." and "₹". The build uses "₹" everywhere (section 11).
 
-## 14a. Pre-order campaign (Phase H, approved 2026-11-18, built locally, not pushed)
+## 14a. Pre-order campaign (Phase H, approved 2026-11-18, pushed f190e5e; reworked 2026-11-26)
+
+**Rework (owner brief "Onwei website", approved 2026-11-26, built locally, not pushed).** It replaces the
+one-product reserve page, the ₹900 per item reserve, "Stock is in, ask for balance" and the day 3/7/14
+reminders described further down. Migration `20261127120000_preorder_rework_insider_access` (owner runs it on
+prod before the push).
+
+- Pre-orders go through the normal bag. In pre-order mode with a lap running, the bag takes campaign products
+  only (`bagTakes` in `commerce/cart.ts`); `getCartView` prices it with the lap discount and returns
+  `preorder` (lap, reserve, balance, gifts, close and due dates). `placeOrder` makes a PREORDER order from it,
+  holds the stock and the gifts, and charges only the reserve. `/preorder/checkout` redirects to `/checkout`.
+- Reserve from the bag at product price before any discount (`reserveForBag` in `preorders/rules.ts`): up to
+  `reserveThreshold` (₹4,000) pays `reserveLow` (₹500), above pays `reserveHigh` (₹900), never more than the
+  order total. Same in every lap. Campaign settings in admin.
+- Stock is held when the reserve is paid, so pre-orders sell only what is in Inventory. Balance paid turns the
+  hold into a sale and the order ships through iThink (confirm flow). A reserve that covers the whole total
+  confirms the order straight away.
+- Deadlines from the campaign (`preorderDeadlines`): the window closes at the end of the last lap. The balance
+  nudge goes out `nudgeDaysBeforeClose` (7) days before close (daily job) or earlier from admin (per order on the
+  order page, ticked or all on the Pre-order tab), saved as `Order.balanceNudgedAt`. Balance due
+  `balanceDueDaysAfterClose` (7) days after close; a last call goes 2 days before; unpaid after that is cancelled,
+  stock released, reserve becomes a 12-month credit, nothing ships. The customer can pay the balance any time.
+- Customer cancel (`customerCanCancel`): until the window closes, and not after the nudge or the balance. Reserve
+  becomes credit. Ordering again gets the lap live then.
+- Cash refunds (staff only, `order:refund`): the box fills in the reserve minus Razorpay's fee for that payment
+  (`suggestPreorderRefund`), staff can change it. Setting `StoreSetting.refundKeepsGatewayFee` (on). The terms and
+  returns page must say "Cash refunds exclude the payment gateway fee" (owner to add, legal pages live in admin).
+- My orders: reserve paid, balance due and its date, locked lap, Pay the balance, Cancel and keep as credit.
 
 Owner sheet and answers (2026-11-18):
 
@@ -1057,3 +1084,27 @@ keys to the admin Vercel project with `ITHINK_ENV=production`, push, send 3 or 4
   and categories on every catalog page, so prod must be migrated before the push.
 - Not done: the customer order page doesn't refresh tracking by itself (button-only, as decided). Later: polling or
   webhooks, return pickups, COD remittance, failed-delivery reattempt.
+
+## 20. Insider ID on the bag and invite-only Insiders (owner brief, approved 2026-11-26, built locally)
+
+Same migration as the 14a rework.
+
+- **Insider ID box** (`InsiderBox`, bag drawer and checkout, above the pay button): a signed-in Insider sees their
+  ID ticked and the offer; signed out, typing an ID opens sign-in and the code goes to the number on that
+  membership (`findInsiderPhone`; the browser only ever sees `••••••4321`); signed in but not an Insider: "Want
+  to become an Insider?" with Join Insiders, plus "Already an Insider? Use your Insider ID". Typing an ID never
+  applies anything by itself. Every sign-in takes email, mobile or Insider ID. WEI codes are no longer taken in the
+  coupon box. Coupon codes stay on the bag (owner, 2026-11-26).
+- **Join mode** (`InsiderSetting.joinMode`, admin Insiders > Applications): OPEN (as before) or INVITE_OR_APPLY.
+  Invite-only closes the open form (`INVITE_ONLY`) and the Insiders page shows `InsiderAccessForm`.
+- **Path A**: an Insider's number (`/api/insider/invite`), short form, mobile checked with a code (request-otp
+  purpose SIGNUP), approved at once with its own code (`joinByInvite`), welcome email and WhatsApp
+  (`sendInsiderWelcome`, shared by both apps), inviter saved in `invitedByEntryId`.
+- **Path B**: application (`applyToJoin`, status APPLIED, no code), "Great, you're interested" email. Admin
+  Applications tab: filters, approve, reject, bulk, CSV. Approve gives the next printed card code and sends the
+  welcome (20 at once, the rest wait in Insiders > Email). One mobile can apply once (rejected rows stay).
+- Members lists, counts, exports, WhatsApp groups and code filling only include APPROVED rows.
+- **Invite rewards** (`InsiderRewardRule`, `InsiderRewardGrant`, admin Insiders > Invite rewards): "invite N, get
+  X" as a personal one-use coupon (money off, percent off or a free item), given once per member when their Nth
+  invitee becomes an Insider, emailed. Account page "Invite friends" card shows the count, the next reward and a
+  WhatsApp share link. Risk: a printed number shared publicly lets anyone in; Top inviters shows counts.

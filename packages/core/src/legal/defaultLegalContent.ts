@@ -103,12 +103,16 @@ const TERMS: DefaultLegalPage = {
       body: "An order is confirmed only when we accept it and send you a confirmation. We may decline or cancel an order, for example if an item is out of stock or we suspect misuse. Accepted payment methods and any taxes are shown at checkout.",
     },
     {
+      heading: "Pre-orders",
+      body: "- A pre-order is paid in two parts: a reserve when you order, and the balance later. The reserve and the balance are shown in your bag and at checkout before you pay, and the reserve counts towards your final price.\n- The pre-order discount and gifts live when you pay the reserve are locked in for that order. If you cancel and order again, you get the offer live at that time.\n- You can cancel a pre-order from your account until pre-orders close, unless we have already sent you the reminder to pay the balance. What you paid becomes credit on your account, valid for 12 months.\n- Pay the balance by the date shown on your order. If it is not paid by then, nothing ships, the pre-order offer ends, and what you paid becomes credit on your account, valid for 12 months.\n- Credit cannot be exchanged for cash. If we agree to refund a reserve in cash instead, the refund excludes the payment gateway fee.",
+    },
+    {
       heading: "Shipping and delivery",
       body: "Delivery times shown at checkout are estimates, not guarantees. Delays caused by couriers, weather or other things outside our control are not our fault. Risk in the product passes to you when it is delivered.",
     },
     {
       heading: "Returns and refunds",
-      body: "If something is wrong with your order, tell us at admin@onwei.in within [number of days] days of delivery. To be eligible for a return, the item must be unused and in its original packaging. Once we approve a return, we refund the amount you paid to your original payment method.",
+      body: "If something is wrong with your order, tell us at admin@onwei.in within [number of days] days of delivery. To be eligible for a return, the item must be unused and in its original packaging. Once we approve a return, we refund the amount you paid to your original payment method. Cash refunds of a pre-order reserve exclude the payment gateway fee.",
     },
     {
       heading: "Coupons and offers",

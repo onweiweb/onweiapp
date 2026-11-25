@@ -19,7 +19,7 @@ import {
   type PricingResult,
 } from "../pricing/engine";
 import { getPreorderCampaignForAdmin, liveTier } from "./campaign";
-import { splitReserve } from "./quote";
+import { reserveForBag } from "./rules";
 
 /**
  * The admin price checker: "what would this customer pay?" for one product,
@@ -145,10 +145,8 @@ export async function checkPrice(
     pricing,
     reserve:
       campaign && input.preorder
-        ? splitReserve({
-            reservePerItem: campaign.reserveAmount,
-            quantity: input.quantity,
-            merchandiseTotal: pricing.merchandiseTotal,
+        ? reserveForBag(campaign, {
+            productTotal: pricing.subtotal,
             total: pricing.total,
           })
         : null,

@@ -8,7 +8,7 @@ import {
   type InsiderStackMode,
 } from "../insiders/insiderTiers";
 import { priceCart } from "../pricing/engine";
-import { splitReserve } from "./quote";
+import { reserveForBag, type ReserveSettings } from "./rules";
 
 export { insiderExtraText } from "./journeyText";
 
@@ -45,8 +45,8 @@ export interface JourneyPreview {
 export async function previewPreorderJourney(input: {
   variantId: string;
   tiers: JourneyTierInput[];
-  /** Paid now per item, paise. */
-  reservePerItem: number;
+  /** Paise, from the unsaved form. */
+  reserve: ReserveSettings;
 }): Promise<JourneyPreview | null> {
   const variant = await prisma.productVariant.findUnique({
     where: { id: input.variantId },
@@ -84,10 +84,8 @@ export async function previewPreorderJourney(input: {
       },
       codFee: 0,
     });
-    const split = splitReserve({
-      reservePerItem: input.reservePerItem,
-      quantity: 1,
-      merchandiseTotal: pricing.merchandiseTotal,
+    const split = reserveForBag(input.reserve, {
+      productTotal: pricing.subtotal,
       total: pricing.total,
     });
     return {

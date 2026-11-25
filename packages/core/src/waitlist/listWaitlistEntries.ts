@@ -16,8 +16,10 @@ export async function listWaitlistEntries(
   const page = Math.max(input.page ?? 1, 1);
   const search = input.search?.trim();
 
-  const where: Prisma.WaitlistEntryWhereInput | undefined = search
+  // Members only: applications are listed in Insiders > Applications.
+  const where: Prisma.WaitlistEntryWhereInput = search
     ? {
+        status: "APPROVED",
         OR: [
           { fullName: { contains: search, mode: "insensitive" } },
           { email: { contains: search, mode: "insensitive" } },
@@ -25,7 +27,7 @@ export async function listWaitlistEntries(
           { insiderCode: { equals: search.replace(/\s+/g, "").toUpperCase() } },
         ],
       }
-    : undefined;
+    : { status: "APPROVED" };
 
   const skip = (page - 1) * pageSize;
   const [fetched, total] = await Promise.all([
@@ -53,9 +55,13 @@ export async function listWaitlistEntries(
 export async function getWaitlistStats(): Promise<WaitlistStats> {
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const [total, unsubscribed, joinedLast7Days] = await Promise.all([
-    prisma.waitlistEntry.count(),
-    prisma.waitlistEntry.count({ where: { unsubscribedAt: { not: null } } }),
-    prisma.waitlistEntry.count({ where: { submittedAt: { gte: weekAgo } } }),
+    prisma.waitlistEntry.count({ where: { status: "APPROVED" } }),
+    prisma.waitlistEntry.count({
+      where: { status: "APPROVED", unsubscribedAt: { not: null } },
+    }),
+    prisma.waitlistEntry.count({
+      where: { status: "APPROVED", submittedAt: { gte: weekAgo } },
+    }),
   ]);
   return {
     total,
@@ -79,6 +85,7 @@ function csvEscape(value: string): string {
  */
 export async function exportWaitlistEntriesToCsv(): Promise<string> {
   const entries = await prisma.waitlistEntry.findMany({
+    where: { status: "APPROVED" },
     orderBy: { submittedAt: "desc" },
   });
 

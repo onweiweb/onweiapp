@@ -3,208 +3,109 @@ import { randomInt } from "node:crypto";
 import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
 import { toMinorUnits } from "../catalog/helpers";
-import {
-  convertHoldToSale,
-  refundPayment,
-  releaseHold,
-} from "../commerce/orders";
+import { refundPayment, releaseHold } from "../commerce/orders";
+import { getStoreSettings } from "../commerce/storeSettings";
 import { creditLeftOn } from "../commerce/couponEligibility";
-import { createRazorpayOrder, type RazorpayConfig } from "../payments/razorpay";
+import {
+  createRazorpayOrder,
+  fetchRazorpayPayment,
+  type RazorpayConfig,
+} from "../payments/razorpay";
+import { getPreorderCampaign, type PreorderCampaignView } from "./campaign";
+import { customerCanCancel } from "./rules";
 
 /**
- * After the reserve: staff say "stock is in", the oldest reservations get
- * stock held and a balance link, reminders go out, and a reservation that is
- * cancelled (by the customer, by staff, or because the balance was never
- * paid) turns its reserve into a personal credit valid for a year.
+ * After the reserve (docs/COMMERCE_BUILD_PLAN.md section 14a). Stock is
+ * already held from the moment the reserve was paid. A week before the
+ * window closes the balance nudge goes out (or earlier, when staff send it),
+ * which also ends the customer's right to cancel. The balance is due a week
+ * after the window closes; unpaid reservations are cancelled and their
+ * reserve turns into a personal credit valid for a year.
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-export const BALANCE_REMINDER_DAYS = [3, 7] as const;
-export const BALANCE_CANCEL_DAYS = 14;
 export const CREDIT_VALID_DAYS = 365;
+/** The last-call reminder goes out this many days before the balance is due. */
+export const LAST_CALL_DAYS = 2;
 
-/** Holds stock for one order line from a warehouse with enough. */
-async function holdLine(
-  tx: Prisma.TransactionClient,
-  item: { id: string; productVariantId: string; quantity: number },
-): Promise<boolean> {
-  const rows = await tx.$queryRaw<{ warehouseId: string }[]>`
-    UPDATE "Inventory" SET "quantityReserved" = "quantityReserved" + ${item.quantity}
-    WHERE "id" = (
-      SELECT "id" FROM "Inventory"
-      WHERE "productVariantId" = ${item.productVariantId}
-        AND "quantityOnHand" - "quantityReserved" >= ${item.quantity}
-      ORDER BY "quantityOnHand" - "quantityReserved" DESC
-      LIMIT 1
-      FOR UPDATE
-    )
-    AND "quantityOnHand" - "quantityReserved" >= ${item.quantity}
-    RETURNING "warehouseId"`;
-  const row = rows[0];
-  if (!row) return false;
-  await tx.orderItem.update({
-    where: { id: item.id },
-    data: { warehouseId: row.warehouseId },
-  });
-  return true;
-}
-
-export interface BalanceRequestResult {
-  /** Orders that got stock held and a balance link. */
-  asked: { orderId: string; orderNumber: string; balanceDue: number }[];
-  /** Orders whose balance was 0: confirmed straight away. */
-  confirmed: { orderId: string; orderNumber: string }[];
-  /** Still waiting because there wasn't enough stock. */
-  waiting: number;
-  /** Gifts that were out of stock (the order still goes ahead). */
-  missingGifts: number;
-  /** Razorpay could not start a payment for these. */
-  failed: number;
+export interface NudgeResult {
+  /** Orders that were nudged now (send them the balance message). */
+  nudged: { orderId: string; orderNumber: string }[];
+  /** Already nudged, paid or no longer reserved. */
+  skipped: number;
 }
 
 /**
- * "Stock is in, ask for balance" for one product: oldest reservations first,
- * as far as stock goes. Each order's own lines are held in one transaction;
- * a gift that has run out doesn't stop the order, it's flagged for staff.
+ * Sends the balance nudge: records the time (which locks cancel) on each
+ * reserved, unpaid, not yet nudged order. `orderIds` limits it to those
+ * orders; without it every open reservation of the campaign is nudged.
+ * Sending the messages is the caller's job (`notifyPreorder`).
  */
-export async function requestPreorderBalance(input: {
-  productId: string;
-  actor: AuditActor;
-  razorpay: RazorpayConfig | null;
-  limit?: number;
-}): Promise<BalanceRequestResult | { error: "PAYMENT_UNAVAILABLE" }> {
-  if (!input.razorpay) return { error: "PAYMENT_UNAVAILABLE" };
-  const orders = await prisma.order.findMany({
-    where: {
-      kind: "PREORDER",
-      status: "RESERVED",
-      balanceRequestedAt: null,
-      deletedAt: null,
-      items: {
-        some: { isFree: false, productVariant: { productId: input.productId } },
-      },
-    },
-    orderBy: [{ paidAt: "asc" }, { id: "asc" }],
-    take: input.limit ?? 200,
-    include: { items: true },
-  });
-
-  const result: BalanceRequestResult = {
-    asked: [],
-    confirmed: [],
-    waiting: 0,
-    missingGifts: 0,
-    failed: 0,
+export async function nudgePreorderBalance(input: {
+  orderIds?: string[];
+  campaignId?: string;
+  /** Staff sending it; null for the daily job. */
+  actor: AuditActor | null;
+  now?: Date;
+}): Promise<NudgeResult> {
+  const now = input.now ?? new Date();
+  const where: Prisma.OrderWhereInput = {
+    kind: "PREORDER",
+    status: "RESERVED",
+    balanceNudgedAt: null,
+    balancePaidAt: null,
+    deletedAt: null,
+    ...(input.orderIds ? { id: { in: input.orderIds } } : {}),
+    ...(input.campaignId ? { preorderCampaignId: input.campaignId } : {}),
   };
-  let outOfStock = false;
-
+  const orders = await prisma.order.findMany({
+    where,
+    select: { id: true, orderNumber: true },
+    orderBy: [{ paidAt: "asc" }, { id: "asc" }],
+    take: 1000,
+  });
+  const result: NudgeResult = {
+    nudged: [],
+    skipped: input.orderIds ? input.orderIds.length - orders.length : 0,
+  };
   for (const order of orders) {
-    if (outOfStock) {
-      result.waiting++;
-      continue;
-    }
-    const held = await prisma
-      .$transaction(async (tx) => {
-        const paid = order.items.filter((i) => !i.isFree);
-        for (const item of paid) {
-          if (!(await holdLine(tx, item))) throw new NoStock();
-        }
-        let missing = 0;
-        for (const item of order.items.filter((i) => i.isFree)) {
-          if (!(await holdLine(tx, item))) missing++;
-        }
-        const balance = toMinorUnits(order.balanceDue ?? 0);
-        await tx.order.update({
-          where: { id: order.id },
-          data: {
-            balanceRequestedAt: new Date(),
-            ...(missing
-              ? {
-                  needsAttention: `${missing} free item${missing === 1 ? " is" : "s are"} out of stock for this pre-order. Restock or tell the customer.`,
-                }
-              : {}),
-            ...(balance === 0
-              ? { status: "CONFIRMED", balancePaidAt: new Date() }
-              : {}),
-          },
+    const done = await prisma.$transaction(
+      async (tx) => {
+        const claimed = await tx.order.updateMany({
+          where: { id: order.id, status: "RESERVED", balanceNudgedAt: null },
+          data: { balanceNudgedAt: now, balanceRequestedAt: now },
         });
+        if (claimed.count === 0) return false;
         await tx.orderStatusHistory.create({
           data: {
             orderId: order.id,
-            status: balance === 0 ? "CONFIRMED" : "RESERVED",
-            note:
-              balance === 0
-                ? "Stock is in. Nothing left to pay"
-                : "Stock is in. Balance requested",
-            changedBy: input.actor.staffUserId,
+            status: "RESERVED",
+            note: "Balance nudge sent. Cancelling is closed",
+            changedBy: input.actor?.staffUserId ?? "system",
           },
         });
-        return { missing, balance };
-      })
-      .catch((error: unknown) => {
-        if (error instanceof NoStock) return null;
-        throw error;
-      });
-
-    if (!held) {
-      outOfStock = true;
-      result.waiting++;
-      continue;
-    }
-    result.missingGifts += held.missing;
-    if (held.balance === 0) {
-      await prisma.$transaction((tx) => convertHoldToSale(tx, order.id));
-      result.confirmed.push({
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-      });
-      continue;
-    }
-    try {
-      const rzp = await createRazorpayOrder(input.razorpay, {
-        amountPaise: held.balance,
-        receipt: `${order.orderNumber}-B`,
-        notes: { orderId: order.id, stage: "balance" },
-      });
-      await prisma.order.update({
-        where: { id: order.id },
-        data: { balanceRazorpayOrderId: rzp.id },
-      });
-      result.asked.push({
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        balanceDue: held.balance,
-      });
-    } catch (error) {
-      console.error("[preorders] balance order failed", error);
-      result.failed++;
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          needsAttention:
-            "Couldn't start the balance payment. Try asking for the balance again.",
-        },
-      });
-    }
+        if (input.actor)
+          await writeAuditLog(
+            {
+              staffUserId: input.actor.staffUserId,
+              action: "preorder.balance.nudge",
+              entityType: "Order",
+              entityId: order.id,
+              beforeState: { balanceNudgedAt: null },
+              afterState: { balanceNudgedAt: now.toISOString() },
+            },
+            tx,
+          );
+        return true;
+      },
+      { timeout: 20_000, maxWait: 10_000 },
+    );
+    if (done)
+      result.nudged.push({ orderId: order.id, orderNumber: order.orderNumber });
+    else result.skipped++;
   }
-
-  await writeAuditLog({
-    staffUserId: input.actor.staffUserId,
-    action: "preorder.balance.request",
-    entityType: "Product",
-    entityId: input.productId,
-    afterState: {
-      asked: result.asked.length,
-      confirmed: result.confirmed.length,
-      waiting: result.waiting,
-      missingGifts: result.missingGifts,
-      failed: result.failed,
-    },
-  });
   return result;
 }
-
-class NoStock extends Error {}
 
 /**
  * The Razorpay order a customer pays the balance with. Made again if it's
@@ -227,7 +128,7 @@ export async function getBalancePayment(
       orderNumber,
       kind: "PREORDER",
       status: "RESERVED",
-      balanceRequestedAt: { not: null },
+      balancePaidAt: null,
       deletedAt: null,
     },
     select: {
@@ -260,6 +161,10 @@ export async function getBalancePayment(
   };
 }
 
+function rupees(paise: number): string {
+  return `₹${(paise / 100).toLocaleString("en-IN")}`;
+}
+
 function creditCode(): string {
   const letters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let out = "CR-";
@@ -286,8 +191,10 @@ export type CancelPreorderResult =
 
 /**
  * Cancels a reserved pre-order (balance not paid). The reserve becomes a
- * personal credit for a year (default), or, staff only, is refunded.
- * Held stock and coupon uses go back.
+ * personal credit for a year (default), or, staff only, is refunded in cash
+ * (`refundAmount`, which may leave out the payment gateway fee). Held stock
+ * and coupon uses go back. A customer can cancel only until the window
+ * closes and before the balance nudge (`customerCanCancel`).
  */
 export async function cancelPreorder(input: {
   orderId: string;
@@ -297,6 +204,8 @@ export async function cancelPreorder(input: {
   customerId?: string;
   /** Staff cancelling. */
   actor?: AuditActor;
+  /** Paise, REFUND only. Defaults to the whole reserve. */
+  refundAmount?: number;
   razorpay?: RazorpayConfig | null;
   now?: Date;
 }): Promise<CancelPreorderResult> {
@@ -315,6 +224,9 @@ export async function cancelPreorder(input: {
       reserveTotal: true,
       contactEmail: true,
       contactPhone: true,
+      balanceNudgedAt: true,
+      balancePaidAt: true,
+      preorderCampaignId: true,
     },
   });
   if (!order) return { ok: false, reason: "NOT_FOUND" };
@@ -322,97 +234,125 @@ export async function cancelPreorder(input: {
     return { ok: false, reason: "NOT_CANCELLABLE" };
   if (input.mode === "REFUND" && !input.actor)
     return { ok: false, reason: "NOT_CANCELLABLE" };
-  const amount = toMinorUnits(order.reserveTotal ?? 0);
+  if (input.customerId && !input.actor) {
+    const campaign = order.preorderCampaignId
+      ? await getPreorderCampaign(order.preorderCampaignId)
+      : null;
+    if (!customerCanCancel(order, campaign?.deadlines.closesAt ?? null, now))
+      return { ok: false, reason: "NOT_CANCELLABLE" };
+  }
+  const reserve = toMinorUnits(order.reserveTotal ?? 0);
+  const amount =
+    input.mode === "REFUND" && input.refundAmount !== undefined
+      ? input.refundAmount
+      : reserve;
+  if (amount < 0 || amount > reserve)
+    return { ok: false, reason: "NOT_CANCELLABLE" };
   const changedBy =
     input.actor?.staffUserId ?? (input.customerId ? "customer" : "system");
 
-  const done = await prisma.$transaction(async (tx) => {
-    const claimed = await tx.order.updateMany({
-      where: { id: order.id, status: "RESERVED", balancePaidAt: null },
-      data: { status: "CANCELLED", cancelReason: input.reason },
-    });
-    if (claimed.count === 0) return null;
-    await releaseHold(tx, order.id);
-    // The coupons used on the reserve go back to the customer too.
-    await tx.couponRedemption.updateMany({
-      where: { orderId: order.id, status: "CONFIRMED" },
-      data: { status: "RELEASED" },
-    });
-    let credit: { id: string; code: string; endsAt: Date } | null = null;
-    if (input.mode === "CREDIT" && amount > 0) {
-      const contacts = [order.contactEmail, order.contactPhone].filter(
-        (c): c is string => Boolean(c),
-      );
-      const endsAt = new Date(now.getTime() + CREDIT_VALID_DAYS * DAY_MS);
-      let created: { id: string; code: string } | null = null;
-      for (let attempt = 0; attempt < 5 && !created; attempt++) {
-        const code = creditCode();
-        const taken = await tx.coupon.findFirst({
-          where: { code: { equals: code, mode: "insensitive" } },
-          select: { id: true },
-        });
-        if (taken) continue;
-        created = await tx.coupon.create({
-          data: {
-            code,
-            kind: "CREDIT",
-            description: `Credit from pre-order ${order.orderNumber}`,
-            isActive: true,
-            endsAt,
-            scope: "CART",
-            audience: "SPECIFIC",
-            allowedContacts: contacts,
-            appliesTo: "BOTH",
-            combinableWithCoupons: true,
-            rules: {
-              create: {
-                type: "FLAT",
-                config: { amount: amount / 100 },
-                stackable: true,
+  const done = await prisma.$transaction(
+    async (tx) => {
+      const claimed = await tx.order.updateMany({
+        where: {
+          id: order.id,
+          status: "RESERVED",
+          balancePaidAt: null,
+          // A customer can't cancel once the nudge has gone out, even if it
+          // went out a moment ago.
+          ...(input.customerId && !input.actor
+            ? { balanceNudgedAt: null }
+            : {}),
+        },
+        data: { status: "CANCELLED", cancelReason: input.reason },
+      });
+      if (claimed.count === 0) return null;
+      await releaseHold(tx, order.id);
+      // The coupons used on the reserve go back to the customer too.
+      await tx.couponRedemption.updateMany({
+        where: { orderId: order.id, status: "CONFIRMED" },
+        data: { status: "RELEASED" },
+      });
+      let credit: { id: string; code: string; endsAt: Date } | null = null;
+      if (input.mode === "CREDIT" && amount > 0) {
+        const contacts = [order.contactEmail, order.contactPhone].filter(
+          (c): c is string => Boolean(c),
+        );
+        const endsAt = new Date(now.getTime() + CREDIT_VALID_DAYS * DAY_MS);
+        let created: { id: string; code: string } | null = null;
+        for (let attempt = 0; attempt < 5 && !created; attempt++) {
+          const code = creditCode();
+          const taken = await tx.coupon.findFirst({
+            where: { code: { equals: code, mode: "insensitive" } },
+            select: { id: true },
+          });
+          if (taken) continue;
+          created = await tx.coupon.create({
+            data: {
+              code,
+              kind: "CREDIT",
+              description: `Credit from pre-order ${order.orderNumber}`,
+              isActive: true,
+              endsAt,
+              scope: "CART",
+              audience: "SPECIFIC",
+              allowedContacts: contacts,
+              appliesTo: "BOTH",
+              combinableWithCoupons: true,
+              rules: {
+                create: {
+                  type: "FLAT",
+                  config: { amount: amount / 100 },
+                  stackable: true,
+                },
               },
             },
-          },
-          select: { id: true, code: true },
+            select: { id: true, code: true },
+          });
+        }
+        if (!created) throw new Error("Could not make a credit code");
+        credit = { ...created, endsAt };
+        await tx.order.update({
+          where: { id: order.id },
+          data: { creditCouponId: created.id },
         });
       }
-      if (!created) throw new Error("Could not make a credit code");
-      credit = { ...created, endsAt };
-      await tx.order.update({
-        where: { id: order.id },
-        data: { creditCouponId: created.id },
-      });
-    }
-    await tx.orderStatusHistory.create({
-      data: {
-        orderId: order.id,
-        status: "CANCELLED",
-        note:
-          input.mode === "CREDIT"
-            ? `${input.reason}. Reserve kept as credit ${credit?.code ?? ""}`.trim()
-            : `${input.reason}. Reserve refunded`,
-        changedBy,
-      },
-    });
-    if (input.actor) {
-      await writeAuditLog(
-        {
-          staffUserId: input.actor.staffUserId,
-          action: "preorder.cancel",
-          entityType: "Order",
-          entityId: order.id,
-          beforeState: { status: "RESERVED" },
-          afterState: {
-            status: "CANCELLED",
-            mode: input.mode,
-            amount: amount / 100,
-            creditCode: credit?.code ?? null,
-          },
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          status: "CANCELLED",
+          note:
+            input.mode === "CREDIT"
+              ? `${input.reason}. Reserve kept as credit ${credit?.code ?? ""}`.trim()
+              : amount < reserve
+                ? `${input.reason}. ${rupees(amount)} of the ${rupees(reserve)} reserve refunded (payment fee kept)`
+                : `${input.reason}. Reserve refunded`,
+          changedBy,
         },
-        tx,
-      );
-    }
-    return { credit };
-  });
+      });
+      if (input.actor) {
+        await writeAuditLog(
+          {
+            staffUserId: input.actor.staffUserId,
+            action: "preorder.cancel",
+            entityType: "Order",
+            entityId: order.id,
+            beforeState: { status: "RESERVED" },
+            afterState: {
+              status: "CANCELLED",
+              mode: input.mode,
+              amount: amount / 100,
+              reserve: reserve / 100,
+              creditCode: credit?.code ?? null,
+            },
+          },
+          tx,
+        );
+      }
+      return { credit };
+    },
+    { timeout: 20_000, maxWait: 10_000 },
+  );
   if (!done) return { ok: false, reason: "NOT_CANCELLABLE" };
 
   if (input.mode === "REFUND" && amount > 0) {
@@ -446,70 +386,152 @@ export async function cancelPreorder(input: {
 }
 
 export interface PreorderReminderRun {
-  /** Send a reminder to these orders. */
+  /**
+   * Send the balance message to these orders: reminder 0 is the nudge,
+   * 1 is the last call before the deadline.
+   */
   remind: { orderId: string; orderNumber: string; reminder: number }[];
   /** These were cancelled and turned into credit. */
   creditMade: Extract<CancelPreorderResult, { ok: true }>[];
 }
 
 /**
- * The daily job: balance reminders after 3 and 7 days, then after 14 days
- * the reservation is cancelled and the reserve turns into a credit for a
- * year. Sending the messages is the caller's job.
+ * The daily job, per open reservation, by its campaign's dates:
+ * - from the nudge date (window close minus N days): the balance nudge,
+ *   unless staff already sent it;
+ * - LAST_CALL_DAYS before the balance is due: one last call;
+ * - after the balance due date: cancelled, the reserve becomes credit for a
+ *   year, nothing ships and the offer ends.
+ * Sending the messages is the caller's job.
  */
 export async function runPreorderReminders(
   now: Date = new Date(),
+  /** Only this campaign's orders (tests). */
+  campaignId?: string,
 ): Promise<PreorderReminderRun> {
   const run: PreorderReminderRun = { remind: [], creditMade: [] };
   const open = await prisma.order.findMany({
     where: {
       kind: "PREORDER",
       status: "RESERVED",
-      balanceRequestedAt: { not: null },
       balancePaidAt: null,
       deletedAt: null,
+      preorderCampaignId: campaignId ?? { not: null },
     },
     select: {
       id: true,
       orderNumber: true,
-      balanceRequestedAt: true,
+      preorderCampaignId: true,
+      balanceNudgedAt: true,
       balanceReminderCount: true,
     },
-    take: 500,
+    orderBy: { paidAt: "asc" },
+    take: 1000,
   });
+  const campaigns = new Map<string, PreorderCampaignView | null>();
+  const toNudge: string[] = [];
   for (const order of open) {
-    const days = (now.getTime() - order.balanceRequestedAt!.getTime()) / DAY_MS;
-    if (days >= BALANCE_CANCEL_DAYS) {
+    const id = order.preorderCampaignId!;
+    if (!campaigns.has(id)) campaigns.set(id, await getPreorderCampaign(id));
+    const campaign = campaigns.get(id);
+    if (!campaign) continue;
+    const { nudgeAt, balanceDueAt } = campaign.deadlines;
+    if (now >= balanceDueAt) {
       const cancelled = await cancelPreorder({
         orderId: order.id,
         mode: "CREDIT",
-        reason: `Balance not paid within ${BALANCE_CANCEL_DAYS} days`,
+        reason: "Balance not paid by the due date",
         now,
       });
       if (cancelled.ok) run.creditMade.push(cancelled);
       continue;
     }
-    const due = BALANCE_REMINDER_DAYS[order.balanceReminderCount];
-    if (due !== undefined && days >= due) {
+    if (!order.balanceNudgedAt) {
+      if (now >= nudgeAt) toNudge.push(order.id);
+      continue;
+    }
+    const lastCallAt = new Date(
+      balanceDueAt.getTime() - LAST_CALL_DAYS * DAY_MS,
+    );
+    if (order.balanceReminderCount === 0 && now >= lastCallAt) {
       const claimed = await prisma.order.updateMany({
-        where: {
-          id: order.id,
-          balanceReminderCount: order.balanceReminderCount,
-        },
-        data: {
-          balanceReminderCount: { increment: 1 },
-          balanceRemindedAt: now,
-        },
+        where: { id: order.id, balanceReminderCount: 0 },
+        data: { balanceReminderCount: 1, balanceRemindedAt: now },
       });
       if (claimed.count === 1)
         run.remind.push({
           orderId: order.id,
           orderNumber: order.orderNumber,
-          reminder: order.balanceReminderCount + 1,
+          reminder: 1,
         });
     }
   }
+  if (toNudge.length) {
+    const nudged = await nudgePreorderBalance({
+      orderIds: toNudge,
+      actor: null,
+      now,
+    });
+    for (const order of nudged.nudged)
+      run.remind.push({ ...order, reminder: 0 });
+  }
   return run;
+}
+
+export interface RefundSuggestion {
+  /** Paise. */
+  reserve: number;
+  /** Paise Razorpay kept on the reserve payment, or null if unknown. */
+  gatewayFee: number | null;
+  /** Paise to fill in the refund box. */
+  suggested: number;
+  /** The shop setting: cash refunds keep the gateway fee. */
+  keepsFee: boolean;
+}
+
+/**
+ * What staff are offered when refunding a cancelled pre-order in cash: the
+ * reserve minus what Razorpay kept on that payment (when the shop setting
+ * says so). Staff can change the amount, e.g. to refund in full.
+ */
+export async function suggestPreorderRefund(
+  orderId: string,
+  razorpay: RazorpayConfig | null,
+): Promise<RefundSuggestion | null> {
+  const order = await prisma.order.findFirst({
+    where: { id: orderId, kind: "PREORDER", deletedAt: null },
+    select: {
+      reserveTotal: true,
+      razorpayOrderId: true,
+      payments: {
+        where: {
+          provider: "razorpay",
+          status: { in: ["SUCCESS", "REFUNDED"] },
+        },
+        orderBy: { createdAt: "asc" },
+        take: 1,
+        select: { providerPaymentId: true },
+      },
+    },
+  });
+  if (!order) return null;
+  const reserve = toMinorUnits(order.reserveTotal ?? 0);
+  const { refundKeepsGatewayFee: keepsFee } = await getStoreSettings();
+  let gatewayFee: number | null = null;
+  const paymentId = order.payments[0]?.providerPaymentId;
+  if (razorpay && paymentId) {
+    try {
+      const payment = await fetchRazorpayPayment(razorpay, paymentId);
+      gatewayFee = typeof payment.fee === "number" ? payment.fee : null;
+    } catch (error) {
+      console.error("[preorders] could not read the payment fee", error);
+    }
+  }
+  const suggested =
+    keepsFee && gatewayFee !== null
+      ? Math.max(0, reserve - gatewayFee)
+      : reserve;
+  return { reserve, gatewayFee, suggested, keepsFee };
 }
 
 /** Paise left on each of a customer's personal credits, for their account. */

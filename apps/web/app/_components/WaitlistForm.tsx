@@ -24,6 +24,8 @@ const ERROR_MESSAGES: Record<string, string> = {
     "This phone number is already on the list with a different email. Use the email you signed up with.",
   CONSENT_REQUIRED: "Tick the box to agree before joining.",
   RATE_LIMITED: "Too many attempts, try again in a few minutes.",
+  INVITE_ONLY:
+    "Onwei Insiders is invite-only now. Ask an Insider for their number, or apply on the Insiders page.",
 };
 
 type Field = "name" | "email" | "phone";

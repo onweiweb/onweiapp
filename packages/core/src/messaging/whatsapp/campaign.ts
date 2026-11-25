@@ -102,6 +102,13 @@ function istDayStart(day: string): Date | null {
 export function audienceWhere(
   audience: CampaignAudience,
 ): Prisma.WaitlistEntryWhereInput {
+  // Members only: applications waiting for approval are not Insiders yet.
+  return { status: "APPROVED", ...audienceGroupWhere(audience) };
+}
+
+function audienceGroupWhere(
+  audience: CampaignAudience,
+): Prisma.WaitlistEntryWhereInput {
   switch (audience.group) {
     case "noAddress":
       return { cardAddress: { is: null } };
@@ -377,7 +384,7 @@ export async function sendCampaignBatch(
 
   const unique = [...new Set(ids)].slice(0, CAMPAIGN_BATCH_SIZE);
   const members = await prisma.waitlistEntry.findMany({
-    where: { id: { in: unique }, unsubscribedAt: null },
+    where: { id: { in: unique }, unsubscribedAt: null, status: "APPROVED" },
     select: { id: true, fullName: true, phone: true, insiderCode: true },
   });
   const phones = members.map((m) => m.phone);

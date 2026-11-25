@@ -289,13 +289,20 @@ docs/       -> architecture, schema rationale, test plan, security notes, open d
 
 ## Current phase
 
-**Latest (2026-11-09):** the commerce build (Insider codes, coupons, sign-in, cart, checkout with Razorpay and COD,
+**Latest (2026-11-26, local, not pushed):** owner brief rework. Pre-orders through the bag with a reserve from the
+bag total before discounts (₹500 up to ₹4,000, ₹900 above), stock held at reserve, balance nudge (auto 7 days before
+close or from admin) that locks cancel, balance due 7 days after close then credit, cash refunds keep the gateway fee;
+Insider ID box above the pay button and sign-in by Insider ID; invite-only Insiders (invite by number or apply,
+admin Applications) with invite rewards. Needs prod migration `20261127120000_preorder_rework_insider_access` before
+the push. Details: `docs/COMMERCE_BUILD_PLAN.md` sections 14a and 20.
+
+**Earlier (2026-11-09):** the commerce build (Insider codes, coupons, sign-in, cart, checkout with Razorpay and COD,
 account, returns, staff tools) is pushed (3650c51, then the feedback round b64b37c) and prod is migrated. Prod is still
 in WAITLIST mode, so the shop is hidden until the owner flips it to LIVE. Razorpay live keys and webhook, Resend
 (`onwei.in` and `mail.onwei.in` verified) and `admin.onwei.in` are set up. Read `docs/COMMERCE_BUILD_PLAN.md`
 (progress log, launch checklist, section 18) before touching any of it. Left: owner's admin setup (GST/HSN, shop rules,
 marquee, refund permission, Insider tiers), Insider email send (100 a day), Phase G (real SMS and WhatsApp, phone
-sign-in is refused on live prod until then), Phase H pre-order (built locally 2026-11-18, not pushed, needs 2 prod migrations first, see section 14a), and unplanned gaps
+sign-in is refused on live prod until then), Phase H pre-order (pushed f190e5e; reworked locally 2026-11-26, see the note below and section 14a), and unplanned gaps
 (shipped/delivered/refund emails, PIN autofill). GST invoicing, delivery partner and CRM are still not started.
 Local test data: dev waitlist entry and Insider code WEI6615 for the owner's own email; test orders ONW1001 to ONW1006.
 Contact Us (2026-11-09, pushed 8030251, prod migrated): `/contact` from Figma 1189:6006 / 1189:6203, reusing SiteHeader, FaqSection

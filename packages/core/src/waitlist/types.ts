@@ -19,7 +19,8 @@ export type SubscribeToWaitlistFailureReason =
   | "INVALID_EMAIL"
   | "INVALID_PHONE"
   | "DUPLICATE_EMAIL"
-  | "DUPLICATE_PHONE";
+  | "DUPLICATE_PHONE"
+  | "INVITE_ONLY";
 
 export type SubscribeToWaitlistResult =
   | { ok: true; alreadyJoined: true }

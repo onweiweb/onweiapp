@@ -3,6 +3,7 @@ import { isValidEmail } from "../validation/email";
 import { validatePhone } from "../validation/phone";
 import { getSiteSetting } from "../settings/siteSetting";
 import { assignInsiderCode } from "../insiders/insiderCode";
+import { getInsiderJoinMode } from "../insiders/applications";
 import type {
   SubscribeToWaitlistInput,
   SubscribeToWaitlistResult,
@@ -16,6 +17,10 @@ function clampMovementFlex(value: number | undefined): number | null {
 export async function subscribeToWaitlist(
   input: SubscribeToWaitlistInput,
 ): Promise<SubscribeToWaitlistResult> {
+  // Invite-only: new people come in through an Insider's number or an
+  // application (insiders/applications.ts), not the open form.
+  if ((await getInsiderJoinMode()) === "INVITE_OR_APPLY")
+    return { ok: false, reason: "INVITE_ONLY" };
   const fullName = input.fullName.trim();
   if (fullName.length < 2) return { ok: false, reason: "INVALID_NAME" };
 

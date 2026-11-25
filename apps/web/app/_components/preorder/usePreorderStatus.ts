@@ -11,7 +11,10 @@ const NOT_LIVE: PreorderPublicStatus = {
   state: "LIVE",
   live: false,
   opensAt: null,
-  reserveAmount: 0,
+  reserveLow: 0,
+  reserveHigh: 0,
+  reserveThreshold: 0,
+  balanceDueBy: null,
   productIds: [],
   tiers: [],
   liveIndex: -1,
@@ -59,7 +62,8 @@ export function isOnPreorder(
  * What a product's buy button does right now. LOADING until the status is
  * known, so a click can never land in the wrong mode.
  * - SHOP: normal add to bag.
- * - RESERVE: pre-order is open for this product.
+ * - RESERVE: pre-order is open for this product: it goes in the bag and
+ *   checkout charges the reserve.
  * - SOON / CLOSED: on the campaign, but no lap is running.
  * - LAUNCH: pre-order mode, not on the campaign: waits for launch.
  */
@@ -134,4 +138,11 @@ export function useNow(ms = 1000): number {
 /** "₹900" from paise. */
 export function reserveText(paise: number): string {
   return `₹${(paise / 100).toLocaleString("en-IN")}`;
+}
+
+/** "Reserve ₹500 today, ₹900 on bags over ₹4,000." */
+export function reserveRuleText(status: PreorderPublicStatus): string {
+  if (status.reserveLow === status.reserveHigh)
+    return `Reserve ${reserveText(status.reserveLow)} today.`;
+  return `Reserve ${reserveText(status.reserveLow)} today, ${reserveText(status.reserveHigh)} on bags over ${reserveText(status.reserveThreshold)}.`;
 }

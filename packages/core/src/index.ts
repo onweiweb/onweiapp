@@ -300,6 +300,16 @@ export {
   assignInsiderCode,
   assignMissingInsiderCodes,
 } from "./insiders/insiderCode";
+export { findInsiderPhone, maskPhone } from "./insiders/insiderSignIn";
+export * from "./insiders/applications";
+export * from "./insiders/inviteRewards";
+export {
+  insiderSender,
+  renderInsiderWelcomeEmail,
+  sendInsiderWhatsApp,
+  sendInsiderWelcome,
+  type InsiderWelcomeRecipient,
+} from "./insiders/insiderWelcome";
 export {
   PRINT_RUN_SIZE,
   LOW_FREE_CARDS,
@@ -442,6 +452,7 @@ export {
   variantLabelOf,
   type CartOwner,
   type CartView,
+  type CartPreorder,
   type CartLineView,
   type CodeView,
   type CartActionResult,

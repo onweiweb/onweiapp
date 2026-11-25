@@ -36,3 +36,7 @@ export type {
   PreorderEmailInput,
   PreorderCreditEmailInput,
 } from "./templates/preorderEmails";
+export {
+  renderInsiderApplicationEmail,
+  renderInviteRewardEmail,
+} from "./templates/insiderAccessEmails";

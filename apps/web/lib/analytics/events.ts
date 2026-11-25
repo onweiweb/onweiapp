@@ -38,6 +38,8 @@ export interface AnalyticsEvents {
   preorder_popup_shown: { tier: string };
   preorder_banner_clicked: { tier: string };
   preorder_reserved: { tier: string; reserve: number; total: number };
+  /** The Insider box in the bag or at checkout was used. */
+  insider_box_opened: { signed_in: boolean };
   preorder_balance_paid: { order_number: string };
 
   // Blog events.

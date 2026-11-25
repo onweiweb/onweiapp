@@ -1,5 +1,5 @@
 import Image from "@/_components/ScaledImage";
-import { getSiteSetting } from "@onwei/core";
+import { getInsiderJoinMode, getSiteSetting } from "@onwei/core";
 import { WaitlistHeader } from "@/_components/WaitlistHeader";
 import { WaitlistCountdown } from "@/_components/WaitlistCountdown";
 import { WaitlistCardScroll } from "@/_components/WaitlistCardScroll";
@@ -32,6 +32,7 @@ export default async function WaitlistPage() {
     showBlogOnWaitlist,
   } = await getSiteSetting();
   const articles = showBlogOnWaitlist ? await listPublishedArticles(3) : [];
+  const joinMode = await getInsiderJoinMode();
 
   return (
     <main className="flex flex-col items-center bg-onwei-beige">
@@ -104,7 +105,10 @@ export default async function WaitlistPage() {
         </WaitlistCardScroll>
       </section>
 
-      <InsidersJoinSection instagramUrl={instagramUrl} />
+      <InsidersJoinSection
+        instagramUrl={instagramUrl}
+        inviteOnly={joinMode === "INVITE_OR_APPLY"}
+      />
 
       <WaitlistBlogSection articles={articles} />
 

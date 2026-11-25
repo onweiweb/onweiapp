@@ -21,8 +21,21 @@ const adapter = new PrismaPg({
 // instance on `globalThis` keeps a single client across reloads.
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
+// Interactive transactions time out after 5s by default. Tests against the
+// far-away dev database set PRISMA_TRANSACTION_TIMEOUT_MS (vitest config) so
+// slow round trips don't expire them; production keeps the default.
+const transactionTimeout = Number(process.env.PRISMA_TRANSACTION_TIMEOUT_MS);
+const transactionOptions =
+  Number.isFinite(transactionTimeout) && transactionTimeout > 0
+    ? { timeout: transactionTimeout, maxWait: transactionTimeout }
+    : undefined;
+
 export const prisma: PrismaClient =
-  globalForPrisma.prisma ?? new PrismaClient({ adapter });
+  globalForPrisma.prisma ??
+  new PrismaClient({
+    adapter,
+    ...(transactionOptions ? { transactionOptions } : {}),
+  });
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;

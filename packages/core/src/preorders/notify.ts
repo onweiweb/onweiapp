@@ -10,6 +10,12 @@ import {
 import { toMinorUnits } from "../catalog/helpers";
 import { firstNameOf } from "../messaging/whatsapp/purposes";
 import { sendWhatsApp } from "../messaging/whatsapp/send";
+import { getPreorderCampaign } from "./campaign";
+
+/** The deadline is exclusive (midnight): the last day to pay is the day before. */
+function lastDayBefore(moment: Date): Date {
+  return new Date(moment.getTime() - 1);
+}
 
 /**
  * Tells the customer about their pre-order by email and WhatsApp (when the
@@ -40,20 +46,27 @@ export async function notifyPreorder(
       include: {
         items: true,
         customer: { select: { id: true, name: true } },
-        preorderCampaign: { select: { expectedShipDate: true } },
       },
     });
     if (!order || order.kind !== "PREORDER") return;
-    const main = order.items.find((i) => !i.isFree);
+    const campaign = order.preorderCampaignId
+      ? await getPreorderCampaign(order.preorderCampaignId)
+      : null;
+    const paid = order.items.filter((i) => !i.isFree);
     const name = order.customer.name;
-    const product = main
-      ? `${main.productName}${main.variantLabel ? ` (${main.variantLabel})` : ""}`
-      : "Your pre-order";
+    const items = paid.map((item) => ({
+      label: `${item.productName}${item.variantLabel ? ` (${item.variantLabel})` : ""}`,
+      quantity: item.quantity,
+      total: toMinorUnits(item.totalAmount),
+    }));
+    const product =
+      items.length === 0
+        ? "Your pre-order"
+        : items.map((item) => `${item.label} x ${item.quantity}`).join(", ");
     const input: PreorderEmailInput = {
       name,
       orderNumber: order.orderNumber,
-      product,
-      quantity: main?.quantity ?? 1,
+      items,
       tierLabel: order.preorderTierLabel,
       gifts: order.items
         .filter((i) => i.isFree)
@@ -64,8 +77,11 @@ export async function notifyPreorder(
       total: toMinorUnits(order.total),
       paidNow: toMinorUnits(order.reserveTotal ?? 0),
       balance: toMinorUnits(order.balanceDue ?? 0),
-      expectedShipDate: order.preorderCampaign?.expectedShipDate
-        ? DATE.format(order.preorderCampaign.expectedShipDate)
+      expectedShipDate: campaign?.expectedShipDate
+        ? DATE.format(campaign.expectedShipDate)
+        : null,
+      balanceDueBy: campaign
+        ? DATE.format(lastDayBefore(campaign.deadlines.balanceDueAt))
         : null,
       siteUrl: options.siteUrl,
     };
@@ -84,7 +100,7 @@ export async function notifyPreorder(
           values: {
             firstName: firstNameOf(name),
             orderNumber: order.orderNumber,
-            product: `${product} x ${input.quantity}`,
+            product,
             paidNow: rupeesText(input.paidNow),
             balance: rupeesText(input.balance),
           },

@@ -90,7 +90,8 @@ export async function assignInsiderCode(
 /** Gives every waitlist entry without a code one. Returns how many got one. */
 export async function assignMissingInsiderCodes(): Promise<number> {
   const missing = await prisma.waitlistEntry.findMany({
-    where: { insiderCode: null },
+    // Applications get their code when staff approve them.
+    where: { insiderCode: null, status: "APPROVED" },
     select: { id: true },
     orderBy: { submittedAt: "asc" },
   });

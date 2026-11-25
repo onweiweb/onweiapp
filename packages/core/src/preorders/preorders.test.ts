@@ -6,7 +6,7 @@ import {
   validatePreorderCampaign,
   type PreorderCampaignInput,
 } from "./campaign";
-import { splitReserve } from "./quote";
+import { customerCanCancel, preorderDeadlines, reserveForBag } from "./rules";
 import { storefrontStateOf } from "./storefront";
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -49,27 +49,79 @@ describe("tier timing", () => {
   });
 });
 
-describe("reserve split", () => {
-  it("takes the reserve per item and leaves the rest as balance", () => {
+describe("reserve from the bag", () => {
+  const settings = {
+    reserveLow: 50000,
+    reserveHigh: 90000,
+    reserveThreshold: 400000,
+  };
+
+  it("takes ₹500 up to ₹4,000 at product price", () => {
     expect(
-      splitReserve({
-        reservePerItem: 90000,
-        quantity: 2,
-        merchandiseTotal: 680000,
-        total: 680000,
-      }),
-    ).toEqual({ reserveTotal: 180000, balanceDue: 500000 });
+      reserveForBag(settings, { productTotal: 249900, total: 212400 }),
+    ).toEqual({ reserveTotal: 50000, balanceDue: 162400 });
+    expect(
+      reserveForBag(settings, { productTotal: 400000, total: 340000 })
+        .reserveTotal,
+    ).toBe(50000);
   });
 
-  it("never asks for more than the items cost", () => {
+  it("takes ₹900 above ₹4,000, before any discount", () => {
+    // ₹5,498 of products, lap 1 + Insider = 20% off: ₹4,398.40 total.
     expect(
-      splitReserve({
-        reservePerItem: 90000,
-        quantity: 1,
-        merchandiseTotal: 50000,
-        total: 59900,
-      }),
-    ).toEqual({ reserveTotal: 50000, balanceDue: 9900 });
+      reserveForBag(settings, { productTotal: 549800, total: 439840 }),
+    ).toEqual({ reserveTotal: 90000, balanceDue: 349840 });
+    expect(
+      reserveForBag(settings, { productTotal: 400100, total: 320080 })
+        .reserveTotal,
+    ).toBe(90000);
+  });
+
+  it("never asks for more than the order total", () => {
+    expect(
+      reserveForBag(settings, { productTotal: 99900, total: 30000 }),
+    ).toEqual({ reserveTotal: 30000, balanceDue: 0 });
+  });
+});
+
+describe("deadlines and cancelling", () => {
+  const endsAt = new Date(start.getTime() + 30 * DAY);
+  const deadlines = preorderDeadlines({
+    endsAt,
+    nudgeDaysBeforeClose: 7,
+    balanceDueDaysAfterClose: 7,
+  });
+
+  it("nudges a week before close and wants the balance a week after", () => {
+    expect(deadlines.closesAt).toEqual(endsAt);
+    expect(deadlines.nudgeAt.getTime()).toBe(endsAt.getTime() - 7 * DAY);
+    expect(deadlines.balanceDueAt.getTime()).toBe(endsAt.getTime() + 7 * DAY);
+  });
+
+  const reserved = {
+    status: "RESERVED",
+    balanceNudgedAt: null,
+    balancePaidAt: null,
+  };
+
+  it("lets the customer cancel until the window closes", () => {
+    const before = new Date(endsAt.getTime() - 1);
+    expect(customerCanCancel(reserved, endsAt, before)).toBe(true);
+    expect(customerCanCancel(reserved, endsAt, endsAt)).toBe(false);
+  });
+
+  it("locks cancelling once the nudge went out or the balance is paid", () => {
+    const mid = new Date(start.getTime() + 2 * DAY);
+    expect(
+      customerCanCancel({ ...reserved, balanceNudgedAt: mid }, endsAt, mid),
+    ).toBe(false);
+    expect(
+      customerCanCancel({ ...reserved, balancePaidAt: mid }, endsAt, mid),
+    ).toBe(false);
+    expect(
+      customerCanCancel({ ...reserved, status: "CONFIRMED" }, endsAt, mid),
+    ).toBe(false);
+    expect(customerCanCancel(reserved, null, mid)).toBe(false);
   });
 });
 
@@ -78,7 +130,11 @@ describe("campaign form checks", () => {
     name: "Launch pre-order",
     isActive: true,
     startDate: "2026-12-01",
-    reserveAmount: 900,
+    reserveLow: 500,
+    reserveHigh: 900,
+    reserveThreshold: 4000,
+    nudgeDaysBeforeClose: 7,
+    balanceDueDaysAfterClose: 7,
     expectedShipDate: null,
     productIds: ["p1"],
     insiderGiftVariantId: null,
@@ -101,12 +157,14 @@ describe("campaign form checks", () => {
     const errors = validatePreorderCampaign({
       ...good,
       name: "",
-      reserveAmount: 0,
+      reserveLow: 0,
+      balanceDueDaysAfterClose: 0,
       productIds: [],
       tiers: [{ ...good.tiers[0]!, days: 0 }],
     });
     expect(errors.name).toBeTruthy();
-    expect(errors.reserveAmount).toBeTruthy();
+    expect(errors.reserveLow).toBeTruthy();
+    expect(errors.balanceDueDaysAfterClose).toBeTruthy();
     expect(errors.productIds).toBeTruthy();
     expect(errors.tier0).toBeTruthy();
   });

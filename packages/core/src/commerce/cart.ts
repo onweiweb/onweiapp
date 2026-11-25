@@ -17,7 +17,10 @@ import {
   type InsiderStatus,
 } from "./customerIdentity";
 import { getStoreSettings, type StoreSettings } from "./storeSettings";
-import { getStorefront } from "../preorders/storefront";
+import { getStorefront, type Storefront } from "../preorders/storefront";
+import { liveTier } from "../preorders/campaign";
+import { preorderGiftsFor, type PreorderGift } from "../preorders/quote";
+import { reserveForBag } from "../preorders/rules";
 import {
   getInsiderStackMode,
   type InsiderStackMode,
@@ -74,11 +77,22 @@ function sellable(variant: CartItemRow["productVariant"]): boolean {
 }
 
 /**
- * In pre-order mode only pre-order products can be bought, through the
- * pre-order checkout. The normal cart opens when the site goes live.
+ * The bag is shut: pre-order mode with no lap running (before the campaign
+ * starts, or after it ends). While a lap runs, the bag takes campaign
+ * products only and checkout charges the reserve.
  */
 export async function shopIsPreorderOnly(): Promise<boolean> {
-  return (await getStorefront()).preorderMode;
+  const storefront = await getStorefront();
+  return storefront.preorderMode && storefront.state !== "PREORDER_OPEN";
+}
+
+/** Whether this product can go in the bag right now. */
+function bagTakes(storefront: Storefront, productId: string): boolean {
+  if (!storefront.preorderMode) return true;
+  return (
+    storefront.state === "PREORDER_OPEN" &&
+    storefront.campaignProductIds.includes(productId)
+  );
 }
 
 /**
@@ -159,11 +173,15 @@ export async function addToCart(
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > MAX_PER_LINE) {
     return { ok: false, reason: "INVALID_QUANTITY" };
   }
-  if (await shopIsPreorderOnly()) return { ok: false, reason: "PREORDER_ONLY" };
-  const variant = await prisma.productVariant.findUnique({
-    where: { id: variantId },
-    include: { inventory: true, product: true },
-  });
+  const [storefront, variant] = await Promise.all([
+    getStorefront(),
+    prisma.productVariant.findUnique({
+      where: { id: variantId },
+      include: { inventory: true, product: true },
+    }),
+  ]);
+  if (variant && !bagTakes(storefront, variant.productId))
+    return { ok: false, reason: "PREORDER_ONLY" };
   if (
     !variant ||
     variant.status !== "ACTIVE" ||
@@ -212,9 +230,10 @@ export async function setCartQuantity(
     });
     return { ok: true, quantity: 0 };
   }
-  if (await shopIsPreorderOnly()) return { ok: false, reason: "PREORDER_ONLY" };
   const item = cart.items.find((row) => row.productVariantId === variantId);
   if (!item) return addToCart(owner, variantId, quantity);
+  if (!bagTakes(await getStorefront(), item.productVariant.productId))
+    return { ok: false, reason: "PREORDER_ONLY" };
   const stock = available(item.productVariant);
   const allowed = Math.min(quantity, stock, MAX_PER_LINE);
   if (allowed <= 0) return { ok: false, reason: "OUT_OF_STOCK" };
@@ -352,10 +371,31 @@ export interface CartView {
   /** Nothing in the cart stops checkout. */
   canCheckout: boolean;
   /**
-   * The site is in pre-order mode: the bag is kept for launch but can't be
-   * checked out; pre-order items are reserved one by one instead.
+   * The bag is shut: pre-order mode with no lap running. Nothing can be
+   * added or checked out until a lap opens or the shop goes live.
    */
   preorderOnly: boolean;
+  /** A lap is running: this bag is a pre-order and pays the reserve now. */
+  preorder: CartPreorder | null;
+}
+
+export interface CartPreorder {
+  campaignId: string;
+  tierLabel: string;
+  percent: number;
+  /** Paise. Bag at product price, before any discount (sets the reserve). */
+  productTotal: number;
+  /** Paise, paid today. */
+  reserveTotal: number;
+  /** Paise, paid later. */
+  balanceDue: number;
+  /** Paise. Bag total above this pays the higher reserve. */
+  reserveThreshold: number;
+  reserveLow: number;
+  reserveHigh: number;
+  gifts: PreorderGift[];
+  closesAt: string;
+  balanceDueBy: string;
 }
 
 export interface CartContext {
@@ -389,14 +429,23 @@ export async function getCartView(
     context?: CartContext;
   } = {},
 ): Promise<CartView> {
-  const [context, cart, preorderOnly] = await Promise.all([
+  const [context, cart, storefront] = await Promise.all([
     options.context ? Promise.resolve(options.context) : loadCartContext(owner),
     findCart(owner),
-    shopIsPreorderOnly(),
+    getStorefront(),
   ]);
-  // In pre-order mode the bag is closed: anything left from before shows
-  // nothing (bags are emptied when the mode is switched on).
-  const items = preorderOnly ? [] : (cart?.items ?? []);
+  const preorderOnly =
+    storefront.preorderMode && storefront.state !== "PREORDER_OPEN";
+  const campaign =
+    storefront.state === "PREORDER_OPEN" ? storefront.campaign : null;
+  const tier = campaign ? liveTier(campaign) : null;
+  // Pre-order mode: only campaign products count (bags are emptied when the
+  // mode is switched on); with no lap running the bag shows nothing.
+  const items = preorderOnly
+    ? []
+    : (cart?.items ?? []).filter((item) =>
+        bagTakes(storefront, item.productVariant.productId),
+      );
 
   const lines: CartLineView[] = [];
   for (const item of items) {
@@ -465,9 +514,18 @@ export async function getCartView(
         ? { percent: context.insider.percent }
         : null,
     insiderMode: context.insiderMode,
-    orderKind: "STANDARD",
+    orderKind: tier ? "PREORDER" : "STANDARD",
+    ...(tier
+      ? {
+          preorder: {
+            percent: tier.percent,
+            label: `${tier.label}, ${tier.percent}% off`,
+          },
+        }
+      : {}),
     coupons: resolved.coupons,
-    paymentMethod: options.paymentMethod ?? null,
+    // Pre-orders are paid online only.
+    paymentMethod: tier ? "RAZORPAY" : (options.paymentMethod ?? null),
     shipping: {
       freeThreshold: context.settings.freeShippingThreshold,
       fee: context.settings.deliveryFee,
@@ -515,6 +573,34 @@ export async function getCartView(
     };
   });
 
+  let preorder: CartPreorder | null = null;
+  if (campaign && tier) {
+    const itemCount = priceable.reduce((sum, line) => sum + line.quantity, 0);
+    const split = reserveForBag(campaign, {
+      productTotal: pricing.subtotal,
+      total: pricing.total,
+    });
+    preorder = {
+      campaignId: campaign.id,
+      tierLabel: tier.label,
+      percent: tier.percent,
+      productTotal: pricing.subtotal,
+      ...split,
+      reserveThreshold: campaign.reserveThreshold,
+      reserveLow: campaign.reserveLow,
+      reserveHigh: campaign.reserveHigh,
+      gifts: await preorderGiftsFor({
+        campaign,
+        tier,
+        itemCount,
+        insider: insiderOn,
+        freeItems: pricing.freeItems,
+      }),
+      closesAt: campaign.deadlines.closesAt.toISOString(),
+      balanceDueBy: campaign.deadlines.balanceDueAt.toISOString(),
+    };
+  }
+
   return {
     cartId: cart?.id ?? null,
     lines,
@@ -540,6 +626,7 @@ export async function getCartView(
       priceable.length > 0 &&
       lines.every((line) => line.issue === null),
     preorderOnly,
+    preorder,
   };
 }
 
@@ -649,7 +736,8 @@ export async function quickAddProduct(
   owner: CartOwner,
   productId: string,
 ): Promise<CartActionResult | QuickAddChoice> {
-  if (await shopIsPreorderOnly()) return { ok: false, reason: "PREORDER_ONLY" };
+  if (!bagTakes(await getStorefront(), productId))
+    return { ok: false, reason: "PREORDER_ONLY" };
   const product = await prisma.product.findFirst({
     where: {
       id: productId,

@@ -1,5 +1,9 @@
 import type { Metadata } from "next";
-import { getSiteSetting, listActiveInsiderUpdates } from "@onwei/core";
+import {
+  getInsiderJoinMode,
+  getSiteSetting,
+  listActiveInsiderUpdates,
+} from "@onwei/core";
 import { InsiderUpdates } from "@/_components/InsiderUpdates";
 import { SiteHeader } from "@/_components/SiteHeader";
 import { SiteFooter } from "@/_components/SiteFooter";
@@ -18,14 +22,19 @@ export const revalidate = 60;
 // section from the waitlist page, approved as the basic layout. While the
 // site is in waitlist mode, proxy.ts sends visitors to /ontheway instead.
 export default async function InsidersPage() {
-  const [{ instagramUrl }, updates] = await Promise.all([
+  const [{ instagramUrl }, updates, joinMode] = await Promise.all([
     getSiteSetting(),
     listActiveInsiderUpdates(),
+    getInsiderJoinMode(),
   ]);
   return (
     <main className="flex flex-col items-center bg-onwei-beige text-onwei-blue">
       <SiteHeader />
-      <InsidersJoinSection instagramUrl={instagramUrl} place="insiders" />
+      <InsidersJoinSection
+        instagramUrl={instagramUrl}
+        place="insiders"
+        inviteOnly={joinMode === "INVITE_OR_APPLY"}
+      />
       <InsiderUpdates updates={updates} />
       <div className="w-full">
         <SiteFooter />

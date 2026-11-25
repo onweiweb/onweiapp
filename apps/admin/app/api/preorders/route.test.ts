@@ -69,7 +69,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
         create: { id: "singleton" },
         update: {},
       });
-    });
+    }, 60000);
 
     afterAll(async () => {
       await prisma.preorderCampaign.deleteMany({
@@ -82,7 +82,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       await prisma.productVariant.deleteMany({ where: { id: variantId } });
       await prisma.product.deleteMany({ where: { id: productId } });
       await prisma.category.deleteMany({ where: { id: categoryId } });
-    });
+    }, 60000);
 
     function request(path: string, cookie: string, body: unknown) {
       return new Request(`http://localhost${path}`, {
@@ -96,7 +96,11 @@ describe.skipIf(!process.env.DATABASE_URL)(
       name,
       isActive: false,
       startDate: "2026-12-01",
-      reserveAmount: 900,
+      reserveLow: 500,
+      reserveHigh: 900,
+      reserveThreshold: 4000,
+      nudgeDaysBeforeClose: 7,
+      balanceDueDaysAfterClose: 7,
       expectedShipDate: null,
       productIds: [productId],
       insiderGiftVariantId: null,
@@ -124,13 +128,13 @@ describe.skipIf(!process.env.DATABASE_URL)(
       const res = await POST(
         request("/api/preorders/campaign", adminCookie, {
           ...campaign(""),
-          reserveAmount: 0,
+          reserveLow: 0,
         }),
       );
       expect(res.status).toBe(400);
       const body = (await res.json()) as { errors: Record<string, string> };
       expect(body.errors.name).toBeTruthy();
-      expect(body.errors.reserveAmount).toBeTruthy();
+      expect(body.errors.reserveLow).toBeTruthy();
     });
 
     it("saves a campaign and prices a pre-order with it", async () => {
@@ -163,7 +167,31 @@ describe.skipIf(!process.env.DATABASE_URL)(
         reserve: { reserveTotal: number };
       };
       expect(body.pricing.discountTotal).toBe(60000);
-      expect(body.reserve.reserveTotal).toBe(180000);
+      // ₹4,000 of products at full price: the smaller reserve.
+      expect(body.reserve.reserveTotal).toBe(50000);
+    });
+
+    it("lets only order staff send the balance nudge, and needs orders to nudge", async () => {
+      const { POST } = await import("./nudge/route");
+      const refused = await POST(
+        request("/api/preorders/nudge", plainCookie, { orderIds: ["x"] }),
+      );
+      expect(refused.status).toBe(403);
+      const empty = await POST(
+        request("/api/preorders/nudge", adminCookie, {}),
+      );
+      expect(empty.status).toBe(400);
+      const none = await POST(
+        request("/api/preorders/nudge", adminCookie, {
+          orderIds: [`missing-${tag}`],
+        }),
+      );
+      expect(none.status).toBe(200);
+      expect(await none.json()).toMatchObject({
+        ok: true,
+        nudged: 0,
+        skipped: 1,
+      });
     });
   },
 );

@@ -30,6 +30,7 @@ const bodySchema = z.object({
   returnsAllowRefund: z.boolean(),
   returnsAllowExchange: z.boolean(),
   returnSaleItems: z.boolean(),
+  refundKeepsGatewayFee: z.boolean(),
   returnReasons: z
     .array(z.string().max(80))
     .min(1, "Keep at least one reason.")

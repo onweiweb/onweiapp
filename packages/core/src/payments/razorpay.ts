@@ -144,6 +144,10 @@ export interface RazorpayPayment {
   currency: string;
   status: "created" | "authorized" | "captured" | "refunded" | "failed";
   method: string;
+  /** Paise Razorpay kept, GST included (set once captured). */
+  fee?: number | null;
+  /** Paise, the GST part of the fee. */
+  tax?: number | null;
 }
 
 export async function fetchRazorpayPayment(

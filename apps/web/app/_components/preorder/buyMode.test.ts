@@ -1,6 +1,6 @@
 import type { PreorderPublicStatus } from "@onwei/core";
 import { describe, expect, it } from "vitest";
-import { buyModeFor } from "./usePreorderStatus";
+import { buyModeFor, reserveRuleText } from "./usePreorderStatus";
 
 function status(
   state: PreorderPublicStatus["state"],
@@ -9,7 +9,10 @@ function status(
   return {
     state,
     live: state === "PREORDER_OPEN",
-    reserveAmount: 90000,
+    reserveLow: 50000,
+    reserveHigh: 90000,
+    reserveThreshold: 400000,
+    balanceDueBy: null,
     productIds,
     tiers: [],
     liveIndex: -1,
@@ -39,5 +42,13 @@ describe("buyModeFor", () => {
     expect(buyModeFor(status("PREORDER_CLOSED", []), "p1")).toBe("LAUNCH");
     expect(buyModeFor(status("PREORDER_CLOSED"), "p1")).toBe("CLOSED");
     expect(buyModeFor(status("PREORDER_SOON"), "p1")).toBe("SOON");
+  });
+});
+
+describe("reserveRuleText", () => {
+  it("states both reserve amounts and the threshold", () => {
+    expect(reserveRuleText(status("PREORDER_OPEN"))).toBe(
+      "Reserve ₹500 today, ₹900 on bags over ₹4,000.",
+    );
   });
 });

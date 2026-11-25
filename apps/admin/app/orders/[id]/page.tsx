@@ -21,6 +21,7 @@ import {
 import { OrderStatusForm } from "../../_components/OrderStatusForm";
 import { OrderDelivery } from "../../_components/OrderDelivery";
 import { CancelPreorderForm } from "../../_components/CancelPreorderForm";
+import { SendNudgeButton } from "../../_components/SendNudgeButton";
 import {
   CancelOrderForm,
   RefundForm,
@@ -182,8 +183,12 @@ export default async function OrderDetailPage({
           <Heading>Pre-order</Heading>
           <dl className="grid gap-2 text-sm sm:grid-cols-2">
             <div>
-              <dt className="text-onwei-blue/60">Tier</dt>
-              <dd>{order.preorderTierLabel ?? "-"}</dd>
+              <dt className="text-onwei-blue/60">Lap locked in</dt>
+              <dd>
+                {order.discounts.find((d) => d.kind === "PREORDER")?.label ??
+                  order.preorderTierLabel ??
+                  "-"}
+              </dd>
             </div>
             <div>
               <dt className="text-onwei-blue/60">Paid now (reserve)</dt>
@@ -195,9 +200,9 @@ export default async function OrderDetailPage({
                 {money(order.balanceDue ?? 0)}
                 {order.balancePaidAt
                   ? " (paid)"
-                  : order.balanceRequestedAt
-                    ? ` (asked ${order.balanceRequestedAt.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" })}, ${order.balanceReminderCount} reminder${order.balanceReminderCount === 1 ? "" : "s"})`
-                    : " (waiting for stock)"}
+                  : order.balanceNudgedAt
+                    ? ` (nudge sent ${order.balanceNudgedAt.toLocaleString("en-IN", { timeZone: "Asia/Kolkata", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}${order.balanceReminderCount ? ", last call sent" : ""}; the customer can't cancel now)`
+                    : " (not paid yet, no nudge sent)"}
               </dd>
             </div>
             {order.creditCouponId ? (
@@ -214,6 +219,14 @@ export default async function OrderDetailPage({
               </div>
             ) : null}
           </dl>
+          {order.status === "RESERVED" &&
+          canUpdate &&
+          !order.balanceNudgedAt &&
+          !order.balancePaidAt ? (
+            <div>
+              <SendNudgeButton orderId={order.id} />
+            </div>
+          ) : null}
           {order.status === "RESERVED" && canUpdate ? (
             <CancelPreorderForm orderId={order.id} canRefund={canRefund} />
           ) : null}

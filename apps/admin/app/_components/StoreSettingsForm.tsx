@@ -30,6 +30,7 @@ export interface StoreSettingsValues {
   parcelWidthCm: number;
   parcelHeightCm: number;
   defaultItemWeightKg: number;
+  refundKeepsGatewayFee: boolean;
 }
 
 const numberOrNull = (value: string) =>
@@ -306,6 +307,16 @@ export function StoreSettingsForm({
               onChange={(e) => set("returnSaleItems", e.target.checked)}
             />
             Items bought on sale can be returned
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              disabled={disabled}
+              checked={values.refundKeepsGatewayFee}
+              onChange={(e) => set("refundKeepsGatewayFee", e.target.checked)}
+            />
+            Cash refunds of a cancelled pre-order keep the payment fee Razorpay
+            charged us (staff can still change the amount)
           </label>
         </div>
         <Field label="Reasons customers pick from" hint="One per line.">

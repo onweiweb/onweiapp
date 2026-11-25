@@ -18,7 +18,7 @@ export function rupeesText(paise: number): string {
   })}`;
 }
 
-interface Shell {
+export interface Shell {
   subject: string;
   kicker: string;
   heading: string;
@@ -28,7 +28,7 @@ interface Shell {
   siteUrl: string;
 }
 
-function shell(input: Shell): string {
+export function shell(input: Shell): string {
   const cell = `font-family:${BODY_FONT};font-size:14px;color:${NAVY};padding:6px 0;`;
   const rows = input.rows?.length
     ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid ${NAVY};border-radius:18px;margin:0 0 20px;"><tr><td style="padding:16px 18px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">${input.rows
@@ -55,7 +55,7 @@ ${rows}${button}
 </td></tr></table></td></tr></table></body></html>`;
 }
 
-function textOf(input: Shell): string {
+export function textOf(input: Shell): string {
   return [
     input.heading.replace(/<br>/g, " "),
     input.kicker,
@@ -72,8 +72,8 @@ function textOf(input: Shell): string {
 export interface PreorderEmailInput {
   name: string | null;
   orderNumber: string;
-  product: string;
-  quantity: number;
+  /** Paid items, e.g. "Rally Pro (M)", with their total after discounts. */
+  items: { label: string; quantity: number; total: number }[];
   tierLabel: string | null;
   gifts: string[];
   /** Paise. */
@@ -81,7 +81,16 @@ export interface PreorderEmailInput {
   paidNow: number;
   balance: number;
   expectedShipDate: string | null;
+  /** "6 Jan 2027": the balance must be paid by this day. */
+  balanceDueBy: string | null;
   siteUrl?: string;
+}
+
+function itemRows(input: PreorderEmailInput) {
+  return input.items.map((item) => ({
+    label: `${item.label} × ${item.quantity}`,
+    value: rupeesText(item.total),
+  }));
 }
 
 export function renderPreorderReservedEmail(
@@ -96,19 +105,27 @@ export function renderPreorderReservedEmail(
     kicker: `Pre-order #${input.orderNumber}`,
     heading: `${first ? `Thanks, ${escapeHtml(first)}!` : "Thank you!"}<br>It's reserved.`,
     paragraphs: [
-      `Your price${input.tierLabel ? ` (${input.tierLabel})` : ""} is locked in. We'll message you as soon as it's ready to ship, and you pay the balance then.`,
+      `Your price${input.tierLabel ? ` (${input.tierLabel})` : ""} is locked in. We'll remind you to pay the balance a week before pre-orders close.`,
+      ...(input.balanceDueBy
+        ? [
+            `Pay the balance by ${input.balanceDueBy} and it ships with its gifts. Changed your mind? Cancel from your account before then and what you paid stays with you as credit for a year.`,
+          ]
+        : []),
       ...(input.expectedShipDate
         ? [`Expected to ship around ${input.expectedShipDate}.`]
         : []),
     ],
     rows: [
-      {
-        label: `${input.product} × ${input.quantity}`,
-        value: rupeesText(input.total),
-      },
+      ...itemRows(input),
       ...input.gifts.map((g) => ({ label: g, value: "Free" })),
+      { label: "Order total", value: rupeesText(input.total) },
       { label: "Paid now", value: rupeesText(input.paidNow), bold: true },
-      { label: "Balance when it's ready", value: rupeesText(input.balance) },
+      {
+        label: input.balanceDueBy
+          ? `Balance, due by ${input.balanceDueBy}`
+          : "Balance",
+        value: rupeesText(input.balance),
+      },
     ],
     button: {
       label: "See your pre-order",
@@ -123,24 +140,22 @@ export function renderPreorderBalanceEmail(
 ): RenderedEmail {
   const siteUrl = input.siteUrl ?? DEFAULT_SITE_URL;
   const first = firstNameOf(input.name);
+  const due = input.balanceDueBy ? ` by ${input.balanceDueBy}` : "";
   const subject =
     input.reminder > 0
-      ? `Reminder: pay the balance for pre-order #${input.orderNumber}`
-      : `Your Onwei pre-order #${input.orderNumber} is ready`;
+      ? `Last call: pay the balance for pre-order #${input.orderNumber}`
+      : `Time to pay the balance for pre-order #${input.orderNumber}`;
   const parts: Shell = {
     subject,
     siteUrl,
     kicker: `Pre-order #${input.orderNumber}`,
-    heading: `${first ? `${escapeHtml(first)}, ` : ""}it's ready<br>to ship.`,
+    heading: `${first ? `${escapeHtml(first)}, ` : ""}your pre-order<br>is nearly yours.`,
     paragraphs: [
-      `Pay the balance of ${rupeesText(input.balance)} and we'll send it out straight away.`,
-      "If it isn't paid within 14 days of this first message, the amount you already paid stays with you as credit for a year.",
+      `Pay the balance of ${rupeesText(input.balance)}${due} and it ships with its gifts.`,
+      `If it isn't paid${due}, nothing ships and the pre-order offer ends. The ${rupeesText(input.paidNow)} you already paid stays with you as credit for a year.`,
     ],
     rows: [
-      {
-        label: `${input.product} × ${input.quantity}`,
-        value: rupeesText(input.total),
-      },
+      ...itemRows(input),
       { label: "Already paid", value: `−${rupeesText(input.paidNow)}` },
       { label: "Balance to pay", value: rupeesText(input.balance), bold: true },
     ],

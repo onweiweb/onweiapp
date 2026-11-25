@@ -32,7 +32,7 @@ export async function getInsiderOverview(): Promise<InsiderOverview> {
     addresses,
     cardsPosted,
   ] = await Promise.all([
-    prisma.waitlistEntry.count(),
+    prisma.waitlistEntry.count({ where: { status: "APPROVED" } }),
     prisma.waitlistEntry.count({ where: { insiderCode: { not: null } } }),
     prisma.waitlistEntry.count({ where: { codeEmailedAt: { not: null } } }),
     prisma.waitlistEntry.count({
@@ -42,7 +42,9 @@ export async function getInsiderOverview(): Promise<InsiderOverview> {
         unsubscribedAt: null,
       },
     }),
-    prisma.waitlistEntry.count({ where: { unsubscribedAt: { not: null } } }),
+    prisma.waitlistEntry.count({
+      where: { status: "APPROVED", unsubscribedAt: { not: null } },
+    }),
     prisma.insiderCardAddress.count(),
     prisma.insiderCardAddress.count({ where: { postedAt: { not: null } } }),
   ]);
@@ -290,6 +292,7 @@ export async function searchInsiderRecipients(
   if (q.length < 2) return [];
   const rows = await prisma.waitlistEntry.findMany({
     where: {
+      status: "APPROVED",
       OR: [
         { fullName: { contains: q, mode: "insensitive" } },
         { email: { contains: q, mode: "insensitive" } },

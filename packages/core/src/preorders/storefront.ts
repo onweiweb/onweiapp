@@ -9,30 +9,32 @@ import {
 
 /**
  * One answer to "what can a shopper do right now", used by the cart, the
- * pre-order checkout, the product lists and the storefront buttons alike,
+ * product lists and the storefront buttons alike,
  * so the browser and the server never disagree.
  *
  * - LIVE: the normal shop.
  * - PREORDER_OPEN: pre-order mode and a lap is running. Only campaign
- *   products show, and they can be reserved.
+ *   products show; they go in the bag and checkout charges the reserve.
  * - PREORDER_SOON: pre-order mode, the campaign starts later.
  * - PREORDER_CLOSED: pre-order mode with no campaign switched on, or the
  *   last lap has ended.
  * - WAITLIST: everything is behind the coming-soon page.
  *
- * In every PREORDER_* state the normal bag and checkout are closed.
+ * In PREORDER_SOON and PREORDER_CLOSED the bag and checkout are shut.
  */
 export type StorefrontState =
   "WAITLIST" | "LIVE" | "PREORDER_OPEN" | "PREORDER_SOON" | "PREORDER_CLOSED";
 
 export interface Storefront {
   state: StorefrontState;
-  /** True in every PREORDER_* state: the normal bag and checkout are shut. */
+  /** True in every PREORDER_* state: only campaign products are listed. */
   preorderMode: boolean;
   /** Products the storefront lists in pre-order mode (empty otherwise). */
   campaignProductIds: string[];
   /** When the first lap opens, for PREORDER_SOON. */
   opensAt: Date | null;
+  /** The switched-on campaign, when in pre-order mode. */
+  campaign: PreorderCampaignView | null;
 }
 
 type SiteModeValue = "WAITLIST" | "PREORDERS" | "LIVE";
@@ -70,6 +72,7 @@ export async function getStorefront(
     preorderMode,
     campaignProductIds: preorderMode ? (campaign?.productIds ?? []) : [],
     opensAt: state === "PREORDER_SOON" && campaign ? campaign.startsAt : null,
+    campaign: preorderMode ? campaign : null,
   };
 }
 
@@ -117,10 +120,16 @@ export interface PreorderPublicTier {
 export interface PreorderPublicStatus {
   /** What shoppers can do right now (see `StorefrontState`). */
   state: StorefrontState;
-  /** True only when a lap is running and Reserve works. */
+  /** True only when a lap is running and pre-orders can be placed. */
   live: boolean;
-  /** Paise, per item. */
-  reserveAmount: number;
+  /** Paise: reserve for a bag at or under `reserveThreshold` (product prices). */
+  reserveLow: number;
+  /** Paise: reserve above the threshold. */
+  reserveHigh: number;
+  /** Paise. */
+  reserveThreshold: number;
+  /** When the balance must be paid by (exclusive). */
+  balanceDueBy: string | null;
   /** Campaign products, in every pre-order state. */
   productIds: string[];
   tiers: PreorderPublicTier[];
@@ -153,7 +162,10 @@ export async function getPreorderPublicStatus(
   const empty: PreorderPublicStatus = {
     state,
     live: false,
-    reserveAmount: 0,
+    reserveLow: 0,
+    reserveHigh: 0,
+    reserveThreshold: 0,
+    balanceDueBy: null,
     productIds: preorderMode ? (campaign?.productIds ?? []) : [],
     tiers: [],
     liveIndex: -1,
@@ -186,7 +198,10 @@ export async function getPreorderPublicStatus(
   return {
     ...empty,
     live: true,
-    reserveAmount: campaign.reserveAmount,
+    reserveLow: campaign.reserveLow,
+    reserveHigh: campaign.reserveHigh,
+    reserveThreshold: campaign.reserveThreshold,
+    balanceDueBy: campaign.deadlines.balanceDueAt.toISOString(),
     tiers,
     liveIndex: campaign.tiers.findIndex((t) => t.id === live.id),
     day: Math.floor((now.getTime() - campaign.startsAt.getTime()) / DAY_MS) + 1,

@@ -44,7 +44,11 @@ export const DEFAULT_CAMPAIGN = (today: string): PreorderCampaignInput => ({
   name: "Launch pre-order",
   isActive: false,
   startDate: today,
-  reserveAmount: 900,
+  reserveLow: 500,
+  reserveHigh: 900,
+  reserveThreshold: 4000,
+  nudgeDaysBeforeClose: 7,
+  balanceDueDaysAfterClose: 7,
   expectedShipDate: null,
   productIds: [],
   insiderGiftVariantId: null,
@@ -222,8 +226,8 @@ export function PreorderCampaignForm({
               The basics
             </h2>
             <p className="text-sm text-onwei-blue/70">
-              Customers pay the amount below per item now, and the rest when
-              it&apos;s ready to ship.
+              Customers pay a reserve today, worked out from their bag at full
+              price, and the balance by the due date below.
             </p>
           </div>
           <label className="flex items-center gap-2 text-sm font-semibold text-onwei-blue">
@@ -257,16 +261,72 @@ export function PreorderCampaignForm({
             />
           </Field>
           <Field
-            label="Paid now, per item (₹)"
-            hint="Never more than the item costs after discounts."
-            error={errors.reserveAmount}
+            label="Reserve for smaller bags (₹)"
+            hint="Paid today when the bag is at or under the amount below, at full price before any discount."
+            error={errors.reserveLow}
           >
             <AdminInput
               type="number"
               min={1}
-              value={form.reserveAmount}
+              value={form.reserveLow}
               disabled={disabled}
-              onChange={(e) => set("reserveAmount", Number(e.target.value))}
+              onChange={(e) => set("reserveLow", Number(e.target.value))}
+            />
+          </Field>
+          <Field
+            label="Bigger reserve starts above (₹)"
+            hint="Bag total at full price. Example: ₹4,000."
+            error={errors.reserveThreshold}
+          >
+            <AdminInput
+              type="number"
+              min={1}
+              value={form.reserveThreshold}
+              disabled={disabled}
+              onChange={(e) => set("reserveThreshold", Number(e.target.value))}
+            />
+          </Field>
+          <Field
+            label="Reserve for bigger bags (₹)"
+            hint="Paid today above that amount. Never more than the order costs."
+            error={errors.reserveHigh}
+          >
+            <AdminInput
+              type="number"
+              min={1}
+              value={form.reserveHigh}
+              disabled={disabled}
+              onChange={(e) => set("reserveHigh", Number(e.target.value))}
+            />
+          </Field>
+          <Field
+            label="Balance reminder, days before pre-orders close"
+            hint="We remind everyone who hasn't paid the balance. After this they can't cancel."
+            error={errors.nudgeDaysBeforeClose}
+          >
+            <AdminInput
+              type="number"
+              min={0}
+              value={form.nudgeDaysBeforeClose}
+              disabled={disabled}
+              onChange={(e) =>
+                set("nudgeDaysBeforeClose", Number(e.target.value))
+              }
+            />
+          </Field>
+          <Field
+            label="Days to pay the balance after pre-orders close"
+            hint="Unpaid after this: nothing ships, and the reserve becomes credit for a year."
+            error={errors.balanceDueDaysAfterClose}
+          >
+            <AdminInput
+              type="number"
+              min={1}
+              value={form.balanceDueDaysAfterClose}
+              disabled={disabled}
+              onChange={(e) =>
+                set("balanceDueDaysAfterClose", Number(e.target.value))
+              }
             />
           </Field>
           <Field
@@ -477,7 +537,11 @@ export function PreorderCampaignForm({
           items={gifts.filter((g) => !g.giftOnly)}
           productIds={form.productIds}
           tiers={form.tiers}
-          reserveAmount={form.reserveAmount}
+          reserve={{
+            low: form.reserveLow,
+            high: form.reserveHigh,
+            threshold: form.reserveThreshold,
+          }}
         />
       </AdminCard>
 
@@ -487,8 +551,9 @@ export function PreorderCampaignForm({
             Products on pre-order
           </h2>
           <p className="text-sm text-onwei-blue/70">
-            {form.productIds.length} picked. There&apos;s no limit on how many
-            can be reserved.
+            {form.productIds.length} picked. Pre-orders take what&apos;s in
+            stock: each reservation holds its items, so add the planned quantity
+            in Inventory before pre-orders open.
           </p>
         </div>
         {errors.productIds ? (
@@ -554,13 +619,14 @@ function JourneyPreview({
   items,
   productIds,
   tiers,
-  reserveAmount,
+  reserve,
 }: {
   items: GiftOption[];
   /** Products on this pre-order: listed first, and the first one is picked. */
   productIds: string[];
   tiers: PreorderCampaignInput["tiers"];
-  reserveAmount: number;
+  /** Rupees, from the form. */
+  reserve: { low: number; high: number; threshold: number };
 }) {
   const sorted = [
     ...items.filter((i) => productIds.includes(i.productId)),
@@ -586,7 +652,9 @@ function JourneyPreview({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             variantId,
-            reserveAmount: Number(reserveAmount) || 0,
+            reserveLow: Number(reserve.low) || 0,
+            reserveHigh: Number(reserve.high) || 0,
+            reserveThreshold: Number(reserve.threshold) || 0,
             tiers: JSON.parse(tierKey),
           }),
         }).catch(() => null);
@@ -608,7 +676,7 @@ function JourneyPreview({
       live = false;
       clearTimeout(timer);
     };
-  }, [variantId, reserveAmount, tierKey]);
+  }, [variantId, reserve.low, reserve.high, reserve.threshold, tierKey]);
 
   if (items.length === 0) return null;
 

@@ -7,6 +7,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import Image from "@/_components/ScaledImage";
 import { track } from "../../../lib/analytics/track";
 import {
+  reserveRuleText,
   reserveText,
   timeLeft,
   useNow,
@@ -272,14 +273,14 @@ function Body({
 }) {
   const live = status.tiers[status.liveIndex]!;
   const next = status.tiers[status.liveIndex + 1];
-  const reserve = reserveText(status.reserveAmount);
+  const reserve = reserveText(status.reserveLow);
   const daysLeft = status.endsAt
     ? Math.max(1, Math.ceil((Date.parse(status.endsAt) - now) / 86_400_000))
     : 0;
   const urgency = next
     ? `${next.label} starts in ${timeLeft(next.startsAt, now)} and the saving drops to ${next.percent}%.`
     : `Pre-orders close in ${timeLeft(live.endsAt, now)}.`;
-  const holds = `${reserve} holds your product and is redeemable against the final discounted value.`;
+  const holds = `${reserveRuleText(status)} It holds your order and counts towards the final discounted price.`;
   const others = status.tiers.filter((_, i) => i !== status.liveIndex);
   const reserveButton = (mobile: boolean) => (
     <Link
@@ -287,7 +288,7 @@ function Body({
       onClick={onClose}
       className={`flex items-center justify-center rounded-full bg-onwei-blue font-display font-medium uppercase text-onwei-white ${mobile ? "w-full px-6 py-4 text-[length:max(0.9375rem,13px)] tracking-[0.06em]" : "w-[21.25rem] px-10 py-5 text-[length:max(1rem,13px)] tracking-[0.06em]"}`}
     >
-      Reserve for {reserve}
+      Reserve from {reserve}
     </Link>
   );
 

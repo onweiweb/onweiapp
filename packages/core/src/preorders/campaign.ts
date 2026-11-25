@@ -3,6 +3,7 @@ import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
 import { toMinorUnits } from "../catalog/helpers";
 import { istDayStart } from "../insiders/insiderTiers";
+import { preorderDeadlines, type PreorderDeadlines } from "./rules";
 
 /**
  * The pre-order campaign (docs/COMMERCE_BUILD_PLAN.md section 14a). Tiers
@@ -13,7 +14,9 @@ import { istDayStart } from "../insiders/insiderTiers";
  */
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-export const DEFAULT_RESERVE_RUPEES = 900;
+export const DEFAULT_RESERVE_LOW_RUPEES = 500;
+export const DEFAULT_RESERVE_HIGH_RUPEES = 900;
+export const DEFAULT_RESERVE_THRESHOLD_RUPEES = 4000;
 export const MAX_PREORDER_TIERS = 5;
 
 export interface PreorderTierView {
@@ -34,14 +37,21 @@ export interface PreorderCampaignView {
   name: string;
   isActive: boolean;
   startsAt: Date;
-  /** Paise, per item. */
-  reserveAmount: number;
+  /** Paise. Reserve for a bag at or under the threshold (product prices). */
+  reserveLow: number;
+  /** Paise. Reserve above the threshold. */
+  reserveHigh: number;
+  /** Paise. Bag total at product price, before any discount. */
+  reserveThreshold: number;
+  nudgeDaysBeforeClose: number;
+  balanceDueDaysAfterClose: number;
   expectedShipDate: Date | null;
   productIds: string[];
   insiderGiftVariantId: string | null;
   tiers: PreorderTierView[];
   /** Exclusive: the end of the last tier. */
   endsAt: Date;
+  deadlines: PreorderDeadlines;
 }
 
 export type TierState = "CLOSED" | "LIVE" | "LOCKED";
@@ -100,17 +110,27 @@ function toView(row: CampaignRow): PreorderCampaignView {
     startsAt: tier.startsAt,
     endsAt: tier.endsAt,
   }));
+  const endsAt = tiers.at(-1)?.endsAt ?? row.startsAt;
   return {
     id: row.id,
     name: row.name,
     isActive: row.isActive,
     startsAt: row.startsAt,
-    reserveAmount: toMinorUnits(row.reserveAmount),
+    reserveLow: toMinorUnits(row.reserveLow),
+    reserveHigh: toMinorUnits(row.reserveHigh),
+    reserveThreshold: toMinorUnits(row.reserveThreshold),
+    nudgeDaysBeforeClose: row.nudgeDaysBeforeClose,
+    balanceDueDaysAfterClose: row.balanceDueDaysAfterClose,
     expectedShipDate: row.expectedShipDate,
     productIds: row.productIds,
     insiderGiftVariantId: row.insiderGiftVariantId,
     tiers,
-    endsAt: tiers.at(-1)?.endsAt ?? row.startsAt,
+    endsAt,
+    deadlines: preorderDeadlines({
+      endsAt,
+      nudgeDaysBeforeClose: row.nudgeDaysBeforeClose,
+      balanceDueDaysAfterClose: row.balanceDueDaysAfterClose,
+    }),
   };
 }
 
@@ -148,8 +168,16 @@ export interface PreorderCampaignInput {
   isActive: boolean;
   /** First day, "YYYY-MM-DD" in India time. */
   startDate: string;
-  /** Rupees per item. */
-  reserveAmount: number;
+  /** Rupees. Reserve for a bag at or under the threshold. */
+  reserveLow: number;
+  /** Rupees. Reserve above the threshold. */
+  reserveHigh: number;
+  /** Rupees. Bag total at product price, before any discount. */
+  reserveThreshold: number;
+  /** The balance nudge goes out this many days before the window closes. */
+  nudgeDaysBeforeClose: number;
+  /** Days after the window closes to pay the balance. */
+  balanceDueDaysAfterClose: number;
   /** "YYYY-MM-DD" in India time, or null. */
   expectedShipDate: string | null;
   productIds: string[];
@@ -176,12 +204,22 @@ export function validatePreorderCampaign(
   if (name.length < 2 || name.length > 80)
     errors.name = "Give the campaign a name (2 to 80 characters).";
   if (!istDayStart(input.startDate)) errors.startDate = "Pick a start date.";
-  if (!(
-    Number.isInteger(input.reserveAmount) &&
-    input.reserveAmount >= 1 &&
-    input.reserveAmount <= 100000
-  ))
-    errors.reserveAmount = "Enter a whole amount in rupees, at least ₹1.";
+  const wholeRupees = (n: number) =>
+    Number.isInteger(n) && n >= 1 && n <= 100000;
+  if (!wholeRupees(input.reserveLow))
+    errors.reserveLow = "Enter a whole amount in rupees, at least ₹1.";
+  if (!wholeRupees(input.reserveHigh))
+    errors.reserveHigh = "Enter a whole amount in rupees, at least ₹1.";
+  if (!wholeRupees(input.reserveThreshold))
+    errors.reserveThreshold = "Enter a whole amount in rupees, at least ₹1.";
+  const days = (n: number) => Number.isInteger(n) && n >= 0 && n <= 60;
+  if (!days(input.nudgeDaysBeforeClose))
+    errors.nudgeDaysBeforeClose = "Enter whole days, from 0 to 60.";
+  if (
+    !days(input.balanceDueDaysAfterClose) ||
+    input.balanceDueDaysAfterClose < 1
+  )
+    errors.balanceDueDaysAfterClose = "Enter whole days, from 1 to 60.";
   if (input.expectedShipDate && !istDayStart(input.expectedShipDate))
     errors.expectedShipDate = "Pick a date, or leave it empty.";
   if (input.isActive && input.productIds.length === 0)
@@ -245,7 +283,11 @@ export async function savePreorderCampaign(
     name: input.name.trim(),
     isActive: input.isActive,
     startsAt: istDayStart(input.startDate)!,
-    reserveAmount: new Prisma.Decimal(input.reserveAmount),
+    reserveLow: new Prisma.Decimal(input.reserveLow),
+    reserveHigh: new Prisma.Decimal(input.reserveHigh),
+    reserveThreshold: new Prisma.Decimal(input.reserveThreshold),
+    nudgeDaysBeforeClose: input.nudgeDaysBeforeClose,
+    balanceDueDaysAfterClose: input.balanceDueDaysAfterClose,
     expectedShipDate: input.expectedShipDate
       ? istDayStart(input.expectedShipDate)
       : null,
@@ -253,41 +295,44 @@ export async function savePreorderCampaign(
     insiderGiftVariantId: input.insiderGiftVariantId || null,
   };
 
-  const saved = await prisma.$transaction(async (tx) => {
-    if (input.isActive) {
-      // Only one campaign is live at a time.
-      await tx.preorderCampaign.updateMany({
-        where: { isActive: true, ...(id ? { NOT: { id } } : {}) },
-        data: { isActive: false },
+  const saved = await prisma.$transaction(
+    async (tx) => {
+      if (input.isActive) {
+        // Only one campaign is live at a time.
+        await tx.preorderCampaign.updateMany({
+          where: { isActive: true, ...(id ? { NOT: { id } } : {}) },
+          data: { isActive: false },
+        });
+      }
+      const row = id
+        ? await tx.preorderCampaign.update({ where: { id }, data })
+        : await tx.preorderCampaign.create({ data });
+      await tx.preorderTier.deleteMany({ where: { campaignId: row.id } });
+      await tx.preorderTier.createMany({
+        data: input.tiers.map((tier, index) => ({
+          campaignId: row.id,
+          position: index + 1,
+          label: tier.label.trim(),
+          days: tier.days,
+          percent: tier.percent,
+          giftVariantId: tier.giftVariantId || null,
+          giftLabel: tier.giftLabel?.trim() || null,
+        })),
       });
-    }
-    const row = id
-      ? await tx.preorderCampaign.update({ where: { id }, data })
-      : await tx.preorderCampaign.create({ data });
-    await tx.preorderTier.deleteMany({ where: { campaignId: row.id } });
-    await tx.preorderTier.createMany({
-      data: input.tiers.map((tier, index) => ({
-        campaignId: row.id,
-        position: index + 1,
-        label: tier.label.trim(),
-        days: tier.days,
-        percent: tier.percent,
-        giftVariantId: tier.giftVariantId || null,
-        giftLabel: tier.giftLabel?.trim() || null,
-      })),
-    });
-    await writeAuditLog(
-      {
-        staffUserId: actor.staffUserId,
-        action: id ? "preorder.campaign.update" : "preorder.campaign.create",
-        entityType: "PreorderCampaign",
-        entityId: row.id,
-        beforeState: before ? { ...before } : null,
-        afterState: { ...input },
-      },
-      tx,
-    );
-    return row;
-  });
+      await writeAuditLog(
+        {
+          staffUserId: actor.staffUserId,
+          action: id ? "preorder.campaign.update" : "preorder.campaign.create",
+          entityType: "PreorderCampaign",
+          entityId: row.id,
+          beforeState: before ? { ...before } : null,
+          afterState: { ...input },
+        },
+        tx,
+      );
+      return row;
+    },
+    { timeout: 20_000, maxWait: 10_000 },
+  );
   return { ok: true, id: saved.id };
 }

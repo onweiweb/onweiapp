@@ -20,6 +20,12 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 // Figma "Checkout – Payment successful" (1257:7316 desktop, 1257:7898 mobile).
+const DUE = new Intl.DateTimeFormat("en-IN", {
+  day: "numeric",
+  month: "short",
+  timeZone: "Asia/Kolkata",
+});
+
 export default async function CheckoutSuccessPage({
   searchParams,
 }: {
@@ -76,8 +82,12 @@ export default async function CheckoutSuccessPage({
               {order.contactEmail
                 ? `We've sent the details to ${order.contactEmail}. `
                 : ""}
-              When it&apos;s ready to ship we&apos;ll message you a link to pay
-              the remaining {rupees(order.preorder.balanceDue)}.
+              Pay the remaining {rupees(order.preorder.balanceDue)} from your
+              account any time
+              {order.preorder.balanceDueBy
+                ? ` before ${DUE.format(new Date(new Date(order.preorder.balanceDueBy).getTime() - 1))}`
+                : ""}
+              . We&apos;ll remind you a week before pre-orders close.
             </p>
           ) : (
             <p className="font-grotesk text-[length:max(0.9375rem,13px)] leading-[1.6]">

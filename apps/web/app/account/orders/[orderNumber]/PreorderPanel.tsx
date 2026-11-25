@@ -21,9 +21,10 @@ const DATE = new Intl.DateTimeFormat("en-IN", {
 });
 
 /**
- * A pre-order on the account page: where it's up to, "Pay the balance" once
- * it's ready, "Cancel and keep as credit" before that is paid, and the credit
- * code after a cancel. No Figma frame; built in the checkout style.
+ * A pre-order on the account page: the locked lap, reserve paid, balance due
+ * and its date, "Pay the balance" (any time before the due date), "Cancel and
+ * keep as credit" until pre-orders close or the balance nudge goes out, and
+ * the credit code after a cancel. No Figma frame; built in the checkout style.
  */
 export function PreorderPanel({
   orderNumber,
@@ -42,7 +43,11 @@ export function PreorderPanel({
   const [working, setWorking] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const cancellable = info.stage === "WAITING" || info.stage === "DUE";
+  const cancellable = info.canCancel;
+  const payable = info.stage === "RESERVED" || info.stage === "DUE";
+  const dueBy = info.balanceDueBy
+    ? DATE.format(new Date(new Date(info.balanceDueBy).getTime() - 1))
+    : null;
 
   async function payBalance() {
     setWorking(true);
@@ -120,12 +125,14 @@ export function PreorderPanel({
     <Card className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2 className="font-display text-[length:max(1.125rem,14px)] font-bold">
-          Pre-order{info.tierLabel ? `, ${info.tierLabel}` : ""}
+          Pre-order
         </h2>
         <span className="rounded-full bg-onwei-green px-3 py-0.5 font-grotesk text-[length:max(0.6875rem,10px)] uppercase">
           {info.stage === "DUE"
-            ? "Ready to ship"
-            : info.stage === "WAITING"
+            ? dueBy
+              ? `Balance due by ${dueBy}`
+              : "Balance due"
+            : info.stage === "RESERVED"
               ? "Reserved"
               : info.stage === "PAID"
                 ? "Fully paid"
@@ -135,34 +142,42 @@ export function PreorderPanel({
         </span>
       </div>
       <dl className="flex flex-col gap-1.5 font-grotesk text-[length:max(0.8125rem,11px)]">
+        {info.lapText ? (
+          <div className="flex justify-between gap-3">
+            <dt>Lap discount locked in</dt>
+            <dd>{info.lapText}</dd>
+          </div>
+        ) : null}
         <div className="flex justify-between gap-3">
-          <dt>Paid when you reserved</dt>
+          <dt>Reserve paid</dt>
           <dd>{rupees(info.reserveTotal)}</dd>
         </div>
         <div className="flex justify-between gap-3 font-bold">
-          <dt>{info.stage === "PAID" ? "Balance paid" : "Balance"}</dt>
+          <dt>
+            {info.stage === "PAID"
+              ? "Balance paid"
+              : dueBy && payable
+                ? `Balance due by ${dueBy}`
+                : "Balance"}
+          </dt>
           <dd>{rupees(info.balanceDue)}</dd>
         </div>
       </dl>
 
-      {info.stage === "WAITING" ? (
-        <p className="font-grotesk text-[length:max(0.8125rem,11px)] leading-[1.6]">
-          Your price and gifts are locked in. We&apos;ll email and WhatsApp you
-          when it&apos;s ready to ship
-          {info.expectedShipDate
-            ? ` (expected around ${DATE.format(new Date(info.expectedShipDate))})`
-            : ""}
-          , then you pay the balance.
-        </p>
-      ) : null}
-      {info.stage === "DUE" ? (
+      {payable ? (
         <>
           <p className="font-grotesk text-[length:max(0.8125rem,11px)] leading-[1.6]">
-            It&apos;s ready. Pay the balance and we&apos;ll send it out straight
-            away.
-            {info.creditAfter
-              ? ` If it isn't paid by ${DATE.format(new Date(info.creditAfter))}, what you paid stays with you as credit for a year.`
+            {info.stage === "DUE"
+              ? "Pre-orders are closing. "
+              : "Your price, lap discount and gifts are locked in. "}
+            Pay the balance
+            {dueBy ? ` by ${dueBy}` : ""} and it ships with its gifts
+            {info.expectedShipDate
+              ? ` (expected around ${DATE.format(new Date(info.expectedShipDate))})`
               : ""}
+            . If it isn&apos;t paid in time, nothing ships and the offer ends,
+            but the {rupees(info.reserveTotal)} you paid stays with you as
+            credit for a year.
           </p>
           <button
             type="button"
@@ -170,7 +185,9 @@ export function PreorderPanel({
             onClick={payBalance}
             className={PRIMARY}
           >
-            {working ? "Opening payment..." : `Pay ${rupees(info.balanceDue)}`}
+            {working
+              ? "Opening payment..."
+              : `Pay the balance, ${rupees(info.balanceDue)}`}
           </button>
         </>
       ) : null}
@@ -191,7 +208,8 @@ export function PreorderPanel({
             <p className="font-grotesk text-[length:max(0.8125rem,11px)] leading-[1.6]">
               Cancel this pre-order? The {rupees(info.reserveTotal)} you paid
               becomes a credit code for a year, for any order or pre-order. Your
-              locked price and gifts are lost.
+              locked lap discount and gifts are lost: if you order again, you
+              get the lap that&apos;s live then.
             </p>
             <div className="flex flex-wrap gap-2">
               <button
@@ -218,6 +236,9 @@ export function PreorderPanel({
             className="w-fit font-grotesk text-[length:max(0.75rem,11px)] underline underline-offset-2"
           >
             Cancel and keep as credit
+            {info.cancelUntil
+              ? ` (until ${DATE.format(new Date(new Date(info.cancelUntil).getTime() - 1))})`
+              : ""}
           </button>
         )
       ) : null}

@@ -18,7 +18,7 @@ export const CART_ERRORS: Record<string, string> = {
   NOT_AVAILABLE: "This item isn't available right now.",
   OUT_OF_STOCK: "That's sold out for now.",
   PREORDER_ONLY:
-    "We're only taking pre-orders right now. The bag opens at launch.",
+    "We're only taking pre-orders right now, and this one isn't on pre-order. It opens at launch.",
   INVALID_QUANTITY: "Pick a quantity from 1 to 10.",
   NETWORK: "We couldn't update your bag. Check your connection and try again.",
 };
@@ -72,6 +72,8 @@ export function codeMessage(input: {
 }
 
 export const SIGN_IN_ERRORS: Record<string, string> = {
+  UNKNOWN_INSIDER:
+    "That Insider ID doesn't match any member. Check the card, or sign in with your email or mobile number.",
   INVALID_EMAIL: "That email doesn't look right. Check it and try again.",
   INVALID_PHONE: "Enter a 10-digit mobile number.",
   PHONE_UNAVAILABLE:
@@ -94,7 +96,7 @@ export const SIGN_IN_ERRORS: Record<string, string> = {
 export const CHECKOUT_ERRORS: Record<string, string> = {
   NOT_SIGNED_IN: "Sign in to place your order.",
   PREORDER_ONLY:
-    "We're taking pre-orders right now, so the bag opens at launch. Reserve pre-order items from their product page.",
+    "Pre-orders aren't open right now. Checkout opens with the next pre-order lap or at launch.",
   EMPTY_CART: "Your bag is empty.",
   CART_NEEDS_ATTENTION:
     "Something in your bag needs a look before you pay. Check the items marked below.",
@@ -214,6 +216,6 @@ export const PREORDER_ERRORS: Record<string, string> = {
   RATE_LIMITED: "That's a lot of tries. Wait a few minutes and try again.",
   NOT_DUE: "There's nothing to pay on this order right now.",
   NOT_CANCELLABLE:
-    "This pre-order can't be cancelled any more. Get in touch and we'll help.",
+    "This pre-order can't be cancelled any more: cancelling closes when pre-orders close or once the balance reminder has gone out. Get in touch and we'll help.",
   NETWORK: "Something went wrong. Check your connection and try again.",
 };

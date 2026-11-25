@@ -442,6 +442,8 @@ model Order {
   balanceDue             Decimal?          @db.Decimal(10, 2)
   balanceRazorpayOrderId String?           @unique
   balanceRequestedAt     DateTime?
+  // When the balance nudge went out (staff or the daily job). Locks cancel.
+  balanceNudgedAt        DateTime?
   balanceRemindedAt      DateTime?
   balanceReminderCount   Int               @default(0)
   balancePaidAt          DateTime?
@@ -1023,6 +1025,8 @@ model StoreSetting {
   parcelWidthCm         Decimal  @default(25) @db.Decimal(6, 1)
   parcelHeightCm        Decimal  @default(5) @db.Decimal(6, 1)
   defaultItemWeightKg   Decimal  @default(0.3) @db.Decimal(6, 3)
+  // Pre-order cash refunds keep the payment gateway fee (stated in the terms).
+  refundKeepsGatewayFee Boolean  @default(true)
   updatedAt             DateTime @updatedAt
   updatedByStaffId      String?
 }
@@ -1095,7 +1099,69 @@ model WaitlistEntry {
   printedCard        InsiderCode?
   whatsAppMessages   WhatsAppMessage[]
 
+  // Invite-only Insiders (docs/COMMERCE_BUILD_PLAN.md section 20).
+  // APPROVED is a member; APPLIED waits in admin Applications; REJECTED
+  // stays so the same mobile can't apply again.
+  status            InsiderJoinStatus    @default(APPROVED)
+  invitedByEntryId  String?
+  invitedBy         WaitlistEntry?       @relation("InsiderInvites", fields: [invitedByEntryId], references: [id], onDelete: SetNull)
+  invitees          WaitlistEntry[]      @relation("InsiderInvites")
+  activity          String?
+  joinReasons       String[]             @default([])
+  sessionPick       String?
+  gearWish          String?
+  reviewedAt        DateTime?
+  reviewedByStaffId String?
+  rewardGrants      InsiderRewardGrant[]
+
   @@index([submittedAt])
+  @@index([status, submittedAt])
+  @@index([invitedByEntryId])
+}
+
+enum InsiderJoinStatus {
+  APPROVED
+  APPLIED
+  REJECTED
+}
+
+enum InsiderJoinMode {
+  OPEN
+  INVITE_OR_APPLY
+}
+
+enum InsiderRewardType {
+  AMOUNT_OFF
+  PERCENT_OFF
+  FREE_ITEM
+}
+
+// "Invite N people, get X": given once per member when their Nth invitee is
+// approved, as a personal coupon.
+model InsiderRewardRule {
+  id            String               @id @default(cuid())
+  invites       Int
+  rewardType    InsiderRewardType
+  // Rupees for AMOUNT_OFF, percent for PERCENT_OFF; null for FREE_ITEM.
+  value         Decimal?             @db.Decimal(10, 2)
+  freeVariantId String?
+  validDays     Int                  @default(90)
+  isActive      Boolean              @default(true)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  grants        InsiderRewardGrant[]
+}
+
+model InsiderRewardGrant {
+  id              String            @id @default(cuid())
+  waitlistEntryId String
+  waitlistEntry   WaitlistEntry     @relation(fields: [waitlistEntryId], references: [id], onDelete: Cascade)
+  ruleId          String
+  rule            InsiderRewardRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  couponId        String?
+  grantedAt       DateTime          @default(now())
+
+  @@unique([waitlistEntryId, ruleId])
 }
 
 // One row per printed Insider card. Codes are made ahead of a print run so
@@ -1126,6 +1192,9 @@ model InsiderSetting {
   // How the Insider discount works with coupons and the pre-order discount:
   // ADD (percentages add up on the price) or BEST (the bigger one only).
   stackMode         InsiderStackMode @default(ADD)
+  // OPEN: anyone signs up (as before). INVITE_OR_APPLY: an Insider's number
+  // lets you in, otherwise you apply and staff approve.
+  joinMode          InsiderJoinMode  @default(OPEN)
   // The Insider card envelope, sent to the delivery partner with each card.
   cardLengthCm      Decimal          @default(20.3) @db.Decimal(6, 1)
   cardWidthCm       Decimal          @default(1) @db.Decimal(6, 1)
@@ -1146,18 +1215,28 @@ enum InsiderStackMode {
 // run one after another from startsAt, each for its number of days. Settings
 // data; orders keep their own copy of the tier, discount and gifts.
 model PreorderCampaign {
-  id                   String    @id @default(cuid())
-  name                 String
-  isActive             Boolean   @default(false)
-  startsAt             DateTime
+  id                       String    @id @default(cuid())
+  name                     String
+  isActive                 Boolean   @default(false)
+  startsAt                 DateTime
   // Paid now per item, rupees. The rest is paid when stock is ready.
-  reserveAmount        Decimal   @default(900) @db.Decimal(10, 2)
-  expectedShipDate     DateTime?
-  productIds           String[]  @default([])
+  reserveAmount            Decimal   @default(900) @db.Decimal(10, 2)
+  // Reserve from the bag total at product price (before any discount):
+  // up to reserveThreshold pays reserveLow, above it pays reserveHigh.
+  // Replaces the per-item reserveAmount above (kept, no longer read).
+  reserveLow               Decimal   @default(500) @db.Decimal(10, 2)
+  reserveHigh              Decimal   @default(900) @db.Decimal(10, 2)
+  reserveThreshold         Decimal   @default(4000) @db.Decimal(10, 2)
+  // The balance nudge goes out this many days before the window closes.
+  nudgeDaysBeforeClose     Int       @default(7)
+  // Balance must be paid within this many days after the window closes.
+  balanceDueDaysAfterClose Int       @default(7)
+  expectedShipDate         DateTime?
+  productIds               String[]  @default([])
   // Free for Insiders on every pre-order: a gift-only product variant.
-  insiderGiftVariantId String?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  insiderGiftVariantId     String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
   tiers  PreorderTier[]
   orders Order[]

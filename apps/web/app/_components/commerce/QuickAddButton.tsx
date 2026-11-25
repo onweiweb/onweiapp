@@ -9,7 +9,6 @@ import { rupees } from "../../../lib/messages/commerce";
 import { useCart, type QuickChoice } from "./CartProvider";
 import {
   buyModeFor,
-  reserveText,
   usePreorderStatus,
   waitingCopy,
 } from "../preorder/usePreorderStatus";
@@ -19,12 +18,11 @@ import {
 // page) so the customer never has to leave to choose a size or colour.
 export function QuickAddButton({
   productId,
-  slug,
   inStock,
   className,
 }: {
   productId: string;
-  /** Product page, for "Reserve" while it's on pre-order. */
+  /** Product page slug (not used any more; callers still pass it). */
   slug?: string;
   inStock: boolean;
   className: string;
@@ -34,13 +32,6 @@ export function QuickAddButton({
   const [choice, setChoice] = useState<QuickChoice | null>(null);
   const preorder = usePreorderStatus();
   const mode = buyModeFor(preorder, productId);
-  if (mode === "RESERVE" && slug && preorder) {
-    return (
-      <Link href={`/product/${slug}`} className={className}>
-        reserve for {reserveText(preorder.reserveAmount)}
-      </Link>
-    );
-  }
   const waiting =
     mode === "SOON" || mode === "CLOSED" || mode === "LAUNCH"
       ? waitingCopy(mode, preorder?.opensAt ?? null)
@@ -49,7 +40,9 @@ export function QuickAddButton({
     <>
       <button
         type="button"
-        disabled={!inStock || working || mode !== "SHOP"}
+        disabled={
+          !inStock || working || (mode !== "SHOP" && mode !== "RESERVE")
+        }
         title={waiting?.note}
         onClick={async () => {
           setWorking(true);
@@ -65,10 +58,16 @@ export function QuickAddButton({
             ? "sold out"
             : working
               ? "adding..."
-              : "add to cart"}
+              : mode === "RESERVE"
+                ? "pre-order now"
+                : "add to cart"}
       </button>
       {choice ? (
-        <QuickPicker choice={choice} onClose={() => setChoice(null)} />
+        <QuickPicker
+          choice={choice}
+          productId={productId}
+          onClose={() => setChoice(null)}
+        />
       ) : null}
     </>
   );
@@ -76,9 +75,11 @@ export function QuickAddButton({
 
 function QuickPicker({
   choice,
+  productId,
   onClose,
 }: {
   choice: QuickChoice;
+  productId: string;
   onClose: () => void;
 }) {
   const titleId = useId();
@@ -147,7 +148,11 @@ function QuickPicker({
           formattedPrices={formattedPrices}
         >
           <VariantPrice />
-          <ProductVariantPicker slug={choice.slug} onAdded={onClose} />
+          <ProductVariantPicker
+            slug={choice.slug}
+            productId={productId}
+            onAdded={onClose}
+          />
         </ProductVariantProvider>
         <Link
           href={`/product/${choice.slug}`}

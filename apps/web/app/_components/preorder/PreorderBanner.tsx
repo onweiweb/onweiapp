@@ -111,10 +111,10 @@ export function PreorderBanner() {
   const live = status.tiers[status.liveIndex];
   if (!live) return null;
   const isLast = status.liveIndex === status.tiers.length - 1;
-  const reserve = reserveText(status.reserveAmount);
+  const reserve = reserveText(status.reserveLow);
   const line = isLast
-    ? `Last lap! Reserve yours for ${reserve} before pre-orders close.`
-    : `Reserve yours for ${reserve}. The earlier you move, the more you save.`;
+    ? `Last lap! Reserve yours from ${reserve} before pre-orders close.`
+    : `Reserve yours from ${reserve}. The earlier you move, the more you save.`;
   const mobileOrder = [
     live,
     ...status.tiers.filter((_, i) => i !== status.liveIndex),

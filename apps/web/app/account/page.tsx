@@ -6,6 +6,7 @@ import {
   getAccountSummary,
   listAddresses,
   listCustomerCredits,
+  getInviteProgress,
   listCustomerOrders,
 } from "@onwei/core";
 import { ProductImage } from "@/_components/ProductImage";
@@ -52,12 +53,16 @@ export default async function AccountPage({
   const { tab: tabParam } = await searchParams;
   const tab = TABS.some((t) => t.id === tabParam) ? tabParam! : "orders";
   const first = account.name?.split(/\s+/)[0];
-  const credits = await listCustomerCredits({
+  const identity = {
     email: account.emailVerified
       ? (account.email?.toLowerCase() ?? null)
       : null,
     phone: account.phoneVerified ? account.phone : null,
-  });
+  };
+  const [credits, invites] = await Promise.all([
+    listCustomerCredits(identity),
+    account.insider ? getInviteProgress(identity) : Promise.resolve(null),
+  ]);
 
   return (
     <CheckoutShell header="site">
@@ -97,6 +102,8 @@ export default async function AccountPage({
             </p>
           </div>
         ) : null}
+
+        {invites ? <InviteCard progress={invites} /> : null}
 
         {credits.length ? (
           <Card className="flex flex-col gap-3">
@@ -244,13 +251,23 @@ async function Orders({ customerId }: { customerId: string }) {
                 {DATE.format(order.placedAt)} · {order.itemCount} item
                 {order.itemCount === 1 ? "" : "s"} · {rupees(order.total)}
               </span>
+              {order.preorder ? (
+                <span className="block font-grotesk text-[length:max(0.75rem,11px)]">
+                  Pre-order · reserve paid {rupees(order.preorder.reserveTotal)}
+                  {order.preorder.balanceDue > 0
+                    ? ` · balance due ${rupees(order.preorder.balanceDue)}`
+                    : ""}
+                </span>
+              ) : null}
             </span>
             <span
               className={`shrink-0 rounded-full px-3 py-1 font-grotesk text-[length:max(0.6875rem,10px)] uppercase ${order.awaitingPayment ? "bg-onwei-blue text-onwei-beige" : "bg-onwei-green"}`}
             >
               {order.awaitingPayment
                 ? "Finish payment"
-                : ORDER_STATUS_LABELS[order.status]}
+                : order.preorder?.balanceNudged && order.preorder.balanceDue > 0
+                  ? "Balance due"
+                  : ORDER_STATUS_LABELS[order.status]}
             </span>
           </Link>
         </li>
@@ -276,5 +293,59 @@ async function Orders({ customerId }: { customerId: string }) {
         </section>
       ) : null}
     </div>
+  );
+}
+
+function rewardText(
+  next: NonNullable<Awaited<ReturnType<typeof getInviteProgress>>>["next"],
+): string {
+  if (!next) return "";
+  if (next.rewardType === "AMOUNT_OFF")
+    return `₹${(next.value ?? 0).toLocaleString("en-IN")} off`;
+  if (next.rewardType === "PERCENT_OFF") return `${next.value}% off`;
+  return next.itemName ? `a free ${next.itemName}` : "a free item";
+}
+
+// Invite friends (owner brief 2026-11-25). No Figma frame; styled like the
+// account cards. Friends join with this Insider ID on the Insiders page.
+function InviteCard({
+  progress,
+}: {
+  progress: NonNullable<Awaited<ReturnType<typeof getInviteProgress>>>;
+}) {
+  const site = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.onwei.in"
+  ).replace(/\/$/, "");
+  const message = `I'm an Onwei Insider. Use my Insider number ${progress.insiderCode} to get in: ${site}/insiders`;
+  const left = progress.next ? progress.next.invites - progress.invites : 0;
+  return (
+    <Card className="flex flex-col gap-3">
+      <h2 className="font-display text-[length:max(1.125rem,14px)] font-bold">
+        Invite friends
+      </h2>
+      <p className="font-grotesk text-[length:max(0.8125rem,11px)] leading-[1.6]">
+        Insiders is invite-only. Anyone who joins with your Insider number{" "}
+        <strong>{progress.insiderCode}</strong> becomes an Insider straight
+        away.
+      </p>
+      <p className="font-grotesk text-[length:max(0.8125rem,11px)] leading-[1.6]">
+        {progress.invites}{" "}
+        {progress.invites === 1 ? "person has" : "people have"} joined with your
+        number.
+        {progress.next
+          ? left > 0
+            ? ` ${left} more and you get ${rewardText(progress.next)}.`
+            : ` Your reward of ${rewardText(progress.next)} is on its way.`
+          : ""}
+      </p>
+      <a
+        href={`https://wa.me/?text=${encodeURIComponent(message)}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex h-12 w-fit items-center justify-center rounded-full bg-onwei-blue px-7 font-grotesk text-[length:max(0.8125rem,11px)] uppercase tracking-[0.04em] text-onwei-beige"
+      >
+        Share on WhatsApp
+      </a>
+    </Card>
   );
 }

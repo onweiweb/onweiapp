@@ -42,6 +42,8 @@ export type PlaceOrderResult =
       orderId: string;
       orderNumber: string;
       total: number;
+      /** Pre-order: paise charged now (the reserve). */
+      reserveTotal?: number;
       paymentMethod: "RAZORPAY" | "COD";
       razorpay?: {
         keyId: string;
@@ -155,9 +157,10 @@ export async function placeOrder(input: {
   if (view.lines.length === 0) return { ok: false, reason: "EMPTY_CART", view };
   if (!view.canCheckout)
     return { ok: false, reason: "CART_NEEDS_ATTENTION", view };
+  const preorder = view.preorder;
   if (
     input.paymentMethod === "COD" &&
-    !codAllowedFor(settings, view.pricing.total)
+    (preorder || !codAllowedFor(settings, view.pricing.total))
   ) {
     return { ok: false, reason: "COD_NOT_AVAILABLE", view };
   }
@@ -224,7 +227,23 @@ export async function placeOrder(input: {
             warehouseId: string;
             reason: string;
           }[] = [];
-          for (const free of pricing.freeItems) {
+          // A pre-order's gifts (lap mystery box, Insider gift) count the
+          // same way: held if in stock, otherwise flagged for staff.
+          const extras = preorder
+            ? preorder.gifts.map((gift) => ({
+                variantId: gift.variantId,
+                quantity: gift.quantity,
+                reason: gift.reason,
+                available: true,
+              }))
+            : pricing.freeItems.map((free) => ({
+                variantId: free.variantId,
+                quantity: free.quantity,
+                reason: `Free with ${free.code}`,
+                available: free.available,
+              }));
+          let missingGifts = 0;
+          for (const free of extras) {
             if (!free.available) continue;
             const rows = await tx.$queryRaw<{ warehouseId: string }[]>`
               UPDATE "Inventory" SET "quantityReserved" = "quantityReserved" + ${free.quantity}
@@ -243,8 +262,9 @@ export async function placeOrder(input: {
                 variantId: free.variantId,
                 quantity: free.quantity,
                 warehouseId: rows[0].warehouseId,
-                reason: `Free with ${free.code}`,
+                reason: free.reason,
               });
+            else missingGifts++;
           }
           const freeVariants = freeLines.length
             ? await tx.productVariant.findMany({
@@ -297,6 +317,20 @@ export async function placeOrder(input: {
               customerId: identity.id,
               status: isCod ? "CONFIRMED" : "PENDING",
               paymentMethod: input.paymentMethod,
+              ...(preorder
+                ? {
+                    kind: "PREORDER" as const,
+                    preorderCampaignId: preorder.campaignId,
+                    preorderTierLabel: preorder.tierLabel,
+                    reserveTotal: toRupees(preorder.reserveTotal),
+                    balanceDue: toRupees(preorder.balanceDue),
+                  }
+                : {}),
+              ...(preorder && missingGifts
+                ? {
+                    needsAttention: `${missingGifts} free item${missingGifts === 1 ? " is" : "s are"} out of stock for this pre-order. Restock or tell the customer.`,
+                  }
+                : {}),
               subtotal: toRupees(pricing.subtotal),
               discountTotal: toRupees(pricing.discountTotal),
               insiderDiscount: toRupees(insiderDiscount),
@@ -380,7 +414,11 @@ export async function placeOrder(input: {
                 create: [
                   {
                     status: "PENDING",
-                    note: isCod ? "Cash on delivery" : "Waiting for payment",
+                    note: isCod
+                      ? "Cash on delivery"
+                      : preorder
+                        ? "Pre-order, waiting for the reserve payment"
+                        : "Waiting for payment",
                     changedBy: "customer",
                   },
                   ...(isCod
@@ -452,11 +490,14 @@ export async function placeOrder(input: {
     };
   }
 
+  const chargeNow = preorder ? preorder.reserveTotal : pricing.total;
   try {
     const rzp = await createRazorpayOrder(input.razorpay!, {
-      amountPaise: pricing.total,
+      amountPaise: chargeNow,
       receipt: order.orderNumber,
-      notes: { orderId: order.id },
+      notes: preorder
+        ? { orderId: order.id, stage: "reserve" }
+        : { orderId: order.id },
     });
     await prisma.order.update({
       where: { id: order.id },
@@ -467,11 +508,12 @@ export async function placeOrder(input: {
       orderId: order.id,
       orderNumber: order.orderNumber,
       total: pricing.total,
+      ...(preorder ? { reserveTotal: preorder.reserveTotal } : {}),
       paymentMethod: "RAZORPAY",
       razorpay: {
         keyId: input.razorpay!.keyId,
         orderId: rzp.id,
-        amount: pricing.total,
+        amount: chargeNow,
         currency: "INR",
       },
     };
@@ -673,7 +715,9 @@ export async function markOrderPaid(input: {
 
   const outcome = await prisma.$transaction(async (tx) => {
     await upsertPayment(tx, order.id, input, "SUCCESS");
-    if (stage === "RESERVE") {
+    // A pre-order whose reserve covers the whole total has nothing left
+    // to pay: it is confirmed like a normal paid order.
+    if (stage === "RESERVE" && toMinorUnits(order.balanceDue ?? 0) > 0) {
       const reserved = await tx.order.updateMany({
         where: { id: order.id, status: "PENDING" },
         data: {
@@ -695,6 +739,15 @@ export async function markOrderPaid(input: {
             changedBy: "system",
           },
         });
+        const items = await tx.orderItem.findMany({
+          where: { orderId: order.id },
+          select: { productVariantId: true },
+        });
+        await removeOrderedItems(
+          order.customerId,
+          items.map((i) => i.productVariantId),
+          tx,
+        );
         return "RESERVED" as const;
       }
     }
@@ -703,7 +756,7 @@ export async function markOrderPaid(input: {
         where: {
           id: order.id,
           status: "RESERVED",
-          balanceRequestedAt: { not: null },
+          balancePaidAt: null,
         },
         data: { status: "CONFIRMED", balancePaidAt: new Date() },
       });
@@ -720,17 +773,20 @@ export async function markOrderPaid(input: {
         return "CONFIRMED" as const;
       }
     }
-    const claimed =
-      stage === "FULL"
-        ? await tx.order.updateMany({
-            where: { id: order.id, status: "PENDING" },
-            data: {
-              status: "CONFIRMED",
-              paidAt: new Date(),
-              reservationExpiresAt: null,
-            },
-          })
-        : { count: 0 };
+    const settlesInFull =
+      stage === "FULL" ||
+      (stage === "RESERVE" && toMinorUnits(order.balanceDue ?? 0) === 0);
+    const claimed = settlesInFull
+      ? await tx.order.updateMany({
+          where: { id: order.id, status: "PENDING" },
+          data: {
+            status: "CONFIRMED",
+            paidAt: new Date(),
+            reservationExpiresAt: null,
+            ...(stage === "RESERVE" ? { balancePaidAt: new Date() } : {}),
+          },
+        })
+      : { count: 0 };
     if (claimed.count === 1) {
       await convertHoldToSale(tx, order.id);
       await tx.couponRedemption.updateMany({

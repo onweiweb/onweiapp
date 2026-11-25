@@ -1,6 +1,8 @@
 import {
   checkOtpRateLimit,
+  findInsiderPhone,
   getClientIp,
+  isInsiderCodeFormat,
   getSiteSetting,
   isValidEmail,
   parseJsonBody,
@@ -22,10 +24,15 @@ import {
 // Gupshup once its sign-in template is on in admin. Before that, SMS and
 // WhatsApp use a static code from OTP_STATIC_CODE, refused on the live
 // production site (packages/core/src/otp/staticOtp.ts).
+//
+// An Insider ID (WEI + 4 digits) can stand in for the mobile number: the code
+// goes to the member's number, and only its last digits come back.
 
 const bodySchema = z.object({
   identifier: z.string().trim().min(1).max(254),
   channel: z.enum(["EMAIL", "SMS", "WHATSAPP"]),
+  // SIGNUP: checking a mobile number on the Insiders join form, no sign-in.
+  purpose: z.enum(["LOGIN", "SIGNUP"]).default("LOGIN"),
 });
 
 const RESEND_AFTER_SECONDS = 30;
@@ -33,10 +40,37 @@ const RESEND_AFTER_SECONDS = 30;
 export async function POST(request: Request) {
   const parsed = await parseJsonBody(request, bodySchema);
   if (!parsed.ok) return invalidInput();
-  const { channel } = parsed.data;
+  const { channel, purpose } = parsed.data;
   let identifier = parsed.data.identifier;
 
   const setting = await getSiteSetting();
+  let insiderId: string | null = null;
+  let sentTo: string | null = null;
+  if (
+    purpose === "LOGIN" &&
+    channel !== "EMAIL" &&
+    isInsiderCodeFormat(identifier)
+  ) {
+    // Limit lookups per ID and per IP, so IDs can't be tried one by one.
+    const lookup = await checkOtpRateLimit(
+      identifier.toUpperCase(),
+      getClientIp(request),
+    );
+    if (!lookup.allowed)
+      return NextResponse.json(
+        { ok: false, reason: "RATE_LIMITED" },
+        { status: 429 },
+      );
+    const member = await findInsiderPhone(identifier);
+    if (!member)
+      return NextResponse.json(
+        { ok: false, reason: "UNKNOWN_INSIDER" },
+        { status: 404 },
+      );
+    insiderId = member.code;
+    sentTo = member.masked;
+    identifier = member.phone;
+  }
   if (channel === "EMAIL") {
     identifier = identifier.toLowerCase();
     if (!isValidEmail(identifier)) {
@@ -90,7 +124,7 @@ export async function POST(request: Request) {
     {
       identifier,
       channel,
-      purpose: "LOGIN",
+      purpose,
       requestIp: requestIp ?? undefined,
     },
     secret,
@@ -124,7 +158,9 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     ok: true,
-    identifier,
+    // Signing in by Insider ID: the browser keeps the ID, never the number.
+    identifier: insiderId ?? identifier,
+    sentTo,
     expiresAt,
     resendAfterSeconds: RESEND_AFTER_SECONDS,
   });

@@ -7,6 +7,11 @@ if (process.env.VERCEL) {
   delete process.env.DATABASE_URL;
 }
 
+// The dev database is far from a laptop (about 0.4s a query), which expires
+// Prisma's default 5s transactions mid-test. Tests only; see
+// packages/database/src/client.ts.
+process.env.PRISMA_TRANSACTION_TIMEOUT_MS ??= "30000";
+
 export const baseVitestConfig: { test: TestUserConfig } = {
   test: {
     passWithNoTests: false,

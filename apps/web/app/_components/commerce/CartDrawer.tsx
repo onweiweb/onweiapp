@@ -5,6 +5,9 @@ import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { ProductImage } from "@/_components/ProductImage";
 import { codeMessage, rupees } from "../../../lib/messages/commerce";
+import { PreorderSummary } from "./PreorderSummary";
+import { InsiderBox } from "./InsiderBox";
+import { looksLikeInsiderId } from "./SignInPanel";
 import { useCart } from "./CartProvider";
 import { QuickAddButton } from "./QuickAddButton";
 
@@ -229,7 +232,7 @@ function Recommendations({ excludeIds }: { excludeIds: string[] }) {
 }
 
 export function CodeBox() {
-  const { cart, applyCode, removeCode, setInsider, busy, session } = useCart();
+  const { cart, applyCode, removeCode, busy } = useCart();
   const [openBox, setOpenBox] = useState(false);
   const [value, setValue] = useState("");
   const [message, setMessage] = useState<string | null>(null);
@@ -239,26 +242,6 @@ export function CodeBox() {
   const visibleCodes = cart.codes.filter((code) => !code.isInsiderCode);
   return (
     <div className="flex flex-col gap-2">
-      {cart.insider ? (
-        <div className="flex items-center justify-between gap-3 rounded-[0.75rem] bg-onwei-green px-3 py-2 font-grotesk text-[length:max(0.8125rem,11px)] text-onwei-blue">
-          <span>
-            {cart.insider.applied
-              ? `Insider ${cart.insider.percent}% off is on.`
-              : cart.insider.switchedOn && cart.insider.blockedBy
-                ? `Your Insider ${cart.insider.percent}% can't be used with ${cart.insider.blockedBy}. We kept the bigger saving.`
-                : `You're an Onwei Insider. Get ${cart.insider.percent}% off.`}
-          </span>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setInsider(!cart.insider!.switchedOn)}
-            className="shrink-0 underline underline-offset-2"
-          >
-            {cart.insider.switchedOn ? "Remove" : "Apply"}
-          </button>
-        </div>
-      ) : null}
-
       {visibleCodes.map((code) => (
         <div
           key={code.code}
@@ -289,6 +272,12 @@ export function CodeBox() {
           onSubmit={async (event) => {
             event.preventDefault();
             if (!value.trim()) return;
+            if (looksLikeInsiderId(value)) {
+              setMessage(
+                "That's an Insider ID. Log in with it in the Insider box below.",
+              );
+              return;
+            }
             const result = await applyCode(value.trim());
             setMessage(result.ok ? null : (result.message ?? null));
             if (result.ok) {
@@ -298,7 +287,7 @@ export function CodeBox() {
           }}
         >
           <label htmlFor={inputId} className="sr-only">
-            Discount or Insider code
+            Discount code
           </label>
           <div className="flex gap-2">
             <input
@@ -329,11 +318,6 @@ export function CodeBox() {
               {message}
             </p>
           ) : null}
-          {!session?.signedIn ? (
-            <p className="font-grotesk text-[length:max(0.6875rem,10px)] text-onwei-blue/70">
-              Insider? Sign in at checkout and your discount applies by itself.
-            </p>
-          ) : null}
         </form>
       ) : (
         <button
@@ -355,27 +339,32 @@ function Totals() {
   const row =
     "flex justify-between font-grotesk text-[length:max(0.8125rem,11px)] text-onwei-blue";
   return (
-    <dl className="flex flex-col gap-1">
-      <div className={row}>
-        <dt>Subtotal</dt>
-        <dd>{rupees(p.subtotal)}</dd>
-      </div>
-      {p.discounts
-        .filter((d) => d.amount > 0)
-        .map((d) => (
-          <div key={d.label} className={row}>
-            <dt>{d.label}</dt>
-            <dd>−{rupees(d.amount)}</dd>
-          </div>
-        ))}
-      <div className={row}>
-        <dt>Delivery</dt>
-        <dd>{p.shippingFee === 0 ? "Free" : rupees(p.shippingFee)}</dd>
-      </div>
+    <div className="flex flex-col gap-1">
+      <dl className="flex flex-col gap-1">
+        <div className={row}>
+          <dt>Subtotal</dt>
+          <dd>{rupees(p.subtotal)}</dd>
+        </div>
+        {p.discounts
+          .filter((d) => d.amount > 0)
+          .map((d) => (
+            <div key={d.label} className={row}>
+              <dt>{d.label}</dt>
+              <dd>−{rupees(d.amount)}</dd>
+            </div>
+          ))}
+        <div className={row}>
+          <dt>Delivery</dt>
+          <dd>{p.shippingFee === 0 ? "Free" : rupees(p.shippingFee)}</dd>
+        </div>
+      </dl>
       <p className="font-grotesk text-[length:max(0.6875rem,10px)] text-onwei-blue/70">
         Inclusive of all taxes
       </p>
-    </dl>
+      {cart.preorder ? (
+        <PreorderSummary preorder={cart.preorder} total={p.total} />
+      ) : null}
+    </div>
   );
 }
 
@@ -387,8 +376,8 @@ function EmptyCart({
   preorderOnly: boolean;
 }) {
   if (preorderOnly) {
-    // Pre-order mode: the bag is closed until launch (it is emptied when
-    // pre-orders start), items are reserved one at a time instead.
+    // Pre-order mode with no lap running: the bag is shut until pre-orders
+    // open or the shop goes live.
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-6 px-6 text-center">
         <h2 className="font-display text-[length:max(2.5rem,30px)] font-bold uppercase leading-[0.95] text-onwei-blue">
@@ -397,8 +386,8 @@ function EmptyCart({
           are on
         </h2>
         <p className="max-w-[22rem] font-grotesk text-[length:max(0.875rem,12px)] text-onwei-blue">
-          The bag opens at launch. Until then, reserve what you like from its
-          product page.
+          Pre-orders aren&apos;t open right now. The bag opens with the next
+          pre-order lap or at launch.
         </p>
         <Link
           href="/collection/all"
@@ -553,16 +542,24 @@ export function CartDrawer() {
                 />
               </div>
             </div>
-            <div className="flex flex-col gap-3 border-t border-onwei-blue bg-onwei-beige px-6 py-5 desk:px-8">
-              <CodeBox />
-              <Totals />
+            <div className="flex shrink-0 flex-col gap-3 border-t border-onwei-blue bg-onwei-beige px-6 py-5 desk:px-8">
+              {/* Codes, totals and the Insider box scroll on their own when
+                  they're taller than about half a phone screen, so the bag
+                  items above and the button below stay in view. */}
+              <div className="flex max-h-[45dvh] flex-col gap-3 overflow-y-auto desk:max-h-none">
+                <CodeBox />
+                <Totals />
+                <InsiderBox />
+              </div>
               {cart.canCheckout ? (
                 <Link
                   href="/checkout"
                   onClick={close}
                   className="flex h-12 items-center justify-center rounded-full bg-onwei-blue px-6 font-grotesk text-[length:max(0.875rem,12px)] uppercase tracking-[0.04em] text-onwei-beige"
                 >
-                  Continue to checkout - {rupees(cart.pricing.total)}
+                  {cart.preorder
+                    ? `Continue to reserve - ${rupees(cart.preorder.reserveTotal)}`
+                    : `Continue to checkout - ${rupees(cart.pricing.total)}`}
                 </Link>
               ) : (
                 <p

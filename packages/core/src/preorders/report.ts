@@ -12,9 +12,9 @@ export interface PreorderDemandRow {
   productId: string;
   name: string;
   variantLabel: string;
-  /** Reserved, waiting for stock. */
+  /** Reserve paid (stock held), balance nudge not sent yet. */
   waiting: number;
-  /** Stock held, balance asked, not paid yet. */
+  /** Balance nudge sent, not paid yet. */
   asked: number;
   /** Balance paid. */
   paid: number;
@@ -33,12 +33,16 @@ export interface PreorderOverview {
   byTier: { label: string; orders: number; units: number }[];
   items: PreorderDemandRow[];
   gifts: PreorderDemandRow[];
-  /** Products with reservations waiting, for the "Stock is in" buttons. */
-  products: {
-    productId: string;
-    name: string;
-    waiting: number;
-    stock: number;
+  /** Reserved orders with the balance still to pay, oldest first. */
+  unpaid: {
+    orderId: string;
+    orderNumber: string;
+    tierLabel: string | null;
+    /** Paise. */
+    reserveTotal: number;
+    balanceDue: number;
+    paidAt: Date | null;
+    nudgedAt: Date | null;
   }[];
 }
 
@@ -52,12 +56,16 @@ export async function getPreorderOverview(
       deletedAt: null,
       status: { notIn: ["PENDING", "CANCELLED"] },
     },
+    orderBy: [{ paidAt: "asc" }, { id: "asc" }],
     select: {
+      id: true,
+      orderNumber: true,
+      paidAt: true,
+      balanceNudgedAt: true,
       status: true,
       preorderTierLabel: true,
       reserveTotal: true,
       balanceDue: true,
-      balanceRequestedAt: true,
       items: {
         select: {
           productVariantId: true,
@@ -86,15 +94,25 @@ export async function getPreorderOverview(
     byTier: [],
     items: [],
     gifts: [],
-    products: [],
+    unpaid: [],
   };
   const tiers = new Map<string, { orders: number; units: number }>();
   const rows = new Map<string, PreorderDemandRow>();
 
   for (const order of orders) {
     overview.reserveCollected += toMinorUnits(order.reserveTotal ?? 0);
-    if (order.status === "RESERVED")
+    if (order.status === "RESERVED") {
       overview.balanceOutstanding += toMinorUnits(order.balanceDue ?? 0);
+      overview.unpaid.push({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        tierLabel: order.preorderTierLabel,
+        reserveTotal: toMinorUnits(order.reserveTotal ?? 0),
+        balanceDue: toMinorUnits(order.balanceDue ?? 0),
+        paidAt: order.paidAt,
+        nudgedAt: order.balanceNudgedAt,
+      });
+    }
     const units = order.items
       .filter((i) => !i.isFree)
       .reduce((sum, i) => sum + i.quantity, 0);
@@ -110,7 +128,7 @@ export async function getPreorderOverview(
     const stage =
       order.status !== "RESERVED"
         ? "paid"
-        : order.balanceRequestedAt
+        : order.balanceNudgedAt
           ? "asked"
           : "waiting";
     for (const item of order.items) {
@@ -143,21 +161,5 @@ export async function getPreorderOverview(
   );
   overview.items = all.filter((r) => !r.isFree);
   overview.gifts = all.filter((r) => r.isFree);
-  const products = new Map<
-    string,
-    { productId: string; name: string; waiting: number; stock: number }
-  >();
-  for (const row of overview.items) {
-    const p = products.get(row.productId) ?? {
-      productId: row.productId,
-      name: row.name,
-      waiting: 0,
-      stock: 0,
-    };
-    p.waiting += row.waiting;
-    p.stock += row.stock;
-    products.set(row.productId, p);
-  }
-  overview.products = [...products.values()];
   return overview;
 }

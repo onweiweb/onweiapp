@@ -119,17 +119,21 @@ describe("Insiders WhatsApp send: blanks", () => {
 });
 
 describe("Insiders WhatsApp send: who gets it", () => {
-  it("builds the filter for each group", () => {
-    expect(audienceWhere({ group: "all" })).toEqual({});
+  it("builds the filter for each group, members only", () => {
+    const members = { status: "APPROVED" };
+    expect(audienceWhere({ group: "all" })).toEqual(members);
     expect(audienceWhere({ group: "noAddress" })).toEqual({
+      ...members,
       cardAddress: { is: null },
     });
     expect(audienceWhere({ group: "picked", ids: ["a", "a", "b"] })).toEqual({
+      ...members,
       id: { in: ["a", "b"] },
     });
     expect(
       audienceWhere({ group: "joined", from: "2026-11-01", to: "2026-11-02" }),
     ).toEqual({
+      ...members,
       submittedAt: {
         gte: new Date("2026-10-31T18:30:00Z"),
         lt: new Date("2026-11-02T18:30:00Z"),

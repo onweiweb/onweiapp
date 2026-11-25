@@ -9,6 +9,8 @@ import {
 } from "./customerIdentity";
 import type { AddressSnapshot } from "./orders";
 import { getStoreSettings } from "./storeSettings";
+import { getPreorderCampaign } from "../preorders/campaign";
+import { customerCanCancel } from "../preorders/rules";
 import { ithinkTrackingUrl } from "../logistics/ithinkClient";
 
 /** Everything the account page and checkout need about the customer. */
@@ -272,6 +274,12 @@ export interface OrderListItem {
   isCurrent: boolean;
   /** Waiting for payment, still within the hold. */
   awaitingPayment: boolean;
+  /** Set on pre-orders. Paise; balanceDue is 0 once paid or cancelled. */
+  preorder: {
+    reserveTotal: number;
+    balanceDue: number;
+    balanceNudged: boolean;
+  } | null;
 }
 
 export async function listCustomerOrders(
@@ -293,6 +301,10 @@ export async function listCustomerOrders(
       total: true,
       paymentMethod: true,
       reservationExpiresAt: true,
+      kind: true,
+      reserveTotal: true,
+      balanceDue: true,
+      balanceNudgedAt: true,
       items: {
         select: { productName: true, imageUrl: true, quantity: true },
         orderBy: { id: "asc" },
@@ -315,6 +327,17 @@ export async function listCustomerOrders(
       order.status === "PENDING" &&
       order.paymentMethod === "RAZORPAY" &&
       (order.reservationExpiresAt?.getTime() ?? 0) > now,
+    preorder:
+      order.kind === "PREORDER"
+        ? {
+            reserveTotal: toMinorUnits(order.reserveTotal ?? 0),
+            balanceDue:
+              order.status === "RESERVED"
+                ? toMinorUnits(order.balanceDue ?? 0)
+                : 0,
+            balanceNudged: Boolean(order.balanceNudgedAt),
+          }
+        : null,
   }));
 }
 
@@ -342,13 +365,21 @@ export interface OrderDetailItem {
 /** Set on pre-orders. Paise. */
 export interface OrderPreorderInfo {
   tierLabel: string | null;
+  /** The lap discount locked in, e.g. "Lap 1, 15% off". */
+  lapText: string | null;
   reserveTotal: number;
   balanceDue: number;
-  /** "WAITING": reserved, stock not in yet. "DUE": asked to pay. */
-  stage: "PAYING_RESERVE" | "WAITING" | "DUE" | "PAID" | "CANCELLED";
-  balanceRequestedAt: Date | null;
-  /** When it turns into credit if still unpaid. */
-  creditAfter: Date | null;
+  /**
+   * PAYING_RESERVE: reserve not paid yet. RESERVED: reserve paid, balance can
+   * be paid any time. DUE: the balance nudge went out. PAID: balance paid.
+   */
+  stage: "PAYING_RESERVE" | "RESERVED" | "DUE" | "PAID" | "CANCELLED";
+  /** Pay by this moment (exclusive), or it turns into credit. */
+  balanceDueBy: Date | null;
+  /** The customer can cancel now (until the window closes, before the nudge). */
+  canCancel: boolean;
+  /** When cancelling closes, if it still can. */
+  cancelUntil: Date | null;
   expectedShipDate: Date | null;
   creditCode: string | null;
   creditEndsAt: Date | null;
@@ -473,10 +504,7 @@ export async function getCustomerOrder(
   if (order.kind === "PREORDER") {
     const [campaign, credit] = await Promise.all([
       order.preorderCampaignId
-        ? prisma.preorderCampaign.findUnique({
-            where: { id: order.preorderCampaignId },
-            select: { expectedShipDate: true },
-          })
+        ? getPreorderCampaign(order.preorderCampaignId)
         : Promise.resolve(null),
       order.creditCouponId
         ? prisma.coupon.findUnique({
@@ -485,8 +513,13 @@ export async function getCustomerOrder(
           })
         : Promise.resolve(null),
     ]);
+    const closesAt = campaign?.deadlines.closesAt ?? null;
+    const canCancel = customerCanCancel(order, closesAt);
     preorder = {
       tierLabel: order.preorderTierLabel,
+      lapText:
+        order.discounts.find((d) => d.kind === "PREORDER")?.label ??
+        order.preorderTierLabel,
       reserveTotal: toMinorUnits(order.reserveTotal ?? 0),
       balanceDue: toMinorUnits(order.balanceDue ?? 0),
       stage:
@@ -496,15 +529,12 @@ export async function getCustomerOrder(
             ? "CANCELLED"
             : order.status !== "RESERVED"
               ? "PAID"
-              : order.balanceRequestedAt
+              : order.balanceNudgedAt
                 ? "DUE"
-                : "WAITING",
-      balanceRequestedAt: order.balanceRequestedAt,
-      creditAfter: order.balanceRequestedAt
-        ? new Date(
-            order.balanceRequestedAt.getTime() + 14 * 24 * 60 * 60 * 1000,
-          )
-        : null,
+                : "RESERVED",
+      balanceDueBy: campaign?.deadlines.balanceDueAt ?? null,
+      canCancel,
+      cancelUntil: canCancel ? closesAt : null,
       expectedShipDate: campaign?.expectedShipDate ?? null,
       creditCode: credit?.code.toUpperCase() ?? null,
       creditEndsAt: credit?.endsAt ?? null,

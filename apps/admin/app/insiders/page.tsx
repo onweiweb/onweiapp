@@ -29,6 +29,8 @@ import {
 import { CreateCodesButton, EmailSender, FillCardsButton } from "./_components";
 import { CARD_SHIP_VIEWS, ShipCardsTab, type CardShipView } from "./_shipCards";
 import { MembersTab } from "./_members";
+import { ApplicationsTab } from "./_applications";
+import { RewardsTab } from "./_rewards";
 import {
   WHATSAPP_RANGES,
   WHATSAPP_VIEWS,
@@ -41,6 +43,8 @@ import { AddUpdateButton, UpdateActions } from "./_updates";
 
 const TABS = [
   { id: "members", label: "Members" },
+  { id: "applications", label: "Applications" },
+  { id: "rewards", label: "Invite rewards" },
   { id: "overview", label: "Overview" },
   { id: "ship", label: "Ship cards" },
   { id: "cards", label: "Printed cards" },
@@ -80,6 +84,10 @@ export default async function InsidersPage({
     campaign?: string;
     status?: string;
     range?: string;
+    activity?: string;
+    reason?: string;
+    from?: string;
+    to?: string;
   }>;
 }) {
   const staff = await requirePageSession("waitlist:view");
@@ -97,12 +105,20 @@ export default async function InsidersPage({
     <main className="flex flex-col gap-6">
       <PageHeader
         title="Insiders"
-        description="Everyone who signs up is an Onwei Insider with a personal, lifetime discount code. See who joined, set the discount, email the codes, and post the Insider cards."
+        description="Onwei Insiders get a personal, lifetime discount code. See who joined, review applications, set invite rewards, email the codes, and post the Insider cards."
       />
       <AdminTabLinks basePath="/insiders" tabs={TABS} active={tab} />
       {tab === "members" ? (
         <MembersTab page={parsePage(params.page)} q={params.q} />
       ) : null}
+      {tab === "applications" ? (
+        <ApplicationsTab
+          canManage={canManage}
+          page={parsePage(params.page)}
+          params={params}
+        />
+      ) : null}
+      {tab === "rewards" ? <RewardsTab canManage={canManage} /> : null}
       {tab === "overview" ? <OverviewTab canManage={canManage} /> : null}
       {tab === "ship" ? (
         <ShipCardsTab

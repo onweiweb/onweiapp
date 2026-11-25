@@ -1,6 +1,7 @@
 import Image from "@/_components/ScaledImage";
 import { ScrollReveal } from "@/_components/ScrollReveal";
 import { WaitlistForm } from "@/_components/WaitlistForm";
+import { InsiderAccessForm } from "@/_components/InsiderAccessForm";
 
 // Figma node 945:4323 (web) / 945:4451 (mobile), "join onwei insiders": the
 // photo plus the signup form. Used on the waitlist page before launch and on
@@ -8,9 +9,12 @@ import { WaitlistForm } from "@/_components/WaitlistForm";
 export function InsidersJoinSection({
   instagramUrl,
   place = "waitlist",
+  inviteOnly = false,
 }: {
   instagramUrl: string | null;
   place?: "waitlist" | "insiders";
+  /** Insiders join mode "invite or apply": the invite and apply form. */
+  inviteOnly?: boolean;
 }) {
   return (
     <section
@@ -51,12 +55,18 @@ export function InsidersJoinSection({
             join onwei insiders
           </p>
           <p className="font-grotesk text-[length:max(0.875rem,11px)] leading-[1.3] text-onwei-blue">
-            {place === "insiders"
-              ? "Takes under a minute. Your personal Insider code comes by email."
-              : "Takes under a minute. You'll get your card right after."}
+            {inviteOnly
+              ? "Insiders is invite-only. Get in with an Insider's number, or apply and we'll get back to you."
+              : place === "insiders"
+                ? "Takes under a minute. Your personal Insider code comes by email."
+                : "Takes under a minute. You'll get your card right after."}
           </p>
         </div>
-        <WaitlistForm instagramUrl={instagramUrl} place={place} />
+        {inviteOnly ? (
+          <InsiderAccessForm />
+        ) : (
+          <WaitlistForm instagramUrl={instagramUrl} place={place} />
+        )}
       </ScrollReveal>
     </section>
   );

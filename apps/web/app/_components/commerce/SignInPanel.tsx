@@ -18,6 +18,11 @@ function looksLikePhone(value: string): boolean {
   return /^[+\d\s()-]{8,}$/.test(value.trim()) && !value.includes("@");
 }
 
+/** "WEI1234" (spaces and case ignored): an Insider ID. */
+export function looksLikeInsiderId(value: string): boolean {
+  return /^WEI\d{4}$/.test(value.replace(/\s+/g, "").toUpperCase());
+}
+
 async function post(url: string, body: unknown) {
   try {
     const response = await fetch(url, {
@@ -29,6 +34,8 @@ async function post(url: string, body: unknown) {
       ok: boolean;
       reason?: string;
       identifier?: string;
+      /** Signing in by Insider ID: the last digits of the member's number. */
+      sentTo?: string | null;
       resendAfterSeconds?: number;
       needsName?: boolean;
     };
@@ -38,23 +45,32 @@ async function post(url: string, body: unknown) {
 }
 
 /**
- * Sign in with an email or a mobile number and a 6-digit code. Phones pick
- * WhatsApp or SMS. Used by the entry pop-up, checkout and /login. The same
- * component links a missing contact on the account page (`mode="link"`).
+ * Sign in with an email, a mobile number or an Insider ID, and a 6-digit
+ * code. Phones and Insider IDs pick WhatsApp or SMS; with an Insider ID the
+ * code goes to the member's number. Used by the entry pop-up, checkout, the
+ * bag's Insider box and /login. The same component links a missing contact
+ * on the account page (`mode="link"`, no Insider IDs there).
  */
 export function SignInPanel({
   onDone,
   mode = "signIn",
   heading,
   intro,
+  initialContact = "",
+  onUnknownInsider,
 }: {
   onDone: (result: { needsName: boolean }) => void;
   mode?: "signIn" | "link";
   heading?: string;
   intro?: string;
+  /** Start with this typed in (for example an Insider ID from the bag). */
+  initialContact?: string;
+  /** The Insider ID typed in isn't one of ours. */
+  onUnknownInsider?: () => void;
 }) {
   const [step, setStep] = useState<"contact" | "code">("contact");
-  const [contact, setContact] = useState("");
+  const [contact, setContact] = useState(initialContact);
+  const [sentTo, setSentTo] = useState<string | null>(null);
   const [identifier, setIdentifier] = useState("");
   const [channel, setChannel] = useState<Channel>("EMAIL");
   const [code, setCode] = useState("");
@@ -65,7 +81,8 @@ export function SignInPanel({
   const contactId = useId();
   const codeId = useId();
   const codeRef = useRef<HTMLInputElement>(null);
-  const phone = looksLikePhone(contact);
+  const insiderId = mode === "signIn" && looksLikeInsiderId(contact);
+  const phone = insiderId || looksLikePhone(contact);
   const requestUrl =
     mode === "link" ? "/api/account/contact/request" : "/api/auth/request-otp";
   const verifyUrl =
@@ -87,7 +104,9 @@ export function SignInPanel({
       setError(
         phone
           ? SIGN_IN_ERRORS.INVALID_PHONE!
-          : "Enter your email or mobile number.",
+          : mode === "signIn"
+            ? "Enter your email, mobile number or Insider ID."
+            : "Enter your email or mobile number.",
       );
       return;
     }
@@ -98,12 +117,17 @@ export function SignInPanel({
     });
     setWorking(false);
     if (!data.ok) {
+      if (data.reason === "UNKNOWN_INSIDER" && onUnknownInsider) {
+        onUnknownInsider();
+        return;
+      }
       setError(
         SIGN_IN_ERRORS[data.reason ?? "NETWORK"] ?? SIGN_IN_ERRORS.NETWORK!,
       );
       return;
     }
     setChannel(via);
+    setSentTo(data.sentTo ?? null);
     setIdentifier(data.identifier ?? contact.trim());
     setWait(data.resendAfterSeconds ?? 30);
     setCode("");
@@ -142,7 +166,7 @@ export function SignInPanel({
   const where =
     channel === "EMAIL"
       ? identifier
-      : `${channel === "WHATSAPP" ? "WhatsApp" : "SMS"} on ${identifier}`;
+      : `${channel === "WHATSAPP" ? "WhatsApp" : "SMS"} on ${sentTo ? `the number on your Insider ID (${sentTo})` : identifier}`;
 
   return (
     <div className="flex flex-col gap-4 text-onwei-blue">
@@ -168,7 +192,9 @@ export function SignInPanel({
             htmlFor={contactId}
             className="font-grotesk text-[length:max(0.75rem,11px)] uppercase tracking-[0.04em]"
           >
-            Email or mobile number
+            {mode === "signIn"
+              ? "Email, mobile number or Insider ID"
+              : "Email or mobile number"}
           </label>
           <input
             id={contactId}
@@ -178,8 +204,12 @@ export function SignInPanel({
               setError(null);
             }}
             autoComplete="username"
-            inputMode={phone ? "tel" : "email"}
-            placeholder="you@example.com or 98765 43210"
+            inputMode={phone && !insiderId ? "tel" : "email"}
+            placeholder={
+              mode === "signIn"
+                ? "you@example.com, 98765 43210 or WEI1234"
+                : "you@example.com or 98765 43210"
+            }
             aria-invalid={Boolean(error)}
             aria-describedby={error ? `${contactId}-error` : undefined}
             className={INPUT}

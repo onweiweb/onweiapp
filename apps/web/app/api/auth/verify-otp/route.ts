@@ -1,6 +1,8 @@
 import { createSessionToken, SESSION_COOKIE_NAME } from "@onwei/auth";
 import {
+  findInsiderPhone,
   getClientIp,
+  isInsiderCodeFormat,
   getCurrentConsentVersion,
   getSiteSetting,
   isValidEmail,
@@ -41,7 +43,15 @@ export async function POST(request: Request) {
 
   // Same normalising as request-otp, so the code is found.
   let identifier = parsed.data.identifier;
-  if (channel === "EMAIL") {
+  if (channel !== "EMAIL" && isInsiderCodeFormat(identifier)) {
+    const member = await findInsiderPhone(identifier);
+    if (!member)
+      return NextResponse.json(
+        { ok: false, reason: "UNKNOWN_INSIDER" },
+        { status: 400 },
+      );
+    identifier = member.phone;
+  } else if (channel === "EMAIL") {
     identifier = identifier.toLowerCase();
     if (!isValidEmail(identifier)) return invalidInput();
   } else {

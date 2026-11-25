@@ -26,6 +26,8 @@ export interface StoreSettings {
   parcelWidthCm: number;
   parcelHeightCm: number;
   defaultItemWeightKg: number;
+  /** Pre-order cash refunds keep the payment gateway fee. */
+  refundKeepsGatewayFee: boolean;
 }
 
 type Row = Awaited<ReturnType<typeof prisma.storeSetting.upsert>>;
@@ -50,6 +52,7 @@ function toSettings(row: Row): StoreSettings {
     parcelWidthCm: Number(row.parcelWidthCm),
     parcelHeightCm: Number(row.parcelHeightCm),
     defaultItemWeightKg: Number(row.defaultItemWeightKg),
+    refundKeepsGatewayFee: row.refundKeepsGatewayFee,
   };
 }
 
@@ -107,6 +110,7 @@ export interface UpdateStoreSettingsInput {
   parcelWidthCm?: number;
   parcelHeightCm?: number;
   defaultItemWeightKg?: number;
+  refundKeepsGatewayFee?: boolean;
 }
 
 export async function updateStoreSettings(

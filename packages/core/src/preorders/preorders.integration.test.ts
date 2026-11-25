@@ -8,7 +8,7 @@ import {
   it,
   vi,
 } from "vitest";
-import { markOrderPaid } from "../commerce/orders";
+import { markOrderPaid, placeOrder } from "../commerce/orders";
 import {
   addToCart,
   getCartView,
@@ -27,17 +27,18 @@ import { resolveCoupons } from "../commerce/couponEligibility";
 import { getCustomerIdentity } from "../commerce/customerIdentity";
 import {
   cancelPreorder,
+  getPreorderCampaign,
   getPreorderOverview,
-  placePreorder,
-  quotePreorder,
-  requestPreorderBalance,
+  nudgePreorderBalance,
   runPreorderReminders,
   savePreorderCampaign,
+  suggestPreorderRefund,
 } from "./index";
 
-// Runs the whole pre-order path against the dev database: reserve, pay the
-// reserve, stock arrives, pay the balance, and cancel to a credit. Razorpay
-// is faked by stubbing fetch. Everything made here is removed afterwards.
+// Runs the whole pre-order path against the dev database: fill the bag, pay
+// the reserve (stock held), pay the balance, the nudge and the deadline job,
+// and cancel to a credit. Razorpay is faked by stubbing fetch. Everything
+// made here is removed afterwards.
 
 const TAG = `pre-${crypto.randomUUID().slice(0, 8)}`;
 const razorpay = { keyId: "rzp_test_fake", keySecret: "fake_secret" };
@@ -49,7 +50,8 @@ function istToday(): string {
 
 describe.skipIf(!process.env.DATABASE_URL)(
   "pre-orders (integration)",
-  { timeout: 60000 },
+  // The dev database is far away (about 0.4s a query from a laptop).
+  { timeout: 240000 },
   () => {
     let staffUserId: string;
     let categoryId: string;
@@ -69,6 +71,21 @@ describe.skipIf(!process.env.DATABASE_URL)(
     beforeEach(() => {
       vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
         const target = String(url);
+        if (target.includes("/payments/") && !target.endsWith("/refund")) {
+          return new Response(
+            JSON.stringify({
+              id: target.split("/payments/")[1],
+              order_id: "x",
+              amount: 50000,
+              currency: "INR",
+              status: "captured",
+              method: "upi",
+              fee: 1180,
+              tax: 180,
+            }),
+            { status: 200 },
+          );
+        }
         if (target.endsWith("/orders")) {
           const body = JSON.parse(String((init as RequestInit).body)) as {
             amount: number;
@@ -161,7 +178,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       ).id;
       await prisma.inventory.createMany({
         data: [
-          { productVariantId: variantId, warehouseId, quantityOnHand: 0 },
+          { productVariantId: variantId, warehouseId, quantityOnHand: 20 },
           { productVariantId: boxVariantId, warehouseId, quantityOnHand: 0 },
         ],
       });
@@ -171,7 +188,11 @@ describe.skipIf(!process.env.DATABASE_URL)(
           name: `Test ${TAG}`,
           isActive: true,
           startDate: istToday(),
-          reserveAmount: 900,
+          reserveLow: 500,
+          reserveHigh: 900,
+          reserveThreshold: 4000,
+          nudgeDaysBeforeClose: 7,
+          balanceDueDaysAfterClose: 7,
           expectedShipDate: null,
           productIds: [productId],
           insiderGiftVariantId: null,
@@ -209,7 +230,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
         where: { id: "singleton" },
         data: { siteMode: "PREORDERS" },
       });
-    }, 60000);
+    }, 240000);
 
     afterAll(async () => {
       vi.restoreAllMocks();
@@ -240,6 +261,12 @@ describe.skipIf(!process.env.DATABASE_URL)(
         where: { couponId: { in: creditIds } },
       });
       await prisma.coupon.deleteMany({ where: { id: { in: creditIds } } });
+      await prisma.cartItem.deleteMany({
+        where: { cart: { customerId: { in: customerIds } } },
+      });
+      await prisma.cart.deleteMany({
+        where: { customerId: { in: customerIds } },
+      });
       await prisma.address.deleteMany({
         where: { customerId: { in: customerIds } },
       });
@@ -261,7 +288,13 @@ describe.skipIf(!process.env.DATABASE_URL)(
           data: { stackMode: previousMode },
         });
       await prisma.auditLog.deleteMany({
-        where: { entityId: { in: [campaignId, productId, ...orderIds] } },
+        where: {
+          entityId: {
+            in: [campaignId, productId, ...orderIds].filter(
+              (id): id is string => Boolean(id),
+            ),
+          },
+        },
       });
       const variants = [variantId, boxVariantId];
       await prisma.inventoryLog.deleteMany({
@@ -278,7 +311,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       });
       await prisma.category.deleteMany({ where: { id: categoryId } });
       await prisma.warehouse.deleteMany({ where: { id: warehouseId } });
-    }, 60000);
+    }, 240000);
 
     async function makeCustomer() {
       const customer = await prisma.customer.create({
@@ -306,35 +339,60 @@ describe.skipIf(!process.env.DATABASE_URL)(
       return { id: customer.id, addressId: address.id };
     }
 
+    async function setStock(onHand: number, boxes = 0) {
+      await prisma.inventory.update({
+        where: {
+          productVariantId_warehouseId: {
+            productVariantId: variantId,
+            warehouseId,
+          },
+        },
+        data: { quantityOnHand: onHand, quantityReserved: 0 },
+      });
+      await prisma.inventory.update({
+        where: {
+          productVariantId_warehouseId: {
+            productVariantId: boxVariantId,
+            warehouseId,
+          },
+        },
+        data: { quantityOnHand: boxes, quantityReserved: 0 },
+      });
+    }
+
+    async function stockOf(id: string) {
+      return prisma.inventory.findUniqueOrThrow({
+        where: {
+          productVariantId_warehouseId: { productVariantId: id, warehouseId },
+        },
+      });
+    }
+
     async function reserve(quantity: number) {
       const buyer = await makeCustomer();
-      const q = await quotePreorder({
-        variantId,
-        quantity,
-        customerId: buyer.id,
-      });
-      if (!q.ok) throw new Error(q.reason);
-      const placed = await placePreorder({
+      const owner = { customerId: buyer.id };
+      const added = await addToCart(owner, variantId, quantity);
+      if (!added.ok) throw new Error(added.reason);
+      const view = await getCartView(owner);
+      if (!view.preorder) throw new Error("not a pre-order bag");
+      const placed = await placeOrder({
         customerId: buyer.id,
         addressId: buyer.addressId,
-        variantId,
-        quantity,
-        codes: [],
-        expectedReserve: q.quote.reserveTotal,
-        expectedTotal: q.quote.pricing.total,
+        paymentMethod: "RAZORPAY",
+        expectedTotal: view.pricing.total,
         razorpay,
       });
       if (!placed.ok) throw new Error(placed.reason);
       const paid = await markOrderPaid({
-        razorpayOrderId: placed.razorpay.orderId,
+        razorpayOrderId: placed.razorpay!.orderId,
         paymentId: `pay_${TAG}_${++counter}`,
-        amountPaise: placed.reserveTotal,
+        amountPaise: placed.reserveTotal!,
         razorpay,
       });
-      return { buyer, quote: q.quote, placed, paid };
+      return { buyer, view, preorder: view.preorder, placed, paid };
     }
 
-    it("is open for the campaign product only, and closed while the site is live", async () => {
+    it("is open for the campaign product only, and a normal bag while the site is live", async () => {
       const storefront = await getStorefront();
       expect(storefront.state).toBe("PREORDER_OPEN");
       expect(storefront.campaignProductIds).toEqual([productId]);
@@ -344,18 +402,23 @@ describe.skipIf(!process.env.DATABASE_URL)(
       });
       expect(listed.map((p) => p.id)).toEqual([productId]);
 
+      const owner = { customerId: null, guestToken: `live-${TAG}` };
       await prisma.siteSetting.update({
         where: { id: "singleton" },
         data: { siteMode: "LIVE" },
       });
       try {
-        const q = await quotePreorder({
-          variantId,
-          quantity: 1,
-          customerId: null,
-        });
-        expect(q).toEqual({ ok: false, reason: "NOT_OPEN" });
+        await addToCart(owner, variantId, 1);
+        const view = await getCartView(owner);
+        expect(view.preorder).toBeNull();
+        expect(view.lines).toHaveLength(1);
       } finally {
+        await prisma.cartItem.deleteMany({
+          where: { cart: { guestToken: owner.guestToken } },
+        });
+        await prisma.cart.deleteMany({
+          where: { guestToken: owner.guestToken },
+        });
         await prisma.siteSetting.update({
           where: { id: "singleton" },
           data: { siteMode: "PREORDERS" },
@@ -363,23 +426,49 @@ describe.skipIf(!process.env.DATABASE_URL)(
       }
     });
 
-    it("keeps the normal bag shut in pre-order mode", async () => {
+    it("takes only campaign products in the bag, and shuts it when no lap runs", async () => {
       const owner = { customerId: null, guestToken: `guest-${TAG}` };
-      expect(await addToCart(owner, variantId, 1)).toEqual({
-        ok: false,
-        reason: "PREORDER_ONLY",
-      });
-      expect(await quickAddProduct(owner, productId)).toEqual({
-        ok: false,
-        reason: "PREORDER_ONLY",
-      });
-      expect(await setCartQuantity(owner, variantId, 2)).toMatchObject({
-        ok: true,
-        quantity: 0,
-      });
-      const view = await getCartView(owner);
-      expect(view.preorderOnly).toBe(true);
-      expect(view.canCheckout).toBe(false);
+      try {
+        expect(await addToCart(owner, boxVariantId, 1)).toEqual({
+          ok: false,
+          reason: "PREORDER_ONLY",
+        });
+        expect(await addToCart(owner, variantId, 1)).toMatchObject({
+          ok: true,
+        });
+        expect(await quickAddProduct(owner, productId)).toMatchObject({
+          ok: true,
+        });
+        const open = await getCartView(owner);
+        expect(open.preorder).not.toBeNull();
+        expect(open.canCheckout).toBe(true);
+
+        await prisma.preorderCampaign.update({
+          where: { id: campaignId },
+          data: { isActive: false },
+        });
+        try {
+          expect(await setCartQuantity(owner, variantId, 3)).toEqual({
+            ok: false,
+            reason: "PREORDER_ONLY",
+          });
+          const shut = await getCartView(owner);
+          expect(shut.preorderOnly).toBe(true);
+          expect(shut.canCheckout).toBe(false);
+        } finally {
+          await prisma.preorderCampaign.update({
+            where: { id: campaignId },
+            data: { isActive: true },
+          });
+        }
+      } finally {
+        await prisma.cartItem.deleteMany({
+          where: { cart: { guestToken: owner.guestToken } },
+        });
+        await prisma.cart.deleteMany({
+          where: { guestToken: owner.guestToken },
+        });
+      }
     });
 
     it("empties every bag when the site switches to pre-order mode", async () => {
@@ -415,20 +504,26 @@ describe.skipIf(!process.env.DATABASE_URL)(
       }
     });
 
-    it("prices tier 1 and splits ₹900 per item from the balance", async () => {
+    it("reserves ₹500 up to ₹4,000 of products and ₹900 above, before discounts", async () => {
       const buyer = await makeCustomer();
-      const q = await quotePreorder({
-        variantId,
-        quantity: 2,
-        customerId: buyer.id,
+      const owner = { customerId: buyer.id };
+      await addToCart(owner, variantId, 1);
+      const one = await getCartView(owner);
+      expect(one.preorder).toMatchObject({
+        tierLabel: "Tier 1",
+        productTotal: 400000,
+        reserveTotal: 50000,
       });
-      expect(q.ok).toBe(true);
-      if (!q.ok) return;
-      expect(q.quote.tier.label).toBe("Tier 1");
-      expect(q.quote.pricing.discountTotal).toBe(120000); // 15% of 8000
-      expect(q.quote.reserveTotal).toBe(180000);
-      expect(q.quote.balanceDue).toBe(q.quote.pricing.total - 180000);
-      expect(q.quote.gifts).toMatchObject([
+      expect(one.pricing.discountTotal).toBe(60000); // 15% of ₹4,000
+      expect(one.preorder!.balanceDue).toBe(one.pricing.total - 50000);
+
+      await setCartQuantity(owner, variantId, 2);
+      const two = await getCartView(owner);
+      expect(two.preorder).toMatchObject({
+        productTotal: 800000,
+        reserveTotal: 90000,
+      });
+      expect(two.preorder!.gifts).toMatchObject([
         { variantId: boxVariantId, quantity: 2, reason: "Tier 1 mystery box" },
       ]);
     });
@@ -440,14 +535,18 @@ describe.skipIf(!process.env.DATABASE_URL)(
           { label: "Tier 1", percent: 15 },
           { label: "Tier 2", percent: 10 },
         ],
-        reservePerItem: 90000,
+        reserve: {
+          reserveLow: 50000,
+          reserveHigh: 90000,
+          reserveThreshold: 400000,
+        },
       });
       expect(preview?.price).toBe(400000);
       const [one, two] = preview!.tiers;
       expect(one!.everyone.total).toBeLessThan(two!.everyone.total);
       expect(one!.insider.total).toBeLessThanOrEqual(one!.everyone.total);
-      expect(one!.everyone.reserveTotal).toBe(90000);
-      expect(one!.everyone.balanceDue).toBe(one!.everyone.total - 90000);
+      expect(one!.everyone.reserveTotal).toBe(50000);
+      expect(one!.everyone.balanceDue).toBe(one!.everyone.total - 50000);
     });
 
     it("gives every gift option its value", async () => {
@@ -457,62 +556,61 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(box?.value).toBe(100000);
     });
 
-    it("reserves, holds stock first come first served, then takes the balance", async () => {
+    it("holds stock at reserve, empties the bag, and takes the balance any time", async () => {
+      await setStock(3, 0);
       const first = await reserve(2);
       expect(first.paid).toMatchObject({ ok: true, status: "RESERVED" });
-      const second = await reserve(1);
-
-      // Only enough stock for the first order; no boxes in stock.
-      await prisma.inventory.update({
-        where: {
-          productVariantId_warehouseId: {
-            productVariantId: variantId,
-            warehouseId,
-          },
-        },
-        data: { quantityOnHand: 2 },
+      expect(await stockOf(variantId)).toMatchObject({
+        quantityOnHand: 3,
+        quantityReserved: 2,
       });
-      const asked = await requestPreorderBalance({
-        productId,
-        actor: { staffUserId },
-        razorpay,
-      });
-      if ("error" in asked) throw new Error(asked.error);
-      expect(asked.asked.map((a) => a.orderNumber)).toEqual([
-        first.placed.orderNumber,
-      ]);
-      expect(asked.waiting).toBe(1);
-      expect(asked.missingGifts).toBe(1);
-
+      expect(
+        await prisma.cartItem.count({
+          where: { cart: { customerId: first.buyer.id } },
+        }),
+      ).toBe(0);
       const order = await prisma.order.findUniqueOrThrow({
         where: { id: first.placed.orderId },
       });
+      // No boxes in stock: the order goes ahead, flagged for staff.
       expect(order.needsAttention).toMatch(/out of stock/);
+
+      // Only 1 left: a second customer can't take 2.
+      const buyer = await makeCustomer();
+      expect(
+        await addToCart({ customerId: buyer.id }, variantId, 2),
+      ).toMatchObject({
+        ok: true,
+        quantity: 1,
+        limited: true,
+      });
+
+      const { getBalancePayment } = await import("./balance");
+      const pay = await getBalancePayment(
+        first.buyer.id,
+        first.placed.orderNumber,
+        razorpay,
+      );
       const balance = await markOrderPaid({
-        razorpayOrderId: order.balanceRazorpayOrderId!,
+        razorpayOrderId: pay!.orderId,
         paymentId: `pay_${TAG}_${++counter}`,
-        amountPaise: first.quote.balanceDue,
+        amountPaise: first.preorder.balanceDue,
         razorpay,
       });
       expect(balance).toMatchObject({ ok: true, status: "CONFIRMED" });
-      const inv = await prisma.inventory.findUniqueOrThrow({
-        where: {
-          productVariantId_warehouseId: {
-            productVariantId: variantId,
-            warehouseId,
-          },
-        },
+      expect(await stockOf(variantId)).toMatchObject({
+        quantityOnHand: 1,
+        quantityReserved: 0,
       });
-      expect(inv).toMatchObject({ quantityOnHand: 0, quantityReserved: 0 });
 
       const overview = await getPreorderOverview(campaignId);
-      expect(overview.orders).toBe(2);
-      expect(overview.items[0]).toMatchObject({ waiting: 1, paid: 2 });
-      void second;
+      expect(overview.orders).toBeGreaterThanOrEqual(1);
     });
 
-    it("turns a cancelled reservation into a year-long credit that keeps its leftover", async () => {
-      const { buyer, placed, quote } = await reserve(1);
+    it("turns a cancelled reservation into a year-long credit and frees the stock", async () => {
+      await setStock(5, 5);
+      const { buyer, placed, preorder } = await reserve(1);
+      expect(await stockOf(variantId)).toMatchObject({ quantityReserved: 1 });
       const cancelled = await cancelPreorder({
         orderId: placed.orderId,
         mode: "CREDIT",
@@ -521,10 +619,14 @@ describe.skipIf(!process.env.DATABASE_URL)(
       });
       expect(cancelled.ok).toBe(true);
       if (!cancelled.ok) return;
-      expect(cancelled.amount).toBe(quote.reserveTotal);
+      expect(cancelled.amount).toBe(preorder.reserveTotal);
       expect(cancelled.creditCode).toMatch(/^CR-/);
       const days = (cancelled.creditEndsAt!.getTime() - Date.now()) / DAY;
       expect(Math.round(days)).toBe(365);
+      expect(await stockOf(variantId)).toMatchObject({ quantityReserved: 0 });
+      expect(await stockOf(boxVariantId)).toMatchObject({
+        quantityReserved: 0,
+      });
 
       const identity = await getCustomerIdentity(buyer.id);
       const resolved = await resolveCoupons({
@@ -535,44 +637,83 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(resolved.coupons[0]).toMatchObject({
         isCredit: true,
         appliesTo: "BOTH",
-        give: { type: "FLAT", amount: 90000 },
+        give: { type: "FLAT", amount: 50000 },
       });
     });
 
-    it("reminds, then turns an unpaid balance into credit after 14 days", async () => {
-      await prisma.inventory.update({
-        where: {
-          productVariantId_warehouseId: {
-            productVariantId: variantId,
-            warehouseId,
-          },
-        },
-        data: { quantityOnHand: 5, quantityReserved: 0 },
-      });
-      const { placed } = await reserve(1);
-      await requestPreorderBalance({
-        productId,
+    it("locks cancelling once the nudge goes out", async () => {
+      await setStock(5, 5);
+      const { buyer, placed } = await reserve(1);
+      const nudged = await nudgePreorderBalance({
+        orderIds: [placed.orderId],
         actor: { staffUserId },
-        razorpay,
       });
-      const askedAt = new Date();
-      await prisma.order.update({
-        where: { id: placed.orderId },
-        data: { balanceRequestedAt: askedAt },
+      expect(nudged.nudged.map((n) => n.orderId)).toEqual([placed.orderId]);
+      const again = await nudgePreorderBalance({
+        orderIds: [placed.orderId],
+        actor: { staffUserId },
       });
-      const day4 = await runPreorderReminders(
-        new Date(askedAt.getTime() + 4 * DAY),
+      expect(again).toMatchObject({ nudged: [], skipped: 1 });
+      expect(
+        await cancelPreorder({
+          orderId: placed.orderId,
+          mode: "CREDIT",
+          reason: "Changed my mind",
+          customerId: buyer.id,
+        }),
+      ).toEqual({ ok: false, reason: "NOT_CANCELLABLE" });
+    });
+
+    it("nudges a week before close, sends a last call, then makes credit after the due date", async () => {
+      await setStock(5, 5);
+      const { placed } = await reserve(1);
+      const campaign = (await getPreorderCampaign(campaignId))!;
+      const { nudgeAt, balanceDueAt } = campaign.deadlines;
+
+      const early = await runPreorderReminders(
+        new Date(nudgeAt.getTime() - DAY),
       );
-      expect(day4.remind.map((r) => r.orderId)).toContain(placed.orderId);
-      const day15 = await runPreorderReminders(
-        new Date(askedAt.getTime() + 15 * DAY),
+      expect(early.remind.map((r) => r.orderId)).not.toContain(placed.orderId);
+
+      const nudge = await runPreorderReminders(
+        new Date(nudgeAt.getTime() + 1),
+        campaignId,
       );
-      expect(day15.creditMade.map((c) => c.orderId)).toContain(placed.orderId);
+      expect(nudge.remind).toContainEqual({
+        orderId: placed.orderId,
+        orderNumber: placed.orderNumber,
+        reminder: 0,
+      });
+
+      const last = await runPreorderReminders(
+        new Date(balanceDueAt.getTime() - DAY),
+        campaignId,
+      );
+      expect(last.remind).toContainEqual({
+        orderId: placed.orderId,
+        orderNumber: placed.orderNumber,
+        reminder: 1,
+      });
+
+      const due = await runPreorderReminders(balanceDueAt, campaignId);
+      expect(due.creditMade.map((c) => c.orderId)).toContain(placed.orderId);
       const order = await prisma.order.findUniqueOrThrow({
         where: { id: placed.orderId },
       });
       expect(order.status).toBe("CANCELLED");
       expect(order.creditCouponId).toBeTruthy();
+    });
+
+    it("suggests a cash refund without the gateway fee", async () => {
+      await setStock(5, 5);
+      const { placed } = await reserve(1);
+      const suggestion = await suggestPreorderRefund(placed.orderId, razorpay);
+      expect(suggestion).toEqual({
+        reserve: 50000,
+        gatewayFee: 1180,
+        suggested: 48820,
+        keepsFee: true,
+      });
     });
   },
 );

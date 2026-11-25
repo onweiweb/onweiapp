@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { ProductImage } from "@/_components/ProductImage";
 import { AddressForm } from "@/_components/commerce/AddressForm";
 import { CodeBox } from "@/_components/commerce/CartDrawer";
+import { PreorderSummary } from "@/_components/commerce/PreorderSummary";
+import { InsiderBox } from "@/_components/commerce/InsiderBox";
 import { useCart } from "@/_components/commerce/CartProvider";
 import {
   failedPageUrl,
@@ -40,7 +42,7 @@ function Summary({ view, method }: { view: CartView; method: Method }) {
           Order summary
         </h2>
         <span className="rounded-full bg-onwei-green px-3 py-0.5 font-grotesk text-[length:max(0.6875rem,10px)] uppercase">
-          In your bag
+          {view.preorder ? "Pre-order" : "In your bag"}
         </span>
       </div>
       <ul className="flex flex-col gap-3">
@@ -116,6 +118,9 @@ function Summary({ view, method }: { view: CartView; method: Method }) {
           {rupees(p.total)}
         </span>
       </div>
+      {view.preorder ? (
+        <PreorderSummary preorder={view.preorder} total={p.total} />
+      ) : null}
       {p.discountTotal + p.shippingSaved > 0 ? (
         <p className="rounded-[0.75rem] bg-onwei-green px-3 py-2 text-center font-grotesk text-[length:max(0.75rem,11px)]">
           You&apos;re saving {rupees(p.discountTotal + p.shippingSaved)} on this
@@ -237,12 +242,10 @@ export function CheckoutFlow({
     return (
       <div className="mx-auto flex max-w-[34rem] flex-col items-start gap-4">
         <h1 className="font-display text-[length:max(2.5rem,30px)] font-bold uppercase leading-none">
-          Pre-orders are on
+          Pre-orders aren&apos;t open
         </h1>
         <p className="font-grotesk leading-[1.6]">
-          Checkout opens at launch. Until then, items are reserved one at a time
-          from their product page: pay a small amount now and the rest when
-          it&apos;s ready to ship.
+          Checkout opens with the next pre-order lap or at launch.
         </p>
         <Link
           href="/collection/all"
@@ -275,15 +278,18 @@ export function CheckoutFlow({
 
   const address = addresses.find((a) => a.id === addressId) ?? null;
   const total = view?.pricing.total ?? 0;
-  const codBlocked = !cod.enabled
-    ? "Cash on delivery isn't offered right now."
-    : codOffForPin
-      ? "Cash on delivery isn't available at this PIN code."
-      : cod.max !== null && total > cod.max
-        ? `Cash on delivery is available for orders up to ${rupees(cod.max)}.`
-        : cod.min !== null && total < cod.min
-          ? `Cash on delivery is available for orders from ${rupees(cod.min)}.`
-          : null;
+  const preorder = view?.preorder ?? null;
+  const codBlocked = preorder
+    ? "Pre-orders are paid online."
+    : !cod.enabled
+      ? "Cash on delivery isn't offered right now."
+      : codOffForPin
+        ? "Cash on delivery isn't available at this PIN code."
+        : cod.max !== null && total > cod.max
+          ? `Cash on delivery is available for orders up to ${rupees(cod.max)}.`
+          : cod.min !== null && total < cod.min
+            ? `Cash on delivery is available for orders from ${rupees(cod.min)}.`
+            : null;
 
   /** Checks the PIN can be delivered to, then moves on to payment. */
   async function continueToPayment() {
@@ -321,7 +327,7 @@ export function CheckoutFlow({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         addressId: address.id,
-        paymentMethod: method,
+        paymentMethod: preorder ? "RAZORPAY" : method,
         expectedTotal: view.pricing.total,
       }),
     }).catch(() => null);
@@ -342,8 +348,17 @@ export function CheckoutFlow({
       void refresh();
       return;
     }
-    track("order_placed", { payment_method: method, total: data.total ?? 0 });
-    if (method === "COD" || !data.razorpay) {
+    track("order_placed", {
+      payment_method: preorder ? "RAZORPAY" : method,
+      total: data.total ?? 0,
+    });
+    if (preorder)
+      track("preorder_reserved", {
+        tier: preorder.tierLabel,
+        reserve: preorder.reserveTotal,
+        total: data.total ?? 0,
+      });
+    if ((method === "COD" && !preorder) || !data.razorpay) {
       void refresh();
       router.push(`/checkout/success?order=${data.orderNumber}`);
       return;
@@ -395,7 +410,9 @@ export function CheckoutFlow({
         <h1 className="font-display text-[length:max(2.5rem,30px)] font-bold uppercase leading-[0.95]">
           {step === "details"
             ? "Where should we send it?"
-            : "How would you like to pay?"}
+            : preorder
+              ? "Pay the reserve"
+              : "How would you like to pay?"}
         </h1>
 
         {error ? (
@@ -541,7 +558,7 @@ export function CheckoutFlow({
                 <input
                   type="radio"
                   name="method"
-                  checked={method === "RAZORPAY"}
+                  checked={method === "RAZORPAY" || Boolean(preorder)}
                   onChange={() => setMethod("RAZORPAY")}
                   className="mt-1 accent-onwei-blue"
                 />
@@ -561,7 +578,7 @@ export function CheckoutFlow({
                   type="radio"
                   name="method"
                   disabled={Boolean(codBlocked)}
-                  checked={method === "COD"}
+                  checked={method === "COD" && !preorder}
                   onChange={() => setMethod("COD")}
                   className="mt-1 accent-onwei-blue"
                 />
@@ -577,6 +594,7 @@ export function CheckoutFlow({
               </label>
             </fieldset>
 
+            <InsiderBox />
             <button
               type="button"
               disabled={placing || !view?.canCheckout || !address}
@@ -587,9 +605,11 @@ export function CheckoutFlow({
                 ? method === "COD"
                   ? "Placing your order..."
                   : "Opening payment..."
-                : method === "COD"
-                  ? `Place order (cash on delivery) - ${rupees(total)}`
-                  : `Pay ${rupees(total)}`}
+                : preorder
+                  ? `Pay ${rupees(preorder.reserveTotal)} reserve`
+                  : method === "COD"
+                    ? `Place order (cash on delivery) - ${rupees(total)}`
+                    : `Pay ${rupees(total)}`}
             </button>
             <p className="font-grotesk text-[length:max(0.6875rem,10px)]">
               By placing your order you agree to our{" "}

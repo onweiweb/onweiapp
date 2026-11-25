@@ -5,7 +5,9 @@ import { defineAdminRoute } from "../../_lib/defineAdminRoute";
 
 const bodySchema = z.object({
   variantId: z.string().min(1, "Pick a product.").max(64),
-  reserveAmount: z.number().min(0).max(100000),
+  reserveLow: z.number().min(0).max(100000),
+  reserveHigh: z.number().min(0).max(100000),
+  reserveThreshold: z.number().min(0).max(1000000),
   tiers: z
     .array(
       z.object({
@@ -25,7 +27,11 @@ export const POST = defineAdminRoute(
     const preview = await previewPreorderJourney({
       variantId: body.variantId,
       tiers: body.tiers,
-      reservePerItem: Math.round(body.reserveAmount * 100),
+      reserve: {
+        reserveLow: Math.round(body.reserveLow * 100),
+        reserveHigh: Math.round(body.reserveHigh * 100),
+        reserveThreshold: Math.round(body.reserveThreshold * 100),
+      },
     });
     if (!preview) {
       return NextResponse.json(

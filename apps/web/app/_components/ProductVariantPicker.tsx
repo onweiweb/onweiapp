@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { track } from "../../lib/analytics/track";
 import { useProductVariant } from "./ProductVariantContext";
@@ -9,7 +8,7 @@ import { useCart } from "./commerce/CartProvider";
 import { rupees } from "../../lib/messages/commerce";
 import {
   buyModeFor,
-  reserveText,
+  reserveRuleText,
   usePreorderStatus,
   waitingCopy,
 } from "./preorder/usePreorderStatus";
@@ -28,7 +27,7 @@ export function ProductVariantPicker({
   onAdded,
   productId,
 }: {
-  /** Set to show "Reserve" while this product is on pre-order. */
+  /** Set to show "pre-order now" while this product is on pre-order. */
   productId?: string;
   /** Product slug for analytics when the picker isn't on the product page. */
   slug?: string;
@@ -109,61 +108,47 @@ export function ProductVariantPicker({
         </div>
       ) : null}
 
-      {reserving && preorder ? (
-        <div className="flex w-full flex-col items-center gap-3 pt-3">
-          <Link
-            href={`/preorder/checkout?v=${selectedVariant.id}`}
-            onClick={() => {
-              track("preorder_reserve_clicked", {
-                product_slug: productSlug,
-                variant_id: selectedVariant.id,
-              });
-              onAdded?.();
-            }}
-            className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase leading-none text-onwei-beige"
-          >
-            reserve for {reserveText(preorder.reserveAmount)}
-          </Link>
-          <p className="text-center font-display text-[length:max(0.75rem,11px)] text-onwei-blue">
-            Pay {reserveText(preorder.reserveAmount)} now. The rest when
-            it&apos;s ready to ship.
-          </p>
-        </div>
-      ) : (
-        <div className="flex w-full flex-col items-center gap-3 pt-3">
-          <button
-            type="button"
-            disabled={!selectedVariant.inStock || busy || mode !== "SHOP"}
-            onClick={() => {
-              track("add_to_cart", {
-                product_slug: productSlug,
-                variant_id: selectedVariant.id,
-              });
-              void add(selectedVariant.id, 1).then((ok) => {
-                if (ok) onAdded?.();
-              });
-            }}
-            className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase leading-none text-onwei-beige disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {waiting
-              ? waiting.button
-              : selectedVariant.inStock
-                ? busy
-                  ? "adding..."
+      <div className="flex w-full flex-col items-center gap-3 pt-3">
+        <button
+          type="button"
+          disabled={
+            !selectedVariant.inStock ||
+            busy ||
+            (mode !== "SHOP" && mode !== "RESERVE")
+          }
+          onClick={() => {
+            track(reserving ? "preorder_reserve_clicked" : "add_to_cart", {
+              product_slug: productSlug,
+              variant_id: selectedVariant.id,
+            });
+            void add(selectedVariant.id, 1).then((ok) => {
+              if (ok) onAdded?.();
+            });
+          }}
+          className="flex w-full items-center justify-center rounded-[1.875rem] bg-onwei-blue px-6 py-3 font-grotesk text-label uppercase leading-none text-onwei-beige disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {waiting
+            ? waiting.button
+            : selectedVariant.inStock
+              ? busy
+                ? "adding..."
+                : reserving
+                  ? "pre-order now"
                   : "add to cart"
-                : "sold out"}
-          </button>
-          <p className="font-display text-[length:max(0.75rem,11px)] text-onwei-blue">
-            {waiting
-              ? waiting.note
-              : selectedVariant.inStock
-                ? freeShippingThreshold
+              : "sold out"}
+        </button>
+        <p className="font-display text-[length:max(0.75rem,11px)] text-onwei-blue">
+          {waiting
+            ? waiting.note
+            : selectedVariant.inStock
+              ? reserving && preorder
+                ? reserveRuleText(preorder)
+                : freeShippingThreshold
                   ? `Free shipping on orders over ${rupees(freeShippingThreshold)}`
                   : "Free shipping on bigger orders"
-                : "Out of stock in this size/color"}
-          </p>
-        </div>
-      )}
+              : "Out of stock in this size/color"}
+        </p>
+      </div>
     </div>
   );
 }

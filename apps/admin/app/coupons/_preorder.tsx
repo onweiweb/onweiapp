@@ -27,7 +27,7 @@ import {
   DEFAULT_CAMPAIGN,
   PreorderCampaignForm,
 } from "./_components/PreorderCampaignForm";
-import { StockInButton } from "./_components/StockInButton";
+import { BalanceNudgeList } from "./_components/BalanceNudgeList";
 
 const STATE_LABEL = { CLOSED: "Over", LIVE: "Live now", LOCKED: "Coming up" };
 const STATE_TONE = {
@@ -69,7 +69,11 @@ export async function PreorderTab({
         name: campaign.name,
         isActive: campaign.isActive,
         startDate: istDateOf(campaign.startsAt),
-        reserveAmount: campaign.reserveAmount / 100,
+        reserveLow: campaign.reserveLow / 100,
+        reserveHigh: campaign.reserveHigh / 100,
+        reserveThreshold: campaign.reserveThreshold / 100,
+        nudgeDaysBeforeClose: campaign.nudgeDaysBeforeClose,
+        balanceDueDaysAfterClose: campaign.balanceDueDaysAfterClose,
         expectedShipDate: campaign.expectedShipDate
           ? istDateOf(campaign.expectedShipDate)
           : null,
@@ -91,27 +95,31 @@ export async function PreorderTab({
         <h2 className="text-lg font-semibold text-onwei-blue">How it works</h2>
         <ol className="list-decimal pl-5 text-sm text-onwei-blue/80">
           <li>
-            Customers reserve a product and pay the amount below per item. The
-            live tier&apos;s discount and gift are locked in.
+            Customers fill their bag with pre-order products and pay only the
+            reserve today: the smaller amount for bags up to the limit below at
+            full price, the bigger one above it. The live tier&apos;s discount
+            and gifts are locked in, and the stock is held for them.
           </li>
           <li>
-            When stock arrives, press &ldquo;Stock is in&rdquo; for that
-            product. The oldest reservations get a link to pay the rest.
+            They can pay the balance any time from their account. A week (or the
+            days set below) before pre-orders close, everyone who hasn&apos;t
+            paid gets a balance nudge by email and WhatsApp. You can also send
+            it earlier from the list below.
           </li>
           <li>
-            Reminders go out after 3 and 7 days. After 14 days unpaid, the
-            amount paid becomes credit for a year.
+            Customers can cancel until pre-orders close, unless the nudge has
+            gone out. What they paid becomes credit for a year.
           </li>
           <li>
-            A customer can cancel before paying the balance and keep the amount
-            as credit for a year.
+            Balance not paid by the due date: nothing ships, the offer ends, the
+            stock goes back on sale and the reserve becomes credit for a year.
           </li>
         </ol>
         {site.siteMode !== "PREORDERS" ? (
           <p className="text-sm font-semibold text-onwei-blue">
             The site is in {site.siteMode === "LIVE" ? "live shop" : "waitlist"}{" "}
-            mode, so customers can&apos;t reserve yet. Switch to pre-order mode
-            in{" "}
+            mode, so customers can&apos;t pre-order yet. Switch to pre-order
+            mode in{" "}
             <Link href="/settings" className="underline">
               Settings
             </Link>
@@ -174,37 +182,32 @@ export async function PreorderTab({
         </AdminCard>
       ) : null}
 
-      {overview && overview.products.length > 0 ? (
+      {campaign && overview && overview.orders > 0 ? (
         <AdminCard className="flex flex-col gap-4">
           <div>
             <h2 className="text-lg font-semibold text-onwei-blue">
-              Stock and balance
+              Balance still to pay
             </h2>
             <p className="text-sm text-onwei-blue/70">
-              Add the stock in Inventory first, then ask for the balance here.
+              Pre-orders close on{" "}
+              {istDateOf(new Date(campaign.deadlines.closesAt.getTime() - 1))}.
+              The balance is due by{" "}
+              {istDateOf(
+                new Date(campaign.deadlines.balanceDueAt.getTime() - 1),
+              )}
+              .
             </p>
           </div>
-          {overview.products.map((p) => (
-            <div
-              key={p.productId}
-              className="flex flex-wrap items-center justify-between gap-3 border-b border-onwei-blue/10 pb-3 last:border-b-0"
-            >
-              <div>
-                <p className="font-semibold text-onwei-blue">{p.name}</p>
-                <p className="text-sm text-onwei-blue/70">
-                  {p.waiting} waiting · {p.stock} in stock
-                </p>
-              </div>
-              {canAskBalance ? (
-                <StockInButton
-                  productId={p.productId}
-                  name={p.name}
-                  waiting={p.waiting}
-                  stock={p.stock}
-                />
-              ) : null}
-            </div>
-          ))}
+          <BalanceNudgeList
+            campaignId={campaign.id}
+            canNudge={canAskBalance}
+            nudgeDate={istDateOf(campaign.deadlines.nudgeAt)}
+            orders={overview.unpaid.map((o) => ({
+              ...o,
+              paidAt: o.paidAt?.toISOString() ?? null,
+              nudgedAt: o.nudgedAt?.toISOString() ?? null,
+            }))}
+          />
           <DemandTable title="By size and colour" rows={overview.items} />
           {overview.gifts.length ? (
             <DemandTable title="Free gifts owed" rows={overview.gifts} />
@@ -259,10 +262,10 @@ function DemandTable({
       <AdminTable>
         <AdminTableHead>
           <AdminTableHeaderCell>Item</AdminTableHeaderCell>
-          <AdminTableHeaderCell>Waiting for stock</AdminTableHeaderCell>
-          <AdminTableHeaderCell>Asked to pay</AdminTableHeaderCell>
-          <AdminTableHeaderCell>Paid</AdminTableHeaderCell>
-          <AdminTableHeaderCell>In stock now</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Reserved</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Nudged, not paid</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Fully paid</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Free stock now</AdminTableHeaderCell>
         </AdminTableHead>
         <tbody>
           {rows.map((r) => (
