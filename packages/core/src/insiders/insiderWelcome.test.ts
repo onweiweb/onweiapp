@@ -1,12 +1,8 @@
-// @vitest-environment node
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const sendWhatsApp = vi.fn();
 
-vi.mock("@onwei/core", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@onwei/core")>()),
-  sendWhatsApp,
-}));
+vi.mock("../messaging/whatsapp/send", () => ({ sendWhatsApp }));
 
 process.env.INSIDER_LINK_SECRET = "s".repeat(40);
 
@@ -22,7 +18,7 @@ describe("sendInsiderWhatsApp", () => {
 
   it("sends the code and a signed address token", async () => {
     sendWhatsApp.mockResolvedValue({ status: "sent", messageId: "m" });
-    const { sendInsiderWhatsApp } = await import("./insiderMail");
+    const { sendInsiderWhatsApp } = await import("./insiderWelcome");
     expect(await sendInsiderWhatsApp(member)).toBe("sent");
     const [input] = sendWhatsApp.mock.calls[0]!;
     expect(input).toMatchObject({
@@ -36,12 +32,12 @@ describe("sendInsiderWhatsApp", () => {
 
   it("reports a failed WhatsApp without throwing", async () => {
     sendWhatsApp.mockResolvedValue({ status: "failed", reason: "x" });
-    const { sendInsiderWhatsApp } = await import("./insiderMail");
+    const { sendInsiderWhatsApp } = await import("./insiderWelcome");
     expect(await sendInsiderWhatsApp(member)).toBe("failed");
   });
 
   it("skips members without a phone", async () => {
-    const { sendInsiderWhatsApp } = await import("./insiderMail");
+    const { sendInsiderWhatsApp } = await import("./insiderWelcome");
     expect(await sendInsiderWhatsApp({ ...member, phone: "" })).toBe("skipped");
     expect(sendWhatsApp).not.toHaveBeenCalled();
   });
