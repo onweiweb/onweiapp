@@ -129,9 +129,10 @@ export async function ShipCardsTab({
         <p>
           <strong>How it works:</strong> send cards to iThink here. Each one
           shows up in the iThink portal, where the team prints the labels and
-          hands the envelopes to the courier. Press &ldquo;Update all&rdquo; to
-          see where they are. A card counts as posted once the courier picks it
-          up.
+          hands the envelopes to the courier. iThink tells us when a card moves,
+          so this page updates by itself. Press &ldquo;Update all&rdquo; only if
+          something looks out of date. A card counts as posted once the courier
+          picks it up.
         </p>
         <div className="flex flex-wrap items-center gap-3 text-onwei-blue/80">
           <span>

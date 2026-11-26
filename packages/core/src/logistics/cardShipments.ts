@@ -581,10 +581,14 @@ export type RefreshCardsResult =
 /** Max sends with no reply looked up per round (each reads iThink's list). */
 const UNSURE_PER_ROUND = 5;
 
-function refreshWhere(startedAt: Date): Prisma.ShipmentWhereInput {
+function refreshWhere(
+  startedAt: Date,
+  shipmentIds?: string[],
+): Prisma.ShipmentWhereInput {
   return {
     kind: "INSIDER_CARD",
     isCurrent: true,
+    ...(shipmentIds ? { id: { in: shipmentIds } } : {}),
     AND: [
       {
         OR: [
@@ -600,16 +604,17 @@ function refreshWhere(startedAt: Date): Prisma.ShipmentWhereInput {
 /**
  * One round of "Update all": asks iThink about up to `max` cards not yet
  * checked since `startedAt`. The page calls it until `remaining` is 0.
+ * `shipmentIds` limits it to those parcels (iThink's webhook).
  */
 export async function refreshCardShipments(
-  input: { startedAt: Date; max?: number },
+  input: { startedAt: Date; max?: number; shipmentIds?: string[] },
   deps: IthinkDeps = {},
 ): Promise<RefreshCardsResult> {
   const { config, fetchImpl, now } = depsOf(deps);
   if (!config) return { ok: false, reason: "NOT_SET_UP" };
   const max = Math.max(1, Math.min(input.max ?? 50, 100));
   const rows = await prisma.shipment.findMany({
-    where: refreshWhere(input.startedAt),
+    where: refreshWhere(input.startedAt, input.shipmentIds),
     take: max,
     orderBy: [
       { lastCheckedAt: { sort: "asc", nulls: "first" } },
@@ -668,7 +673,7 @@ export async function refreshCardShipments(
     });
   }
   const remaining = await prisma.shipment.count({
-    where: refreshWhere(input.startedAt),
+    where: refreshWhere(input.startedAt, input.shipmentIds),
   });
   return { ok: true, checked: checkedIds.length, changed, remaining };
 }

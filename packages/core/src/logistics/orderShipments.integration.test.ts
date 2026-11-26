@@ -10,6 +10,7 @@ import {
   sendOrderToIthink,
 } from "./orderShipments";
 import { matchTrackingNumbers } from "./trackingMatch";
+import { handleIthinkWebhook } from "./webhook";
 
 // Test orders only (example.test customers), removed afterwards. iThink is
 // faked: nothing leaves this machine.
@@ -369,6 +370,61 @@ describe.skipIf(!process.env.DATABASE_URL)(
         orderBy: { createdAt: "asc" },
       });
       expect(history.map((h) => h.status)).toEqual(["SHIPPED", "DELIVERED"]);
+    });
+
+    it("moves an order from iThink's webhook, checking with Track Order first", async () => {
+      const id = await makeOrder({ paymentMethod: "COD" });
+      await sendOrderToIthink(id, null, { config, fetchImpl: booking });
+      const awb = (await current(id)).awb!;
+
+      // The push says delivered, Track Order says only picked up: we follow
+      // Track Order, so a forged push can't skip ahead.
+      const first = await handleIthinkWebhook([awb, "NOT-OURS-1"], {
+        config,
+        fetchImpl: track(awb, "In Transit", "UD"),
+      });
+      expect(first).toMatchObject({
+        ok: true,
+        matched: 1,
+        events: [{ orderId: id, type: "SHIPPED" }],
+      });
+      expect(
+        (await prisma.order.findUniqueOrThrow({ where: { id } })).status,
+      ).toBe("SHIPPED");
+
+      // The same push again: nothing moves, so no second email.
+      const again = await handleIthinkWebhook([awb], {
+        config,
+        fetchImpl: track(awb, "In Transit", "UD"),
+      });
+      expect(again).toMatchObject({ ok: true, matched: 1, events: [] });
+
+      const delivered = await handleIthinkWebhook([awb], {
+        config,
+        fetchImpl: track(awb, "Delivered", "DL"),
+      });
+      expect(delivered.events).toEqual([{ orderId: id, type: "DELIVERED" }]);
+    });
+
+    it("ignores webhook tracking numbers we don't have, and needs the keys", async () => {
+      const untouched = fake(() => {
+        throw new Error("iThink should not be asked");
+      });
+      expect(
+        await handleIthinkWebhook(["NOT-OURS-2"], {
+          config,
+          fetchImpl: untouched,
+        }),
+      ).toEqual({ ok: true, matched: 0, changed: 0, events: [] });
+
+      const id = await makeOrder({ paymentMethod: "COD" });
+      await sendOrderToIthink(id, null, { config, fetchImpl: booking });
+      const awb = (await current(id)).awb!;
+      expect(await handleIthinkWebhook([awb], { config: null })).toMatchObject({
+        ok: false,
+        matched: 1,
+        changed: 0,
+      });
     });
 
     it("flags an order coming back", async () => {

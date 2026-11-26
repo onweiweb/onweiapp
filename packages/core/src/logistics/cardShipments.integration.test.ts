@@ -13,6 +13,7 @@ import {
 } from "./cardShipments";
 import type { IthinkConfig } from "./ithinkClient";
 import { matchTrackingNumbers } from "./trackingMatch";
+import { handleIthinkWebhook } from "./webhook";
 
 // Test rows only (fake names, example.test emails), removed afterwards.
 // iThink is faked: nothing leaves this machine.
@@ -204,11 +205,12 @@ describe.skipIf(!process.env.DATABASE_URL)(
             : {},
         );
 
-      const first = await refreshCardShipments(
-        { startedAt: new Date(), max: 100 },
-        { config, fetchImpl: track("In Transit", "UD") },
-      );
-      expect(first).toMatchObject({ ok: true });
+      // iThink's webhook: only this card is asked about.
+      const first = await handleIthinkWebhook([awb], {
+        config,
+        fetchImpl: track("In Transit", "UD"),
+      });
+      expect(first).toMatchObject({ ok: true, matched: 1, changed: 1 });
       expect((await current(id)).status).toBe("IN_TRANSIT");
       const address = await prisma.insiderCardAddress.findUniqueOrThrow({
         where: { id },

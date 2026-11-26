@@ -1102,8 +1102,16 @@ keys to the admin Vercel project with `ITHINK_ENV=production`, push, send 3 or 4
 - Migrations `20261125120000_order_shipments` (additive: `ShipmentKind.ORDER`, `Shipment.orderId`, `StoreSetting` parcel
   columns) and `20261126120000_category_shipper_box` (additive `Category.box*`). `StoreSetting` is read on every cart view
   and categories on every catalog page, so prod must be migrated before the push.
-- Not done: the customer order page doesn't refresh tracking by itself (button-only, as decided). Later: polling or
-  webhooks, return pickups, COD remittance, failed-delivery reattempt.
+- Webhook (2026-11-26, pushed, token set on Vercel web, waiting for iThink to connect it): iThink pushes every status change to `POST /api/webhooks/ithink` (web). iThink's
+  webhook form: API URL `https://www.onwei.in/api/webhooks/ithink`, Authorization "Bearer Token", token =
+  `ITHINK_WEBHOOK_TOKEN` (web Vercel project only). The push carries only the tracking number (`awb_number`), no order
+  number or courier. The route checks the token (401 otherwise), answers 200 at once and, after the response, re-checks
+  each tracking number with Track Order through the same refresh code as the buttons (`handleIthinkWebhook`,
+  `packages/core/src/logistics/webhook.ts`), so a forged push can't move anything. Orders and cards then move, and shipped
+  and delivered emails go out (`getOrderDeliveryEmail` in core, shared with admin). Unknown tracking numbers are ignored.
+  The "Update from iThink" buttons stay as the backup for a missed push. Missing tracking numbers are fixed by iThink
+  enabling Order Details on the live account (iThink offered it 2026-11-26, needs our yes), not by the webhook.
+- Not done: return pickups, COD remittance, failed-delivery reattempt, showing iThink's expected delivery date.
 
 ## 20. Insider ID on the bag and invite-only Insiders (owner brief, approved 2026-11-26, live 2026-11-26)
 

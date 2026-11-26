@@ -343,6 +343,13 @@ labels in the iThink portal, "Update all" reads courier status. Needs prod migra
 and the live `ITHINK_*` keys on the admin project. Phase 1 pushed 0b9c350. Phase 2 (orders: send on confirm, Delivery card,
 update buttons, shipped/delivered emails, PIN check) built locally 2026-11-25, needs prod migration `20261125120000_order_shipments`
 before the push. See `docs/COMMERCE_BUILD_PLAN.md` section 19.
+iThink follow-up (2026-11-26, pushed): the ~25 cards stuck by "Already Exist" have their tracking numbers (owner pasted
+them). iThink offered to enable live Order Details (needs our yes) and supports webhooks. Built: `POST /api/webhooks/ithink`
+(web, Bearer `ITHINK_WEBHOOK_TOKEN`, set on the web Vercel project), which re-checks each tracking number with Track Order
+through the button code, so updates and shipped/delivered emails happen by themselves; buttons stay as backup. Not tested
+live yet: waiting for iThink to connect it (URL https://www.onwei.in/api/webhooks/ithink, Bearer Token). Same push: admin
+photo uploads shrink in the browser first (`app/_lib/imageUpload.ts`), server limit 4MB, because Vercel refuses request
+bodies over 4.5MB.
 
 **Latest (2026-10-21):** Blogs page and admin blog editor, admin overhaul (speed, nav, shared kit), waitlist blog switch,
 blog analytics, product delete and redesigned product pages are pushed (up to f34223b). The backup product image work

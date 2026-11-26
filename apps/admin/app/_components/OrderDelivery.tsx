@@ -209,8 +209,9 @@ export function OrderDelivery({
           {status === "BOOKED" ? (
             <p className="text-onwei-blue/70">
               Print the label in the iThink portal and hand the parcel to the
-              courier. Press &ldquo;Get latest update&rdquo; later to see it
-              move.
+              courier. The order updates by itself as iThink reports each step.
+              Press &ldquo;Get latest update&rdquo; only if it looks out of
+              date.
             </p>
           ) : null}
         </div>
