@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { IMAGE_PRESETS, UPLOAD_HELP, uploadImage } from "../_lib/imageUpload";
 import { SafeImage } from "./SafeImage";
 import { useConfirm } from "./ui";
 
@@ -34,22 +35,17 @@ export function ImageManager({
     setError(null);
     setUploading(true);
 
-    const formData = new FormData();
-    formData.set("file", file);
-
     try {
-      const response = await fetch(`/api/products/${productId}/images`, {
-        method: "POST",
-        body: formData,
-      });
-      const data = (await response.json()) as { ok: boolean; error?: string };
-      if (!data.ok) {
-        setError(data.error ?? "Something went wrong. Please try again.");
+      const result = await uploadImage(
+        `/api/products/${productId}/images`,
+        file,
+        IMAGE_PRESETS.catalog,
+      );
+      if (!result.ok) {
+        setError(result.error);
       } else {
         router.refresh();
       }
-    } catch {
-      setError("Something went wrong. Please try again.");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -145,7 +141,7 @@ export function ImageManager({
           {uploading ? "Uploading..." : "Click to upload or drag a photo here"}
         </span>
         <span className="text-xs text-onwei-blue/70">
-          JPEG, PNG or WebP, up to 8MB
+          JPEG, PNG or WebP. {UPLOAD_HELP}
         </span>
         <input
           ref={fileInputRef}

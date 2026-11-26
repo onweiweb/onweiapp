@@ -3,6 +3,7 @@
 import type { WhatsAppPurposeInfo, WhatsAppTemplateView } from "@onwei/core";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { IMAGE_PRESETS, UPLOAD_HELP, uploadImage } from "../_lib/imageUpload";
 import {
   PhonePreview,
   TemplateList,
@@ -138,23 +139,21 @@ function WhatsAppTemplateForm({
 
   async function upload(file: File) {
     setUploading(true);
-    const form = new FormData();
-    form.set("file", file);
-    const response = await fetch("/api/whatsapp/image", {
-      method: "POST",
-      body: form,
-    }).catch(() => null);
-    const data = (await response?.json().catch(() => null)) as {
-      ok: boolean;
-      url?: string;
-      error?: string;
-    } | null;
+    const result = await uploadImage(
+      "/api/whatsapp/image",
+      file,
+      IMAGE_PRESETS.whatsapp,
+    );
     setUploading(false);
-    if (!data?.ok || !data.url) {
-      toast(data?.error ?? "The image didn't upload. Try again.", "error");
+    const url = result.ok ? result.data.url : null;
+    if (typeof url !== "string") {
+      toast(
+        result.ok ? "The image didn't upload. Try again." : result.error,
+        "error",
+      );
       return;
     }
-    set("headerImageUrl", data.url);
+    set("headerImageUrl", url);
     toast("Image uploaded. Save to use it.", "success");
   }
 
@@ -236,8 +235,8 @@ function WhatsAppTemplateForm({
           <Step number={3} title="Image at the top">
             <div className="flex flex-col gap-1.5 text-sm">
               <span className="text-xs text-onwei-blue/70">
-                JPEG or PNG under 5MB, landscape (about 1200 by 628). Sent with
-                every message.
+                JPEG or PNG, landscape (about 1200 by 628). Sent with every
+                message. {UPLOAD_HELP}
                 {values.headerImageUrl
                   ? ""
                   : " Add one before switching this message on."}

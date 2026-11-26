@@ -1,18 +1,15 @@
 import { addProductImage } from "@onwei/core";
 import { NextResponse } from "next/server";
 import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
-import { uploadPublicFile } from "../../../../_lib/storage";
+import {
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_LABEL,
+  safeFileName,
+  uploadPublicFile,
+} from "../../../../_lib/storage";
 import { triggerCatalogRevalidate } from "../../../_lib/triggerCatalogRevalidate";
 
-const MAX_SIZE_BYTES = 8 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-// The upload's own file name is user input: keep only safe characters so it
-// can't add path segments or odd characters to the blob key.
-function safeFileName(name: string): string {
-  const cleaned = name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
-  return cleaned || "image";
-}
 
 // Multipart upload, so there is no JSON body for zod; the file is checked by
 // hand below.
@@ -33,9 +30,12 @@ export const POST = defineAdminRoute<never, { id: string }>(
         { status: 400 },
       );
     }
-    if (file.size > MAX_SIZE_BYTES) {
+    if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json(
-        { ok: false, error: "That image is too large, the limit is 8MB." },
+        {
+          ok: false,
+          error: `That image is too large, the limit is ${MAX_UPLOAD_LABEL}.`,
+        },
         { status: 400 },
       );
     }

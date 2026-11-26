@@ -14,6 +14,7 @@ import {
 } from "@onwei/core/campaign-fill";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { IMAGE_PRESETS, UPLOAD_HELP, uploadImage } from "../_lib/imageUpload";
 import {
   AdminButton,
   AdminInput,
@@ -173,23 +174,21 @@ function FillEditor({
 
   async function upload(file: File) {
     setUploading(true);
-    const form = new FormData();
-    form.set("file", file);
-    const response = await fetch("/api/insiders/whatsapp/image", {
-      method: "POST",
-      body: form,
-    }).catch(() => null);
-    const data = (await response?.json().catch(() => null)) as {
-      ok: boolean;
-      url?: string;
-      error?: string;
-    } | null;
+    const result = await uploadImage(
+      "/api/insiders/whatsapp/image",
+      file,
+      IMAGE_PRESETS.whatsapp,
+    );
     setUploading(false);
-    if (!data?.ok || !data.url) {
-      toast(data?.error ?? "The image didn't upload. Try again.", "error");
+    const url = result.ok ? result.data.url : null;
+    if (typeof url !== "string") {
+      toast(
+        result.ok ? "The image didn't upload. Try again." : result.error,
+        "error",
+      );
       return;
     }
-    onImage(data.url);
+    onImage(url);
   }
 
   return (
@@ -293,7 +292,7 @@ function FillEditor({
             ) : null}
           </div>
           <span className="text-xs text-onwei-blue/70">
-            JPEG or PNG, up to 5MB. Wide images (about 1.9 to 1) look best.
+            JPEG or PNG. Wide images (about 1.9 to 1) look best. {UPLOAD_HELP}
           </span>
         </div>
       ) : null}

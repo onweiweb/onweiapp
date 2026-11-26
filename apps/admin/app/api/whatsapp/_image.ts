@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
-import { uploadPublicFile } from "../../_lib/storage";
+import {
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_LABEL,
+  uploadPublicFile,
+} from "../../_lib/storage";
 
-// WhatsApp allows JPEG or PNG images up to 5MB in a template header.
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+// WhatsApp allows JPEG or PNG images up to 5MB in a template header. Our own
+// limit (MAX_UPLOAD_BYTES) is lower, so it always fits.
 const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 
 /** Uploads a WhatsApp header image and returns its public link. */
@@ -21,9 +25,12 @@ export async function uploadWhatsAppImage(request: Request): Promise<Response> {
       { status: 400 },
     );
   }
-  if (file.size > MAX_SIZE_BYTES) {
+  if (file.size > MAX_UPLOAD_BYTES) {
     return NextResponse.json(
-      { ok: false, error: "That image is too large, the limit is 5MB." },
+      {
+        ok: false,
+        error: `That image is too large, the limit is ${MAX_UPLOAD_LABEL}.`,
+      },
       { status: 400 },
     );
   }

@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { IMAGE_PRESETS, UPLOAD_HELP, uploadImage } from "../_lib/imageUpload";
 import {
   AdminButton,
   AdminCard,
@@ -162,22 +163,17 @@ export function ArticlesEditor({ items }: { items: ArticleRow[] }) {
     setError(null);
     setUploading(true);
     try {
-      const data = new FormData();
-      data.append("file", file);
-      const response = await fetch("/api/content/articles/cover", {
-        method: "POST",
-        body: data,
-      });
-      const result = (await response.json()) as {
-        ok: boolean;
-        url?: string;
-        error?: string;
-      };
-      if (!result.ok || !result.url) {
-        setError(result.error ?? "Couldn't upload that image.");
+      const result = await uploadImage(
+        "/api/content/articles/cover",
+        file,
+        IMAGE_PRESETS.catalog,
+      );
+      const url = result.ok ? result.data.url : null;
+      if (typeof url !== "string") {
+        setError(result.ok ? "Couldn't upload that image." : result.error);
         return;
       }
-      setForm((f) => ({ ...f, coverImageUrl: result.url! }));
+      setForm((f) => ({ ...f, coverImageUrl: url }));
     } finally {
       setUploading(false);
     }
@@ -451,7 +447,7 @@ export function ArticlesEditor({ items }: { items: ArticleRow[] }) {
                         : "Click to upload or drag a photo here"}
                     </span>
                     <span className="text-xs text-onwei-blue/70">
-                      JPEG, PNG or WebP, up to 8MB
+                      JPEG, PNG or WebP. {UPLOAD_HELP}
                     </span>
                     <input
                       type="file"

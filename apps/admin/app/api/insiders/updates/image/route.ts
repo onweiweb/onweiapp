@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { defineAdminRoute } from "../../../_lib/defineAdminRoute";
-import { uploadPublicFile } from "../../../../_lib/storage";
+import {
+  MAX_UPLOAD_BYTES,
+  MAX_UPLOAD_LABEL,
+  uploadPublicFile,
+} from "../../../../_lib/storage";
 
-const MAX_SIZE_BYTES = 5 * 1024 * 1024;
 const TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -28,9 +31,12 @@ export const POST = defineAdminRoute(
         { status: 400 },
       );
     }
-    if (file.size > MAX_SIZE_BYTES) {
+    if (file.size > MAX_UPLOAD_BYTES) {
       return NextResponse.json(
-        { ok: false, error: "That photo is too large, the limit is 5MB." },
+        {
+          ok: false,
+          error: `That photo is too large, the limit is ${MAX_UPLOAD_LABEL}.`,
+        },
         { status: 400 },
       );
     }

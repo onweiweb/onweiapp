@@ -3,6 +3,7 @@
 import type { UpdateRow } from "./_updateRow";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { IMAGE_PRESETS, UPLOAD_HELP, uploadImage } from "../_lib/imageUpload";
 import {
   AdminButton,
   AdminDialog,
@@ -59,23 +60,21 @@ function UpdateForm({
 
   async function upload(file: File) {
     setUploading(true);
-    const form = new FormData();
-    form.set("file", file);
-    const response = await fetch("/api/insiders/updates/image", {
-      method: "POST",
-      body: form,
-    }).catch(() => null);
-    const data = (await response?.json().catch(() => null)) as {
-      ok: boolean;
-      url?: string;
-      error?: string;
-    } | null;
+    const result = await uploadImage(
+      "/api/insiders/updates/image",
+      file,
+      IMAGE_PRESETS.insiderUpdate,
+    );
     setUploading(false);
-    if (!data?.ok || !data.url) {
-      toast(data?.error ?? "The photo didn't upload. Try again.", "error");
+    const url = result.ok ? result.data.url : null;
+    if (typeof url !== "string") {
+      toast(
+        result.ok ? "The photo didn't upload. Try again." : result.error,
+        "error",
+      );
       return;
     }
-    set("imageUrl", data.url);
+    set("imageUrl", url);
   }
 
   async function save(event: React.FormEvent) {
@@ -169,7 +168,7 @@ function UpdateForm({
       </div>
       <Field
         label="Photo (optional)"
-        hint="JPEG, PNG or WebP, up to 5MB. Shown wide, about 16 by 10."
+        hint={`JPEG, PNG or WebP. Shown wide, about 16 by 10. ${UPLOAD_HELP}`}
       >
         <div className="flex flex-wrap items-center gap-3">
           {values.imageUrl ? (
