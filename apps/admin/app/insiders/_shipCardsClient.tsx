@@ -9,6 +9,7 @@ import {
   AdminInput,
   AdminSelect,
   AdminTable,
+  AdminTextarea,
   AdminTableCell,
   AdminTableHead,
   AdminTableHeaderCell,
@@ -51,6 +52,8 @@ export interface CardShipRowData {
     error: string | null;
     addressChanged: boolean;
     unsure: boolean;
+    /** iThink has it but we have no tracking number. */
+    needsTrackingNumber: boolean;
     deliveredOn: string | null;
     checkedOn: string | null;
   } | null;
@@ -383,6 +386,31 @@ export function SendAllReadyButton({ ready }: { ready: number }) {
   );
 }
 
+/**
+ * Asks iThink about every card on its way, 50 per request, until none are
+ * left. Returns the totals, or null when it stopped on an error.
+ */
+async function updateAllFromIthink(
+  onProgress: (checked: number) => void,
+): Promise<{ total: number; changed: number } | { error: string }> {
+  const startedAt = new Date().toISOString();
+  let total = 0;
+  let changed = 0;
+  for (;;) {
+    const result = await post("/api/insiders/cards/refresh", { startedAt });
+    if (!result.ok) {
+      return {
+        error: result.error ?? "Couldn't get updates from iThink. Try again.",
+      };
+    }
+    total += Number(result.checked);
+    changed += Number(result.changed);
+    onProgress(total);
+    if (Number(result.remaining) === 0 || Number(result.checked) === 0) break;
+  }
+  return { total, changed };
+}
+
 /** Asks iThink about every card on its way, 50 per request. */
 export function UpdateAllButton() {
   const router = useRouter();
@@ -393,27 +421,12 @@ export function UpdateAllButton() {
   async function update() {
     setBusy(true);
     setChecked(0);
-    const startedAt = new Date().toISOString();
-    let total = 0;
-    let changed = 0;
-    let failed = false;
-    for (;;) {
-      const result = await post("/api/insiders/cards/refresh", { startedAt });
-      if (!result.ok) {
-        toast(
-          result.error ?? "Couldn't get updates from iThink. Try again.",
-          "error",
-        );
-        failed = true;
-        break;
-      }
-      total += Number(result.checked);
-      changed += Number(result.changed);
-      setChecked(total);
-      if (Number(result.remaining) === 0 || Number(result.checked) === 0) break;
-    }
+    const result = await updateAllFromIthink(setChecked);
     setBusy(false);
-    if (!failed) {
+    if ("error" in result) {
+      toast(result.error, "error");
+    } else {
+      const { total, changed } = result;
       toast(
         total === 0
           ? "No cards on their way right now."
@@ -433,6 +446,131 @@ export function UpdateAllButton() {
     >
       {busy ? `Updating... ${checked}` : "Update all from iThink"}
     </AdminButton>
+  );
+}
+
+/**
+ * "Add tracking numbers": for cards iThink booked whose tracking number
+ * never reached us. Staff paste tracking numbers from the iThink portal;
+ * each is matched to its card by the reference iThink holds. With
+ * `addressId`, only that card (the button on its row).
+ */
+export function TrackingNumbersButton({
+  addressId,
+  name,
+}: {
+  addressId?: string;
+  name?: string;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [left, setLeft] = useState<{ awb: string; reason: string }[]>([]);
+  const single = Boolean(addressId);
+
+  function close() {
+    setOpen(false);
+    setText("");
+    setLeft([]);
+  }
+
+  async function save() {
+    setBusy("Matching with iThink...");
+    const result = await post("/api/insiders/cards/tracking", {
+      text,
+      ...(addressId ? { addressId } : {}),
+    });
+    if (!result.ok) {
+      setBusy(null);
+      toast(result.error ?? "That didn't work. Try again.", "error");
+      return;
+    }
+    const matched = (result.matched as unknown[] | undefined)?.length ?? 0;
+    const notMatched = (result.left as { awb: string; reason: string }[]) ?? [];
+    if (matched > 0) {
+      // Bring in where each one is now (picked up, on the way).
+      setBusy("Getting the latest from iThink...");
+      await updateAllFromIthink(() => {});
+    }
+    setBusy(null);
+    toast(
+      String(result.message ?? "Done."),
+      notMatched.length > 0 ? "error" : "success",
+    );
+    router.refresh();
+    if (notMatched.length > 0) {
+      setLeft(notMatched);
+      setText(notMatched.map((l) => l.awb).join("\n"));
+    } else {
+      close();
+    }
+  }
+
+  return (
+    <>
+      <AdminButton
+        type="button"
+        variant={single ? "primary" : "secondary"}
+        onClick={() => setOpen(true)}
+      >
+        {single ? "Add tracking number" : "Add tracking numbers"}
+      </AdminButton>
+      <AdminDialog
+        open={open}
+        onClose={close}
+        title={
+          single
+            ? `Tracking number for ${name ?? "this card"}`
+            : "Add tracking numbers"
+        }
+        description={
+          single
+            ? "iThink already booked this card, but its tracking number never reached us. Find the card in the iThink portal (search its reference) and paste the tracking number here."
+            : "For cards iThink booked whose tracking number never reached us. In the iThink portal, copy the tracking numbers (AWB) of those orders and paste them here, one per line or straight from the portal table. Each one is matched to its card by the reference iThink shows (like CARD-0059)."
+        }
+        size="sm"
+      >
+        <Field
+          label={single ? "Tracking number" : "Tracking numbers"}
+          hint={single ? undefined : "Up to 100 at a time."}
+        >
+          {single ? (
+            <AdminInput
+              value={text}
+              inputMode="numeric"
+              onChange={(e) => setText(e.target.value)}
+            />
+          ) : (
+            <AdminTextarea
+              value={text}
+              rows={8}
+              onChange={(e) => setText(e.target.value)}
+            />
+          )}
+        </Field>
+        {left.length > 0 ? (
+          <div className="flex flex-col gap-1 text-sm text-onwei-blue">
+            <strong>Not matched</strong>
+            {left.map((l) => (
+              <span key={l.awb}>
+                {l.awb}: {l.reason}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        <div className="flex justify-end">
+          <AdminButton
+            type="button"
+            onClick={save}
+            disabled={busy !== null || text.trim() === ""}
+          >
+            {busy ?? "Save"}
+          </AdminButton>
+        </div>
+      </AdminDialog>
+    </>
   );
 }
 
@@ -568,8 +706,14 @@ function StatusCell({ row }: { row: CardShipRowData }) {
   return (
     <div className="flex max-w-[22rem] flex-col gap-1 whitespace-normal">
       <span>
-        <AdminBadge tone={s.unsure ? "problem" : status.tone}>
-          {s.unsure ? "No reply from iThink" : status.label}
+        <AdminBadge
+          tone={s.unsure || s.needsTrackingNumber ? "problem" : status.tone}
+        >
+          {s.needsTrackingNumber
+            ? "Booked on iThink, no tracking number"
+            : s.unsure
+              ? "No reply from iThink"
+              : status.label}
           {s.status === "DELIVERED" && s.deliveredOn ? ` ${s.deliveredOn}` : ""}
         </AdminBadge>
       </span>
@@ -579,7 +723,12 @@ function StatusCell({ row }: { row: CardShipRowData }) {
           send again, or keep it if the change doesn&apos;t matter.
         </span>
       ) : null}
-      {s.error ? (
+      {s.needsTrackingNumber ? (
+        <span className="text-xs text-onwei-blue">
+          iThink already has {s.reference}. Don&apos;t send it again: that books
+          a second envelope. Add its tracking number from the iThink portal.
+        </span>
+      ) : s.error ? (
         <span className="text-xs text-onwei-blue">{s.error}</span>
       ) : null}
       {s.courierStatus ? (
@@ -711,6 +860,12 @@ function RowActions({
   );
 
   const buttons: React.ReactNode[] = [];
+  if (s?.needsTrackingNumber) {
+    // Booked on iThink already: no send, posted by hand or address edit.
+    return canSend ? (
+      <TrackingNumbersButton addressId={row.id} name={row.name} />
+    ) : null;
+  }
   if (!s || status === "CANCELLED") {
     if (row.postedOn) {
       buttons.push(

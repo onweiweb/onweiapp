@@ -45,3 +45,9 @@ export {
 } from "./orderShipments";
 export { ithinkTrackingUrl, type PincodeService } from "./ithinkClient";
 export { type IthinkDeps } from "./cardShipments";
+export {
+  TRACKING_PASTE_MAX,
+  matchTrackingNumbers,
+  trackingNumbersIn,
+  type TrackingMatchResult,
+} from "./trackingMatch";

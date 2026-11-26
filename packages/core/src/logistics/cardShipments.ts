@@ -12,12 +12,14 @@ import {
   type IthinkParcel,
 } from "./ithinkClient";
 import {
+  ALREADY_IN_ITHINK,
   applyCourierUpdate,
   bookClaimedParcels,
   markShipmentBooked,
   type ClaimedParcel,
 } from "./parcelBooking";
 import { OPEN_SHIPMENT_STATUSES } from "./shipmentStatus";
+import { needsTrackingNumber } from "./trackingMatch";
 
 /**
  * Insider cards through iThink Logistics (docs/COMMERCE_BUILD_PLAN.md
@@ -174,6 +176,8 @@ function viewWhere(
               { status: { in: ["FAILED", "RETURNING", "RETURNED", "LOST"] } },
               { status: "BOOKED", addressChangedAt: { not: null } },
               { status: "SENDING", updatedAt: { lt: staleBefore } },
+              // iThink already has it: waiting for its tracking number.
+              { status: "SENDING", error: { not: null } },
             ],
           },
         },
@@ -192,7 +196,11 @@ function viewWhere(
                       in: ["IN_TRANSIT", "OUT_FOR_DELIVERY", "DELIVERED"],
                     },
                   },
-                  { status: "SENDING", updatedAt: { gte: staleBefore } },
+                  {
+                    status: "SENDING",
+                    updatedAt: { gte: staleBefore },
+                    error: null,
+                  },
                 ],
               },
             },
@@ -220,6 +228,8 @@ export interface CardShipmentView {
   lastCheckedAt: Date | null;
   /** Sent, but no reply saved for a while: press "Check again". */
   unsure: boolean;
+  /** iThink has it but we have no tracking number: add it, don't resend. */
+  needsTrackingNumber: boolean;
 }
 
 export interface CardShipRow {
@@ -307,7 +317,10 @@ export async function listCardShipRows(input: {
               deliveredAt: s.deliveredAt,
               lastCheckedAt: s.lastCheckedAt,
               unsure:
-                s.status === "SENDING" && s.updatedAt.getTime() < staleBefore,
+                s.status === "SENDING" &&
+                s.updatedAt.getTime() < staleBefore &&
+                !needsTrackingNumber(s),
+              needsTrackingNumber: needsTrackingNumber(s),
             }
           : null,
       };
@@ -390,6 +403,7 @@ export async function sendInsiderCards(
   });
 
   const claimed: ClaimedParcel[] = [];
+  const early: { name: string; reason: string }[] = [];
   let skipped = 0;
   for (const row of candidates) {
     const cardNumber = row.waitlistEntry.printedCard?.cardNumber;
@@ -428,6 +442,14 @@ export async function sendInsiderCards(
       heightCm: settings.heightCm,
       weightKg: settings.weightKg,
     });
+
+    // Refused as a duplicate: iThink has it booked. A new attempt would be
+    // a second parcel, so wait for its tracking number instead.
+    if (current && needsTrackingNumber(current)) {
+      skipped += 1;
+      early.push({ name: row.fullName, reason: ALREADY_IN_ITHINK });
+      continue;
+    }
 
     if (current?.status === "SENDING") {
       const touched = await prisma.shipment.updateMany({
@@ -537,7 +559,15 @@ export async function sendInsiderCards(
   const remaining = await prisma.insiderCardAddress.count({
     where: viewWhere("ready", new Date()),
   });
-  return { ok: true, booked, failed, unsure, skipped, remaining, problems };
+  return {
+    ok: true,
+    booked,
+    failed,
+    unsure,
+    skipped,
+    remaining,
+    problems: [...early, ...problems],
+  };
 }
 
 // ---------------------------------------------------------------------------

@@ -289,12 +289,26 @@ docs/       -> architecture, schema rationale, test plan, security notes, open d
 
 ## Current phase
 
-**Latest (2026-11-26, pushed 5ac0785 and e31c241, prod migrated):** owner brief rework. Pre-orders through the bag with a reserve from the
+**Latest (2026-11-26, live: 5ac0785, e31c241, 813a9de; both prod migrations run):** owner brief rework. Pre-orders through the bag with a reserve from the
 bag total before discounts (₹500 up to ₹4,000, ₹900 above), stock held at reserve, balance nudge (auto 7 days before
 close or from admin) that locks cancel, balance due 7 days after close then credit, cash refunds keep the gateway fee;
 Insider ID box above the pay button and sign-in by Insider ID; invite-only Insiders (invite by number or apply,
-admin Applications) with invite rewards. Prod still needs the data-only migration `20261127130000_legal_preorder_terms`
-(Terms wording). Details: `docs/COMMERCE_BUILD_PLAN.md` sections 14a and 20.
+admin Applications) with invite rewards; Terms "Pre-orders" section and gateway fee line (data migration
+`20261127130000_legal_preorder_terms`). Prod has no pre-order campaign yet and Insiders is still open signup. Owner
+to-dos: create the campaign, enter stock in Inventory (reserves hold stock), invite reward rules, flip the join mode.
+Details: `docs/COMMERCE_BUILD_PLAN.md` sections 14a and 20.
+Dev and testing gotchas from this round:
+
+- Dev has the real WhatsApp SIGN_IN_CODE template ON: asking for a phone code in dev sends a real WhatsApp, and
+  approving an Insider application sends a real welcome. Never use made-up numbers in browser tests; create the
+  `OtpChallenge` with a fixed code (`requestOtpChallenge(..., fixedCode)`) and call the API instead.
+- The dev DB is about 0.4s per query from a laptop. Tests set `PRISMA_TRANSACTION_TIMEOUT_MS` (packages/config/vitest/base.ts,
+  read in packages/database/src/client.ts); DB integration tests need minutes-long timeouts.
+- Restart `npm run dev` after any migration (stale Prisma client gives 500s).
+- A "use client" module's functions can't be called from a server component (prod-only crash with no campaign, fixed
+  813a9de). Shared defaults belong in a plain module.
+- React error #441 in the browser is the generic "server component failed"; read the Vercel runtime logs
+  (`/v1/projects/<id>/deployments/<dpl>/runtime-logs`, streams live only, token `VERCEL_TOKEN` in `.env`).
 
 **Earlier (2026-11-09):** the commerce build (Insider codes, coupons, sign-in, cart, checkout with Razorpay and COD,
 account, returns, staff tools) is pushed (3650c51, then the feedback round b64b37c) and prod is migrated. Prod is still
@@ -302,7 +316,7 @@ in WAITLIST mode, so the shop is hidden until the owner flips it to LIVE. Razorp
 (`onwei.in` and `mail.onwei.in` verified) and `admin.onwei.in` are set up. Read `docs/COMMERCE_BUILD_PLAN.md`
 (progress log, launch checklist, section 18) before touching any of it. Left: owner's admin setup (GST/HSN, shop rules,
 marquee, refund permission, Insider tiers), Insider email send (100 a day), Phase G (real SMS and WhatsApp, phone
-sign-in is refused on live prod until then), Phase H pre-order (pushed f190e5e; reworked locally 2026-11-26, see the note below and section 14a), and unplanned gaps
+sign-in is refused on live prod until then), Phase H pre-order (pushed f190e5e; reworked and pushed 2026-11-26, see the Latest note and section 14a), and unplanned gaps
 (shipped/delivered/refund emails, PIN autofill). GST invoicing, delivery partner and CRM are still not started.
 Local test data: dev waitlist entry and Insider code WEI6615 for the owner's own email; test orders ONW1001 to ONW1006.
 Contact Us (2026-11-09, pushed 8030251, prod migrated): `/contact` from Figma 1189:6006 / 1189:6203, reusing SiteHeader, FaqSection

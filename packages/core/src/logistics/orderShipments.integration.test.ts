@@ -9,6 +9,7 @@ import {
   refreshOrderShipments,
   sendOrderToIthink,
 } from "./orderShipments";
+import { matchTrackingNumbers } from "./trackingMatch";
 
 // Test orders only (example.test customers), removed afterwards. iThink is
 // faked: nothing leaves this machine.
@@ -274,6 +275,81 @@ describe.skipIf(!process.env.DATABASE_URL)(
       });
       expect(history.map((h) => h.status)).toEqual(["SHIPPED", "DELIVERED"]);
       expect(history.every((h) => h.changedBy === "ithink")).toBe(true);
+    });
+
+    it("keeps an order iThink already has from going twice, then takes its tracking number", async () => {
+      const id = await makeOrder({ paymentMethod: "COD" });
+      const lost = (async () => {
+        throw new TypeError("fetch failed");
+      }) as unknown as typeof fetch;
+      expect(
+        await sendOrderToIthink(id, null, { config, fetchImpl: lost }),
+      ).toMatchObject({ ok: true, outcome: "UNSURE" });
+      const sending = await current(id);
+
+      // Live iThink: refuses the repeat, Order Details answers null.
+      const awb = String((nextAwb += 1));
+      const live = fake((path, data) => {
+        if (path === "order/add.json") {
+          return {
+            data: {
+              "1": {
+                status: "error",
+                remark: "Order No. Already Exist.",
+                refnum: sending.reference.toLowerCase(),
+              },
+            },
+          };
+        }
+        if (path === "order/get_details.json") return null;
+        if (path === "order/track.json" && data.awb_number_list === awb) {
+          return {
+            data: {
+              [awb]: {
+                message: "success",
+                awb_no: awb,
+                logistic: "Delhivery",
+                current_status: "Manifested",
+                current_status_code: "UD",
+                order_details: { order_number: sending.reference },
+              },
+            },
+          };
+        }
+        return {};
+      });
+      const checked = await sendOrderToIthink(id, actor, {
+        config,
+        fetchImpl: live,
+      });
+      expect(checked).toMatchObject({ ok: true, outcome: "UNSURE" });
+      const again = await sendOrderToIthink(id, actor, {
+        config,
+        fetchImpl: live,
+      });
+      expect(again).toMatchObject({ ok: true, outcome: "UNSURE" });
+      expect(await prisma.shipment.count({ where: { orderId: id } })).toBe(1);
+
+      // A tracking number for another order is refused.
+      const otherId = await makeOrder({ paymentMethod: "COD" });
+      const wrong = await matchTrackingNumbers(
+        { text: awb, kind: "ORDER", orderId: otherId },
+        actor,
+        { config, fetchImpl: live },
+      );
+      expect(wrong).toMatchObject({ ok: true, matched: [] });
+
+      const matched = await matchTrackingNumbers(
+        { text: awb, kind: "ORDER", orderId: id },
+        actor,
+        { config, fetchImpl: live },
+      );
+      expect(matched).toMatchObject({ ok: true, matched: [{ awb }] });
+      expect(await current(id)).toMatchObject({
+        id: sending.id,
+        status: "BOOKED",
+        awb,
+      });
     });
 
     it("jumps straight to delivered when the in-between scans were missed", async () => {

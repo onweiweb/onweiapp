@@ -14,6 +14,7 @@ import {
   CardShipTable,
   EnvelopeButton,
   SendAllReadyButton,
+  TrackingNumbersButton,
   UpdateAllButton,
   type CardShipRowData,
 } from "./_shipCardsClient";
@@ -94,6 +95,7 @@ export async function ShipCardsTab({
           error: row.shipment.error,
           addressChanged: Boolean(row.shipment.addressChangedAt),
           unsure: row.shipment.unsure,
+          needsTrackingNumber: row.shipment.needsTrackingNumber,
           deliveredOn: row.shipment.deliveredAt
             ? istDateOf(row.shipment.deliveredAt)
             : null,
@@ -160,6 +162,7 @@ export async function ShipCardsTab({
         {canManage && config ? (
           <div className="flex flex-wrap gap-2">
             <UpdateAllButton />
+            {view === "problem" ? <TrackingNumbersButton /> : null}
             {view === "ready" ? (
               <SendAllReadyButton ready={counts.ready} />
             ) : null}

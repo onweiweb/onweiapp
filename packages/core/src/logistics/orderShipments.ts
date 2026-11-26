@@ -24,12 +24,14 @@ import {
   type PincodeService,
 } from "./ithinkClient";
 import {
+  ALREADY_IN_ITHINK,
   applyCourierUpdate,
   bookClaimedParcels,
   markShipmentBooked,
   type ShipmentMove,
 } from "./parcelBooking";
 import { OPEN_SHIPMENT_STATUSES } from "./shipmentStatus";
+import { needsTrackingNumber } from "./trackingMatch";
 
 /**
  * Orders through iThink Logistics (docs/COMMERCE_BUILD_PLAN.md section 19,
@@ -344,6 +346,12 @@ export async function sendOrderToIthink(
     !RESENDABLE.includes(current.status)
   ) {
     return { ok: false, reason: "ALREADY_SENT" };
+  }
+
+  // Refused as a duplicate: iThink has it booked. A new attempt would be a
+  // second parcel, so wait for its tracking number instead.
+  if (current && needsTrackingNumber(current)) {
+    return { ok: true, outcome: "UNSURE", message: ALREADY_IN_ITHINK };
   }
 
   let shipmentId: string;
@@ -768,6 +776,8 @@ export interface OrderShipmentView {
   lastCheckedAt: Date | null;
   /** Sent, but no reply saved for 5 minutes. */
   unsure: boolean;
+  /** iThink has it but we have no tracking number: add it, don't resend. */
+  needsTrackingNumber: boolean;
   attempts: number;
 }
 
@@ -794,7 +804,9 @@ export async function getOrderShipment(
     lastCheckedAt: current.lastCheckedAt,
     unsure:
       current.status === "SENDING" &&
-      current.updatedAt.getTime() < now.getTime() - 5 * 60_000,
+      current.updatedAt.getTime() < now.getTime() - 5 * 60_000 &&
+      !needsTrackingNumber(current),
+    needsTrackingNumber: needsTrackingNumber(current),
     attempts,
   };
 }

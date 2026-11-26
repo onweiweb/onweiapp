@@ -2,6 +2,7 @@ import { Prisma, prisma, type ShipmentStatus } from "@onwei/database";
 import {
   addIthinkParcels,
   findIthinkParcel,
+  type AddParcelResult,
   type IthinkConfig,
   type IthinkOrderInfo,
   type IthinkParcel,
@@ -9,9 +10,22 @@ import {
 import { canMoveShipment, isPickedUp, mapIthinkStatus } from "./shipmentStatus";
 
 /**
- * Books claimed parcels on iThink (one Add Order call, up to 10) and saves
- * each answer on its Shipment row. Shared by Insider cards and orders.
+ * Books claimed parcels on iThink and saves each answer on its Shipment row.
+ * Shared by Insider cards and orders. One parcel per Add Order call, a few
+ * at a time: a refusal or a slow reply then only touches its own parcel
+ * (2026-11-26, a batch of 10 lost its reply and every card was stuck).
  */
+
+/** Add Order calls in flight at once. 10 parcels fit a 60s request. */
+const PARALLEL_SENDS = 5;
+
+/**
+ * Saved on a parcel iThink already has but whose tracking number we
+ * couldn't read. Never "Not sent": sending it again as a new attempt would
+ * book a second parcel. Staff paste the tracking number from the portal.
+ */
+export const ALREADY_IN_ITHINK =
+  'iThink already has this booking but didn\'t send its tracking number. Copy the tracking number from the iThink portal and paste it in "Add tracking numbers".';
 
 export interface ClaimedParcel {
   shipmentId: string;
@@ -69,11 +83,17 @@ export async function bookClaimedParcels(
     bookedShipments: [],
   };
   if (claimed.length === 0) return out;
-  const results = await addIthinkParcels(
-    config,
-    claimed.map((c) => c.parcel),
-    fetchImpl,
-  );
+  const results: AddParcelResult[] = [];
+  for (let i = 0; i < claimed.length; i += PARALLEL_SENDS) {
+    const chunk = claimed.slice(i, i + PARALLEL_SENDS);
+    const answers = await Promise.all(
+      chunk.map(async (c) => {
+        const [answer] = await addIthinkParcels(config, [c.parcel], fetchImpl);
+        return answer as AddParcelResult;
+      }),
+    );
+    results.push(...answers);
+  }
   for (const [index, result] of results.entries()) {
     const item = claimed[index];
     if (!item) continue;
@@ -86,19 +106,25 @@ export async function bookClaimedParcels(
     if (result.outcome === "BOOKED") {
       await booked(result.awb, result.courier);
     } else if (result.outcome === "DUPLICATE") {
-      const found = await findIthinkParcel(
-        config,
-        item.reference,
-        item.createdAt,
-        fetchImpl,
-      );
+      const found = result.awb
+        ? { awb: result.awb, courier: null }
+        : await findIthinkParcel(
+            config,
+            item.reference,
+            item.createdAt,
+            fetchImpl,
+          );
       if (found) {
         await booked(found.awb, found.courier);
       } else {
-        const reason = `iThink already has ${item.reference} but we couldn't read its tracking number. Find it in the iThink portal before sending again.`;
-        await markFailed(item.shipmentId, reason);
-        out.failed += 1;
-        out.problems.push({ name: item.label, reason });
+        // Booked on iThink: stays "sending" (never sent again as a new
+        // attempt) until staff add its tracking number.
+        await prisma.shipment.updateMany({
+          where: { id: item.shipmentId, status: "SENDING" },
+          data: { error: ALREADY_IN_ITHINK },
+        });
+        out.unsure += 1;
+        out.problems.push({ name: item.label, reason: ALREADY_IN_ITHINK });
       }
     } else if (result.outcome === "REFUSED") {
       await markFailed(item.shipmentId, result.reason);

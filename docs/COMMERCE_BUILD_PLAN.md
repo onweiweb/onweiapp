@@ -804,10 +804,10 @@ at desktop and mobile and shown to the owner before its phase ships.
 
 ## 14a. Pre-order campaign (Phase H, approved 2026-11-18, pushed f190e5e; reworked 2026-11-26)
 
-**Rework (owner brief "Onwei website", approved 2026-11-26, built locally, not pushed).** It replaces the
-one-product reserve page, the ₹900 per item reserve, "Stock is in, ask for balance" and the day 3/7/14
-reminders described further down. Migration `20261127120000_preorder_rework_insider_access` (owner runs it on
-prod before the push).
+**Rework (owner brief "Onwei website", approved 2026-11-26, pushed 5ac0785, e31c241, 813a9de; prod migrated).**
+It replaces the one-product reserve page, the ₹900 per item reserve, "Stock is in, ask for balance" and the day
+3/7/14 reminders described further down. Migrations `20261127120000_preorder_rework_insider_access` and
+`20261127130000_legal_preorder_terms` (Terms wording, data only), both run on prod 2026-11-26. Prod has no campaign yet.
 
 - Pre-orders go through the normal bag. In pre-order mode with a lap running, the bag takes campaign products
   only (`bagTakes` in `commerce/cart.ts`); `getCartView` prices it with the lap discount and returns
@@ -827,8 +827,8 @@ prod before the push).
 - Customer cancel (`customerCanCancel`): until the window closes, and not after the nudge or the balance. Reserve
   becomes credit. Ordering again gets the lap live then.
 - Cash refunds (staff only, `order:refund`): the box fills in the reserve minus Razorpay's fee for that payment
-  (`suggestPreorderRefund`), staff can change it. Setting `StoreSetting.refundKeepsGatewayFee` (on). The terms and
-  returns page must say "Cash refunds exclude the payment gateway fee" (owner to add, legal pages live in admin).
+  (`suggestPreorderRefund`), staff can change it. Setting `StoreSetting.refundKeepsGatewayFee` (on). The Terms have a
+  "Pre-orders" section and "Returns and refunds" says cash refunds of a reserve exclude the gateway fee (live).
 - My orders: reserve paid, balance due and its date, locked lap, Pay the balance, Cancel and keep as credit.
 
 Owner sheet and answers (2026-11-18):
@@ -1002,7 +1002,7 @@ Soft deletes on customer-facing rows, price snapshots on order lines, audit rows
 ## 19. Delivery partner: iThink Logistics (approved 2026-11-24)
 
 The owner picked iThink Logistics (https://docs.ithinklogistics.com/, API v3). Two phases: Insider cards first
-(built locally 2026-11-24, not pushed), then orders.
+(pushed 0b9c350), then orders (pushed fdc5f69).
 
 **Decisions:** Add Order (books the courier and returns the tracking number at once), not Sync Order. Labels are
 printed in the iThink portal, not in Onwei admin. iThink picks the courier (`logistics` empty). No polling for now:
@@ -1024,6 +1024,26 @@ Without all four required values admin says "iThink isn't connected yet". Phase 
 - Order Details ignores `order_no`; we match the reference ourselves.
 - The test server is one account shared by many shops, and its Track Order and Cancel return canned sample data.
   Test mode reads status from Order Details (`latest_courier_status`) instead, and test references get a random tail.
+
+**Live server quirks (found 2026-11-26) and the "Already Exist" fix:**
+
+- The live server refuses a repeat reference as "Order No. Already Exist." (not "Duplicate"). Live Order Details
+  answers `null` for every request (date range, AWB list, order number), and so does Order Details Count. Get Airwaybill
+  only lists parcels with recent courier scans. So there is no way to find a booking by our reference on live. Track
+  Order works and returns our reference as `order_details.order_number`. Ask the iThink account manager to switch on
+  Order Details for the account; then a lost reply is found by itself again.
+- What went wrong: about 25 cards were booked on iThink but the reply never reached us (no reply, then "Check again"
+  sent the same reference). The repeat came back "Already Exist", which we didn't read as a duplicate, so the card showed
+  "Not sent" and "Send again" would have booked a second envelope.
+- Fix: "Already Exist" counts as a duplicate (per parcel or for the whole call). Each Add Order call now carries one
+  parcel (5 at a time), so one refusal or slow reply can't touch other parcels. A duplicate we can't look up stays
+  "sending" with `ALREADY_IN_ITHINK` and is never sent again as a new attempt (`needsTrackingNumber`; old rows saved as
+  "Not sent" with the duplicate message are caught the same way). Staff add the tracking number from the portal: Insiders >
+  Ship cards > Needs a look > "Add tracking numbers" (paste many, or the button on a row), or the order page's Delivery
+  card. `matchTrackingNumbers` (`logistics/trackingMatch.ts`) asks Track Order, matches the reference, books the parcel,
+  writes an audit row (`shipment.trackingNumber.add`), then the page runs "Update all". If an older try of the same card is
+  the one booked and the newest one really failed, it switches to the older one; if two tries are both on iThink it lists
+  them so staff cancel one in the portal.
 
 **Phase 1, Insider cards (`packages/core/src/logistics`, admin Insiders > Ship cards):**
 
@@ -1051,7 +1071,7 @@ keys to the admin Vercel project with `ITHINK_ENV=production`, push, send 3 or 4
 
 **Phase 1 status:** pushed 2026-11-24 (0b9c350), prod migrated, live keys on both Vercel projects.
 
-**Phase 2, orders (built locally 2026-11-25, not pushed):**
+**Phase 2, orders (pushed fdc5f69 with both prod migrations):**
 
 - Sending: `afterOrderConfirmed` (web `api/_lib/orderEmails.ts`) sends every newly confirmed order to iThink after the
   response (COD placement, payment verify, Razorpay webhook; a pre-order once its balance is paid). Reference is the order
@@ -1085,7 +1105,7 @@ keys to the admin Vercel project with `ITHINK_ENV=production`, push, send 3 or 4
 - Not done: the customer order page doesn't refresh tracking by itself (button-only, as decided). Later: polling or
   webhooks, return pickups, COD remittance, failed-delivery reattempt.
 
-## 20. Insider ID on the bag and invite-only Insiders (owner brief, approved 2026-11-26, built locally)
+## 20. Insider ID on the bag and invite-only Insiders (owner brief, approved 2026-11-26, live 2026-11-26)
 
 Same migration as the 14a rework.
 

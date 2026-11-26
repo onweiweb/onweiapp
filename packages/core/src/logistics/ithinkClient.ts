@@ -9,10 +9,18 @@
  *   is refused as "Invalid Request Format - <field>"), and `logistics`
  *   present (empty lets iThink choose the courier).
  * - The reference (`order`) comes back lowercased in `refnum`, and a
- *   reference iThink already has is refused as "Duplicate Order no.".
+ *   reference iThink already has is refused as "Duplicate Order no." (the
+ *   live server says "Order No. Already Exist.").
  * - `waybill` comes back as a number.
  * - On the test server Track Order and Cancel return canned sample data, so
  *   test mode reads status from Order Details instead.
+ *
+ * Learned on the live server (2026-11-26):
+ * - Order Details answers `null` for every request (date range, AWB list or
+ *   order number), so a booking can't be found by our reference there. Track
+ *   Order works and returns our reference as `order_details.order_number`,
+ *   so a booking whose reply was lost is matched from its tracking number
+ *   (staff copy it from the iThink portal).
  * The keys are never logged.
  */
 
@@ -279,7 +287,8 @@ export type AddParcelResult =
       awb: string;
       courier: string | null;
     }
-  | { reference: string; outcome: "DUPLICATE" }
+  // iThink already has this reference. `awb` when its reply says which.
+  | { reference: string; outcome: "DUPLICATE"; awb: string | null }
   | {
       reference: string;
       outcome: "REFUSED";
@@ -295,6 +304,20 @@ const NO_REPLY: Record<"TIMEOUT" | "NETWORK" | "BAD_REPLY", string> = {
   NETWORK: "Couldn't reach iThink.",
   BAD_REPLY: "iThink sent back something we couldn't read.",
 };
+
+/**
+ * Whether iThink refused a parcel because it already has that reference:
+ * "Duplicate Order no. in system" (test server), "Order No. Already Exist."
+ * (live). Also matches our own saved error for such a refusal.
+ */
+export function isDuplicateRemark(remark: string): boolean {
+  const lower = remark.toLowerCase();
+  return (
+    lower.includes("duplicate") ||
+    /already\s+exist/.test(lower) ||
+    lower.includes("already has")
+  );
+}
 
 /** iThink's remark in plain words, and whether it's about the address. */
 export function explainIthinkRemark(remark: string): {
@@ -365,6 +388,17 @@ export async function addIthinkParcels(
     const reference = parcel.reference;
     if (Object.keys(line).length === 0) {
       if (str(result.body.status).toLowerCase() === "error" && whole) {
+        if (isDuplicateRemark(whole)) {
+          // One message for the whole call: with several parcels we can't
+          // tell which one iThink already has.
+          return parcels.length === 1
+            ? { reference, outcome: "DUPLICATE" as const, awb: null }
+            : {
+                reference,
+                outcome: "UNKNOWN" as const,
+                reason: NO_REPLY.BAD_REPLY,
+              };
+        }
         const explained = explainIthinkRemark(whole);
         return { reference, outcome: "REFUSED" as const, ...explained };
       }
@@ -394,8 +428,8 @@ export async function addIthinkParcels(
       };
     }
     const remark = str(line.remark);
-    if (remark.toLowerCase().includes("duplicate")) {
-      return { reference, outcome: "DUPLICATE" as const };
+    if (isDuplicateRemark(remark)) {
+      return { reference, outcome: "DUPLICATE" as const, awb: awb || null };
     }
     return {
       reference,

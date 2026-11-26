@@ -12,6 +12,7 @@ import {
   sendInsiderCards,
 } from "./cardShipments";
 import type { IthinkConfig } from "./ithinkClient";
+import { matchTrackingNumbers } from "./trackingMatch";
 
 // Test rows only (fake names, example.test emails), removed afterwards.
 // iThink is faked: nothing leaves this machine.
@@ -310,6 +311,293 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(checked).toMatchObject({ booked: 1 });
       const booked = await current(id);
       expect(booked).toMatchObject({ id: sending.id, status: "BOOKED", awb });
+    });
+
+    /**
+     * The live server (2026-11-26): Order Details answers null, a repeat is
+     * refused as "Order No. Already Exist.", and Track Order gives our
+     * reference back as order_details.order_number.
+     */
+    function liveIthink(booked: Map<string, string>): typeof fetch {
+      return fake((path, data) => {
+        if (path === "order/add.json") {
+          const shipments = data.shipments as { order: string }[];
+          return {
+            status: "success",
+            data: Object.fromEntries(
+              shipments.map((s, i) => [
+                String(i + 1),
+                booked.has(s.order)
+                  ? {
+                      status: "error",
+                      remark: "Order No. Already Exist.",
+                      refnum: s.order.toLowerCase(),
+                    }
+                  : {
+                      status: "success",
+                      waybill: String((nextAwb += 1)),
+                      refnum: s.order.toLowerCase(),
+                    },
+              ]),
+            ),
+          };
+        }
+        if (path === "order/get_details.json") return null;
+        if (path === "order/track.json") {
+          const asked = String(data.awb_number_list).split(",");
+          const byAwb = new Map([...booked].map(([ref, awb]) => [awb, ref]));
+          return {
+            status: "success",
+            data: Object.fromEntries(
+              asked
+                .filter((awb) => byAwb.has(awb))
+                .map((awb) => [
+                  awb,
+                  {
+                    message: "success",
+                    awb_no: awb,
+                    logistic: "Delhivery",
+                    current_status: "Manifested",
+                    current_status_code: "UD",
+                    order_details: { order_number: byAwb.get(awb) },
+                  },
+                ]),
+            ),
+          };
+        }
+        return {};
+      });
+    }
+
+    it("never sends a card iThink already has as a new attempt, and matches its tracking number", async () => {
+      const id = await makeMember();
+      // First send: iThink books it, but the reply is lost.
+      await sendInsiderCards({ addressIds: [id] }, actor, {
+        config,
+        fetchImpl: failing,
+      });
+      const sending = await current(id);
+      const awb = String((nextAwb += 1));
+      const live = liveIthink(new Map([[sending.reference, awb]]));
+
+      // "Check again": refused as a duplicate, lookup finds nothing live.
+      const checked = await sendInsiderCards({ addressIds: [id] }, actor, {
+        config,
+        fetchImpl: live,
+      });
+      expect(checked).toMatchObject({ booked: 0, failed: 0, unsure: 1 });
+      const stuck = await current(id);
+      expect(stuck).toMatchObject({ id: sending.id, status: "SENDING" });
+      expect(stuck.error).toContain("tracking number");
+
+      // Pressing send again does nothing new.
+      const again = await sendInsiderCards({ addressIds: [id] }, actor, {
+        config,
+        fetchImpl: live,
+      });
+      expect(again).toMatchObject({ booked: 0, skipped: 1 });
+      expect(
+        await prisma.shipment.count({ where: { insiderCardAddressId: id } }),
+      ).toBe(1);
+
+      // Staff paste the tracking number from the portal.
+      const matched = await matchTrackingNumbers(
+        { text: `${sending.reference}  ${awb}  Today`, kind: "INSIDER_CARD" },
+        actor,
+        { config, fetchImpl: live },
+      );
+      expect(matched).toMatchObject({
+        ok: true,
+        matched: [{ reference: sending.reference, awb }],
+        left: [],
+      });
+      expect(await current(id)).toMatchObject({
+        id: sending.id,
+        status: "BOOKED",
+        awb,
+        courier: "Delhivery",
+        error: null,
+      });
+      expect(
+        await prisma.auditLog.count({
+          where: {
+            entityId: sending.id,
+            action: "shipment.trackingNumber.add",
+          },
+        }),
+      ).toBe(1);
+
+      // The same paste again changes nothing.
+      const twice = await matchTrackingNumbers(
+        { text: awb, kind: "INSIDER_CARD" },
+        actor,
+        { config, fetchImpl: live },
+      );
+      expect(twice).toMatchObject({ ok: true, matched: [], alreadySaved: 1 });
+    });
+
+    it("fixes cards marked not sent before the fix (refused as Already Exist)", async () => {
+      const id = await makeMember();
+      const ref = `CARD-T${Date.now()}`;
+      const old = await prisma.shipment.create({
+        data: {
+          kind: "INSIDER_CARD",
+          insiderCardAddressId: id,
+          reference: ref,
+          status: "FAILED",
+          error: "iThink said: Order No. Already Exist.",
+        },
+      });
+      const awb = String((nextAwb += 1));
+      const live = liveIthink(new Map([[ref, awb]]));
+
+      const sent = await sendInsiderCards({ addressIds: [id] }, actor, {
+        config,
+        fetchImpl: live,
+      });
+      expect(sent).toMatchObject({ booked: 0, skipped: 1 });
+      expect(
+        await prisma.shipment.count({ where: { insiderCardAddressId: id } }),
+      ).toBe(1);
+
+      // Scoped to another card: refused.
+      const other = await makeMember();
+      const wrong = await matchTrackingNumbers(
+        { text: awb, kind: "INSIDER_CARD", insiderCardAddressId: other },
+        actor,
+        { config, fetchImpl: live },
+      );
+      expect(wrong).toMatchObject({ ok: true, matched: [] });
+      if (wrong.ok) expect(wrong.left[0]?.reason).toContain("not this card");
+
+      const fixed = await matchTrackingNumbers(
+        { text: awb, kind: "INSIDER_CARD", insiderCardAddressId: id },
+        actor,
+        { config, fetchImpl: live },
+      );
+      expect(fixed).toMatchObject({ ok: true, matched: [{ awb }] });
+      expect(await current(id)).toMatchObject({
+        id: old.id,
+        status: "BOOKED",
+        awb,
+      });
+    });
+
+    it("takes an older try that was booked after all, and flags two live bookings", async () => {
+      const id = await makeMember();
+      const base = `CARD-T${Date.now()}`;
+      const first = await prisma.shipment.create({
+        data: {
+          kind: "INSIDER_CARD",
+          insiderCardAddressId: id,
+          reference: base,
+          status: "FAILED",
+          isCurrent: false,
+          error: "iThink took too long to answer.",
+        },
+      });
+      const second = await prisma.shipment.create({
+        data: {
+          kind: "INSIDER_CARD",
+          insiderCardAddressId: id,
+          reference: `${base}-2`,
+          status: "FAILED",
+          error: "iThink said: Order No. Already Exist.",
+        },
+      });
+      const awb1 = String((nextAwb += 1));
+      const awb2 = String((nextAwb += 1));
+      const live = liveIthink(
+        new Map([
+          [base, awb1],
+          [`${base}-2`, awb2],
+        ]),
+      );
+      // Both tries are booked on iThink: the newest is taken, the older
+      // one is listed so staff cancel it in the portal.
+      const result = await matchTrackingNumbers(
+        { text: `${awb2}\n${awb1}`, kind: "INSIDER_CARD" },
+        actor,
+        { config, fetchImpl: live },
+      );
+      expect(result).toMatchObject({
+        ok: true,
+        matched: [{ reference: `${base}-2`, awb: awb2 }],
+      });
+      if (result.ok) {
+        expect(result.left).toHaveLength(1);
+        expect(result.left[0]?.reason).toContain("both on iThink");
+      }
+      expect(await current(id)).toMatchObject({ id: second.id, awb: awb2 });
+      expect(
+        await prisma.shipment.findUniqueOrThrow({ where: { id: first.id } }),
+      ).toMatchObject({ status: "FAILED", awb: null, isCurrent: false });
+    });
+
+    it("switches to an older try when the newer one really failed", async () => {
+      const id = await makeMember();
+      const base = `CARD-T${Date.now()}`;
+      const first = await prisma.shipment.create({
+        data: {
+          kind: "INSIDER_CARD",
+          insiderCardAddressId: id,
+          reference: base,
+          status: "FAILED",
+          isCurrent: false,
+          error: "iThink took too long to answer.",
+        },
+      });
+      await prisma.shipment.create({
+        data: {
+          kind: "INSIDER_CARD",
+          insiderCardAddressId: id,
+          reference: `${base}-2`,
+          status: "FAILED",
+          error: "iThink can't deliver to this PIN code.",
+        },
+      });
+      const awb = String((nextAwb += 1));
+      const result = await matchTrackingNumbers(
+        { text: awb, kind: "INSIDER_CARD" },
+        actor,
+        { config, fetchImpl: liveIthink(new Map([[base, awb]])) },
+      );
+      expect(result).toMatchObject({ ok: true, matched: [{ awb }] });
+      expect(await current(id)).toMatchObject({
+        id: first.id,
+        status: "BOOKED",
+        awb,
+      });
+      expect(
+        await prisma.shipment.count({
+          where: { insiderCardAddressId: id, isCurrent: true },
+        }),
+      ).toBe(1);
+    });
+
+    it("sends one card per iThink call, so one refusal can't sink the rest", async () => {
+      const ids = [await makeMember(), await makeMember(), await makeMember()];
+      const calls: number[] = [];
+      const counting = fake((path, data) => {
+        if (path !== "order/add.json") return {};
+        const shipments = data.shipments as { order: string }[];
+        calls.push(shipments.length);
+        return {
+          data: {
+            "1": {
+              status: "success",
+              waybill: String((nextAwb += 1)),
+              refnum: shipments[0]?.order.toLowerCase(),
+            },
+          },
+        };
+      });
+      const sent = await sendInsiderCards({ addressIds: ids }, actor, {
+        config,
+        fetchImpl: counting,
+      });
+      expect(sent).toMatchObject({ booked: 3 });
+      expect(calls).toEqual([1, 1, 1]);
     });
 
     it("cancels a booked card before pickup", async () => {

@@ -6,6 +6,7 @@ import {
   checkIthinkPincode,
   explainIthinkRemark,
   findIthinkParcel,
+  isDuplicateRemark,
   ithinkDate,
   ithinkPhone,
   ithinkUrl,
@@ -261,11 +262,71 @@ describe("addIthinkParcels", () => {
     expect(results[2]).toEqual({
       reference: "CARD-0003",
       outcome: "DUPLICATE",
+      awb: null,
     });
     expect(calls[0]?.data).toMatchObject({
       access_token: "token",
       logistics: "",
     });
+  });
+
+  it("reads the live server's duplicate wording", async () => {
+    const { impl } = fakeFetch({
+      data: {
+        "1": {
+          status: "error",
+          remark: "Order No. Already Exist.",
+          refnum: "card-0059",
+        },
+      },
+    });
+    const [result] = await addIthinkParcels(
+      config,
+      [parcel("CARD-0059")],
+      impl,
+    );
+    expect(result).toEqual({
+      reference: "CARD-0059",
+      outcome: "DUPLICATE",
+      awb: null,
+    });
+  });
+
+  it("takes the tracking number when a duplicate reply carries one", async () => {
+    const { impl } = fakeFetch({
+      data: {
+        "1": {
+          status: "error",
+          remark: "Order No. Already Exist.",
+          waybill: 21025866121144,
+          refnum: "card-0059",
+        },
+      },
+    });
+    const [result] = await addIthinkParcels(
+      config,
+      [parcel("CARD-0059")],
+      impl,
+    );
+    expect(result).toMatchObject({
+      outcome: "DUPLICATE",
+      awb: "21025866121144",
+    });
+  });
+
+  it("reads a whole-call duplicate as that parcel, but can't blame one of many", async () => {
+    const { impl } = fakeFetch({
+      status: "error",
+      html_message: "Order No. Already Exist.",
+    });
+    const [one] = await addIthinkParcels(config, [parcel("CARD-0059")], impl);
+    expect(one).toMatchObject({ outcome: "DUPLICATE" });
+    const many = await addIthinkParcels(
+      config,
+      [parcel("CARD-0059"), parcel("CARD-0060")],
+      impl,
+    );
+    expect(many.map((r) => r.outcome)).toEqual(["UNKNOWN", "UNKNOWN"]);
   });
 
   it("treats no reply as unknown", async () => {
@@ -303,6 +364,18 @@ describe("addIthinkParcels", () => {
       impl,
     );
     expect(result).toMatchObject({ outcome: "UNKNOWN" });
+  });
+});
+
+describe("isDuplicateRemark", () => {
+  it("knows both servers' wording and our saved message", () => {
+    expect(isDuplicateRemark("Duplicate Order no. in system")).toBe(true);
+    expect(isDuplicateRemark("Order No. Already Exist.")).toBe(true);
+    expect(isDuplicateRemark("iThink said: Order No. Already Exist.")).toBe(
+      true,
+    );
+    expect(isDuplicateRemark("iThink already has this booking")).toBe(true);
+    expect(isDuplicateRemark("Invalid Pincode")).toBe(false);
   });
 });
 

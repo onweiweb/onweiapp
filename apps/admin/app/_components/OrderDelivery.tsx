@@ -5,7 +5,9 @@ import { useState } from "react";
 import {
   AdminBadge,
   AdminButton,
+  AdminInput,
   CopyText,
+  Field,
   useToast,
   type StatusTone,
 } from "./ui";
@@ -31,6 +33,8 @@ export interface OrderDeliveryData {
   trackingUrl: string | null;
   error: string | null;
   unsure: boolean;
+  /** iThink has it but we have no tracking number. */
+  needsTrackingNumber: boolean;
   checkedOn: string | null;
   attempts: number;
 }
@@ -103,10 +107,15 @@ export function OrderDelivery({
   const router = useRouter();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
+  const [awb, setAwb] = useState("");
 
-  async function run(path: "send" | "refresh") {
+  async function run(path: "send" | "refresh" | "tracking") {
     setBusy(true);
-    const result = await post(`/api/orders/${orderId}/ithink/${path}`);
+    const result = await post(
+      `/api/orders/${orderId}/ithink/${path}`,
+      path === "tracking" ? { text: awb } : undefined,
+    );
+    if (path === "tracking" && result.ok) setAwb("");
     setBusy(false);
     if (!result.ok) {
       toast(result.error ?? "That didn't work. Try again.", "error");
@@ -117,12 +126,15 @@ export function OrderDelivery({
   }
 
   const status = shipment?.status;
+  const needsAwb = Boolean(shipment?.needsTrackingNumber);
   const showSend =
     canUpdate &&
     connected &&
     canSend &&
+    !needsAwb &&
     (!shipment || RESENDABLE.includes(status!));
-  const showCheck = canUpdate && connected && status === "SENDING";
+  const showCheck = canUpdate && connected && status === "SENDING" && !needsAwb;
+  const showAwb = canUpdate && connected && needsAwb;
   const showRefresh =
     canUpdate && connected && status !== undefined && OPEN.includes(status);
 
@@ -138,11 +150,17 @@ export function OrderDelivery({
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <AdminBadge
-              tone={shipment.unsure ? "problem" : STATUS[shipment.status].tone}
+              tone={
+                shipment.unsure || needsAwb
+                  ? "problem"
+                  : STATUS[shipment.status].tone
+              }
             >
-              {shipment.unsure
-                ? "No reply from iThink"
-                : STATUS[shipment.status].label}
+              {needsAwb
+                ? "Booked on iThink, no tracking number"
+                : shipment.unsure
+                  ? "No reply from iThink"
+                  : STATUS[shipment.status].label}
             </AdminBadge>
             <span className="text-onwei-blue/70">
               Reference {shipment.reference}
@@ -172,7 +190,16 @@ export function OrderDelivery({
               ) : null}
             </div>
           ) : null}
-          {shipment.error ? <p>{shipment.error}</p> : null}
+          {needsAwb ? (
+            <p>
+              iThink already has {shipment.reference}, but its tracking number
+              never reached us. Don&apos;t send it again: that books a second
+              parcel. Find {shipment.reference} in the iThink portal and paste
+              its tracking number below.
+            </p>
+          ) : shipment.error ? (
+            <p>{shipment.error}</p>
+          ) : null}
           {shipment.courierStatus ? (
             <p className="text-onwei-blue/70">
               iThink says: {shipment.courierStatus}
@@ -201,6 +228,24 @@ export function OrderDelivery({
           iThink isn&apos;t connected on this site, so nothing can be sent or
           updated from here.
         </p>
+      ) : null}
+      {showAwb ? (
+        <div className="flex flex-wrap items-end gap-2">
+          <Field label="Tracking number from the iThink portal">
+            <AdminInput
+              value={awb}
+              inputMode="numeric"
+              onChange={(e) => setAwb(e.target.value)}
+            />
+          </Field>
+          <AdminButton
+            type="button"
+            disabled={busy || awb.trim() === ""}
+            onClick={() => run("tracking")}
+          >
+            {busy ? "Saving..." : "Save tracking number"}
+          </AdminButton>
+        </div>
       ) : null}
       {showSend || showCheck || showRefresh ? (
         <div className="flex flex-wrap gap-2">

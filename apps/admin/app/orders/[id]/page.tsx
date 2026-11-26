@@ -156,6 +156,7 @@ export default async function OrderDetailPage({
                     trackingUrl: shipment.trackingUrl,
                     error: shipment.error,
                     unsure: shipment.unsure,
+                    needsTrackingNumber: shipment.needsTrackingNumber,
                     checkedOn: shipment.lastCheckedAt
                       ? istDateOf(shipment.lastCheckedAt)
                       : null,
