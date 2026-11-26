@@ -1,6 +1,9 @@
 # Email plan (recommended 2026-09-30, not started)
 
-Status: **parked, no decisions approved yet.** Come back to this before building anything email related.
+Status (2026-11-26): **superseded, kept for history.** Resend is live (`onwei.in` and `mail.onwei.in` verified) and
+`packages/emails` sends sign-in codes, welcome, Insider, order confirmation, shipped, delivered, pre-order and contact
+emails. Current email details: `docs/COMMERCE_BUILD_PLAN.md` section 12. Open email items (refund email, separate order
+sender, newsletter sending) are in `docs/OPEN_DECISIONS.md`. The rest of this file describes the state on 2026-09-30.
 Scope: email only. Mobile number verification is out of scope for now (phone stays an optional,
 unverified field). Orders, delivery partner and CRM are also not started, so delivery-update emails wait.
 

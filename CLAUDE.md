@@ -93,8 +93,8 @@ read before assuming something that looks broken is a missing asset.
 - Admin lists page with `apps/admin/app/_lib/pagination.ts` plus `AdminPager`, never a bare `take: N`.
 - State changes (orders, and later shipments, payments, invoices) use a transaction with a compare-and-set
   on the old status, and write history and audit rows in the same transaction.
-- Orders, checkout, payments, coupons and returns are built (see `docs/COMMERCE_BUILD_PLAN.md`). The delivery partner
-  (iThink) is approved and in progress (section 19). GST invoicing and CRM are deliberately not built yet and have no answers. Do not start them or add schema for them
+- Orders, checkout, payments, coupons, returns, pre-orders and delivery (iThink, section 19) are built and live (see
+  `docs/COMMERCE_BUILD_PLAN.md`). GST invoicing and CRM are deliberately not built yet and have no answers. Do not start them or add schema for them
   without an approved plan.
 
 ## Databases and migrations (added 2026-10-01)
@@ -223,7 +223,7 @@ attribution on signups, the admin `/analytics` page reads reports back. Full pri
   signup location comes from Vercel IP headers on `WaitlistEntry` (`country`, `region`, `city`).
   WhatsApp and outreach only show by name when the link carries a UTM.
 
-## Tech stack (proposed, see docs/OPEN_DECISIONS.md for what's still open)
+## Tech stack (see docs/OPEN_DECISIONS.md for what's still open)
 
 - Next.js, App Router, TypeScript (strict)
 - Turborepo monorepo
@@ -231,8 +231,10 @@ attribution on signups, the admin `/analytics` page reads reports back. Full pri
 - Redis (Upstash), OTP throttling, sessions, caching
 - Tailwind CSS + a small headless component layer
 - Vitest + React Testing Library (unit/integration), Playwright (e2e)
-- Payments: Razorpay (live, Standard Checkout, server capture, webhook). Email OTP via Resend; SMS/WhatsApp provider
-  not chosen yet (static code, refused on live prod)
+- Payments: Razorpay (live, Standard Checkout, server capture, webhook). Sign-in codes: email via Resend, SMS via
+  MSG91, WhatsApp via Gupshup (all real on prod). The static `OTP_STATIC_CODE` is only a fallback when neither phone
+  provider is ready, and is refused on live prod
+- Delivery: iThink Logistics (orders and Insider cards, webhook for status)
 - Hosting: Vercel; Vercel Postgres for data, Vercel Blob for images/uploads, confirmed
 - Amazon reviews: paid third-party aggregation service (confirmed route; vendor not yet picked)
 - Figma: Dev Mode MCP server connected live in Claude Code (not static exports)
@@ -281,94 +283,56 @@ docs/       -> architecture, schema rationale, test plan, security notes, open d
 - `docs/DATABASE_SCHEMA.md`, entities, relationships, and the reasoning behind them
 - `docs/TEST_PLAN.md`, required unit/integration/e2e cases by feature area
 - `docs/SECURITY_AND_DPDP.md`, encryption, consent, data-subject rights
-- `docs/OPEN_DECISIONS.md`, things still needing sign-off before Phase 1
-- `docs/EMAIL_PLAN.md`: parked plan and open questions for real email (OTP, offers, delivery updates)
+- `docs/OPEN_DECISIONS.md`, the one list of open items: owner set-up, waiting on outside services, decisions, design gaps
+- `docs/EMAIL_PLAN.md`: the original email plan (history; Resend is live and sends every email now)
 - `docs/COMMERCE_BUILD_PLAN.md`: the approved commerce build (Insider codes, coupons, sign-in, cart, checkout,
   account, returns, Razorpay, pre-order). Read it before any of that work; it has the progress log, coupon safety
   rules and UX/messaging standards.
 
 ## Current phase
 
-**Latest (2026-11-26, live: 5ac0785, e31c241, 813a9de; both prod migrations run):** owner brief rework. Pre-orders through the bag with a reserve from the
-bag total before discounts (₹500 up to ₹4,000, ₹900 above), stock held at reserve, balance nudge (auto 7 days before
-close or from admin) that locks cancel, balance due 7 days after close then credit, cash refunds keep the gateway fee;
-Insider ID box above the pay button and sign-in by Insider ID; invite-only Insiders (invite by number or apply,
-admin Applications) with invite rewards; Terms "Pre-orders" section and gateway fee line (data migration
-`20261127130000_legal_preorder_terms`). Prod has no pre-order campaign yet and Insiders is still open signup. Owner
-to-dos: create the campaign, enter stock in Inventory (reserves hold stock), invite reward rules, flip the join mode.
-Details: `docs/COMMERCE_BUILD_PLAN.md` sections 14a and 20.
-Dev and testing gotchas from this round:
+**Status (audited 2026-11-26).** Everything below is pushed and live; prod is migrated. Prod is still in WAITLIST mode,
+so the storefront is hidden behind `/ontheway` until the owner flips it to LIVE. **Every open item lives in
+`docs/OPEN_DECISIONS.md`** (owner set-up, waiting on outside services, decisions, design gaps, loose ends). Keep it
+current instead of adding pending lists here.
+
+What's live (details in `docs/COMMERCE_BUILD_PLAN.md`, newest last):
+
+- Storefront pages from Figma: Homepage, Collection, PDP, About Us, Contact Us (`/contact`, admin Messages), Blogs
+  (`/journal`), `/insiders` signup. Audited against Figma 2026-10-13, see `docs/FIGMA_AUDIT.md`. Collection, product and
+  journal pages are prebuilt and revalidated every 60s.
+- Admin CMS: catalog, inventory, orders and returns, coupons, staff and roles, reviews, marketing content, blog editor,
+  analytics (PostHog), Insiders (members, applications, printed cards, ship cards, email, WhatsApp sends), WhatsApp
+  templates, Text messages log.
+- Commerce (pushed 3650c51 onward): Insider codes, coupon builder, sign-in by email, phone (SMS via MSG91, WhatsApp via
+  Gupshup) or Insider ID, cart, checkout with Razorpay and COD, account, returns, staff order tools.
+- Printed Insider cards (85af9e4): 500 pre-made codes in `InsiderCode`; the Insider email is sent only from admin.
+- Pre-orders through the bag (reworked 5ac0785): reserve ₹500 up to ₹4,000 and ₹900 above, stock held at reserve,
+  balance nudge, credit if unpaid. Invite-only Insiders with invite rewards (switch in admin). Sections 14a and 20.
+- iThink Logistics (0b9c350, fdc5f69, ec1b73d, 9026df1): cards and orders booked automatically, PIN check at checkout,
+  shipped and delivered emails, staff paste tracking numbers when iThink doesn't return one, and the webhook
+  `POST /api/webhooks/ithink` (Bearer `ITHINK_WEBHOOK_TOKEN`, web) that re-checks with Track Order. Waiting for iThink
+  to connect it and enable Order Details. Section 19.
+- Admin photo uploads shrink in the browser first (`apps/admin/app/_lib/imageUpload.ts`, 75f94cd): Vercel refuses
+  request bodies over 4.5MB, the server limit is 4MB.
+
+Rules learned the hard way:
+
+- Any new `SiteSetting` (and `StoreSetting`, categories) column must be migrated on prod before the push:
+  `getSiteSetting` reads the whole row and the waitlist gate calls it on every request.
+- A "use client" module's functions can't be called from a server component (prod-only crash, fixed 813a9de). Shared
+  defaults belong in a plain module.
+- React error #441 in the browser is the generic "server component failed"; read the Vercel runtime logs
+  (`/v1/projects/<id>/deployments/<dpl>/runtime-logs`, streams live only, token `VERCEL_TOKEN` in `.env`).
+
+Dev and testing gotchas:
 
 - Dev has the real WhatsApp SIGN_IN_CODE template ON: asking for a phone code in dev sends a real WhatsApp, and
   approving an Insider application sends a real welcome. Never use made-up numbers in browser tests; create the
   `OtpChallenge` with a fixed code (`requestOtpChallenge(..., fixedCode)`) and call the API instead.
 - The dev DB is about 0.4s per query from a laptop. Tests set `PRISMA_TRANSACTION_TIMEOUT_MS` (packages/config/vitest/base.ts,
-  read in packages/database/src/client.ts); DB integration tests need minutes-long timeouts.
+  read in packages/database/src/client.ts); DB integration tests need minutes-long timeouts. DB tests skip without
+  `DATABASE_URL`; to run one from a package: `node --env-file=../database/.env ../../node_modules/vitest/vitest.mjs run
+<file> --testTimeout=180000` (the root `.env` isn't shell-sourceable).
 - Restart `npm run dev` after any migration (stale Prisma client gives 500s).
-- A "use client" module's functions can't be called from a server component (prod-only crash with no campaign, fixed
-  813a9de). Shared defaults belong in a plain module.
-- React error #441 in the browser is the generic "server component failed"; read the Vercel runtime logs
-  (`/v1/projects/<id>/deployments/<dpl>/runtime-logs`, streams live only, token `VERCEL_TOKEN` in `.env`).
-
-**Earlier (2026-11-09):** the commerce build (Insider codes, coupons, sign-in, cart, checkout with Razorpay and COD,
-account, returns, staff tools) is pushed (3650c51, then the feedback round b64b37c) and prod is migrated. Prod is still
-in WAITLIST mode, so the shop is hidden until the owner flips it to LIVE. Razorpay live keys and webhook, Resend
-(`onwei.in` and `mail.onwei.in` verified) and `admin.onwei.in` are set up. Read `docs/COMMERCE_BUILD_PLAN.md`
-(progress log, launch checklist, section 18) before touching any of it. Left: owner's admin setup (GST/HSN, shop rules,
-marquee, refund permission, Insider tiers), Insider email send (100 a day), Phase G (real SMS and WhatsApp, phone
-sign-in is refused on live prod until then), Phase H pre-order (pushed f190e5e; reworked and pushed 2026-11-26, see the Latest note and section 14a), and unplanned gaps
-(shipped/delivered/refund emails, PIN autofill). GST invoicing, delivery partner and CRM are still not started.
-Local test data: dev waitlist entry and Insider code WEI6615 for the owner's own email; test orders ONW1001 to ONW1006.
-Contact Us (2026-11-09, pushed 8030251, prod migrated): `/contact` from Figma 1189:6006 / 1189:6203, reusing SiteHeader, FaqSection
-(new `expandAfter` for in-place "view all"), InstagramGrid, SiteFooter, shared `formStyles.ts` and `SocialIcons.tsx`.
-Messages are saved (`ContactMessage`), emailed to the support address with the sender as reply-to, and handled in admin
-Messages (`customer:view`). Contact details live on `SiteSetting` (admin Settings). Migrations
-`20261110120000_contact_us` and `20261110120100_contact_address_lines`. Any new `SiteSetting` column must be migrated on
-prod before the push: `getSiteSetting` reads the whole row and the waitlist gate calls it on every request.
-Printed Insider cards (2026-11-15, pushed 85af9e4, prod migrated): 500 pre-made codes in `InsiderCode`, new signups take
-the next free card, admin Insiders "Printed cards" tab (set up, printer CSV). The Insider email is sent only from admin
-(the automatic send at signup was removed 2026-11-16, 6d13cf6). Details in `docs/COMMERCE_BUILD_PLAN.md`.
-WhatsApp through Gupshup (2026-11-16): templates managed in admin `/whatsapp` (DB rows, off by default),
-real WhatsApp sign-in codes, waitlist-joined message, Insider WhatsApp sent with the Insider email, Gupshup webhook for
-delivery and STOP, waitlist consent names WhatsApp. Pushed ce3d290, prod migrated. Then (local): compact WhatsApp page with
-popups, Waitlist merged into Insiders > Members, `/insiders` signup page behind every "find your wei" link. Migration `20261116120000_whatsapp_messaging` is on prod.
-SMS sign-in codes through MSG91 (2026-11-17, ba1c8db, prod migrated): admin "Text messages" log; switches on once the owner
-sets `MSG91_AUTH_KEY` and `MSG91_OTP_TEMPLATE_ID` on Vercel (web). Client feedback round pushed (61ca1d3).
-Insiders > WhatsApp sends (2026-11-17, b762ec1, prod migrated `20261119120000_whatsapp_campaigns`): any approved
-template, fill blanks, pick a group, test, batch send, per-send log; numbers panel added 2026-11-18 (6cf5164).
-Details in `docs/COMMERCE_BUILD_PLAN.md` section 13.
-
-iThink Logistics (2026-11-24): Insiders > Ship cards sends Insider cards to iThink, staff print
-labels in the iThink portal, "Update all" reads courier status. Needs prod migration `20261124120000_insider_card_shipments`
-and the live `ITHINK_*` keys on the admin project. Phase 1 pushed 0b9c350. Phase 2 (orders: send on confirm, Delivery card,
-update buttons, shipped/delivered emails, PIN check) built locally 2026-11-25, needs prod migration `20261125120000_order_shipments`
-before the push. See `docs/COMMERCE_BUILD_PLAN.md` section 19.
-iThink follow-up (2026-11-26, pushed): the ~25 cards stuck by "Already Exist" have their tracking numbers (owner pasted
-them). iThink offered to enable live Order Details (needs our yes) and supports webhooks. Built: `POST /api/webhooks/ithink`
-(web, Bearer `ITHINK_WEBHOOK_TOKEN`, set on the web Vercel project), which re-checks each tracking number with Track Order
-through the button code, so updates and shipped/delivered emails happen by themselves; buttons stay as backup. Not tested
-live yet: waiting for iThink to connect it (URL https://www.onwei.in/api/webhooks/ithink, Bearer Token). Same push: admin
-photo uploads shrink in the browser first (`app/_lib/imageUpload.ts`), server limit 4MB, because Vercel refuses request
-bodies over 4.5MB.
-
-**Latest (2026-10-21):** Blogs page and admin blog editor, admin overhaul (speed, nav, shared kit), waitlist blog switch,
-blog analytics, product delete and redesigned product pages are pushed (up to f34223b). The backup product image work
-(`no-photo.svg`, `ProductImage`, `SafeImage`, seed no longer creates placeholder rows) is done locally and not pushed.
-Prod still has placeholder photo rows to remove from each product's Photos tab. Details: `docs/PHASE_1_SCAFFOLD_PROGRESS.md`.
-
-**Earlier (2026-10-13):** Homepage, Collection, PDP and About Us were audited against Figma and fixed, and
-collection, product and journal pages are prebuilt and revalidated every 60s (sorting runs in the browser). Pushed, live
-but gated by the waitlist. Login, journal article and 404 have no Figma frame, so they wait for an approved design.
-Open items and decisions: `docs/FIGMA_AUDIT.md`. Older status below.
-
-**Phase 1 is functionally complete and deployed**: DB schema, dummy OTP auth,
-product browsing (Homepage/Collection/PDP), and a full admin CMS (catalog,
-inventory, orders/returns, coupons, staff/roles, review moderation, marketing
-content, compliance), the last of these well beyond Phase 1's original scope.
-See `docs/PHASE_1_SCAFFOLD_PROGRESS.md` for the authoritative, continuously-
-updated status log; trust it over this section if they ever disagree.
-Phase 2 (cart/checkout/payments + coupon redemption) hasn't started and is
-blocked on the payment-gateway decision in `docs/OPEN_DECISIONS.md`, plus a
-Plan Mode session per ground rule 1. Phase 3: reviews (moderation already
-shipped in Phase 1's admin build-out; the open piece is customer-submitted
-reviews). Phase 4: analytics.
+- Local test data: dev waitlist entry and Insider code WEI6615 for the owner's own email; test orders ONW1001 to ONW1006.

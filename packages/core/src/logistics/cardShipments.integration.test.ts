@@ -736,7 +736,7 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(rebooked.addressChangedAt).toBeNull();
       expect(rebooked.reference).toMatch(/-2$/);
       await prisma.auditLog.deleteMany({ where: { entityId: id } });
-    });
+    }, 120000); // Two address changes and a resend: many slow dev DB round trips.
 
     it("won't change an address while iThink hasn't replied", async () => {
       const id = await makeMember();

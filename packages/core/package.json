@@ -19,6 +19,7 @@
   "dependencies": {
     "@onwei/auth": "*",
     "@onwei/database": "*",
+    "@onwei/emails": "*",
     "@upstash/ratelimit": "^2.2.0",
     "@upstash/redis": "^1.39.0",
     "libphonenumber-js": "^1.13.14",

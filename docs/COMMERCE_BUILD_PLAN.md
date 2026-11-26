@@ -250,7 +250,7 @@ Before launch (all after the phases, as agreed):
    Admin domain: `admin.onwei.in` is live on the admin Vercel project (CNAME to Vercel). Web `ADMIN_APP_URL` should be
    `https://admin.onwei.in` (also the code default). No Resend setup is needed for the admin subdomain: nothing sends
    from it.
-5. Real SMS and WhatsApp provider (Phase G). Phone sign-in is refused on the live production site until then.
+5. Real SMS and WhatsApp provider (Phase G). Done: MSG91 and Gupshup send real codes on prod (2026-11-26).
 6. Set GST rates and HSN codes per product, shop rules in Settings, the marquee text.
 
 ## 3. Build order
@@ -483,8 +483,9 @@ Insider discount. So:
   hidden) and in dev and preview, it works.
 - Email codes are real from day one, so launch can go ahead with email sign-in even if SMS and WhatsApp are not ready.
   Phone sign-in is hidden at launch until a real provider is wired.
-- Phase G replaces the static code with real providers (section 13). WhatsApp is built (Gupshup, 2026-11-16) and takes
-  over once its sign-in template is switched on in admin. SMS still waits for DLT.
+- Phase G replaces the static code with real providers (section 13). Done: WhatsApp (Gupshup, sign-in template
+  `onweisignincode`, Authentication, approved) and SMS (MSG91, env vars set on the web project, checked 2026-11-26) send
+  real codes on prod. The static code is only a fallback when neither is ready.
 
 ---
 
@@ -674,8 +675,8 @@ Either way:
 
 ## 13. SMS and WhatsApp providers (last phase)
 
-- SMS in India needs DLT registration (business, sender id, each template). Usually 1 to 2 weeks. Not started, SMS still
-  uses the static code.
+- SMS in India needs DLT registration (business, sender id, each template). Done for the sign-in template; MSG91 is live
+  on prod (checked 2026-11-26).
 - WhatsApp needs Meta Business verification, a number not used in the WhatsApp app, an approved authentication template.
 
 ### WhatsApp through Gupshup (built 2026-11-16)
@@ -991,13 +992,10 @@ Soft deletes on customer-facing rows, price snapshots on order lines, audit rows
 
 ## 18. Still open
 
-1. (Answered 2026-11-09: locked to its owner.)
-2. (Answered: 5% for everyone, tiers available in admin.)
-3. Starting values for admin settings (all editable later): free shipping threshold, delivery fee below it, COD fee
-   ₹49, COD max ₹5,000, return window 7 days.
-4. (Answered 2026-11-18, see section 14a. Pre-orders built locally.)
-5. Razorpay: test keys in `.env.local`, account activation status.
-6. Go-ahead to start Phase A.
+All open items moved to `docs/OPEN_DECISIONS.md` (audited 2026-11-26). The questions first listed here are answered:
+codes locked to their owner, 5% for everyone with tiers in admin, pre-orders built (14a), Razorpay live, Phase A done.
+Starting values for shop rules (free delivery threshold, delivery fee, COD fee ₹49, COD max ₹5,000, return window 7
+days) are the owner's to set in admin.
 
 ## 19. Delivery partner: iThink Logistics (approved 2026-11-24)
 

@@ -1,9 +1,8 @@
-# Open decisions
+# Open decisions and open items
 
-Defaults were picked for everything below so this scaffold could be built
-without stalling on every question. Anything marked **pending** genuinely
-needs an answer before Phase 1 starts, because a wrong guess here means
-rewriting real code, not just a config value.
+The one list of what is still open across Onwei: owner set-up, things waiting on outside services, decisions that need
+an answer or a plan, design gaps and known loose ends. Audited 2026-11-26. When something closes, move it to "Decided"
+(with the date) or delete it; don't leave stale entries. Build details live in `docs/COMMERCE_BUILD_PLAN.md`.
 
 ## Decided by default (override anytime, low cost to change)
 
@@ -12,7 +11,7 @@ rewriting real code, not just a config value.
 | Database                     | PostgreSQL + Prisma                                                                                                             | Orders, inventory, and coupons need real relational integrity (no overselling, no double-redemption)                                                                                                                                                                                                                                                                                                                                                                                                     |
 | Monorepo tool                | Turborepo                                                                                                                       | Two apps, several shared packages, need one cached build/test pipeline                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Frontend styling             | Tailwind + headless components                                                                                                  | Fast to implement the Figma spec exactly without fighting a themed component library                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| Hosting                      | Vercel + Vercel Postgres (data) + Vercel Blob (images/uploads)                                                                  | Standard, low-ops, single-vendor pairing for a Next.js monorepo. Confirmed.                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Hosting                      | Vercel Pro + Neon Postgres (via Vercel) + Vercel Blob (images/uploads)                                                          | Standard, low-ops pairing for a Next.js monorepo. Confirmed; Pro plan confirmed 2026-11.                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | Admin auth                   | Email + password (room for MFA later), separate from customer OTP auth                                                          | Different threat model than the storefront, see `docs/ARCHITECTURE.md`                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | Amazon reviews               | Paid third-party reviews-aggregation service                                                                                    | Confirmed route; vendor not yet picked (see pending below).                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | Figma access                 | Figma Dev Mode MCP server, connected live in Claude Code, rather than static exported files                                     | Confirmed; lets `apps/web` be built against the live file instead of manual exports. Needs the Figma file link + MCP server set up before Phase 1 UI work starts. Until it's connected, or for any screen/component genuinely missing from the file, `apps/web` UI work stops for explicit design approval instead of improvising, see root `CLAUDE.md` ground rule 8.                                                                                                                                   |
@@ -20,83 +19,81 @@ rewriting real code, not just a config value.
 | SEO ownership                | Custom/in-house (own sitemaps, canonicals, structured data, redirects, meta) rather than a headless-CMS/SEO-plugin route        | Confirmed. `Redirect` (hard delete, no admin UI) and `Article` (hard delete, `isPublished` flag, same convention as `ValueProp`) plus `metaTitle`/`metaDescription` overrides on `Product`/`Category` shipped for this. `AggregateRating`/`Review` structured data deliberately withheld until a real customer-submitted review flow exists (today's `Review` rows are staff/seed-entered only), shipping it earlier risks a Google rich-result spam action against non-independently-submitted content. |
 | hreflang / i18n routing      | Skipped, not building `[locale]` routing or hreflang alternates                                                                 | India-only, single locale, no second locale's content to point to today; would be pure YAGNI. Revisit only if international expansion becomes a real roadmap item, it changes routing architecture, not just a metadata addition.                                                                                                                                                                                                                                                                        |
 
-## Deferred on purpose (2026-09-30, no answers yet)
+## Decided (kept for history)
 
-Email (real OTP delivery, offers, delivery updates): full recommendation and eight open questions in
-`docs/EMAIL_PLAN.md`. Parked until the owner approves a provider and answers those.
+| Topic                  | Decision                                                                                               | When       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------ | ---------- |
+| Payment gateway        | Razorpay, live keys and webhook on prod                                                                | 2026-11-09 |
+| Email                  | Resend, `onwei.in` and `mail.onwei.in` verified. `packages/emails` sends every email                   | 2026-11-09 |
+| SMS sign-in codes      | MSG91 (DLT), env vars set on the web project, real codes on prod (checked 2026-11-26)                  | 2026-11-17 |
+| WhatsApp               | Gupshup. Sign-in template `onweisignincode` is Authentication and approved; templates managed in admin | 2026-11-16 |
+| Delivery partner       | iThink Logistics: cards and orders live, webhook pushed (section 19 of the build plan)                 | 2026-11-24 |
+| Courier status updates | iThink webhook with Bearer token, re-checked with Track Order; buttons stay as backup                  | 2026-11-26 |
+| Vercel plan            | Pro                                                                                                    | 2026-11    |
+| Pre-orders             | Through the bag with a reserve (build plan section 14a)                                                | 2026-11-26 |
+| Insiders access        | Invite-only switch built (admin join mode); prod still open signup until the owner flips it            | 2026-11-26 |
 
-Orders and checkout rules (COD vs online, guest checkout, stock reservation, partial shipments and
-refunds, returns policy), GST and invoicing (registration, tax-inclusive pricing, HSN, e-invoicing,
-in-house vs third party), delivery partner (carrier, serviceability, rates, label flow), and CRM
-(vendor, what gets synced). Schema and code for these wait until the owner answers.
+## Owner set-up in admin (no code needed)
 
-## Pending from the 2026-09-30 audit (owner decision needed)
+- **Launch:** flip prod from WAITLIST to LIVE (admin Settings, site mode). Check Homepage, a collection page and a
+  product page right after: those pages are prebuilt.
+- **Pre-orders:** create the campaign and gift-only products, enter stock in Inventory (reserves hold stock), submit the
+  three pre-order WhatsApp templates (Utility), set site mode to PREORDERS when ready.
+- **Insiders:** invite reward rules, flip the join mode to invite-only, Insider tiers (none set), send the Insider email
+  (Resend free plan: 100 a day).
+- **Shop:** GST rate and HSN per product; shop rules (free delivery threshold, delivery fee, COD fee and limits, return
+  window); marquee text (still says ₹1500); give a role the refund permission.
+- **Delivery:** empty shipper box weights per category; confirm the Yoga box (37 x 17 x 14 in is about 29 kg by volume).
+- **Content:** remove the placeholder photo rows on prod products (then delete the old `placeholder-*.png` files from
+  the repo); feedback content (video links, movers number).
+- **WhatsApp:** in admin WhatsApp, check every message that is On points at an approved template. Rejected for
+  "Incorrect Category" (as of 2026-11-26): `onwei_insider_code`, `onwei_insidersv2`, `insider_nudge_2`,
+  `insider_nudge_4`, `insider_message_5`, `insider_message_113`.
 
-- `packages/emails` is unused (OTP goes through `ConsoleOtpSender`): wire it into OTP, or delete it.
-- `Fonts/` at the repo root is untracked: add to the repo, move to `apps/web/public/fonts`, or ignore.
-- Vercel plan (Hobby or Pro): limits cron and function duration, matters for any future job runner.
-- Dashboard counts may move to summary tables (schema change), and `InventoryLog.productVariantId` can be
-  made required in a later migration.
-- Confirm the Upstash env vars exist on both Vercel projects before the next deploy (limiters now fail
-  closed in production).
+## Waiting on outside services
 
-## Pending, needs an actual answer
+- **iThink:** reply sent or to send: yes to enabling live Order Details, and connect the webhook (URL
+  `https://www.onwei.in/api/webhooks/ithink`, Bearer Token = `ITHINK_WEBHOOK_TOKEN`). Then watch the next pickup update
+  by itself and check the Vercel runtime logs.
+- **MSG91 / Gupshup:** confirm the first live SMS code and WhatsApp sign-in code on prod (admin Text messages and
+  WhatsApp logs). Confirm the Gupshup parameter order for Copy code and URL buttons on the first live Insider send.
 
-**Payment gateway.** Razorpay is the leading candidate (India-first) but
-**not finalized**, treat as a placeholder until confirmed. This also gates
-the OTP/SMS provider choice: an India-first pairing (Razorpay + e.g. MSG91)
-and a global pairing (e.g. Stripe + Twilio) lead to different integration
-code and different compliance/data-residency considerations in
-`docs/SECURITY_AND_DPDP.md`.
+## Needs a decision or a plan (don't build without one)
 
-**Amazon reviews vendor.** Route is decided (paid third-party aggregation
-service, since Amazon's own Product Advertising API hasn't returned actual
-review text since 2010 and scraping is against Amazon's ToS), still need to
-pick which vendor and confirm its pricing/rate limits before building the
-integration.
+- **GST invoicing:** not started on purpose. No schema until there is an approved plan.
+- **CRM:** not started on purpose. HubSpot and DevRev startup perks are on the table.
+- **Refund email** to customers (shipped and delivered emails exist).
+- **iThink extras:** return pickups, COD remittance, failed-delivery reattempt, showing the expected delivery date.
+- **Amazon reviews vendor:** route decided (paid aggregation service, Amazon's API has no review text), vendor and
+  pricing not picked.
+- **Newsletter sending:** subscribers are collected; no compose or send flow, provider or segmentation yet.
+- **Smaller:** PIN code autofill, a separate sender for order emails (`orders@mail.onwei.in`), the pre-order marquee,
+  relabelling the "Total" line on the reserve checkout.
+- **Privacy and data:** application-level encryption of `Customer.phone` / `email`; Neon backup and point-in-time
+  restore retention; client sign-off on PostHog's US region and whether to show a consent banner (a banner is new
+  storefront UI, needs design approval).
+- **Analytics cost at scale:** send PostHog events straight to PostHog instead of through `/ingest` if the Vercel bill
+  grows (every event is a Vercel request today).
 
-**Sensitive-field encryption.** Whether `Customer.phone`/`email` get
-application-level encryption (not just relying on disk-level encryption at
-the database) depends on the DPDP risk appetite and on how search/lookup by
-phone or email needs to work operationally (support lookups, admin search).
+## Storefront design gaps (need an approved layout first, ground rule 8)
 
-**Vercel Postgres backup/PITR retention.** Needed as the last-resort data
-recovery path alongside the expand-contract migration approach in
-`docs/DATABASE_SCHEMA.md`, depends on which Vercel Postgres plan/tier is
-provisioned.
-
-**Logistics/courier integration.** (Decided 2026-11-24: iThink Logistics, see
-`docs/COMMERCE_BUILD_PLAN.md` section 19.) The brief asks for order-tracking
-"feasibility." The schema (`OrderStatusHistory`) supports it either way, but
-whether status updates come from a courier webhook (Shiprocket, Delhivery,
-etc.) or are entered manually by admin staff for now is a real product and
-cost decision, not just a technical one.
-
-**Newsletter campaign/content management.** The admin can view subscribers
-and (as of 2026-09-24) add one manually, but there's no way to compose or
-send an actual newsletter issue. No send provider, template format,
-audience-segmentation, or scheduling model exists yet anywhere in the repo.
-Needs its own scoping conversation (which provider, what content, how
-consent/unsubscribe is enforced per `docs/SECURITY_AND_DPDP.md`) before any
-of that gets built.
-
-**Analytics region and consent.** Visitor analytics use PostHog Cloud
-(cookieless, so no consent banner). Still need the client to confirm the US
-or EU region is acceptable for DPDP, and whether they want a consent banner
-anyway (a banner is new storefront UI that is not in Figma, so it needs
-design approval first). See `docs/SECURITY_AND_DPDP.md`, "Visitor analytics".
-
-## Pending from the 2026-10-12 Figma audit (owner decision or a plan needed)
-
-- **Login, journal article and 404** have no Figma frame. Build only after a layout is approved (ground rule 8).
+- **Login, journal article and 404** have no Figma frame.
 - **Mobile Homepage** hides the "Designed to Move." heading, "at your pace" note and marquee because the mobile frame
   has none of them. Confirm that is intended.
 - **PDP review photos** (two per review in Figma) need a review image model, which is a schema change and a plan.
-- **PDP value cards** use different copy in Figma than the Homepage cards, but both read one `ValueProp` table. Needs a
-  per page surface or separate copy.
-- **PDP marquee** now shows review quotes (Figma 759:3116), so the admin's old "PDP" marquee surface no longer shows
-  anywhere on the PDP. Remove it from the admin or give it a new home.
+- **PDP value cards** use different copy in Figma than the Homepage cards, but both read one `ValueProp` table.
+- **PDP marquee** shows review quotes (Figma 759:3116), so the admin's old "PDP" marquee surface shows nowhere. Remove
+  it from the admin or give it a new home.
 - **Mobile marquee between About and Reviews** (761:5063) has its own items in Figma, today it reuses the Showcase items.
 - **Footer consent checkbox** is not in Figma, needs design sign-off (it is required by the consent rule).
-- **PDP Add to cart** stays disabled until the cart exists, drawn at full strength like Figma.
-- **Flip prod to LIVE** is the launch step, owner only. Check Homepage, a collection page and a product page right after.
+- Not yet audited against Figma: mobile PDP below the info panel, tablet widths by eye. See `docs/FIGMA_AUDIT.md`.
+
+## Tech loose ends
+
+- Failing tests, untouched: admin `app/page.test.tsx` (cookies outside a request), web `app/about/page.test.tsx`
+  (async SiteFooter).
+- Flaky in a full parallel run, pass alone: `cardShipments` and returns concurrency integration tests. One card test
+  ("cancels the old booking when staff change a booked address") times out at its own 30s on the slow dev DB.
+- Admin photo upload over 4.5MB on prod not tried yet since the browser-shrink fix (75f94cd).
+- Dashboard counts may move to summary tables (schema change); `InventoryLog.productVariantId` can be made required in a
+  later migration.

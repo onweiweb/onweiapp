@@ -1,7 +1,16 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getSiteSetting } from "@onwei/core";
 import AboutPage from "./page";
+
+// SiteHeader and SiteFooter are async Server Components, which RTL's client
+// render can't resolve. The checks below are all in the page body.
+vi.mock("@/_components/SiteHeader", () => ({
+  SiteHeader: () => <header />,
+}));
+vi.mock("@/_components/SiteFooter", () => ({
+  SiteFooter: () => <footer />,
+}));
 
 // AboutPage is an async Server Component that reads real site settings via
 // @onwei/core, so this needs a real DATABASE_URL, same convention as

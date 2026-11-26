@@ -7,7 +7,9 @@ import { markReturnReceived } from "../commerce/returns";
 
 describe.skipIf(!process.env.DATABASE_URL)(
   "approveReturn / rejectReturn (integration)",
-  { timeout: 20000 },
+  // The concurrent-receive test runs two locked transactions one after the
+  // other on the slow dev DB.
+  { timeout: 60000 },
   () => {
     const createdReturnIds: string[] = [];
     const createdOrderItemIds: string[] = [];

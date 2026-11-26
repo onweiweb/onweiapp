@@ -31,6 +31,14 @@ class MockIntersectionObserver {
   disconnect() {}
 }
 vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+// jsdom has no ResizeObserver either (ExpandableBio on /about measures its
+// text with one). Same stand-in: nothing to measure in a test.
+class MockResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+vi.stubGlobal("ResizeObserver", MockResizeObserver);
 
 afterEach(() => {
   cleanup();

@@ -15,6 +15,9 @@ export default defineConfig({
   },
   test: {
     ...baseVitestConfig.test,
+    // DB tests share one dev database and its site settings: run files one at
+    // a time when a database is connected (same as packages/core).
+    fileParallelism: !process.env.DATABASE_URL,
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
   },

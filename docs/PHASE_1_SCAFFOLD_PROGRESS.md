@@ -1,5 +1,9 @@
 # Phase 1 scaffold, progress & continuity log
 
+> **History (note added 2026-11-26).** This log covers Phase 1 (to 2026-10-21). Everything it calls "Phase 2", cart,
+> checkout, payments, coupons, is built and live since 2026-11-09. Current status: the "Current phase" section of
+> `CLAUDE.md`; open items: `docs/OPEN_DECISIONS.md`; commerce details: `docs/COMMERCE_BUILD_PLAN.md`.
+
 Read this file first when resuming work on the monorepo scaffold, whether in a fresh session or
 after context compaction. It is the source of truth for "what's actually done", trust this over
 recollection. Update the checklist and this file every time a section below is completed or a fact

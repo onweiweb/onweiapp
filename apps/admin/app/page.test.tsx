@@ -4,8 +4,22 @@
 // docs/PHASE_1_SCAFFOLD_PROGRESS.md). Awaiting the component function
 // directly and rendering its resolved element works around that.
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import DashboardPage from "./page";
+
+// The signed-in staff member comes from the request's cookies, which don't
+// exist in a test. Stand in a staff member who can see every count.
+vi.mock("./_lib/requirePageSession", () => ({
+  requirePageSession: async () => ({
+    staffUserId: "test-staff",
+    permissions: ["order:view", "return:view", "review:moderate", "dsr:view"],
+  }),
+}));
+// Visitor numbers come from PostHog through Next's cache, which only runs
+// inside Next. The card just shows its placeholder here.
+vi.mock("./analytics/_data", () => ({
+  traffic: async () => ({ data: null, fetchedAt: new Date().toISOString() }),
+}));
 
 describe.skipIf(!process.env.DATABASE_URL)("DashboardPage", () => {
   it("renders a main landmark with either real counts or an explained empty state", async () => {
