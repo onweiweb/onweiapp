@@ -21,17 +21,23 @@ an answer or a plan, design gaps and known loose ends. Audited 2026-11-26. When 
 
 ## Decided (kept for history)
 
-| Topic                  | Decision                                                                                               | When       |
-| ---------------------- | ------------------------------------------------------------------------------------------------------ | ---------- |
-| Payment gateway        | Razorpay, live keys and webhook on prod                                                                | 2026-11-09 |
-| Email                  | Resend, `onwei.in` and `mail.onwei.in` verified. `packages/emails` sends every email                   | 2026-11-09 |
-| SMS sign-in codes      | MSG91 (DLT), env vars set on the web project, real codes on prod (checked 2026-11-26)                  | 2026-11-17 |
-| WhatsApp               | Gupshup. Sign-in template `onweisignincode` is Authentication and approved; templates managed in admin | 2026-11-16 |
-| Delivery partner       | iThink Logistics: cards and orders live, webhook pushed (section 19 of the build plan)                 | 2026-11-24 |
-| Courier status updates | iThink webhook with Bearer token, re-checked with Track Order; buttons stay as backup                  | 2026-11-26 |
-| Vercel plan            | Pro                                                                                                    | 2026-11    |
-| Pre-orders             | Through the bag with a reserve (build plan section 14a)                                                | 2026-11-26 |
-| Insiders access        | Invite-only switch built (admin join mode); prod still open signup until the owner flips it            | 2026-11-26 |
+| Topic                   | Decision                                                                                               | When       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ | ---------- |
+| Payment gateway         | Razorpay, live keys and webhook on prod                                                                | 2026-11-09 |
+| Email                   | Resend, `onwei.in` and `mail.onwei.in` verified. `packages/emails` sends every email                   | 2026-11-09 |
+| SMS sign-in codes       | MSG91 (DLT), env vars set on the web project, real codes on prod (checked 2026-11-26)                  | 2026-11-17 |
+| WhatsApp                | Gupshup. Sign-in template `onweisignincode` is Authentication and approved; templates managed in admin | 2026-11-16 |
+| Delivery partner        | iThink Logistics: cards and orders live, webhook pushed (section 19 of the build plan)                 | 2026-11-24 |
+| Courier status updates  | iThink webhook with Bearer token, re-checked with Track Order; buttons stay as backup                  | 2026-11-26 |
+| Vercel plan             | Pro                                                                                                    | 2026-11    |
+| Pre-orders              | Through the bag with a reserve (build plan section 14a)                                                | 2026-11-26 |
+| Insiders access         | Invite-only switch built (admin join mode); prod still open signup until the owner flips it            | 2026-11-26 |
+| Refund email            | One email per staff refund (return, cancelled order or pre-order, order page refund)                   | 2026-11-28 |
+| Failed deliveries (NDR) | Order flagged with the courier's reason; staff choose Try again or Send it back                        | 2026-11-28 |
+| Return pickups          | Staff Book pickup on an approved return (iThink reverse parcel), webhook follows it                    | 2026-11-28 |
+| COD money               | Admin COD money page reads iThink payouts, marks orders paid out, flags wrong amounts                  | 2026-11-28 |
+| Newsletter              | Written and sent from admin in daily batches, opt-in only by default, one-click unsubscribe            | 2026-11-28 |
+| PIN autofill            | Empty city and state filled from iThink's PIN data in every address form                               | 2026-11-28 |
 
 ## Owner set-up in admin (no code needed)
 
@@ -50,6 +56,18 @@ an answer or a plan, design gaps and known loose ends. Audited 2026-11-26. When 
   "Incorrect Category" (as of 2026-11-26): `onwei_insider_code`, `onwei_insidersv2`, `insider_nudge_2`,
   `insider_nudge_4`, `insider_message_5`, `insider_message_113`.
 
+## Built 2026-11-28, waiting to go live
+
+- **Prod migrations, before the push** (owner, `DIRECT_URL="<prod>" npx prisma migrate deploy` from `packages/database`):
+  `20261128120000_ndr_failed_delivery`, `20261128130000_return_pickups`, `20261128140000_cod_remittances`,
+  `20261128150000_newsletter_issues`. All additive.
+- **Vercel (admin):** optional `NEWSLETTER_EMAIL_FROM` (e.g. `Onwei <news@mail.onwei.in>`, falls back to `EMAIL_FROM`).
+  `INSIDER_LINK_SECRET` must be set on admin and web: it signs newsletter unsubscribe links too.
+- **First real checks on prod:** book one return pickup (iThink's docs disagree on which couriers do reverse pickups),
+  press "Update from iThink" on COD money, send the first newsletter as a test to staff, upload one large product photo.
+- **iThink webhook:** no pushes seen in a 30-minute watch of the live logs (2026-11-27). Check the runtime logs after
+  the next real pickup or delivery.
+
 ## Waiting on outside services
 
 - **iThink:** reply sent or to send: yes to enabling live Order Details, and connect the webhook (URL
@@ -62,12 +80,11 @@ an answer or a plan, design gaps and known loose ends. Audited 2026-11-26. When 
 
 - **GST invoicing:** not started on purpose. No schema until there is an approved plan.
 - **CRM:** not started on purpose. HubSpot and DevRev startup perks are on the table.
-- **Refund email** to customers (shipped and delivered emails exist).
-- **iThink extras:** return pickups, COD remittance, failed-delivery reattempt, showing the expected delivery date.
+- **iThink extras:** showing the expected delivery date (`edd_date`), a scheduled COD money import.
 - **Amazon reviews vendor:** route decided (paid aggregation service, Amazon's API has no review text), vendor and
   pricing not picked.
-- **Newsletter sending:** subscribers are collected; no compose or send flow, provider or segmentation yet.
-- **Smaller:** PIN code autofill, a separate sender for order emails (`orders@mail.onwei.in`), the pre-order marquee,
+- **Newsletter extras:** segments, scheduling, open and click tracking, bounce and complaint webhooks.
+- **Smaller:** a separate sender for order emails (`orders@mail.onwei.in`), the pre-order marquee,
   relabelling the "Total" line on the reserve checkout.
 - **Privacy and data:** application-level encryption of `Customer.phone` / `email`; Neon backup and point-in-time
   restore retention; client sign-off on PostHog's US region and whether to show a consent banner (a banner is new
@@ -90,10 +107,7 @@ an answer or a plan, design gaps and known loose ends. Audited 2026-11-26. When 
 
 ## Tech loose ends
 
-- Failing tests, untouched: admin `app/page.test.tsx` (cookies outside a request), web `app/about/page.test.tsx`
-  (async SiteFooter).
-- Flaky in a full parallel run, pass alone: `cardShipments` and returns concurrency integration tests. One card test
-  ("cancels the old booking when staff change a booked address") times out at its own 30s on the slow dev DB.
-- Admin photo upload over 4.5MB on prod not tried yet since the browser-shrink fix (75f94cd).
+- Tests: the two failing tests are fixed, DB tests default to a 60s timeout and DB test files run one at a time
+  in every package (2026-11-28). Run the full DB suite once to confirm nothing else is flaky.
 - Dashboard counts may move to summary tables (schema change); `InventoryLog.productVariantId` can be made required in a
   later migration.

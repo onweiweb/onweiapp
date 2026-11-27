@@ -315,6 +315,10 @@ What's live (details in `docs/COMMERCE_BUILD_PLAN.md`, newest last):
   to connect it and enable Order Details. Section 19.
 - Admin photo uploads shrink in the browser first (`apps/admin/app/_lib/imageUpload.ts`, 75f94cd): Vercel refuses
   request bodies over 4.5MB, the server limit is 4MB.
+- Built 2026-11-28, committed locally (24c5d6e to efa469c), NOT pushed, and needs 4 prod migrations first: refund
+  email, failed deliveries (NDR), return pickups, COD money page, newsletter sending with one-click unsubscribe, PIN
+  autofill, test fixes, Insiders tabs reordered (Overview first). Go-live steps: `docs/OPEN_DECISIONS.md`, "Built
+  2026-11-28, waiting to go live".
 
 Rules learned the hard way:
 

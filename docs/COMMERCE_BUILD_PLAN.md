@@ -1109,7 +1109,22 @@ keys to the admin Vercel project with `ITHINK_ENV=production`, push, send 3 or 4
   and delivered emails go out (`getOrderDeliveryEmail` in core, shared with admin). Unknown tracking numbers are ignored.
   The "Update from iThink" buttons stay as the backup for a missed push. Missing tracking numbers are fixed by iThink
   enabling Order Details on the live account (iThink offered it 2026-11-26, needs our yes), not by the webhook.
-- Not done: return pickups, COD remittance, failed-delivery reattempt, showing iThink's expected delivery date.
+- Failed deliveries (2026-11-28, migration `20261128120000_ndr_failed_delivery`): "Undelivered" / "Out of Delivery Area"
+  scans set `Shipment.failedAttemptAt` / `failedReason` and flag the order (`FAILED_DELIVERY_NOTE`). The Delivery card
+  offers "Try again" (day, optional new phone or address) or "Send it back" (`actOnFailedDelivery`, iThink
+  `ndr/add-reattempt-rto.json`). `ndrActionAt` stops the same scan flagging twice; the flag clears once out again.
+- Return pickups (2026-11-28, migration `20261128130000_return_pickups`): `ShipmentKind.RETURN`,
+  `Shipment.returnRequestId`. `bookReturnPickup` sends a reverse prepaid parcel (`order_type: "reverse"`, reference
+  `ONW1001-R1`); `cancelReturnPickup`; `refreshReturnPickups` (also from the webhook). REV Picked Up moves the return
+  to PICKED_UP, REV Cancelled flags the order. Staff still mark it received and refund. The customer's order page
+  links the pickup.
+- COD money (2026-11-28, migration `20261128140000_cod_remittances`): `CodRemittance`, `Order.codRemittanceId` and
+  `codRemittedAt`. Admin `/cod-money` ("Not paid yet", "Payouts"); "Update from iThink" reads 14 days of
+  `remittance/get.json` and `get_details.json` (`importCodRemittances`), matches by tracking number and flags a
+  different amount. Detail rows don't name their payout, so an order links to that day's first payout.
+- PIN autofill (2026-11-28): `checkIthinkPincode` also returns city and state (`geo/pincodePlace.ts`: FedEx sort code
+  or Delhivery district for the city, state codes mapped to the form's names). Forms fill only empty fields.
+- Not done: showing iThink's expected delivery date, a scheduled COD import.
 
 ## 20. Insider ID on the bag and invite-only Insiders (owner brief, approved 2026-11-26, live 2026-11-26)
 
