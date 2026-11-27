@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { istDateOf, listNewsletterIssues } from "@onwei/core";
 import { prisma } from "@onwei/database";
 import { hasPermission } from "@onwei/auth";
 import { requirePageSession } from "../_lib/requirePageSession";
@@ -6,6 +8,9 @@ import { AddNewsletterSubscriberForm } from "../_components/AddNewsletterSubscri
 import {
   AdminBadge,
   AdminPager,
+  AdminTabLinks,
+  EmptyState,
+  LinkButton,
   AdminTable,
   AdminTableCell,
   AdminTableHead,
@@ -17,12 +22,111 @@ import {
 export default async function NewsletterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>;
+  searchParams: Promise<{ page?: string; tab?: string }>;
 }) {
   const { permissions } = await requirePageSession("newsletter:view");
   const canManage = hasPermission(permissions, "newsletter:manage");
-  const page = parsePage((await searchParams).page);
+  const params = await searchParams;
+  const page = parsePage(params.page);
+  const tab = params.tab === "subscribers" ? "subscribers" : "newsletters";
 
+  return (
+    <main className="flex flex-col gap-6">
+      <PageHeader
+        title="Newsletter"
+        description="Write and send newsletters to the people who signed up for emails. Every newsletter has an unsubscribe link."
+        actions={
+          canManage ? (
+            <LinkButton href="/newsletter/new">Write a newsletter</LinkButton>
+          ) : undefined
+        }
+      />
+      <AdminTabLinks basePath="/newsletter" tabs={TABS} active={tab} />
+      {tab === "newsletters" ? (
+        <Newsletters page={page} />
+      ) : (
+        <Subscribers page={page} canManage={canManage} />
+      )}
+    </main>
+  );
+}
+
+const TABS = [
+  { id: "newsletters", label: "Newsletters" },
+  { id: "subscribers", label: "Subscribers" },
+] as const;
+
+const STATUS = {
+  DRAFT: { label: "Draft", tone: "pending" },
+  SENDING: { label: "Sending", tone: "active" },
+  SENT: { label: "Sent", tone: "success" },
+} as const;
+
+async function Newsletters({ page }: { page: number }) {
+  const { rows, hasNext } = trimPage(
+    await listNewsletterIssues(pageWindow(page)),
+  );
+  if (rows.length === 0 && page === 1) {
+    return (
+      <EmptyState
+        title="No newsletters yet"
+        description="Write one, send yourself a test, then send it to your subscribers."
+      />
+    );
+  }
+  return (
+    <>
+      <AdminTable>
+        <AdminTableHead>
+          <AdminTableHeaderCell>Subject</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Status</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Sent to</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Date</AdminTableHeaderCell>
+        </AdminTableHead>
+        <tbody>
+          {rows.map((r) => (
+            <AdminTableRow key={r.id}>
+              <AdminTableCell>
+                <Link
+                  href={`/newsletter/${r.id}`}
+                  className="font-medium underline-offset-2 hover:underline"
+                >
+                  {r.subject}
+                </Link>
+              </AdminTableCell>
+              <AdminTableCell>
+                <AdminBadge tone={STATUS[r.status].tone}>
+                  {STATUS[r.status].label}
+                </AdminBadge>
+              </AdminTableCell>
+              <AdminTableCell>
+                {r.sent}
+                {r.failed ? ` (${r.failed} failed)` : ""}
+              </AdminTableCell>
+              <AdminTableCell>
+                {istDateOf(r.sentAt ?? r.createdAt)}
+              </AdminTableCell>
+            </AdminTableRow>
+          ))}
+        </tbody>
+      </AdminTable>
+      <AdminPager
+        pathname="/newsletter"
+        page={page}
+        hasNext={hasNext}
+        params={{ tab: "newsletters" }}
+      />
+    </>
+  );
+}
+
+async function Subscribers({
+  page,
+  canManage,
+}: {
+  page: number;
+  canManage: boolean;
+}) {
   const fetched = await prisma.newsletterSubscriber.findMany({
     orderBy: [{ subscribedAt: "desc" }, { id: "desc" }],
     ...pageWindow(page),
@@ -30,12 +134,7 @@ export default async function NewsletterPage({
   const { rows: subscribers, hasNext } = trimPage(fetched);
 
   return (
-    <main className="flex flex-col gap-6">
-      <PageHeader
-        title="Newsletter"
-        description="People who signed up for emails."
-      />
-
+    <>
       {canManage ? <AddNewsletterSubscriberForm /> : null}
 
       {subscribers.length === 0 ? (
@@ -74,8 +173,8 @@ export default async function NewsletterPage({
         pathname="/newsletter"
         page={page}
         hasNext={hasNext}
-        params={{}}
+        params={{ tab: "subscribers" }}
       />
-    </main>
+    </>
   );
 }

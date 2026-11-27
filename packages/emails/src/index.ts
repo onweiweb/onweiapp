@@ -11,6 +11,7 @@ export {
   ResendEmailSender,
   createEmailSender,
   createInsiderEmailSender,
+  createNewsletterSender,
   sendEmailSafely,
 } from "./sender/emailSender";
 export type { EmailSender } from "./sender/emailSender";
@@ -43,3 +44,8 @@ export {
   renderInsiderApplicationEmail,
   renderInviteRewardEmail,
 } from "./templates/insiderAccessEmails";
+export {
+  renderNewsletterEmail,
+  sanitizeNewsletterHtml,
+} from "./templates/newsletterEmail";
+export type { NewsletterEmailInput } from "./templates/newsletterEmail";

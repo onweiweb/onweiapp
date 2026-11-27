@@ -1043,10 +1043,10 @@ model StoreSetting {
 // ---------------------------------------------------------------------------
 
 model NewsletterSubscriber {
-  id             String    @id @default(cuid())
-  email          String    @unique
+  id             String               @id @default(cuid())
+  email          String               @unique
   source         String? // e.g. "homepage_footer", provenance, not required
-  subscribedAt   DateTime  @default(now())
+  subscribedAt   DateTime             @default(now())
   unsubscribedAt DateTime?
   // Proof of consent (DPDP / GDPR): the Privacy Policy version the person
   // ticked the box against, when, and from where. Null on rows that predate
@@ -1054,6 +1054,56 @@ model NewsletterSubscriber {
   consentVersion String?
   consentedAt    DateTime?
   ipAddress      String?
+  deliveries     NewsletterDelivery[]
+}
+
+/// A newsletter written and sent from admin (Newsletter > Newsletters).
+model NewsletterIssue {
+  id                 String               @id @default(cuid())
+  subject            String
+  /// The short line inboxes show after the subject.
+  preheader          String               @default("")
+  /// Sanitized HTML (only simple formatting, links and images).
+  bodyHtml           String
+  status             NewsletterStatus     @default(DRAFT)
+  /// Also send to people added before consent was recorded, or by staff.
+  includeUnconfirmed Boolean              @default(false)
+  createdById        String?
+  sentAt             DateTime?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  deliveries         NewsletterDelivery[]
+
+  @@index([createdAt])
+}
+
+enum NewsletterStatus {
+  DRAFT
+  SENDING
+  SENT
+}
+
+/// One subscriber's copy of an issue. The unique pair is the claim: nobody
+/// gets the same issue twice, even if two sends overlap.
+model NewsletterDelivery {
+  id           String                   @id @default(cuid())
+  issueId      String
+  issue        NewsletterIssue          @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  subscriberId String
+  subscriber   NewsletterSubscriber     @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  status       NewsletterDeliveryStatus @default(SENDING)
+  error        String?
+  sentAt       DateTime?
+  createdAt    DateTime                 @default(now())
+
+  @@unique([issueId, subscriberId])
+  @@index([issueId, status])
+}
+
+enum NewsletterDeliveryStatus {
+  SENDING
+  SENT
+  FAILED
 }
 
 // Pre-launch signups from the /waitlist page, distinct from

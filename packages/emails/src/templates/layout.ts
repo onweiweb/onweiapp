@@ -1,15 +1,15 @@
 import type { RenderedEmail } from "./otpEmail";
 
 // Brand tokens, same values as apps/web/app/globals.css.
-const BLUE = "#161845";
-const BEIGE = "#eae8d6";
-const GREEN = "#eded86";
+export const BLUE = "#161845";
+export const BEIGE = "#eae8d6";
+export const GREEN = "#eded86";
 const PURPLE = "#8e94ca";
 
-const HEADING_FONT = "'Helvetica Neue',Helvetica,Arial,sans-serif";
+export const HEADING_FONT = "'Helvetica Neue',Helvetica,Arial,sans-serif";
 // The storefront body font is a monospace grotesk, mono keeps the feel in
 // clients that block web fonts.
-const BODY_FONT = "'IBM Plex Mono','Courier New',Courier,monospace";
+export const BODY_FONT = "'IBM Plex Mono','Courier New',Courier,monospace";
 
 export const DEFAULT_SITE_URL = "https://www.onwei.in";
 

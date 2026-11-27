@@ -165,6 +165,21 @@ export type {
 } from "./staff/types";
 export { checkNewsletterRateLimit } from "./newsletter/newsletterRateLimit";
 export { subscribeToNewsletter } from "./newsletter/subscribeToNewsletter";
+export {
+  NEWSLETTER_BATCH_SIZE,
+  countNewsletterAudience,
+  deleteNewsletterDraft,
+  getNewsletterIssue,
+  listNewsletterIssues,
+  newsletterLinks,
+  saveNewsletterDraft,
+  sendNewsletterBatch,
+  sendNewsletterTest,
+  unsubscribeNewsletter,
+  type NewsletterBatchResult,
+  type NewsletterDraftInput,
+  type NewsletterIssueRow,
+} from "./newsletter/issues";
 export { canTransition, nextStatuses } from "./orders/orderStateMachine";
 export { updateOrderStatus } from "./orders/updateOrderStatus";
 export type { UpdateOrderStatusInput } from "./orders/types";

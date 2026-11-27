@@ -7,7 +7,9 @@ import { createHmac, timingSafeEqual } from "node:crypto";
  * so an unsubscribe token can't open the address form and nobody can forge
  * a link for another member. Secret: INSIDER_LINK_SECRET (web and admin).
  */
-export type InsiderLinkPurpose = "address" | "unsubscribe";
+// "newsletter": a newsletter subscriber's unsubscribe link (the id is the
+// NewsletterSubscriber's), signed with the same secret.
+export type InsiderLinkPurpose = "address" | "unsubscribe" | "newsletter";
 
 const ADDRESS_LINK_DAYS = 90;
 // Unsubscribe links must keep working for as long as the email exists.

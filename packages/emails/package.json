@@ -12,8 +12,12 @@
   },
   "devDependencies": {
     "@onwei/config": "*",
+    "@types/sanitize-html": "^2.16.2",
     "eslint": "^9.39.5",
     "typescript": "^6.0.3",
     "vitest": "^5.0.1"
+  },
+  "dependencies": {
+    "sanitize-html": "^2.18.2"
   }
 }

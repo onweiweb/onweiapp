@@ -3,7 +3,19 @@
 import { useState } from "react";
 import { insiderErrorFor } from "../../../lib/messages/insider";
 
-export function UnsubscribeButton({ token }: { token: string }) {
+/**
+ * Confirms an unsubscribe from an email link. Insider emails by default; the
+ * newsletter page passes its own endpoint and wording.
+ */
+export function UnsubscribeButton({
+  token,
+  endpoint = "/api/insider/unsubscribe",
+  doneMessage = "Done. You won't get Insider emails from us anymore. Your Insider code still works.",
+}: {
+  token: string;
+  endpoint?: string;
+  doneMessage?: string;
+}) {
   const [state, setState] = useState<"idle" | "working" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -12,7 +24,7 @@ export function UnsubscribeButton({ token }: { token: string }) {
     setError(null);
     try {
       const response = await fetch(
-        `/api/insider/unsubscribe?t=${encodeURIComponent(token)}`,
+        `${endpoint}?t=${encodeURIComponent(token)}`,
         { method: "POST" },
       );
       const data = (await response.json().catch(() => ({}))) as {
@@ -36,8 +48,7 @@ export function UnsubscribeButton({ token }: { token: string }) {
         role="status"
         className="font-grotesk text-[length:max(0.9375rem,13px)] leading-[1.5]"
       >
-        Done. You won&apos;t get Insider emails from us anymore. Your Insider
-        code still works.
+        {doneMessage}
       </p>
     );
   }

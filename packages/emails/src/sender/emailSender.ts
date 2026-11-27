@@ -56,6 +56,22 @@ export function createEmailSender(
 }
 
 /**
+ * The sender for newsletters: NEWSLETTER_EMAIL_FROM (marketing kept apart
+ * from order mail), else EMAIL_FROM. Logs to the console without a Resend key.
+ */
+export function createNewsletterSender(
+  env: Record<string, string | undefined> = process.env,
+): EmailSender {
+  const apiKey = env.RESEND_API_KEY;
+  if (!apiKey) return new ConsoleEmailSender();
+  return new ResendEmailSender(
+    apiKey,
+    env.NEWSLETTER_EMAIL_FROM ?? env.EMAIL_FROM ?? "Onwei <hello@onwei.in>",
+    env.EMAIL_REPLY_TO,
+  );
+}
+
+/**
  * The sender for the Insider code email (from Sakshi). Null when
  * INSIDER_EMAIL_FROM or RESEND_API_KEY is missing, so callers can decide
  * whether to fall back or skip.

@@ -13,6 +13,9 @@ const ALWAYS_ALLOWED_PREFIXES = [
   // unsubscribe). Each request is checked against its signed token.
   "/insider",
   "/api/insider",
+  // Newsletter unsubscribe page and one-click link (signed token checked).
+  "/newsletter/unsubscribe",
+  "/api/newsletter/unsubscribe",
   // Razorpay's server-to-server webhook (signature checked in the route) and
   // the scheduled clean-up of unpaid orders (CRON_SECRET checked).
   "/api/payments/razorpay/webhook",

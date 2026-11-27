@@ -1,5 +1,6 @@
 "use client";
 
+import { HTML_TOOLS } from "./HtmlBodyField";
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IMAGE_PRESETS, UPLOAD_HELP, uploadImage } from "../_lib/imageUpload";
@@ -53,15 +54,8 @@ function slugify(value: string) {
     .replace(/(^-|-$)/g, "");
 }
 
-// Buttons that wrap the selected text in the matching HTML, so staff don't
-// have to type tags by hand.
-const TOOLS: { label: string; before: string; after: string }[] = [
-  { label: "Heading", before: "<h2>", after: "</h2>" },
-  { label: "Bold", before: "<strong>", after: "</strong>" },
-  { label: "Italic", before: "<em>", after: "</em>" },
-  { label: "Bullet list", before: "<ul>\n  <li>", after: "</li>\n</ul>" },
-  { label: "Paragraph", before: "<p>", after: "</p>" },
-];
+// Formatting buttons, shared with the newsletter editor.
+const TOOLS = HTML_TOOLS;
 
 // Backs the Blogs page (/journal), each post's own page, and the homepage's
 // "From the Playbook" row. Add, edit, publish and remove.
