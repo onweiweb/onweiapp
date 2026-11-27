@@ -3,6 +3,7 @@
 import type { AddressView } from "@onwei/core";
 import { useId, useState } from "react";
 import { FieldError } from "../FieldError";
+import { fillEmpty, usePincodePlace } from "../usePincodePlace";
 import {
   ADDRESS_FIELD_ERRORS,
   CHECKOUT_ERRORS,
@@ -63,6 +64,11 @@ export function AddressForm({
     setValues((v) => ({ ...v, [key]: value }));
     setErrors((e) => ({ ...e, [key]: undefined }));
   }
+
+  // A full PIN fills an empty city and state.
+  usePincodePlace(values.postalCode, (place) =>
+    setValues((v) => fillEmpty(v, place, states)),
+  );
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();

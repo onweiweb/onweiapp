@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AdminBadge,
@@ -114,6 +114,36 @@ function EditAddressButton({
         : !row.shipment || status === "CANCELLED"
           ? "Save and send"
           : "Save and send again";
+
+  // A full PIN fills an empty city and state (iThink's PIN data).
+  const pin = values.postalCode.replace(/\s/g, "");
+  useEffect(() => {
+    if (!open || !/^[1-9]\d{5}$/.test(pin)) return;
+    const controller = new AbortController();
+    fetch(`/api/pincode?pin=${pin}`, { signal: controller.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then(
+        (
+          data: {
+            known?: boolean;
+            city?: string | null;
+            state?: string | null;
+          } | null,
+        ) => {
+          if (!data?.known) return;
+          setValues((v) => ({
+            ...v,
+            city: v.city.trim() ? v.city : (data.city ?? v.city),
+            state:
+              !v.state && data.state && states.includes(data.state)
+                ? data.state
+                : v.state,
+          }));
+        },
+      )
+      .catch(() => {});
+    return () => controller.abort();
+  }, [open, pin, states]);
 
   const set =
     (key: AddressField) =>

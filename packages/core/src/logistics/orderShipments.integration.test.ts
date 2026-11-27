@@ -501,6 +501,8 @@ describe.skipIf(!process.env.DATABASE_URL)(
       expect(await checkDeliveryPincode("744301", deps)).toEqual({
         deliverable: false,
         cod: false,
+        city: null,
+        state: null,
       });
       await checkDeliveryPincode("744301", deps);
       expect(calls).toBe(1);

@@ -22,6 +22,9 @@ const ALWAYS_ALLOWED_PREFIXES = [
   "/api/webhooks/msg91",
   "/api/webhooks/ithink",
   "/api/cron/release-orders",
+  // PIN lookup for address forms (city and state autofill), used by the
+  // Insider "Share your address" form while the shop is hidden. Rate limited.
+  "/api/checkout/pincode",
   // Analytics events (rewritten to PostHog in next.config.ts), must never
   // be redirected to the waitlist page.
   "/ingest",

@@ -24,6 +24,8 @@
  * The keys are never logged.
  */
 
+import { placeFromCouriers, type IndianState } from "../geo/pincodePlace";
+
 export const ITHINK_ENV_NAMES = [
   "ITHINK_ENV",
   "ITHINK_ACCESS_TOKEN",
@@ -611,6 +613,9 @@ export interface PincodeService {
   deliverable: boolean;
   /** Some courier collects cash on delivery here. */
   cod: boolean;
+  /** City and state for the PIN when iThink's couriers say (address autofill). */
+  city: string | null;
+  state: IndianState | null;
 }
 
 /** Can iThink's couriers deliver to this PIN? Null when iThink didn't answer. */
@@ -627,13 +632,21 @@ export async function checkIthinkPincode(
   );
   if (!result.ok) return null;
   if (str(result.body.status).toLowerCase() !== "success") return null;
-  const couriers = Object.values(record(record(result.body.data)[pin])).map(
-    record,
+  const byCourier = Object.fromEntries(
+    Object.entries(record(record(result.body.data)[pin]))
+      // Only courier entries (objects); ignore anything else iThink adds.
+      .filter(([, v]) => v !== null && typeof v === "object")
+      .map(([k, v]) => [k.toLowerCase(), record(v)]),
   );
-  if (couriers.length === 0) return { deliverable: false, cod: false };
+  const couriers = Object.values(byCourier);
+  const place = placeFromCouriers(byCourier);
+  if (couriers.length === 0) {
+    return { deliverable: false, cod: false, ...place };
+  }
   const yes = (v: unknown) => str(v).toUpperCase() === "Y";
   return {
     deliverable: couriers.some((c) => yes(c.prepaid) || yes(c.cod)),
     cod: couriers.some((c) => yes(c.cod)),
+    ...place,
   };
 }

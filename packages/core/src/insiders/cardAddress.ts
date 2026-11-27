@@ -1,3 +1,4 @@
+import { INDIAN_STATES } from "../geo/indianStates";
 import { prisma } from "@onwei/database";
 import { z } from "zod";
 import { writeAuditLog } from "../admin/auditLog";
@@ -11,45 +12,7 @@ import {
   type IthinkDeps,
 } from "../logistics/cardShipments";
 
-/** Indian states and union territories, for the address form's dropdown. */
-export const INDIAN_STATES = [
-  "Andaman and Nicobar Islands",
-  "Andhra Pradesh",
-  "Arunachal Pradesh",
-  "Assam",
-  "Bihar",
-  "Chandigarh",
-  "Chhattisgarh",
-  "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi",
-  "Goa",
-  "Gujarat",
-  "Haryana",
-  "Himachal Pradesh",
-  "Jammu and Kashmir",
-  "Jharkhand",
-  "Karnataka",
-  "Kerala",
-  "Ladakh",
-  "Lakshadweep",
-  "Madhya Pradesh",
-  "Maharashtra",
-  "Manipur",
-  "Meghalaya",
-  "Mizoram",
-  "Nagaland",
-  "Odisha",
-  "Puducherry",
-  "Punjab",
-  "Rajasthan",
-  "Sikkim",
-  "Tamil Nadu",
-  "Telangana",
-  "Tripura",
-  "Uttar Pradesh",
-  "Uttarakhand",
-  "West Bengal",
-] as const;
+export { INDIAN_STATES };
 
 const PIN_PATTERN = /^[1-9]\d{5}$/;
 

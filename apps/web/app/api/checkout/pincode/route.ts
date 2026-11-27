@@ -7,8 +7,9 @@ import { NextResponse } from "next/server";
 
 /**
  * Can we deliver to this PIN, and take cash on delivery there? Asked when
- * the shopper moves on from the address step. `known: false` means iThink
- * couldn't tell us, and checkout carries on as normal.
+ * the shopper moves on from the address step, and when a 6-digit PIN is typed
+ * in any address form (city and state, to fill empty fields). `known: false`
+ * means iThink couldn't tell us, and the form carries on as normal.
  */
 export async function GET(request: Request) {
   const pin = new URL(request.url).searchParams.get("pin")?.trim() ?? "";
@@ -31,6 +32,8 @@ export async function GET(request: Request) {
           known: true,
           deliverable: service.deliverable,
           cod: service.cod,
+          city: service.city,
+          state: service.state,
         }
       : { ok: true, known: false },
   );

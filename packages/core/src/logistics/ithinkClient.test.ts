@@ -196,14 +196,22 @@ describe("checkIthinkPincode", () => {
       status: "success",
       data: {
         "500032": {
-          delhivery: { prepaid: "Y", cod: "N" },
-          ecom: { prepaid: "Y", cod: "Y" },
+          delhivery: {
+            prepaid: "Y",
+            cod: "N",
+            district: "K.V.Rangareddy",
+            state_code: "TS",
+          },
+          fedex: { prepaid: "Y", cod: "Y", sort_code: "HYDERABAD" },
+          note: "not a courier",
         },
       },
     });
     expect(await checkIthinkPincode(config, "500032", yes.impl)).toEqual({
       deliverable: true,
       cod: true,
+      city: "Hyderabad",
+      state: "Telangana",
     });
     const no = fakeFetch({
       status: "success",
@@ -212,6 +220,8 @@ describe("checkIthinkPincode", () => {
     expect(await checkIthinkPincode(config, "744301", no.impl)).toEqual({
       deliverable: false,
       cod: false,
+      city: null,
+      state: null,
     });
     const down = (async () => {
       throw new TypeError("fetch failed");

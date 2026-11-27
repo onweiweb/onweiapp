@@ -2,6 +2,7 @@
 
 import { useId, useState, type FormEvent } from "react";
 import { FieldError } from "@/_components/FieldError";
+import { fillEmpty, usePincodePlace } from "@/_components/usePincodePlace";
 import {
   INSIDER_FIELD_ERRORS,
   insiderErrorFor,
@@ -51,6 +52,11 @@ export function InsiderAddressForm({
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // A full PIN fills an empty city and state.
+  usePincodePlace(values.postalCode, (place) =>
+    setValues((current) => fillEmpty(current, place, states)),
+  );
 
   function set<K extends keyof AddressValues>(key: K, value: string) {
     setValues((current) => ({ ...current, [key]: value }));
