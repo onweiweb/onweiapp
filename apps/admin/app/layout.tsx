@@ -60,6 +60,7 @@ const NAV_GROUPS = [
     items: [
       { label: "Orders", href: "/orders", icon: "ShoppingCart" },
       { label: "Returns", href: "/returns", icon: "Undo2" },
+      { label: "COD money", href: "/cod-money", icon: "Banknote" },
       { label: "Coupons and discounts", href: "/coupons", icon: "Ticket" },
       { label: "Customers", href: "/customers", icon: "UsersRound" },
       { label: "Messages", href: "/messages", icon: "Inbox" },

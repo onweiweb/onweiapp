@@ -410,19 +410,24 @@ model Order {
 
   // Commerce build (docs/COMMERCE_BUILD_PLAN.md). PENDING means "waiting for
   // payment"; CONFIRMED means paid (or a COD order accepted).
-  paymentMethod           PaymentMethod @default(RAZORPAY)
-  insiderDiscount         Decimal       @default(0) @db.Decimal(10, 2)
-  codFee                  Decimal       @default(0) @db.Decimal(10, 2)
+  paymentMethod           PaymentMethod  @default(RAZORPAY)
+  insiderDiscount         Decimal        @default(0) @db.Decimal(10, 2)
+  codFee                  Decimal        @default(0) @db.Decimal(10, 2)
   contactEmail            String?
   contactPhone            String?
   // Copy of the address as it was when ordered, so editing or deleting a
   // saved address never changes a past order.
   shippingAddressSnapshot Json?
-  razorpayOrderId         String?       @unique
+  razorpayOrderId         String?        @unique
   // Stock and coupon uses are held until this time while payment is open.
   reservationExpiresAt    DateTime?
   paidAt                  DateTime?
   codCollectedAt          DateTime?
+  // iThink paid the cash it collected for this order into our bank
+  // (COD remittance), and which payout it was in.
+  codRemittanceId         String?
+  codRemittance           CodRemittance? @relation(fields: [codRemittanceId], references: [id])
+  codRemittedAt           DateTime?
   shippedAt               DateTime?
   deliveredAt             DateTime?
   trackingNumber          String?
@@ -1680,4 +1685,26 @@ model SmsMessage {
   @@index([purpose, createdAt])
   @@index([status])
   @@index([customerId])
+}
+
+/// One iThink cash on delivery payout (Get Remittance), imported from admin
+/// COD money. Amounts are rupees as iThink reports them.
+model CodRemittance {
+  id                 String   @id @default(cuid())
+  /// iThink's own id for the payout.
+  remittanceId       String   @unique
+  remittanceDate     DateTime
+  codGenerated       Decimal  @db.Decimal(12, 2)
+  billAdjusted       Decimal  @db.Decimal(12, 2)
+  refundAdjusted     Decimal  @db.Decimal(12, 2)
+  transactionCharges Decimal  @db.Decimal(12, 2)
+  gstCharges         Decimal  @db.Decimal(12, 2)
+  walletAmount       Decimal  @db.Decimal(12, 2)
+  advanceHold        Decimal  @db.Decimal(12, 2)
+  codRemitted        Decimal  @db.Decimal(12, 2)
+  importedAt         DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  orders             Order[]
+
+  @@index([remittanceDate])
 }

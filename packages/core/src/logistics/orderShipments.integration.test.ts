@@ -14,6 +14,7 @@ import {
 import { matchTrackingNumbers } from "./trackingMatch";
 import { bookReturnPickup, getReturnPickups } from "./returnShipments";
 import { handleIthinkWebhook } from "./webhook";
+import { importCodRemittances } from "./codRemittance";
 
 // Test orders only (example.test customers), removed afterwards. iThink is
 // faked: nothing leaves this machine.
@@ -571,6 +572,76 @@ describe.skipIf(!process.env.DATABASE_URL)(
       });
       await prisma.shipment.deleteMany({ where: { returnRequestId: ret.id } });
       await prisma.returnRequest.delete({ where: { id: ret.id } });
+    });
+
+    it("marks cash on delivery orders paid out from iThink's payouts, once", async () => {
+      const good = await makeOrder({ paymentMethod: "COD" });
+      const short = await makeOrder({ paymentMethod: "COD" });
+      await sendOrderToIthink(good, null, { config, fetchImpl: booking });
+      await sendOrderToIthink(short, null, { config, fetchImpl: booking });
+      const awbGood = (await current(good)).awb!;
+      const awbShort = (await current(short)).awb!;
+      const payoutId = `TEST-PAYOUT-${Date.now()}`;
+      const payouts = fake((path) => {
+        if (path === "remittance/get.json") {
+          return {
+            status: "success",
+            data: [
+              {
+                remittance_id: payoutId,
+                remittance_date: "2026-11-25",
+                cod_generated: "2296",
+                cod_remitted: "2200",
+              },
+            ],
+          };
+        }
+        if (path === "remittance/get_details.json") {
+          return {
+            status: "success",
+            data: [
+              { airway_bill_no: awbGood, price: "1148" },
+              { airway_bill_no: awbShort, price: "1000" },
+              { airway_bill_no: "NOT-OURS", price: "10" },
+            ],
+          };
+        }
+        return {};
+      });
+      const deps = { config, fetchImpl: payouts };
+      const first = await importCodRemittances(actor, { days: 1 }, deps);
+      expect(first).toMatchObject({
+        ok: true,
+        payouts: 1,
+        matched: 2,
+        mismatched: 1,
+        unknown: 1,
+      });
+      const [a, b] = await Promise.all([
+        prisma.order.findUniqueOrThrow({ where: { id: good } }),
+        prisma.order.findUniqueOrThrow({ where: { id: short } }),
+      ]);
+      expect(a.codRemittanceId).not.toBeNull();
+      expect(a.needsAttention).toBeNull();
+      expect(b.needsAttention).toContain("iThink paid ₹1,000");
+      // Pressing again changes nothing.
+      const second = await importCodRemittances(actor, { days: 1 }, deps);
+      expect(second).toMatchObject({ payouts: 1, matched: 0 });
+
+      await prisma.order.updateMany({
+        where: { id: { in: [good, short] } },
+        data: { codRemittanceId: null },
+      });
+      await prisma.codRemittance.deleteMany({
+        where: { remittanceId: payoutId },
+      });
+      await prisma.auditLog.deleteMany({
+        where: {
+          action: "cod.remittance.import",
+          staffUserId: actor.staffUserId,
+          entityId: "1d",
+        },
+      });
     });
 
     it("flags an order coming back", async () => {

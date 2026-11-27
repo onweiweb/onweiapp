@@ -8,6 +8,8 @@ import {
   findIthinkParcel,
   isDuplicateRemark,
   ndrRequest,
+  parseRemittanceLines,
+  parseRemittances,
   ithinkDate,
   ithinkPhone,
   ithinkUrl,
@@ -511,5 +513,56 @@ describe("ndrRequest", () => {
       ndr_action: 2,
       rto_remark: "Refused",
     });
+  });
+});
+
+describe("remittance parsing", () => {
+  it("reads payouts and per-parcel lines", () => {
+    expect(
+      parseRemittances({
+        status: "success",
+        data: [
+          {
+            remittance_id: "R1",
+            remittance_date: "2026-11-25",
+            cod_generated: "1,148.00",
+            bill_adjusted: "0",
+            refund_adjusted: "0",
+            transaction_charges: "20",
+            transaction_gst_charges: "3.6",
+            wallet_amount: "0",
+            advance_hold: "0",
+            cod_remitted: "1124.40",
+          },
+          { remittance_id: "" },
+        ],
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        remittanceId: "R1",
+        codGenerated: 1148,
+        gstCharges: 3.6,
+        codRemitted: 1124.4,
+      }),
+    ]);
+    expect(
+      parseRemittanceLines({
+        data: [
+          {
+            airway_bill_no: "123",
+            order_no: "ONW1001",
+            price: "1148",
+            delivered_date: "2026-11-23",
+          },
+          { airway_bill_no: "" },
+        ],
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        awb: "123",
+        reference: "ONW1001",
+        amount: 1148,
+      }),
+    ]);
   });
 });

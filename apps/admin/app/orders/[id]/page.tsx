@@ -349,6 +349,12 @@ export default async function OrderDetailPage({
           </dl>
           {isCod ? (
             <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
+              {order.codRemittedAt ? (
+                <span className="w-full text-onwei-blue/70">
+                  iThink paid this order&apos;s cash to you on{" "}
+                  {istDateOf(order.codRemittedAt)} (see COD money).
+                </span>
+              ) : null}
               {order.codCollectedAt ? (
                 <AdminBadge tone="success">Cash collected</AdminBadge>
               ) : (

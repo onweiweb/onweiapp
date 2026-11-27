@@ -722,3 +722,95 @@ export async function ndrIthinkAction(
       : "iThink didn't accept it and gave no reason.",
   };
 }
+
+export interface IthinkRemittance {
+  remittanceId: string;
+  remittanceDate: Date | null;
+  codGenerated: number;
+  billAdjusted: number;
+  refundAdjusted: number;
+  transactionCharges: number;
+  gstCharges: number;
+  walletAmount: number;
+  advanceHold: number;
+  codRemitted: number;
+}
+
+export interface IthinkRemittanceLine {
+  awb: string;
+  reference: string;
+  /** Rupees iThink paid for this parcel. */
+  amount: number;
+  deliveredAt: Date | null;
+}
+
+const money = (v: unknown) => {
+  const n = Number(str(v).replace(/,/g, ""));
+  return Number.isFinite(n) ? n : 0;
+};
+
+const rows = (body: Record<string, unknown>) =>
+  (Array.isArray(body.data) ? body.data : Object.values(record(body.data))).map(
+    record,
+  );
+
+/** Get Remittance reply: one row per payout (exported for tests). */
+export function parseRemittances(
+  body: Record<string, unknown>,
+): IthinkRemittance[] {
+  return rows(body)
+    .map((r) => ({
+      remittanceId: str(r.remittance_id),
+      remittanceDate: parseIthinkTime(r.remittance_date),
+      codGenerated: money(r.cod_generated),
+      billAdjusted: money(r.bill_adjusted),
+      refundAdjusted: money(r.refund_adjusted),
+      transactionCharges: money(r.transaction_charges),
+      gstCharges: money(r.transaction_gst_charges),
+      walletAmount: money(r.wallet_amount),
+      advanceHold: money(r.advance_hold),
+      codRemitted: money(r.cod_remitted),
+    }))
+    .filter((r) => r.remittanceId);
+}
+
+/** Get Remittance Details reply: one row per parcel (exported for tests). */
+export function parseRemittanceLines(
+  body: Record<string, unknown>,
+): IthinkRemittanceLine[] {
+  return rows(body)
+    .map((r) => ({
+      awb: str(r.airway_bill_no),
+      reference: str(r.order_no),
+      amount: money(r.price),
+      deliveredAt: parseIthinkTime(r.delivered_date),
+    }))
+    .filter((r) => r.awb);
+}
+
+/**
+ * Cash on delivery payouts iThink made on a day, and the parcels in them.
+ * Null when iThink didn't answer (nothing is changed then).
+ */
+export async function getIthinkRemittances(
+  config: IthinkConfig,
+  day: Date,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{
+  payouts: IthinkRemittance[];
+  lines: IthinkRemittanceLine[];
+} | null> {
+  const data = { remittance_date: ymd(day) };
+  const [summary, details] = await Promise.all([
+    call(config, "remittance/get.json", data, fetchImpl),
+    call(config, "remittance/get_details.json", data, fetchImpl),
+  ]);
+  if (!summary.ok || !details.ok) return null;
+  const okBody = (b: Record<string, unknown>) =>
+    ["success", ""].includes(str(b.status).toLowerCase()) ||
+    Array.isArray(b.data);
+  return {
+    payouts: okBody(summary.body) ? parseRemittances(summary.body) : [],
+    lines: okBody(details.body) ? parseRemittanceLines(details.body) : [],
+  };
+}
