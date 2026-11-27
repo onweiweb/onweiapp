@@ -41,15 +41,18 @@ import {
 import { toUpdateRow } from "./_updateRow";
 import { AddUpdateButton, UpdateActions } from "./_updates";
 
+// Ordered as staff work through it: the summary, the people, messages to
+// them, the physical cards (set up the printed cards before shipping them),
+// then the public Insiders page.
 const TABS = [
+  { id: "overview", label: "Overview" },
   { id: "members", label: "Members" },
   { id: "applications", label: "Applications" },
   { id: "rewards", label: "Invite rewards" },
-  { id: "overview", label: "Overview" },
-  { id: "ship", label: "Ship cards" },
-  { id: "cards", label: "Printed cards" },
   { id: "email", label: "Email" },
   { id: "whatsapp", label: "WhatsApp" },
+  { id: "cards", label: "Printed cards" },
+  { id: "ship", label: "Ship cards" },
   { id: "updates", label: "Page updates" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
@@ -99,7 +102,7 @@ export default async function InsidersPage({
   if (params.tab === "addresses") redirect("/insiders?tab=ship");
   const tab: TabId = TABS.some((t) => t.id === params.tab)
     ? (params.tab as TabId)
-    : "members";
+    : "overview";
 
   return (
     <main className="flex flex-col gap-6">
