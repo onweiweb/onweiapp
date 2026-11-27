@@ -1,4 +1,5 @@
 import { Prisma, prisma, type ReturnStatus } from "@onwei/database";
+import { sendRefundEmail } from "./refundEmail";
 import { writeAuditLog } from "../admin/auditLog";
 import type { AuditActor } from "../admin/types";
 import { toMinorUnits } from "../catalog/helpers";
@@ -300,6 +301,7 @@ export async function refundReturn(
     };
   }
   const amount = toMinorUnits(row.refundAmount);
+  let cashRefundId: string | null = null;
 
   if (row.order.paymentMethod === "RAZORPAY") {
     const refund = await refundPayment({
@@ -322,25 +324,29 @@ export async function refundReturn(
       };
     }
   } else {
-    await prisma.refund.create({
-      data: {
-        orderId: row.order.id,
-        returnRequestId: returnId,
-        amount: row.refundAmount,
-        method: "MANUAL",
-        status: "PROCESSED",
-        processedAt: new Date(),
-        note: row.payoutUpi
-          ? `Sent to UPI ${row.payoutUpi}`
-          : "Paid back by staff",
-        createdByStaffId: actor.staffUserId,
-      },
-    });
+    cashRefundId = (
+      await prisma.refund.create({
+        data: {
+          orderId: row.order.id,
+          returnRequestId: returnId,
+          amount: row.refundAmount,
+          method: "MANUAL",
+          status: "PROCESSED",
+          processedAt: new Date(),
+          note: row.payoutUpi
+            ? `Sent to UPI ${row.payoutUpi}`
+            : "Paid back by staff",
+          createdByStaffId: actor.staffUserId,
+        },
+      })
+    ).id;
   }
   await moveReturn(returnId, ["RECEIVED"], "REFUNDED", actor, {
     resolvedAt: new Date(),
   });
   await settleOrderAfterReturns(returnId);
+  // Online refunds are emailed by refundPayment; cash ones here.
+  if (cashRefundId) await sendRefundEmail(cashRefundId);
   return { ok: true };
 }
 

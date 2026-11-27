@@ -1,4 +1,5 @@
 import { checkDeliveryPincode } from "../logistics/orderShipments";
+import { sendRefundEmail } from "./refundEmail";
 import { Prisma, prisma } from "@onwei/database";
 import { toMinorUnits } from "../catalog/helpers";
 import { gstPortion } from "../pricing/engine";
@@ -972,6 +973,9 @@ export async function refundPayment(input: {
         },
       });
     });
+    // Staff refunds tell the customer; automatic ones (duplicate payments)
+    // flag the order for staff instead.
+    if (input.staffUserId) await sendRefundEmail(row.id);
     return {
       ok: true,
       refundId: row.id,

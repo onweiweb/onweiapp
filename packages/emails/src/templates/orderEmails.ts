@@ -257,3 +257,59 @@ export function renderOrderDeliveredEmail(
   ].join("\n");
   return { subject, html, text };
 }
+
+export interface RefundEmailInput {
+  name: string | null;
+  orderNumber: string;
+  /** Paise. */
+  amount: number;
+  /** ONLINE: back to the card or UPI paid with. UPI: sent by us to a UPI id. */
+  method: "ONLINE" | "UPI";
+  /** UPI id for a cash on delivery refund (shown partly hidden). */
+  upiId?: string | null;
+  /** What it is for, e.g. "your return" or "your cancelled order". */
+  reason: string;
+  siteUrl?: string;
+}
+
+/** "ab***@okaxis": enough to recognise, not enough to copy. */
+export function maskUpi(upi: string): string {
+  const [user = "", bank] = upi.split("@");
+  const shown = user.slice(0, 2);
+  return `${shown}${"*".repeat(Math.max(3, user.length - 2))}${bank ? `@${bank}` : ""}`;
+}
+
+export function renderRefundEmail(input: RefundEmailInput): RenderedEmail {
+  const siteUrl = input.siteUrl ?? DEFAULT_SITE_URL;
+  const first = firstNameOf(input.name);
+  const amount = rupees(input.amount);
+  const subject = `Your refund of ${amount} for Onwei order #${input.orderNumber}`;
+  const orderUrl = `${siteUrl}/account/orders/${input.orderNumber}`;
+  const where =
+    input.method === "ONLINE"
+      ? "It goes back to the card, UPI or bank account you paid with. Banks usually show it within 5 to 7 working days."
+      : input.upiId
+        ? `We've sent it to your UPI id ${maskUpi(input.upiId)}. It should already be in your account.`
+        : "We've paid it back to you directly.";
+  const html = deliveryEmailHtml({
+    subject,
+    siteUrl,
+    orderNumber: input.orderNumber,
+    heading: `${first ? `${escapeHtml(first)}, your` : "Your"} refund<br>is on its way.`,
+    body:
+      para(
+        `We've refunded <strong>${escapeHtml(amount)}</strong> for ${escapeHtml(input.reason)}.`,
+      ) + para(escapeHtml(where)),
+    button: { label: "View your order", url: orderUrl },
+    footnote:
+      "Don't see it after a week? Reply to this email and we'll check it for you.",
+  });
+  const text = [
+    `${first ? `${first}, we've` : "We've"} refunded ${amount} for ${input.reason} (Onwei order #${input.orderNumber}).`,
+    where,
+    "",
+    `View your order: ${orderUrl}`,
+    "Don't see it after a week? Reply to this email and we'll check it for you.",
+  ].join("\n");
+  return { subject, html, text };
+}

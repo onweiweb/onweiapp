@@ -19,6 +19,19 @@ import {
 } from "./returns";
 import { verifyRazorpayPaymentSignature } from "../payments/razorpay";
 
+// Customer emails are recorded, not sent.
+const emails = vi.hoisted(() => [] as { to: string; subject: string }[]);
+vi.mock("@onwei/emails", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@onwei/emails")>();
+  return {
+    ...actual,
+    sendEmailSafely: async (to: string, email: { subject: string }) => {
+      emails.push({ to, subject: email.subject });
+      return true;
+    },
+  };
+});
+
 // Everything here is test data (example.test emails, "test-" slugs) and is
 // removed afterwards. Online payments are faked by stubbing fetch, so no
 // request reaches Razorpay.
@@ -586,6 +599,23 @@ describe.skipIf(!process.env.DATABASE_URL)(
         where: { orderId: placed.orderId },
       });
       expect(refunds.map((r) => Number(r.amount))).toEqual([1000]);
+      // One refund email, to the buyer, naming the amount.
+      const refundEmails = emails.filter((e) =>
+        e.subject.includes(placed.orderNumber),
+      );
+      expect(refundEmails).toEqual([
+        {
+          to: expect.stringMatching(/@example\.test$/),
+          subject: `Your refund of ₹1,000 for Onwei order #${placed.orderNumber}`,
+        },
+      ]);
+      // A second press refunds nothing and emails nothing.
+      expect((await refundReturn(request.id, { staffUserId }, null)).ok).toBe(
+        false,
+      );
+      expect(
+        emails.filter((e) => e.subject.includes(placed.orderNumber)),
+      ).toHaveLength(1);
     });
 
     it("deletes an unused coupon but keeps one that orders used", async () => {

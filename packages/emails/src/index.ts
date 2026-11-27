@@ -19,10 +19,13 @@ export {
   renderNewOrderAlertEmail,
   renderOrderDeliveredEmail,
   renderOrderShippedEmail,
+  renderRefundEmail,
+  maskUpi,
 } from "./templates/orderEmails";
 export type {
   OrderDeliveryEmailInput,
   OrderEmailInput,
+  RefundEmailInput,
 } from "./templates/orderEmails";
 export { renderContactAlertEmail } from "./templates/contactEmails";
 export type { ContactAlertInput } from "./templates/contactEmails";
