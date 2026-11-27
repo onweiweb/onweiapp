@@ -10,6 +10,7 @@ async function post(
 ): Promise<{
   ok: boolean;
   error?: string;
+  message?: string;
   refunded?: boolean;
   refundProblem?: string;
 }> {
@@ -261,16 +262,30 @@ type ReturnAction =
   "approve" | "reject" | "pickedUp" | "received" | "refund" | "exchanged";
 
 /** The next step(s) for one return, depending on where it is. */
+/** The return's courier pickup on iThink, if one was booked. */
+export interface ReturnPickupData {
+  status: string;
+  awb: string | null;
+  courierStatus: string | null;
+  trackingUrl: string | null;
+  error: string | null;
+}
+
 export function ReturnSteps({
   returnId,
   status,
   resolution,
   refundLabel,
+  pickup = null,
+  canBookPickup = false,
 }: {
   returnId: string;
   status: string;
   resolution: "REFUND" | "EXCHANGE";
   refundLabel: string;
+  pickup?: ReturnPickupData | null;
+  /** iThink is connected here. */
+  canBookPickup?: boolean;
 }) {
   const router = useRouter();
   const toast = useToast();
@@ -295,6 +310,28 @@ export function ReturnSteps({
     setRejecting(false);
     router.refresh();
   }
+
+  async function pickupAction(action: "book" | "cancel" | "refresh") {
+    if (action === "cancel") {
+      const ok = await confirm({
+        title: "Cancel the pickup?",
+        message: "The courier won't come for it. You can book it again later.",
+        confirmLabel: "Cancel pickup",
+        danger: true,
+      });
+      if (!ok) return;
+    }
+    setBusy(true);
+    const result = await post(`/api/returns/${returnId}/pickup`, { action });
+    setBusy(false);
+    if (!result.ok) return toast(result.error ?? "That didn't work.", "error");
+    toast(result.message ?? "Done.", "success");
+    router.refresh();
+  }
+
+  const pickupOpen =
+    pickup !== null && !["CANCELLED", "FAILED"].includes(pickup.status);
+  const showBook = canBookPickup && status === "APPROVED" && !pickupOpen;
 
   if (rejecting) {
     return (
@@ -346,14 +383,69 @@ export function ReturnSteps({
           </AdminButton>
         </>
       ) : null}
-      {status === "APPROVED" ? (
+      {pickup && (status === "APPROVED" || status === "PICKED_UP") ? (
+        <p className="w-full text-xs text-onwei-blue/70">
+          {pickup.status === "SENDING"
+            ? (pickup.error ?? "Pickup sent to iThink, waiting for its reply.")
+            : pickup.status === "FAILED"
+              ? `Pickup not booked: ${pickup.error ?? "iThink refused it."}`
+              : pickup.status === "CANCELLED"
+                ? "Pickup cancelled."
+                : `Pickup ${pickup.awb ?? ""}: ${pickup.courierStatus ?? "booked, courier coming"}`}
+          {pickup.trackingUrl && pickupOpen ? (
+            <>
+              {" "}
+              <a
+                href={pickup.trackingUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                Track
+              </a>
+            </>
+          ) : null}
+        </p>
+      ) : null}
+      {showBook ? (
+        <AdminButton
+          type="button"
+          disabled={busy}
+          onClick={() => pickupAction("book")}
+        >
+          {busy ? "Booking..." : "Book pickup"}
+        </AdminButton>
+      ) : null}
+      {canBookPickup && pickupOpen && status === "APPROVED" ? (
+        <>
+          <AdminButton
+            type="button"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => pickupAction("refresh")}
+          >
+            Get latest update
+          </AdminButton>
+          {pickup?.status === "BOOKED" ? (
+            <AdminButton
+              type="button"
+              variant="secondary"
+              disabled={busy}
+              onClick={() => pickupAction("cancel")}
+            >
+              Cancel pickup
+            </AdminButton>
+          ) : null}
+        </>
+      ) : null}
+      {status === "APPROVED" && !pickupOpen ? (
         <AdminButton
           type="button"
           variant="secondary"
           disabled={busy}
           onClick={() => run("pickedUp", {}, "Marked as picked up.")}
         >
-          Picked up
+          Customer sent it, picked up
         </AdminButton>
       ) : null}
       {status === "APPROVED" || status === "PICKED_UP" ? (

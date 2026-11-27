@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { formatCurrency } from "@onwei/core";
+import {
+  formatCurrency,
+  getReturnPickups,
+  readIthinkConfig,
+} from "@onwei/core";
 import { prisma, type ReturnStatus } from "@onwei/database";
 import { requirePageSession } from "../_lib/requirePageSession";
 import { pageWindow, parsePage, trimPage } from "../_lib/pagination";
@@ -52,12 +56,14 @@ export default async function ReturnsPage({
     ...pageWindow(page),
   });
   const { rows, hasNext } = trimPage(fetched);
+  const pickups = await getReturnPickups(rows.map((r) => r.id));
+  const ithinkConnected = readIthinkConfig() !== null;
 
   return (
     <main className="flex flex-col gap-6">
       <PageHeader
         title="Returns"
-        description="Customers ask for returns from their order page. Approve or reject, mark it picked up and received, then refund or send the exchange. Stock goes back only when you mark it received in good condition."
+        description="Customers ask for returns from their order page. Approve or reject, book the courier pickup (or mark it picked up if the customer sends it), mark it received, then refund or send the exchange. Stock goes back only when you mark it received in good condition."
       />
       <AdminTabLinks basePath="/returns" tabs={TABS} active={tab} />
 
@@ -132,6 +138,18 @@ export default async function ReturnsPage({
                       status={r.status}
                       resolution={r.resolution}
                       refundLabel={refund}
+                      pickup={
+                        pickups.get(r.id)
+                          ? {
+                              status: pickups.get(r.id)!.status,
+                              awb: pickups.get(r.id)!.awb,
+                              courierStatus: pickups.get(r.id)!.courierStatus,
+                              trackingUrl: pickups.get(r.id)!.trackingUrl,
+                              error: pickups.get(r.id)!.error,
+                            }
+                          : null
+                      }
+                      canBookPickup={ithinkConnected}
                     />
                   </AdminTableCell>
                 </AdminTableRow>

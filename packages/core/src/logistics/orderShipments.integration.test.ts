@@ -12,6 +12,7 @@ import {
   sendOrderToIthink,
 } from "./orderShipments";
 import { matchTrackingNumbers } from "./trackingMatch";
+import { bookReturnPickup, getReturnPickups } from "./returnShipments";
 import { handleIthinkWebhook } from "./webhook";
 
 // Test orders only (example.test customers), removed afterwards. iThink is
@@ -505,6 +506,71 @@ describe.skipIf(!process.env.DATABASE_URL)(
         track(awb, "Out For Delivery", "UD", "2026-11-27 09:00:00"),
       );
       expect((await current(id)).failedAttemptAt).toBeNull();
+    });
+
+    it("books a return pickup once, and follows it to picked up", async () => {
+      const id = await makeOrder({ paymentMethod: "RAZORPAY", paid: true });
+      const item = await prisma.orderItem.findFirstOrThrow({
+        where: { orderId: id, isFree: false },
+      });
+      const ret = await prisma.returnRequest.create({
+        data: {
+          orderId: id,
+          orderItemId: item.id,
+          reason: "Too small",
+          status: "REQUESTED",
+          quantity: 1,
+          resolution: "REFUND",
+          refundAmount: 1000,
+        },
+      });
+      // Not approved yet: no pickup.
+      expect(
+        await bookReturnPickup(ret.id, actor, { config, fetchImpl: booking }),
+      ).toMatchObject({ ok: false });
+      await prisma.returnRequest.update({
+        where: { id: ret.id },
+        data: { status: "APPROVED" },
+      });
+      const booked = await bookReturnPickup(ret.id, actor, {
+        config,
+        fetchImpl: booking,
+      });
+      expect(booked).toMatchObject({ ok: true });
+      expect(sent.at(-1)).toMatchObject({
+        order_type: "reverse",
+        payment_mode: "Prepaid",
+        cod_amount: "0",
+        total_amount: "1000",
+      });
+      expect(String(sent.at(-1)?.order)).toMatch(/-R1$/);
+      // A second press books nothing.
+      expect(
+        await bookReturnPickup(ret.id, actor, { config, fetchImpl: booking }),
+      ).toMatchObject({ ok: false });
+
+      const awb = (await getReturnPickups([ret.id])).get(ret.id)!.awb!;
+      const result = await handleIthinkWebhook([awb], {
+        config,
+        fetchImpl: track(awb, "REV Picked Up", "UD"),
+      });
+      expect(result).toMatchObject({ ok: true, matched: 1, changed: 1 });
+      expect(
+        (
+          await prisma.returnRequest.findUniqueOrThrow({
+            where: { id: ret.id },
+          })
+        ).status,
+      ).toBe("PICKED_UP");
+      const pickupRows = await prisma.shipment.findMany({
+        where: { returnRequestId: ret.id },
+        select: { id: true },
+      });
+      await prisma.auditLog.deleteMany({
+        where: { entityId: { in: pickupRows.map((r) => r.id) } },
+      });
+      await prisma.shipment.deleteMany({ where: { returnRequestId: ret.id } });
+      await prisma.returnRequest.delete({ where: { id: ret.id } });
     });
 
     it("flags an order coming back", async () => {

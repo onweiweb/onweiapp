@@ -5,6 +5,7 @@ import {
   formatCurrency,
   getOrderParcelGaps,
   getOrderShipment,
+  getReturnPickups,
   istDateOf,
   nextStatuses,
   readIthinkConfig,
@@ -84,10 +85,11 @@ export default async function OrderDetailPage({
 
   const address =
     order.shippingAddressSnapshot as unknown as AddressSnapshot | null;
-  const [left, shipment, parcelGaps] = await Promise.all([
+  const [left, shipment, parcelGaps, pickups] = await Promise.all([
     refundableAmount(order.id),
     getOrderShipment(order.id),
     getOrderParcelGaps(order.id),
+    getReturnPickups(order.returnRequests.map((r) => r.id)),
   ]);
   const ithinkConnected = readIthinkConfig() !== null;
   // A parcel iThink has (or may have): the hand-ship form steps aside.
@@ -453,6 +455,18 @@ export default async function OrderDetailPage({
                   status={r.status}
                   resolution={r.resolution}
                   refundLabel={r.refundAmount ? money(r.refundAmount) : ""}
+                  pickup={
+                    pickups.get(r.id)
+                      ? {
+                          status: pickups.get(r.id)!.status,
+                          awb: pickups.get(r.id)!.awb,
+                          courierStatus: pickups.get(r.id)!.courierStatus,
+                          trackingUrl: pickups.get(r.id)!.trackingUrl,
+                          error: pickups.get(r.id)!.error,
+                        }
+                      : null
+                  }
+                  canBookPickup={ithinkConnected}
                 />
               </li>
             ))}

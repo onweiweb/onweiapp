@@ -12,7 +12,25 @@ export function mapIthinkStatus(
 ): ShipmentStatus | null {
   const status = text.trim().toLowerCase().replace(/\s+/g, " ");
   const statusCode = code.trim().toUpperCase();
-  if (status.startsWith("rev ")) return null;
+  // Return pickups (iThink "REV ..."): collected from the customer and
+  // brought back to us.
+  if (status.startsWith("rev ")) {
+    if (status === "rev manifest" || status === "rev out for pick up") {
+      return "BOOKED";
+    }
+    if (
+      status === "rev picked up" ||
+      status === "rev in transit" ||
+      status === "rev out for delivery"
+    ) {
+      return "IN_TRANSIT";
+    }
+    if (status === "rev delivered") return "DELIVERED";
+    if (status === "rev cancelled" || status === "rev closed") {
+      return "CANCELLED";
+    }
+    return null;
+  }
   if (status === "lost" || status.endsWith("shortage")) return "LOST";
   if (status.startsWith("rto")) {
     return status === "rto delivered" ? "RETURNED" : "RETURNING";

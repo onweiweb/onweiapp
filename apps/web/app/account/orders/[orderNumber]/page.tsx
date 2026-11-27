@@ -192,6 +192,19 @@ export default async function OrderPage({
                         {r.rejectionReason}
                       </span>
                     ) : null}
+                    {r.pickupTrackingUrl && r.status === "APPROVED" ? (
+                      <span className="text-onwei-blue/80">
+                        A courier is coming to collect it.{" "}
+                        <a
+                          href={r.pickupTrackingUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline"
+                        >
+                          Track the pickup
+                        </a>
+                      </span>
+                    ) : null}
                   </li>
                 ))}
               </ul>

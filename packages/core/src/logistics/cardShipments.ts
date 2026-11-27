@@ -47,7 +47,7 @@ export interface IthinkDeps {
   now?: Date;
 }
 
-function depsOf(deps: IthinkDeps) {
+export function depsOf(deps: IthinkDeps) {
   return {
     config: deps.config === undefined ? readIthinkConfig() : deps.config,
     fetchImpl: deps.fetchImpl ?? fetch,

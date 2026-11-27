@@ -633,6 +633,8 @@ model ReturnRequest {
   payoutUpi       String?
   receivedAt      DateTime?
   restocked       Boolean          @default(false)
+  // Courier pickups booked for this return (newest is current).
+  shipments       Shipment[]
 
   @@index([orderId])
 }
@@ -1303,6 +1305,9 @@ model Shipment {
   insiderCardAddress   InsiderCardAddress? @relation(fields: [insiderCardAddressId], references: [id], onDelete: Cascade)
   orderId              String?
   order                Order?              @relation(fields: [orderId], references: [id])
+  // A return pickup (kind RETURN): the courier collects it from the customer.
+  returnRequestId      String?
+  returnRequest        ReturnRequest?      @relation(fields: [returnRequestId], references: [id])
   // Our reference on iThink ("CARD-0042", a resend "CARD-0042-2"). iThink
   // refuses a reference it has seen, so a parcel is never booked twice.
   reference            String              @unique
@@ -1335,12 +1340,14 @@ model Shipment {
 
   @@index([insiderCardAddressId, isCurrent])
   @@index([orderId, isCurrent])
+  @@index([returnRequestId, isCurrent])
   @@index([status, lastCheckedAt])
 }
 
 enum ShipmentKind {
   INSIDER_CARD
   ORDER
+  RETURN
 }
 
 enum ShipmentStatus {

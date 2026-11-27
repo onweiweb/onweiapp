@@ -206,6 +206,8 @@ export interface IthinkParcel {
   widthCm: number;
   heightCm: number;
   weightKg: number;
+  /** "reverse": a return pickup from this address back to our warehouse. */
+  orderType?: "forward" | "reverse";
 }
 
 /** One Add Order shipment, with every field iThink insists on. */
@@ -279,6 +281,8 @@ export function buildIthinkShipment(
     store_id: config.storeId,
     return_address_id: config.returnAddressId,
     pickup_address_id: config.pickupAddressId,
+    // Only on return pickups; forward parcels are sent exactly as before.
+    ...(parcel.orderType === "reverse" ? { order_type: "reverse" } : {}),
   };
 }
 

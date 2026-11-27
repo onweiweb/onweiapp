@@ -23,7 +23,6 @@ describe("mapIthinkStatus", () => {
 
   it("leaves unknown words alone", () => {
     expect(mapIthinkStatus("Something new", "UD")).toBeNull();
-    expect(mapIthinkStatus("REV Picked Up", "UD")).toBeNull();
     expect(mapIthinkStatus("Something new", "DL")).toBe("DELIVERED");
   });
 });
@@ -58,5 +57,17 @@ describe("failed deliveries", () => {
     expect(clearsFailedDelivery("DELIVERED")).toBe(true);
     expect(clearsFailedDelivery("IN_TRANSIT")).toBe(false);
     expect(clearsFailedDelivery(null)).toBe(false);
+  });
+});
+
+describe("return pickups", () => {
+  it("maps iThink's REV statuses", () => {
+    expect(mapIthinkStatus("REV Manifest", "UD")).toBe("BOOKED");
+    expect(mapIthinkStatus("REV Out for Pick Up", "UD")).toBe("BOOKED");
+    expect(mapIthinkStatus("REV Picked Up", "UD")).toBe("IN_TRANSIT");
+    expect(mapIthinkStatus("REV In Transit", "UD")).toBe("IN_TRANSIT");
+    expect(mapIthinkStatus("REV Delivered", "DL")).toBe("DELIVERED");
+    expect(mapIthinkStatus("REV Cancelled", "UD")).toBe("CANCELLED");
+    expect(mapIthinkStatus("REV Something New", "UD")).toBeNull();
   });
 });

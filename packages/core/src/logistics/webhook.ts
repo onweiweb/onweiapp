@@ -1,6 +1,7 @@
 import { prisma } from "@onwei/database";
 import { refreshCardShipments, type IthinkDeps } from "./cardShipments";
 import { refreshOrderShipments, type OrderEvent } from "./orderShipments";
+import { refreshReturnPickups } from "./returnShipments";
 import { OPEN_SHIPMENT_STATUSES } from "./shipmentStatus";
 
 /** Most tracking numbers taken from one webhook call. */
@@ -97,6 +98,13 @@ export async function handleIthinkWebhook(
       { startedAt, shipmentIds: cardIds, max: cardIds.length },
       deps,
     );
+    if (result.ok) changed += result.changed;
+    else ok = false;
+  }
+
+  const returnIds = rows.filter((r) => r.kind === "RETURN").map((r) => r.id);
+  if (ok && returnIds.length > 0) {
+    const result = await refreshReturnPickups({ shipmentIds: returnIds }, deps);
     if (result.ok) changed += result.changed;
     else ok = false;
   }

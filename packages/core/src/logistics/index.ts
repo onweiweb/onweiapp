@@ -65,3 +65,11 @@ export {
   type IthinkWebhookResult,
 } from "./webhook";
 export { getOrderDeliveryEmail } from "./deliveryEmail";
+export {
+  bookReturnPickup,
+  cancelReturnPickup,
+  getReturnPickups,
+  refreshReturnPickups,
+  type BookReturnPickupResult,
+  type ReturnPickupView,
+} from "./returnShipments";

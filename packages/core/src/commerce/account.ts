@@ -417,6 +417,8 @@ export interface OrderDetail {
     refundAmount: number | null;
     requestedAt: Date;
     rejectionReason: string | null;
+    /** The courier pickup's tracking page, once a pickup is booked. */
+    pickupTrackingUrl: string | null;
   }[];
   returnWindowEndsAt: Date | null;
   awaitingPayment: boolean;
@@ -454,7 +456,18 @@ export async function getCustomerOrder(
         take: 1,
       },
       returnRequests: {
-        include: { orderItem: { select: { productName: true } } },
+        include: {
+          orderItem: { select: { productName: true } },
+          shipments: {
+            where: {
+              isCurrent: true,
+              awb: { not: null },
+              status: { notIn: ["CANCELLED", "FAILED"] },
+            },
+            select: { awb: true },
+            take: 1,
+          },
+        },
         orderBy: { requestedAt: "desc" },
       },
     },
@@ -598,6 +611,9 @@ export async function getCustomerOrder(
       refundAmount: r.refundAmount ? toMinorUnits(r.refundAmount) : null,
       requestedAt: r.requestedAt,
       rejectionReason: r.rejectionReason,
+      pickupTrackingUrl: r.shipments[0]?.awb
+        ? ithinkTrackingUrl(r.shipments[0].awb)
+        : null,
     })),
     returnWindowEndsAt: windowEnds,
     awaitingPayment:
