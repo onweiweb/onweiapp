@@ -161,6 +161,10 @@ export default async function OrderDetailPage({
                       ? istDateOf(shipment.lastCheckedAt)
                       : null,
                     attempts: shipment.attempts,
+                    failedOn: shipment.failedDelivery
+                      ? istDateOf(shipment.failedDelivery.at)
+                      : null,
+                    failedReason: shipment.failedDelivery?.reason ?? null,
                   }
                 : null
             }

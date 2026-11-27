@@ -7,6 +7,7 @@ import {
   explainIthinkRemark,
   findIthinkParcel,
   isDuplicateRemark,
+  ndrRequest,
   ithinkDate,
   ithinkPhone,
   ithinkUrl,
@@ -483,6 +484,32 @@ describe("cancelIthinkParcel", () => {
     expect(await cancelIthinkParcel(config, "1", no.impl)).toEqual({
       ok: false,
       reason: "iThink said: Already picked up",
+    });
+  });
+});
+
+describe("ndrRequest", () => {
+  it("asks for a reattempt on a day in India time, with optional details", () => {
+    expect(
+      ndrRequest("123", {
+        kind: "REATTEMPT",
+        date: new Date("2026-11-28T20:00:00Z"),
+        phone: "+91 98765 43210",
+      }),
+    ).toMatchObject({
+      awb_numbers: "123",
+      ndr_action: 1,
+      reattempt_date: "2026-11-29",
+      reattempt_mobile_number: "9876543210",
+      reattempt_address: "",
+    });
+  });
+
+  it("sends a parcel back with a remark", () => {
+    expect(ndrRequest("123", { kind: "RTO", remark: "Refused" })).toEqual({
+      awb_numbers: "123",
+      ndr_action: 2,
+      rto_remark: "Refused",
     });
   });
 });

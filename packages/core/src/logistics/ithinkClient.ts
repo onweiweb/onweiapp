@@ -449,6 +449,8 @@ export interface IthinkOrderInfo {
   statusCode: string;
   lastScanAt: Date | null;
   deliveredAt: Date | null;
+  /** The courier's reason on the last scan, e.g. why it couldn't deliver. */
+  reason: string | null;
 }
 
 function fromDetails(row: Record<string, unknown>): IthinkOrderInfo | null {
@@ -462,6 +464,7 @@ function fromDetails(row: Record<string, unknown>): IthinkOrderInfo | null {
     statusCode: "",
     lastScanAt: parseIthinkTime(row.last_scan_datetime),
     deliveredAt: null,
+    reason: null,
   };
 }
 
@@ -568,6 +571,7 @@ export async function trackIthinkParcels(
         statusCode: str(row.current_status_code) || str(last.status_code),
         lastScanAt: parseIthinkTime(last.status_date_time),
         deliveredAt: parseIthinkTime(dates.delivery_date),
+        reason: str(last.reason) || str(last.remark) || null,
       });
     }
   }
@@ -648,5 +652,69 @@ export async function checkIthinkPincode(
     deliverable: couriers.some((c) => yes(c.prepaid) || yes(c.cod)),
     cod: couriers.some((c) => yes(c.cod)),
     ...place,
+  };
+}
+
+export type FailedDeliveryAction =
+  | {
+      kind: "REATTEMPT";
+      /** Day to try again, India time. */
+      date: Date;
+      /** A new phone or address for the courier, if the customer gave one. */
+      phone?: string;
+      address?: string;
+    }
+  | { kind: "RTO"; remark: string };
+
+/** The NDR request body for one failed delivery (exported for tests). */
+export function ndrRequest(
+  awb: string,
+  action: FailedDeliveryAction,
+): Record<string, unknown> {
+  if (action.kind === "RTO") {
+    return { awb_numbers: awb, ndr_action: 2, rto_remark: action.remark };
+  }
+  return {
+    awb_numbers: awb,
+    ndr_action: 1,
+    reattempt_date: ymd(action.date),
+    reattempt_time: "10:00:00",
+    reattempt_mobile_number: action.phone ? ithinkPhone(action.phone) : "",
+    reattempt_address: action.address?.trim() ?? "",
+    reattempt_address_type: 1,
+  };
+}
+
+/**
+ * After a failed delivery: ask the courier to try again (on a day, with an
+ * optional new phone or address) or to send the parcel back to us (RTO).
+ */
+export async function ndrIthinkAction(
+  config: IthinkConfig,
+  awb: string,
+  action: FailedDeliveryAction,
+  fetchImpl: typeof fetch = fetch,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const result = await call(
+    config,
+    "ndr/add-reattempt-rto.json",
+    ndrRequest(awb, action),
+    fetchImpl,
+  );
+  if (!result.ok) {
+    return {
+      ok: false,
+      reason: "iThink didn't answer. Try again in a minute.",
+    };
+  }
+  const line = record(record(result.body.data)[awb]);
+  const status = (str(line.status) || str(result.body.status)).toLowerCase();
+  if (status === "success") return { ok: true };
+  const remark = str(line.remark) || str(result.body.html_message);
+  return {
+    ok: false,
+    reason: remark
+      ? `iThink said: ${remark}`
+      : "iThink didn't accept it and gave no reason.",
   };
 }

@@ -4,8 +4,10 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { cancelOrderByStaff, OrderActionError } from "../commerce/adminOrders";
 import type { IthinkConfig } from "./ithinkClient";
 import {
+  actOnFailedDelivery,
   checkDeliveryPincode,
   clearPincodeCache,
+  getOrderShipment,
   refreshOrderShipments,
   sendOrderToIthink,
 } from "./orderShipments";
@@ -66,7 +68,13 @@ describe.skipIf(!process.env.DATABASE_URL)(
       };
     });
 
-    function track(awb: string, status: string, code: string) {
+    function track(
+      awb: string,
+      status: string,
+      code: string,
+      scan = "2026-11-25 10:00:00",
+      reason = "",
+    ) {
       return fake((path) =>
         path === "order/track.json"
           ? {
@@ -78,7 +86,8 @@ describe.skipIf(!process.env.DATABASE_URL)(
                   current_status: status,
                   current_status_code: code,
                   last_scan_details: {
-                    status_date_time: "2026-11-25 10:00:00",
+                    status_date_time: scan,
+                    reason,
                   },
                   order_date_time: {
                     delivery_date: code === "DL" ? "2026-11-27 15:00:00" : "",
@@ -425,6 +434,77 @@ describe.skipIf(!process.env.DATABASE_URL)(
         matched: 1,
         changed: 0,
       });
+    });
+
+    it("flags a failed delivery until staff choose, and tells iThink what they chose", async () => {
+      const id = await makeOrder({ paymentMethod: "COD" });
+      await sendOrderToIthink(id, null, { config, fetchImpl: booking });
+      const awb = (await current(id)).awb!;
+      const refresh = (fetchImpl: typeof fetch) =>
+        refreshOrderShipments(
+          { startedAt: new Date(Date.now() + 1000), orderId: id },
+          { config, fetchImpl },
+        );
+      await refresh(track(awb, "In Transit", "UD"));
+      await refresh(
+        track(
+          awb,
+          "Undelivered",
+          "UD",
+          "2026-11-26 18:00:00",
+          "Customer Not Available",
+        ),
+      );
+      const order = await prisma.order.findUniqueOrThrow({ where: { id } });
+      expect(order.needsAttention).toBe(
+        'The courier couldn\'t deliver (Customer Not Available). Choose "Try again" or "Send it back" on the Delivery card.',
+      );
+      expect((await getOrderShipment(id))?.failedDelivery?.reason).toBe(
+        "Customer Not Available",
+      );
+
+      const asked: Record<string, unknown>[] = [];
+      const ndr = fake((path, data) => {
+        if (path !== "ndr/add-reattempt-rto.json") return {};
+        asked.push(data);
+        return {
+          status: "success",
+          data: { [awb]: { status: "success", remark: "" } },
+        };
+      });
+      const result = await actOnFailedDelivery(
+        id,
+        { kind: "REATTEMPT", date: new Date(Date.now() + 86_400_000) },
+        actor,
+        { config, fetchImpl: ndr },
+      );
+      expect(result).toEqual({ ok: true });
+      expect(asked[0]).toMatchObject({ awb_numbers: awb, ndr_action: 1 });
+      expect(
+        (await prisma.order.findUniqueOrThrow({ where: { id } }))
+          .needsAttention,
+      ).toBeNull();
+      expect((await getOrderShipment(id))?.failedDelivery).toBeNull();
+
+      // The same failed scan again doesn't flag it a second time...
+      await refresh(
+        track(
+          awb,
+          "Undelivered",
+          "UD",
+          "2026-11-26 18:00:00",
+          "Customer Not Available",
+        ),
+      );
+      expect(
+        (await prisma.order.findUniqueOrThrow({ where: { id } }))
+          .needsAttention,
+      ).toBeNull();
+      // ...and once it's out for delivery, the failure is cleared.
+      await refresh(
+        track(awb, "Out For Delivery", "UD", "2026-11-27 09:00:00"),
+      );
+      expect((await current(id)).failedAttemptAt).toBeNull();
     });
 
     it("flags an order coming back", async () => {

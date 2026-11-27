@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   AdminBadge,
   AdminButton,
+  AdminDialog,
   AdminInput,
   CopyText,
   Field,
@@ -37,6 +38,9 @@ export interface OrderDeliveryData {
   needsTrackingNumber: boolean;
   checkedOn: string | null;
   attempts: number;
+  /** The courier couldn't deliver and nobody has chosen what to do yet. */
+  failedOn: string | null;
+  failedReason: string | null;
 }
 
 const STATUS: Record<ShipmentStatus, { label: string; tone: StatusTone }> = {
@@ -216,6 +220,14 @@ export function OrderDelivery({
           ) : null}
         </div>
       )}
+      {shipment?.failedOn ? (
+        <FailedDelivery
+          orderId={orderId}
+          on={shipment.failedOn}
+          reason={shipment.failedReason}
+          canAct={canUpdate && connected}
+        />
+      ) : null}
       {estimatedItems.length > 0 ? (
         <p className="text-onwei-blue/70">
           Size or weight estimated for {estimatedItems.join(", ")}: the category
@@ -284,6 +296,151 @@ export function OrderDelivery({
           ) : null}
         </div>
       ) : null}
+    </div>
+  );
+}
+
+function tomorrow(): string {
+  const day = new Date(Date.now() + 24 * 60 * 60_000 + 330 * 60_000);
+  return day.toISOString().slice(0, 10);
+}
+
+/** "The courier couldn't deliver": try again on a day, or send it back. */
+function FailedDelivery({
+  orderId,
+  on,
+  reason,
+  canAct,
+}: {
+  orderId: string;
+  on: string;
+  reason: string | null;
+  canAct: boolean;
+}) {
+  const router = useRouter();
+  const toast = useToast();
+  const [open, setOpen] = useState<"again" | "back" | null>(null);
+  const [date, setDate] = useState(tomorrow);
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [remark, setRemark] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    setBusy(true);
+    const result = await post(
+      `/api/orders/${orderId}/ithink/failed-delivery`,
+      open === "again"
+        ? { action: "REATTEMPT", date, phone, address }
+        : { action: "RTO", remark },
+    );
+    setBusy(false);
+    if (!result.ok) {
+      toast(result.error ?? "That didn't work. Try again.", "error");
+      return;
+    }
+    toast(result.message ?? "Sent to iThink.", "success");
+    setOpen(null);
+    router.refresh();
+  }
+
+  return (
+    <div className="flex flex-col gap-2 rounded-lg border border-onwei-blue/30 p-3">
+      <AdminBadge tone="problem">Courier couldn&apos;t deliver</AdminBadge>
+      <p>
+        The courier tried on {on} and couldn&apos;t deliver
+        {reason ? `: ${reason}` : ""}. Call the customer if you can, then tell
+        the courier what to do.
+      </p>
+      {canAct ? (
+        <div className="flex flex-wrap gap-2">
+          <AdminButton type="button" onClick={() => setOpen("again")}>
+            Try again
+          </AdminButton>
+          <AdminButton
+            type="button"
+            variant="secondary"
+            onClick={() => setOpen("back")}
+          >
+            Send it back to us
+          </AdminButton>
+        </div>
+      ) : null}
+      <AdminDialog
+        open={open !== null}
+        onClose={() => setOpen(null)}
+        title={open === "back" ? "Send it back to us" : "Try delivering again"}
+        description={
+          open === "back"
+            ? "The courier brings the parcel back to the warehouse. You can refund or reship once it arrives."
+            : "The courier tries again on the day you pick. Add a new phone or address only if the customer gave you one."
+        }
+        size="sm"
+      >
+        <div className="flex flex-col gap-3">
+          {open === "again" ? (
+            <>
+              <Field label="Day to try again">
+                <AdminInput
+                  type="date"
+                  value={date}
+                  min={tomorrow()}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </Field>
+              <Field
+                label="New phone number (optional)"
+                hint="Only if the customer gave a different one."
+              >
+                <AdminInput
+                  value={phone}
+                  inputMode="tel"
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </Field>
+              <Field
+                label="New address (optional)"
+                hint="Full address in one line, including the PIN code."
+              >
+                <AdminInput
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
+              </Field>
+            </>
+          ) : (
+            <Field
+              label="Why it's coming back"
+              hint="The courier sees this, for example: customer refused it."
+            >
+              <AdminInput
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+              />
+            </Field>
+          )}
+          <div className="flex justify-end gap-2">
+            <AdminButton
+              type="button"
+              variant="secondary"
+              onClick={() => setOpen(null)}
+            >
+              Cancel
+            </AdminButton>
+            <AdminButton
+              type="button"
+              disabled={busy || (open === "back" ? !remark.trim() : !date)}
+              onClick={submit}
+            >
+              {busy
+                ? "Sending..."
+                : open === "back"
+                  ? "Send it back"
+                  : "Ask the courier to try again"}
+            </AdminButton>
+          </div>
+        </div>
+      </AdminDialog>
     </div>
   );
 }

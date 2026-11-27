@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { canMoveShipment, mapIthinkStatus } from "./shipmentStatus";
+import {
+  canMoveShipment,
+  clearsFailedDelivery,
+  isFailedDelivery,
+  mapIthinkStatus,
+} from "./shipmentStatus";
 
 describe("mapIthinkStatus", () => {
   it("maps iThink's words", () => {
@@ -41,5 +46,17 @@ describe("canMoveShipment", () => {
     expect(canMoveShipment("IN_TRANSIT", "RETURNING")).toBe(true);
     expect(canMoveShipment("RETURNING", "RETURNED")).toBe(true);
     expect(canMoveShipment("RETURNING", "DELIVERED")).toBe(false);
+  });
+});
+
+describe("failed deliveries", () => {
+  it("knows a failed attempt, and what settles it", () => {
+    expect(isFailedDelivery("Undelivered")).toBe(true);
+    expect(isFailedDelivery("out of  delivery area")).toBe(true);
+    expect(isFailedDelivery("In Transit")).toBe(false);
+    expect(clearsFailedDelivery("OUT_FOR_DELIVERY")).toBe(true);
+    expect(clearsFailedDelivery("DELIVERED")).toBe(true);
+    expect(clearsFailedDelivery("IN_TRANSIT")).toBe(false);
+    expect(clearsFailedDelivery(null)).toBe(false);
   });
 });

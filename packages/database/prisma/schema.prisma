@@ -1324,6 +1324,12 @@ model Shipment {
   deliveredAt          DateTime?
   cancelledAt          DateTime?
   lastCheckedAt        DateTime?
+  // The courier tried and couldn't deliver (iThink "Undelivered"), and why.
+  // Cleared when it moves on. Staff then choose try again or send it back.
+  failedAttemptAt      DateTime?
+  failedReason         String?
+  // When staff last told iThink what to do about a failed delivery.
+  ndrActionAt          DateTime?
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
 

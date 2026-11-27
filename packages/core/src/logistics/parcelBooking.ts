@@ -7,7 +7,13 @@ import {
   type IthinkOrderInfo,
   type IthinkParcel,
 } from "./ithinkClient";
-import { canMoveShipment, isPickedUp, mapIthinkStatus } from "./shipmentStatus";
+import {
+  canMoveShipment,
+  clearsFailedDelivery,
+  isFailedDelivery,
+  isPickedUp,
+  mapIthinkStatus,
+} from "./shipmentStatus";
 
 /**
  * Books claimed parcels on iThink and saves each answer on its Shipment row.
@@ -163,15 +169,25 @@ export async function applyCourierUpdate(
   latest: Pick<
     IthinkOrderInfo,
     "statusText" | "statusCode" | "courier" | "lastScanAt" | "deliveredAt"
-  >,
+  > & { reason?: string | null },
   now: Date,
   onMove: (tx: Prisma.TransactionClient, move: ShipmentMove) => Promise<void>,
 ): Promise<ShipmentMove | null> {
   const next = mapIthinkStatus(latest.statusText, latest.statusCode);
+  const failed = isFailedDelivery(latest.statusText);
   const words = {
     courierStatus: latest.statusText || null,
     ...(latest.courier ? { courier: latest.courier } : {}),
     ...(latest.lastScanAt ? { lastScanAt: latest.lastScanAt } : {}),
+    // A failed attempt is kept until the parcel is out again or done.
+    ...(failed
+      ? {
+          failedAttemptAt: latest.lastScanAt ?? now,
+          failedReason: latest.reason?.trim() || null,
+        }
+      : clearsFailedDelivery(next)
+        ? { failedAttemptAt: null, failedReason: null }
+        : {}),
   };
   if (!next || !canMoveShipment(row.status, next)) {
     await prisma.shipment.update({ where: { id: row.id }, data: words });

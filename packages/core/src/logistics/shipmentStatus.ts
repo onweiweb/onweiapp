@@ -46,6 +46,31 @@ export function mapIthinkStatus(
   return null;
 }
 
+/**
+ * The courier tried and couldn't deliver (iThink's "Undelivered" or "Out of
+ * Delivery Area"). The parcel stays on its way; staff choose try again or
+ * send it back.
+ */
+export function isFailedDelivery(text: string): boolean {
+  const status = text.trim().toLowerCase().replace(/\s+/g, " ");
+  return status === "undelivered" || status === "out of delivery area";
+}
+
+/** Statuses after which a failed attempt no longer matters. */
+const PAST_FAILURE: readonly ShipmentStatus[] = [
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
+  "RETURNING",
+  "RETURNED",
+  "LOST",
+  "CANCELLED",
+];
+
+/** A failed attempt is settled once the parcel is out again or done. */
+export function clearsFailedDelivery(status: ShipmentStatus | null): boolean {
+  return status !== null && PAST_FAILURE.includes(status);
+}
+
 const FORWARD_RANK: Partial<Record<ShipmentStatus, number>> = {
   SENDING: 0,
   BOOKED: 1,

@@ -27,7 +27,9 @@ export {
   type CancelCardResult,
 } from "./cardShipments";
 export {
+  FAILED_DELIVERY_NOTE,
   ITHINK_ACTOR,
+  actOnFailedDelivery,
   checkDeliveryPincode,
   checkPincodeRateLimit,
   countOpenOrderShipments,
@@ -37,13 +39,18 @@ export {
   refreshOrderShipments,
   shipperBoxOf,
   sendOrderToIthink,
+  type FailedDeliveryResult,
   type ItemBox,
   type OrderEvent,
   type OrderShipmentView,
   type RefreshOrdersResult,
   type SendOrderResult,
 } from "./orderShipments";
-export { ithinkTrackingUrl, type PincodeService } from "./ithinkClient";
+export {
+  ithinkTrackingUrl,
+  type FailedDeliveryAction,
+  type PincodeService,
+} from "./ithinkClient";
 export { type IthinkDeps } from "./cardShipments";
 export {
   TRACKING_PASTE_MAX,

@@ -17,8 +17,10 @@ import {
   checkIthinkPincode,
   findIthinkParcel,
   ithinkTrackingUrl,
+  ndrIthinkAction,
   readIthinkConfig,
   trackIthinkParcels,
+  type FailedDeliveryAction,
   type IthinkConfig,
   type IthinkParcel,
   type PincodeService,
@@ -30,7 +32,12 @@ import {
   markShipmentBooked,
   type ShipmentMove,
 } from "./parcelBooking";
-import { OPEN_SHIPMENT_STATUSES } from "./shipmentStatus";
+import {
+  OPEN_SHIPMENT_STATUSES,
+  clearsFailedDelivery,
+  isFailedDelivery,
+  mapIthinkStatus,
+} from "./shipmentStatus";
 import { needsTrackingNumber } from "./trackingMatch";
 
 /**
@@ -583,6 +590,54 @@ async function moveOrderWithCourier(
   return events;
 }
 
+/** Start of the order note for a failed delivery (staff act on it). */
+export const FAILED_DELIVERY_NOTE = "The courier couldn't deliver";
+
+/**
+ * Flags the order when the courier couldn't deliver, and clears that flag
+ * once the parcel is out again or done. Other notes (coming back, lost) are
+ * left alone.
+ */
+async function noteFailedDelivery(
+  orderId: string,
+  latest: {
+    statusText: string;
+    statusCode: string;
+    reason: string | null;
+    lastScanAt: Date | null;
+  },
+  /** Staff already chose for this attempt: don't flag it again. */
+  actedAt: Date | null,
+): Promise<void> {
+  if (isFailedDelivery(latest.statusText)) {
+    if (actedAt && (!latest.lastScanAt || latest.lastScanAt <= actedAt)) return;
+    const reason = latest.reason?.trim();
+    await prisma.order.updateMany({
+      where: {
+        id: orderId,
+        status: { notIn: ["CANCELLED", "REFUNDED", "DELIVERED"] },
+        OR: [
+          { needsAttention: null },
+          { needsAttention: { startsWith: FAILED_DELIVERY_NOTE } },
+        ],
+      },
+      data: {
+        needsAttention: `${FAILED_DELIVERY_NOTE}${reason ? ` (${reason})` : ""}. Choose "Try again" or "Send it back" on the Delivery card.`,
+      },
+    });
+  } else if (
+    clearsFailedDelivery(mapIthinkStatus(latest.statusText, latest.statusCode))
+  ) {
+    await prisma.order.updateMany({
+      where: {
+        id: orderId,
+        needsAttention: { startsWith: FAILED_DELIVERY_NOTE },
+      },
+      data: { needsAttention: null },
+    });
+  }
+}
+
 export type RefreshOrdersResult =
   | { ok: false; reason: "NOT_SET_UP" }
   | {
@@ -678,6 +733,7 @@ export async function refreshOrderShipments(
       },
     );
     if (moved) changed += 1;
+    await noteFailedDelivery(orderId, latest, row.ndrActionAt);
   }
 
   const checkedIds = [...open, ...sending].map((r) => r.id);
@@ -694,6 +750,111 @@ export async function refreshOrderShipments(
 // ---------------------------------------------------------------------------
 // Cancel, view
 // ---------------------------------------------------------------------------
+
+export type FailedDeliveryResult =
+  { ok: true } | { ok: false; message: string };
+
+/**
+ * Staff decide about a failed delivery: the courier tries again (on a day,
+ * with an optional new phone or address) or sends the parcel back to us.
+ * Clears the order's "couldn't deliver" flag; history and audit rows record
+ * what was asked.
+ */
+export async function actOnFailedDelivery(
+  orderId: string,
+  action: FailedDeliveryAction,
+  actor: AuditActor,
+  deps: IthinkDeps = {},
+): Promise<FailedDeliveryResult> {
+  const current = await prisma.shipment.findFirst({
+    where: { orderId, isCurrent: true, kind: "ORDER" },
+  });
+  if (
+    !current?.awb ||
+    !["IN_TRANSIT", "OUT_FOR_DELIVERY"].includes(current.status)
+  ) {
+    return {
+      ok: false,
+      message:
+        "This order isn't with the courier right now, so there's nothing to ask iThink.",
+    };
+  }
+  if (action.kind === "REATTEMPT") {
+    const today = new Date(new Date().toDateString());
+    if (action.date < today) {
+      return { ok: false, message: "Pick today or a later day." };
+    }
+  } else if (!action.remark.trim()) {
+    return { ok: false, message: "Say why it's coming back, for the courier." };
+  }
+  const { config, fetchImpl, now } = depsOf(deps);
+  if (!config) {
+    return {
+      ok: false,
+      message: "iThink isn't connected. Do this in the iThink portal instead.",
+    };
+  }
+  const result = await ndrIthinkAction(config, current.awb, action, fetchImpl);
+  if (!result.ok) return { ok: false, message: result.reason };
+
+  const day = new Intl.DateTimeFormat("en-IN", {
+    day: "numeric",
+    month: "short",
+    timeZone: "Asia/Kolkata",
+  });
+  const note =
+    action.kind === "REATTEMPT"
+      ? `Asked the courier to try again on ${day.format(action.date)}${action.phone || action.address ? " with new contact details" : ""}.`
+      : `Asked the courier to send it back to us: ${action.remark.trim()}`;
+  await prisma.$transaction(async (tx) => {
+    await tx.shipment.update({
+      where: { id: current.id },
+      data: { ndrActionAt: now },
+    });
+    const order = await tx.order.findUniqueOrThrow({
+      where: { id: orderId },
+      select: { status: true },
+    });
+    await tx.orderStatusHistory.create({
+      data: {
+        orderId,
+        status: order.status,
+        note,
+        changedBy: actor.staffUserId,
+      },
+    });
+    await tx.order.updateMany({
+      where: {
+        id: orderId,
+        needsAttention: { startsWith: FAILED_DELIVERY_NOTE },
+      },
+      data: { needsAttention: null },
+    });
+    await writeAuditLog(
+      {
+        staffUserId: actor.staffUserId,
+        action:
+          action.kind === "REATTEMPT"
+            ? "order.shipment.reattempt"
+            : "order.shipment.sendBack",
+        entityType: "Shipment",
+        entityId: current.id,
+        beforeState: { failedReason: current.failedReason },
+        // Contact details are personal data: record that they changed, not what.
+        afterState:
+          action.kind === "REATTEMPT"
+            ? {
+                date: action.date.toISOString(),
+                newPhone: Boolean(action.phone),
+                newAddress: Boolean(action.address),
+              }
+            : { remark: action.remark.trim() },
+      },
+      tx,
+    );
+  });
+  return { ok: true };
+}
 
 export type CancelOrderShipmentResult =
   { ok: true; cancelled: boolean } | { ok: false; message: string };
@@ -779,6 +940,8 @@ export interface OrderShipmentView {
   /** iThink has it but we have no tracking number: add it, don't resend. */
   needsTrackingNumber: boolean;
   attempts: number;
+  /** The courier couldn't deliver and staff haven't chosen what to do yet. */
+  failedDelivery: { at: Date; reason: string | null } | null;
 }
 
 export async function getOrderShipment(
@@ -808,6 +971,12 @@ export async function getOrderShipment(
       !needsTrackingNumber(current),
     needsTrackingNumber: needsTrackingNumber(current),
     attempts,
+    failedDelivery:
+      current.failedAttemptAt &&
+      ["IN_TRANSIT", "OUT_FOR_DELIVERY"].includes(current.status) &&
+      (!current.ndrActionAt || current.ndrActionAt < current.failedAttemptAt)
+        ? { at: current.failedAttemptAt, reason: current.failedReason }
+        : null,
   };
 }
 
